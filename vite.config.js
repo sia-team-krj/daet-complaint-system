@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
     plugins: [
+        tailwindcss(),
         laravel({
             input: ["resources/css/app.css", "resources/js/app.js"],
             refresh: true, // Auto-refresh on Blade changes
@@ -14,7 +15,7 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         hmr: {
-            host: "localhost:8000", // HMR host
+            host: "localhost", // HMR host
         },
         watch: {
             usePolling: true, // Important for Docker volume mounts!
