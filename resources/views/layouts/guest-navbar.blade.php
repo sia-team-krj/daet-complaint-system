@@ -1,6 +1,8 @@
 <nav id="navbar" class="fixed left-0 top-0 w-full z-50 transition-all duration-300 bg-[#0B1F3A]/96 backdrop-blur-md border-b border-[#C9A84C]/15">
   <div class="navbar-inner">
     <div class="navbar-flex">
+
+      {{-- Logo --}}
       <a href="{{ url('/') }}" class="navbar-logo group">
         <div class="logo-icon group-hover:scale-105 transition-transform duration-200">
           <img src="/images/lgulogo.png" alt="Daet LGU" class="w-7 h-7 object-contain">
@@ -13,62 +15,72 @@
 
       {{-- Desktop Center Links --}}
       <ul class="nav-links">
-        <li><a href="{{ route('dashboard') }}" class="nav-link">Dashboard</a></li>
-        <li><a href="{{ url('/') }}" class="nav-link">Transparency</a></li>
-        <li><a href="{{ url('/') }}" class="nav-link">Rewards</a></li>
+        <li><a href="{{ url('/') }}" class="nav-link">Home</a></li>
+        <li><a href="{{ url('/') }}#process" class="nav-link">Process</a></li>
+        <li><a href="{{ url('/') }}#transparency" class="nav-link">Transparency</a></li>
+        <li><a href="{{ url('/') }}#features" class="nav-link">Features</a></li>
+        <li><a href="{{ url('/') }}#rewards" class="nav-link">Rewards</a></li>
       </ul>
 
       {{-- Desktop Right --}}
       <ul class="nav-actions">
+        @auth
+          {{-- File a Complaint CTA --}}
+          <li>
+            <a href="{{ route('complaints.create') }}" class="btn-nav-cta">File a Complaint</a>
+          </li>
+
           @if(auth()->user()->is_admin)
-            <li><a href="{{ route('admin.dashboard') }}" class="nav-link">Admin Dashboard</a></li>
+            <li><a href="{{ route('admin.dashboard') }}" class="nav-link">Admin</a></li>
           @endif
 
-        <li>
-          <a href="{{ route('complaints.create') }}" class="btn-nav-cta">File a Complaint</a>
-        </li>
+          {{-- User dropdown --}}
+          <li class="nav-dropdown-wrap">
+            <button class="nav-user-btn" id="user-menu-btn" aria-expanded="false">
+              <div class="user-avatar">
+                {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}
+              </div>
+              <span class="user-name">{{ auth()->user()->first_name }}</span>
+              <svg class="dropdown-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
 
-
-
-        {{-- User Dropdown --}}
-        <li class="nav-dropdown-wrap">
-          <button class="nav-user-btn" id="user-menu-btn" aria-expanded="false">
-            <div class="user-avatar">
-              {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}
+            <div class="nav-dropdown" id="user-dropdown">
+              <div class="dropdown-header">
+                <span class="dropdown-name">{{ auth()->user()->full_name }}</span>
+                <span class="dropdown-email">{{ auth()->user()->email }}</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <a href="{{ route('profile') }}" class="dropdown-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                My Account
+              </a>
+              <a href="#" class="dropdown-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                My Complaints
+              </a>
+              <div class="dropdown-divider"></div>
+              <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="dropdown-item dropdown-logout">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  Sign Out
+                </button>
+              </form>
             </div>
-            <span class="user-name">{{ auth()->user()->first_name }}</span>
-            <svg class="dropdown-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-
-          <div class="nav-dropdown" id="user-dropdown">
-            <div class="dropdown-header">
-              <span class="dropdown-name">{{ auth()->user()->full_name }}</span>
-              <span class="dropdown-email">{{ auth()->user()->email }}</span>
-            </div>
-            <div class="dropdown-divider"></div>
-            <a href="{{ route('profile') }}" class="dropdown-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              My Account
-            </a>
-            <a href="#" class="dropdown-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              My Complaints
-            </a>
-            <div class="dropdown-divider"></div>
-            <form method="POST" action="{{ route('logout') }}">
-              @csrf
-              <button type="submit" class="dropdown-item dropdown-logout">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Sign Out
-              </button>
-            </form>
-          </div>
-        </li>
+          </li>
+        @else
+          <li><a href="{{ route('login') }}" class="nav-link">Login</a></li>
+          <li><a href="{{ route('register') }}" class="btn-nav-cta">Get Started</a></li>
+        @endauth
       </ul>
 
       {{-- Mobile Right --}}
       <div class="nav-mobile-right">
-        <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm">File</a>
+        @auth
+          <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm">File</a>
+        @else
+          <a href="{{ route('register') }}" class="btn-nav-cta nav-cta-sm">Get Started</a>
+        @endauth
         <button id="mobile-menu-btn" aria-label="Toggle menu" class="hamburger-btn">
           <span class="hamburger-line"></span>
           <span class="hamburger-line"></span>
@@ -82,46 +94,43 @@
   {{-- Mobile Dropdown --}}
   <div id="mobile-menu" class="mobile-menu hidden">
     <div class="mobile-menu-inner">
-
-      {{-- User info --}}
-      <div class="mobile-user-info">
-        <div class="mobile-user-avatar">
-          {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}
-        </div>
-        <div>
-          <div class="mobile-user-name">{{ auth()->user()->full_name }}</div>
-          <div class="mobile-user-email">{{ auth()->user()->email }}</div>
-        </div>
-      </div>
-      <div class="mobile-divider"></div>
-
-      {{-- Nav links --}}
-      <a href="{{ route('dashboard') }}" class="mobile-nav-link">Dashboard</a>
+      <a href="{{ url('/') }}" class="mobile-nav-link">Home</a>
+      <a href="{{ url('/') }}#process" class="mobile-nav-link">Process</a>
       <a href="{{ url('/') }}#transparency" class="mobile-nav-link">Transparency</a>
+      <a href="{{ url('/') }}#features" class="mobile-nav-link">Features</a>
       <a href="{{ url('/') }}#rewards" class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
-
-      {{-- Account links --}}
-      <a href="{{ route('profile') }}" class="mobile-nav-link">My Account</a>
-      <a href="#" class="mobile-nav-link">My Complaints</a>
-      @if(auth()->user()->is_admin)
-        <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">Admin Dashboard</a>
-      @endif
-      <div class="mobile-divider"></div>
-
-      {{-- Logout --}}
-      <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="mobile-nav-link mobile-logout">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Sign Out
-        </button>
-      </form>
-
+      @auth
+        <div class="mobile-user-info">
+          <div class="mobile-user-avatar">
+            {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}
+          </div>
+          <div>
+            <div class="mobile-user-name">{{ auth()->user()->full_name }}</div>
+            <div class="mobile-user-email">{{ auth()->user()->email }}</div>
+          </div>
+        </div>
+        <div class="mobile-divider"></div>
+        <a href="{{ route('profile') }}" class="mobile-nav-link">My Account</a>
+        <a href="#" class="mobile-nav-link">My Complaints</a>
+        @if(auth()->user()->is_admin)
+          <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">Admin Dashboard</a>
+        @endif
+        <div class="mobile-divider"></div>
+        <form method="POST" action="{{ route('logout') }}">
+          @csrf
+          <button type="submit" class="mobile-nav-link mobile-logout">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign Out
+          </button>
+        </form>
+      @else
+        <a href="{{ route('login') }}" class="mobile-nav-link">Login</a>
+        <a href="{{ route('register') }}" class="mobile-nav-link" style="color:#C9A84C;">Get Started</a>
+      @endauth
     </div>
   </div>
 </nav>
-
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap');

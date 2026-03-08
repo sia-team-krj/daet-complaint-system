@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.guest')
 @section('title', 'Daet Listens')
 @section('content')
 
@@ -544,7 +544,7 @@
 
 <div class="home-root">
 
-  {{-- ━━━━━━ HERO ━━━━━━ --}}
+  {{-- HERO --}}
   <section class="hero">
     <div class="hero-glow"></div>
     <div class="hero-glow-left"></div>
@@ -575,30 +575,22 @@
 
         <div class="hero-ctas fu d4">
           @auth
-            <a href="{{ route('complaints.create') }}" class="btn-primary">
+          {{-- route('complaints.create')  --}}
+            <a href="" class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               File a Complaint
             </a>
-            <a href="{{ route('complaints.track') }}" class="btn-secondary">
+            {{-- route('complaints.track') --}}
+            <a href="" class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               Track My Complaint
             </a>
           @else
-          {{--
-
-          {{ route('register') }}
-
-          --}}
-            <a href="" class="btn-primary">
+            <a href="{{ route('register') }}" class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               Get Started
             </a>
-            {{--
-
-            {{ route('login') }}
-
-            --}}
-            <a href="" class="btn-secondary">
+            <a href="{{ route('login') }}" class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               Login to Track
             </a>
@@ -642,7 +634,7 @@
     </div>
   </section>
 
-  {{-- ━━━━━━ PROCESS ━━━━━━ --}}
+  {{-- PROCESS  --}}
   <section class="process" id="process">
     <div class="section-wrap">
       <div class="section-eyebrow">How It Works</div>
@@ -702,7 +694,7 @@
     </div>
   </section>
 
-  {{-- ━━━━━━ FEATURES ━━━━━━ --}}
+  {{--  FEATURES --}}
   <section class="features" id="features">
     <div class="section-wrap">
       <div class="section-eyebrow">Why This System</div>
@@ -785,7 +777,7 @@
     </div>
   </section>
 
-  {{-- ━━━━━━ CTA BANNER ━━━━━━ --}}
+  {{-- CTA BANNER  --}}
   <div class="cta-banner">
     <div class="cta-inner">
       <div class="cta-text">
@@ -802,8 +794,8 @@
           File a Complaint Now
         </a>
       @else
-      {{-- {{ route('register') }} --}}
-        <a href="" class="btn-primary" style="flex-shrink:0;">
+      {{-- --}}
+        <a href="{{ route('register') }} " class="btn-primary" style="flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           Get Started Free
         </a>
@@ -811,7 +803,7 @@
     </div>
   </div>
 
-  {{-- ━━━━━━ FOOTER ━━━━━━ --}}
+  {{-- FOOTER --}}
   <div class="home-footer">
     <p><strong>Municipality of Daet</strong> &nbsp;·&nbsp; Camarines Norte &nbsp;·&nbsp; Official Transparency Complaint Portal</p>
     <span class="footer-seal">Republic Act 6713 &nbsp;·&nbsp; FOI Compliant</span>

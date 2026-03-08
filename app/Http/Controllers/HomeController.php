@@ -6,6 +6,10 @@ class HomeController extends Controller
 {
     public function home()
     {
-        return view("pages.home");
+        if (auth()->check()) {
+            return view("pages.home.dashboard");
+        }
+
+        return view("pages.home.guest");
     }
 }
