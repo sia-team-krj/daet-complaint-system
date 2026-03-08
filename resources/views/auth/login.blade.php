@@ -2,6 +2,136 @@
 @section('title', 'Login — Daet Listens')
 @section('content')
 
+{{-- When user is logged in, and tried to logged in new/existing account thru new tab after clicking submit button
+    Add A notice : Something went wrong and refresh the page, instead of displaying  419 Page Expired
+--}}
+<div class="auth-root">
+  <div class="auth-bg"></div>
+  <div class="auth-glow-tr"></div>
+  <div class="auth-glow-bl"></div>
+  <div class="auth-bar"></div>
+  <div class="auth-wm">DAET</div>
+
+  <div class="auth-layout">
+
+    {{-- LEFT: Brand --}}
+    <div class="auth-brand">
+      <div class="auth-badge fu d1">
+        <span class="badge-dot"></span>
+        Official Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
+      </div>
+
+      <h2 class="auth-brand-title fu d2">
+        Welcome Back<br>
+        <span class="gold-line">to Daet Listens.</span>
+      </h2>
+      <div class="auth-brand-divider fu d2"></div>
+
+      <p class="auth-brand-desc fu d3">
+        Sign in to access your complaints, track ongoing cases,
+        and hold your local government to a higher standard of
+        transparency and accountability.
+      </p>
+
+      <div class="auth-stats fu d4">
+        <div class="auth-stat">
+          <div class="auth-stat-num">{{ $totalComplaints ?? '0' }}</div>
+          <div class="auth-stat-lbl">Filed</div>
+        </div>
+        <div class="auth-stat">
+          <div class="auth-stat-num">{{ $resolvedComplaints ?? '0' }}</div>
+          <div class="auth-stat-lbl">Resolved</div>
+        </div>
+        <div class="auth-stat">
+          <div class="auth-stat-num">{{ $avgDays ?? '—' }}</div>
+          <div class="auth-stat-lbl">Avg. Days</div>
+        </div>
+      </div>
+    </div>
+
+    {{-- RIGHT: Form --}}
+    <div class="auth-form-panel">
+      <div class="auth-form-wrap">
+
+        <div class="auth-form-eyebrow fu d1">Secure Access</div>
+        <h1 class="auth-form-heading fu d2">Sign In</h1>
+        <p class="auth-form-sub fu d2">
+          Don't have an account?
+          <a href="{{ route('register') }}" wire:navigate>Create one here</a>
+        </p>
+
+        @if ($errors->any())
+          <div class="auth-alert alert-error fu">
+            @foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach
+          </div>
+        @endif
+        @if (session('status'))
+          <div class="auth-alert alert-success fu">{{ session('status') }}</div>
+        @endif
+
+        {{-- <form method="POST" action=""> --}}
+        <form method="POST" action="{{ route('login') }}">
+          @csrf
+
+          <div class="field-group fu d3">
+            <label class="field-label" for="email">Email Address</label>
+            <div class="field-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input id="email" name="email" type="email" class="field-input" placeholder="your@email.com" value="{{ old('email') }}" required autocomplete="email" autofocus>
+              <div class="field-underline"></div>
+            </div>
+          </div>
+
+          <div class="field-group fu d3">
+            <label class="field-label" for="password">Password</label>
+            <div class="field-wrap">
+              <span class="field-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input id="password" name="password" type="password" class="field-input" placeholder="••••••••••" required autocomplete="current-password">
+              <div class="field-underline"></div>
+            </div>
+          </div>
+
+          <div class="field-opts fu d4">
+            <label class="field-check">
+              <input type="checkbox" name="remember">
+              <span class="field-check-label">Keep me signed in</span>
+            </label>
+            {{-- <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a> --}}
+            <a href="" class="forgot-link">Forgot Password?</a>
+          </div>
+          {{-- TODO : Add Loading uppon pressing button submit,
+          --}}
+          <button type="submit" class="btn-submit fu d5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Sign In to Your Account
+          </button>
+
+          <div class="auth-or fu d5">
+            <div class="auth-or-line"></div>
+            <span class="auth-or-text">or</span>
+            <div class="auth-or-line"></div>
+          </div>
+
+          <p class="auth-alt-link fu d5">
+            New to Daet Listens?
+            <a href="{{ route('register') }}"  wire:navigate >Create an account &rarr;</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+  </div><!-- /.auth-layout -->
+
+  <div class="auth-footer">
+    <p><strong>Municipality of Daet</strong> &nbsp;&middot;&nbsp; Camarines Norte &nbsp;&middot;&nbsp; Official Transparency Portal</p>
+    <span class="footer-seal">Republic Act 6713 &nbsp;&middot;&nbsp; FOI Compliant</span>
+  </div>
+</div>
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
@@ -321,130 +451,5 @@
   }
 </style>
 
-<div class="auth-root">
-  <div class="auth-bg"></div>
-  <div class="auth-glow-tr"></div>
-  <div class="auth-glow-bl"></div>
-  <div class="auth-bar"></div>
-  <div class="auth-wm">DAET</div>
-
-  <div class="auth-layout">
-
-    {{-- LEFT: Brand --}}
-    <div class="auth-brand">
-      <div class="auth-badge fu d1">
-        <span class="badge-dot"></span>
-        Official Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
-      </div>
-
-      <h2 class="auth-brand-title fu d2">
-        Welcome Back<br>
-        <span class="gold-line">to Daet Listens.</span>
-      </h2>
-      <div class="auth-brand-divider fu d2"></div>
-
-      <p class="auth-brand-desc fu d3">
-        Sign in to access your complaints, track ongoing cases,
-        and hold your local government to a higher standard of
-        transparency and accountability.
-      </p>
-
-      <div class="auth-stats fu d4">
-        <div class="auth-stat">
-          <div class="auth-stat-num">{{ $totalComplaints ?? '0' }}</div>
-          <div class="auth-stat-lbl">Filed</div>
-        </div>
-        <div class="auth-stat">
-          <div class="auth-stat-num">{{ $resolvedComplaints ?? '0' }}</div>
-          <div class="auth-stat-lbl">Resolved</div>
-        </div>
-        <div class="auth-stat">
-          <div class="auth-stat-num">{{ $avgDays ?? '—' }}</div>
-          <div class="auth-stat-lbl">Avg. Days</div>
-        </div>
-      </div>
-    </div>
-
-    {{-- RIGHT: Form --}}
-    <div class="auth-form-panel">
-      <div class="auth-form-wrap">
-
-        <div class="auth-form-eyebrow fu d1">Secure Access</div>
-        <h1 class="auth-form-heading fu d2">Sign In</h1>
-        <p class="auth-form-sub fu d2">
-          Don't have an account?
-          <a href="{{ route('register') }}" wire:navigate>Create one here</a>
-        </p>
-
-        @if ($errors->any())
-          <div class="auth-alert alert-error fu">
-            @foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach
-          </div>
-        @endif
-        @if (session('status'))
-          <div class="auth-alert alert-success fu">{{ session('status') }}</div>
-        @endif
-
-        {{-- <form method="POST" action="{{ route('login') }}"> --}}
-        <form method="POST" action="">
-          @csrf
-
-          <div class="field-group fu d3">
-            <label class="field-label" for="email">Email Address</label>
-            <div class="field-wrap">
-              <span class="field-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <input id="email" name="email" type="email" class="field-input" placeholder="your@email.com" value="{{ old('email') }}" required autocomplete="email" autofocus>
-              <div class="field-underline"></div>
-            </div>
-          </div>
-
-          <div class="field-group fu d3">
-            <label class="field-label" for="password">Password</label>
-            <div class="field-wrap">
-              <span class="field-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </span>
-              <input id="password" name="password" type="password" class="field-input" placeholder="••••••••••" required autocomplete="current-password">
-              <div class="field-underline"></div>
-            </div>
-          </div>
-
-          <div class="field-opts fu d4">
-            <label class="field-check">
-              <input type="checkbox" name="remember">
-              <span class="field-check-label">Keep me signed in</span>
-            </label>
-            {{-- <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a> --}}
-            <a href="" class="forgot-link">Forgot Password?</a>
-          </div>
-
-          <button type="submit" class="btn-submit fu d5">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            Sign In to Your Account
-          </button>
-
-          <div class="auth-or fu d5">
-            <div class="auth-or-line"></div>
-            <span class="auth-or-text">or</span>
-            <div class="auth-or-line"></div>
-          </div>
-
-          <p class="auth-alt-link fu d5">
-            New to Daet Listens?
-            <a href="{{ route('register') }}"  wire:navigate >Create an account &rarr;</a>
-          </p>
-        </form>
-      </div>
-    </div>
-
-  </div><!-- /.auth-layout -->
-
-  <div class="auth-footer">
-    <p><strong>Municipality of Daet</strong> &nbsp;&middot;&nbsp; Camarines Norte &nbsp;&middot;&nbsp; Official Transparency Portal</p>
-    <span class="footer-seal">Republic Act 6713 &nbsp;&middot;&nbsp; FOI Compliant</span>
-  </div>
-</div>
 
 @endsection

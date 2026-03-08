@@ -1,7 +1,5 @@
 @extends($mainLayout)
 
-@section('title' , "Transparency")
-
 @section('content')
     <h1>Transparency Page</h1>
 @endsection

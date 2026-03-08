@@ -15,7 +15,7 @@
       <ul class="nav-links">
         <li><a href="{{ route('dashboard') }}"  wire:navigate  class="nav-link">Dashboard</a></li>
         <li><a href="{{ url('/transparency') }}"  wire:navigate  class="nav-link">Transparency</a></li>
-        <li><a href="{{ url('/') }}"  wire:navigate  class="nav-link">Rewards</a></li>
+        <li><a href="{{ url('/rewards') }}"  wire:navigate  class="nav-link">Rewards</a></li>
       </ul>
 
       {{-- Desktop Right --}}
@@ -27,8 +27,6 @@
         <li>
           <a href="{{ route('complaints.create') }}" class="btn-nav-cta">File a Complaint</a>
         </li>
-
-
 
         {{-- User Dropdown --}}
         <li class="nav-dropdown-wrap">
@@ -96,9 +94,9 @@
       <div class="mobile-divider"></div>
 
       {{-- Nav links --}}
-      <a href="{{ route('dashboard') }}" class="mobile-nav-link">Dashboard</a>
-      <a href="{{ url('/transparency') }}" class="mobile-nav-link">Transparency</a>
-      <a href="{{ url('/') }}#rewards" class="mobile-nav-link">Rewards</a>
+      <a href="{{ route('dashboard') }}" wire:navigate class="mobile-nav-link">Dashboard</a>
+      <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">Transparency</a>
+      <a href="{{ url('/rewards') }}" wire:navigate class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
 
       {{-- Account links --}}
@@ -291,30 +289,38 @@
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
+  // This function wraps your logic so we can call it easily
+  function initNavbar() {
     // Mobile menu toggle
     const mobileBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileBtn && mobileMenu) {
-      mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
-      mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+      mobileBtn.onclick = () => mobileMenu.classList.toggle('hidden');
     }
 
     // User dropdown toggle
     const userBtn = document.getElementById('user-menu-btn');
     const userDropdown = document.getElementById('user-dropdown');
+
     if (userBtn && userDropdown) {
-      userBtn.addEventListener('click', (e) => {
+      userBtn.onclick = (e) => {
         e.stopPropagation();
         const isOpen = userDropdown.classList.contains('open');
         userDropdown.classList.toggle('open');
         userBtn.setAttribute('aria-expanded', !isOpen);
-      });
+      };
+
       // Close on outside click
-      document.addEventListener('click', () => {
+      document.onclick = () => {
         userDropdown.classList.remove('open');
         userBtn.setAttribute('aria-expanded', 'false');
-      });
+      };
     }
-  });
+  }
+
+  // Run on initial load
+  document.addEventListener('DOMContentLoaded', initNavbar);
+
+  // Run every time Livewire finishes navigating
+  document.addEventListener('livewire:navigated', initNavbar);
 </script>

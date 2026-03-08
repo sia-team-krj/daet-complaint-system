@@ -15,11 +15,11 @@
 
       {{-- Desktop Center Links --}}
       <ul class="nav-links {{ Request::is('transparency') ? 'active-ui' : '' }}">
-        <li><a href="{{ url('/') }}" wire:navigate class="nav-link">Home</a></li>
-        <li><a href="{{ url('/') }}#process" wire:navigate class="nav-link">Process</a></li>
+        <li><a href="{{ url('/') }}" wire:navigate  class="nav-link">Home</a></li>
+        <li><a href="/#process"  class="nav-link">Process</a></li>
+        <li><a href="/#features"  class="nav-link">Features</a></li>
         <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">Transparency</a></li>
-        <li><a href="{{ url('/') }}#features" wire:navigate  class="nav-link">Features</a></li>
-        <li><a href="{{ url('/rewards') }}" wire:navigate  class="nav-link">Rewards</a></li>
+        <li><a href="{{ url('/rewards') }}" wire:navigate class="nav-link">Rewards</a></li>
       </ul>
 
       {{-- Desktop Right --}}
@@ -254,30 +254,28 @@
 </style>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    // Mobile menu toggle
-    const mobileBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    if (mobileBtn && mobileMenu) {
-      mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
-      mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.add('hidden')));
-    }
+  document.addEventListener('livewire:navigated', () => {
+      const handleAnchorClick = (e) => {
+          const href = e.currentTarget.getAttribute('href');
 
-    // User dropdown toggle
-    const userBtn = document.getElementById('user-menu-btn');
-    const userDropdown = document.getElementById('user-dropdown');
-    if (userBtn && userDropdown) {
-      userBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isOpen = userDropdown.classList.contains('open');
-        userDropdown.classList.toggle('open');
-        userBtn.setAttribute('aria-expanded', !isOpen);
+          // Check if link is an internal anchor (e.g., /#features)
+          if (href.startsWith('/#') || href.startsWith('#')) {
+              const targetId = href.split('#')[1];
+              const targetElement = document.getElementById(targetId);
+
+              // If we are already on the page where the ID exists
+              if (targetElement) {
+                  e.preventDefault();
+                  targetElement.scrollIntoView({ behavior: 'smooth' });
+                  // Update URL without refreshing
+                  history.pushState(null, null, href);
+              }
+          }
+      };
+
+      // Attach to all nav links that have a '#' in the href
+      document.querySelectorAll('a[href*="#"]').forEach(link => {
+          link.addEventListener('click', handleAnchorClick);
       });
-      // Close on outside click
-      document.addEventListener('click', () => {
-        userDropdown.classList.remove('open');
-        userBtn.setAttribute('aria-expanded', 'false');
-      });
-    }
   });
 </script>
