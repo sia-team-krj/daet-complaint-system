@@ -13,9 +13,9 @@
 
       {{-- Desktop Center Links --}}
       <ul class="nav-links">
-        <li><a href="{{ route('dashboard') }}" class="nav-link">Dashboard</a></li>
-        <li><a href="{{ url('/') }}" class="nav-link">Transparency</a></li>
-        <li><a href="{{ url('/') }}" class="nav-link">Rewards</a></li>
+        <li><a href="{{ route('dashboard') }}"  wire:navigate  class="nav-link">Dashboard</a></li>
+        <li><a href="{{ url('/transparency') }}"  wire:navigate  class="nav-link">Transparency</a></li>
+        <li><a href="{{ url('/') }}"  wire:navigate  class="nav-link">Rewards</a></li>
       </ul>
 
       {{-- Desktop Right --}}
@@ -97,7 +97,7 @@
 
       {{-- Nav links --}}
       <a href="{{ route('dashboard') }}" class="mobile-nav-link">Dashboard</a>
-      <a href="{{ url('/') }}#transparency" class="mobile-nav-link">Transparency</a>
+      <a href="{{ url('/transparency') }}" class="mobile-nav-link">Transparency</a>
       <a href="{{ url('/') }}#rewards" class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
 

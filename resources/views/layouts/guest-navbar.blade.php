@@ -14,72 +14,26 @@
       </a>
 
       {{-- Desktop Center Links --}}
-      <ul class="nav-links">
-        <li><a href="{{ url('/') }}" class="nav-link">Home</a></li>
-        <li><a href="{{ url('/') }}#process" class="nav-link">Process</a></li>
-        <li><a href="{{ url('/') }}#transparency" class="nav-link">Transparency</a></li>
-        <li><a href="{{ url('/') }}#features" class="nav-link">Features</a></li>
-        <li><a href="{{ url('/') }}#rewards" class="nav-link">Rewards</a></li>
+      <ul class="nav-links {{ Request::is('transparency') ? 'active-ui' : '' }}">
+        <li><a href="{{ url('/') }}" wire:navigate class="nav-link">Home</a></li>
+        <li><a href="{{ url('/') }}#process" wire:navigate class="nav-link">Process</a></li>
+        <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">Transparency</a></li>
+        <li><a href="{{ url('/') }}#features" wire:navigate  class="nav-link">Features</a></li>
+        <li><a href="{{ url('/rewards') }}" wire:navigate  class="nav-link">Rewards</a></li>
       </ul>
 
       {{-- Desktop Right --}}
       <ul class="nav-actions">
-        @auth
-          {{-- File a Complaint CTA --}}
-          <li>
-            <a href="{{ route('complaints.create') }}" class="btn-nav-cta">File a Complaint</a>
-          </li>
-
-          @if(auth()->user()->is_admin)
-            <li><a href="{{ route('admin.dashboard') }}" class="nav-link">Admin</a></li>
-          @endif
-
-          {{-- User dropdown --}}
-          <li class="nav-dropdown-wrap">
-            <button class="nav-user-btn" id="user-menu-btn" aria-expanded="false">
-              <div class="user-avatar">
-                {{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}
-              </div>
-              <span class="user-name">{{ auth()->user()->first_name }}</span>
-              <svg class="dropdown-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-
-            <div class="nav-dropdown" id="user-dropdown">
-              <div class="dropdown-header">
-                <span class="dropdown-name">{{ auth()->user()->full_name }}</span>
-                <span class="dropdown-email">{{ auth()->user()->email }}</span>
-              </div>
-              <div class="dropdown-divider"></div>
-              <a href="{{ route('profile') }}" class="dropdown-item">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                My Account
-              </a>
-              <a href="#" class="dropdown-item">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                My Complaints
-              </a>
-              <div class="dropdown-divider"></div>
-              <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="dropdown-item dropdown-logout">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                  Sign Out
-                </button>
-              </form>
-            </div>
-          </li>
-        @else
-          <li><a href="{{ route('login') }}" class="nav-link">Login</a></li>
-          <li><a href="{{ route('register') }}" class="btn-nav-cta">Get Started</a></li>
-        @endauth
+          <li><a href="{{ route('login') }}"  wire:navigate  class="nav-link">Login</a></li>
+          <li><a href="{{ route('register') }}"  wire:navigate class="btn-nav-cta">Get Started</a></li>
       </ul>
 
       {{-- Mobile Right --}}
       <div class="nav-mobile-right">
         @auth
-          <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm">File</a>
+          <a href="{{ route('complaints.create') }}"  wire:navigate class="btn-nav-cta nav-cta-sm">File</a>
         @else
-          <a href="{{ route('register') }}" class="btn-nav-cta nav-cta-sm">Get Started</a>
+          <a href="{{ route('register') }}"  wire:navigate class="btn-nav-cta nav-cta-sm">Get Started</a>
         @endauth
         <button id="mobile-menu-btn" aria-label="Toggle menu" class="hamburger-btn">
           <span class="hamburger-line"></span>
@@ -94,11 +48,11 @@
   {{-- Mobile Dropdown --}}
   <div id="mobile-menu" class="mobile-menu hidden">
     <div class="mobile-menu-inner">
-      <a href="{{ url('/') }}" class="mobile-nav-link">Home</a>
-      <a href="{{ url('/') }}#process" class="mobile-nav-link">Process</a>
-      <a href="{{ url('/') }}#transparency" class="mobile-nav-link">Transparency</a>
-      <a href="{{ url('/') }}#features" class="mobile-nav-link">Features</a>
-      <a href="{{ url('/') }}#rewards" class="mobile-nav-link">Rewards</a>
+      <a href="{{ url('/') }}"  wire:navigate class="mobile-nav-link">Home</a>
+      <a href="{{ url('/') }}#process"   wire:navigate class="mobile-nav-link">Process</a>
+      <a href="{{ url('/transparency') }}"  wire:navigate class="mobile-nav-link">Transparency</a>
+      <a href="{{ url('/') }}#features"   wire:navigate class="mobile-nav-link">Features</a>
+      <a href="{{ url('/rewards') }}"   wire:navigate class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
       @auth
         <div class="mobile-user-info">
@@ -125,8 +79,8 @@
           </button>
         </form>
       @else
-        <a href="{{ route('login') }}" class="mobile-nav-link">Login</a>
-        <a href="{{ route('register') }}" class="mobile-nav-link" style="color:#C9A84C;">Get Started</a>
+        <a href="{{ route('login') }}"  wire:navigate class="mobile-nav-link">Login</a>
+        <a href="{{ route('register') }}"  wire:navigate class="mobile-nav-link" style="color:#C9A84C;">Get Started</a>
       @endauth
     </div>
   </div>

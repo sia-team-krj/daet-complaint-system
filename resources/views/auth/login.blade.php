@@ -373,8 +373,7 @@
         <h1 class="auth-form-heading fu d2">Sign In</h1>
         <p class="auth-form-sub fu d2">
           Don't have an account?
-          {{-- <a href="{{ route('register') }}">Create one here</a> --}}
-          <a href="">Create one here</a>
+          <a href="{{ route('register') }}" wire:navigate>Create one here</a>
         </p>
 
         @if ($errors->any())
@@ -434,7 +433,7 @@
 
           <p class="auth-alt-link fu d5">
             New to Daet Listens?
-            <a href="{{ route('register') }}">Create an account &rarr;</a>
+            <a href="{{ route('register') }}"  wire:navigate >Create an account &rarr;</a>
           </p>
         </form>
       </div>

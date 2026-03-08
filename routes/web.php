@@ -7,6 +7,14 @@ use App\Http\Controllers\AuthController;
 // ── Public ─────────────────────────────────────────────────────────────────
 Route::get("/", [HomeController::class, "home"])->name("home");
 
+Route::get("/transparency", fn() => view("pages.transparency.index"))->name(
+    "transparency",
+);
+
+Route::get("/rewards", fn() => view("pages.transparency.index"))->name(
+    "rewards",
+);
+
 // ── Guest only ─────────────────────────────────────────────────────────────
 Route::middleware("guest")->group(function () {
     Route::get("/login", [AuthController::class, "showLogin"])->name("login");

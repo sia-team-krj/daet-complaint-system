@@ -3,5 +3,5 @@
 @section('title' , "Transparency")
 
 @section('content')
-    <h1>Transparency Page</h1>
+    <h1>Rewards Page</h1>
 @endsection

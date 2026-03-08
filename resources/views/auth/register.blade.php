@@ -272,8 +272,7 @@
         <h1 class="auth-form-heading fu d2">Register</h1>
         <p class="auth-form-sub fu d2">
           Already have an account?
-          {{-- <a href="{{ route('login') }}">Sign in here</a> --}}
-          <a href="">Sign in here</a>
+          <a href="{{ route('login') }}" wire:navigate>Sign in here</a>
         </p>
 
         @if ($errors->any())

@@ -1,5 +1,4 @@
-@extends('layouts.guest')
-@section('title', 'Daet Listens')
+@extends($mainLayout)
 @section('content')
 
 <style>
@@ -586,11 +585,11 @@
               Track My Complaint
             </a>
           @else
-            <a href="{{ route('register') }}" class="btn-primary">
+            <a href="{{ route('register') }}" wire:navigate  class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               Get Started
             </a>
-            <a href="{{ route('login') }}" class="btn-secondary">
+            <a href="{{ route('login') }}"  wire:navigate  class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               Login to Track
             </a>
@@ -789,13 +788,12 @@
         </p>
       </div>
       @auth
-        <a href="{{ route('complaints.create') }}" class="btn-primary" style="flex-shrink:0;">
+        <a href="{{ route('complaints.create') }}"  wire:navigate class="btn-primary" style="flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           File a Complaint Now
         </a>
       @else
-      {{-- --}}
-        <a href="{{ route('register') }} " class="btn-primary" style="flex-shrink:0;">
+        <a href="{{ route('register') }}" wire:navigate class="btn-primary" style="flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           Get Started Free
         </a>
