@@ -71,7 +71,7 @@
 
   /* ─── Brand panel (LEFT) ─── */
   .auth-brand {
-    display: flex; flex-direction: column; justify-content: center; align-items:center; text-align:center;
+    display: flex; flex-direction: column; justify-content: center; align-items:center;
     padding: clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px) clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px);
     position: relative;
     /* Sticky so brand panel scrolls with the page but stays in view */
@@ -99,6 +99,7 @@
   @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.6);} }
 
   .auth-brand-title {
+    text-align:center;
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(28px, 3.2vw, 56px); font-weight: 700;
     line-height: 1.05; color: var(--white);

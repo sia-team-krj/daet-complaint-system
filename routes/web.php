@@ -11,9 +11,7 @@ Route::get("/transparency", fn() => view("pages.transparency.index"))->name(
     "transparency",
 );
 
-Route::get("/rewards", fn() => view("pages.transparency.index"))->name(
-    "rewards",
-);
+Route::get("/rewards", fn() => view("pages.rewards.index"))->name("rewards");
 
 // ── Guest only ─────────────────────────────────────────────────────────────
 Route::middleware("guest")->group(function () {
