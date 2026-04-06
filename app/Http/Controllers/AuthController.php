@@ -14,6 +14,8 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+use Illuminate\Support\Facades\Password as PasswordFacade;
+
 class AuthController extends Controller
 {
     private const BARANGAYS = [
@@ -195,6 +197,53 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route("login");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  PASSWORD RESET (STUB — wire to Laravel's Password facade for production)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Send password reset link to user's email using Laravel's Password facade.
+     */
+    public function sendResetLink(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'exists:users,email'],
+        ]);
+
+        $status = PasswordFacade::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === PasswordFacade::RESET_LINK_SENT
+            ? back()->with(['status' => __($status)])
+            : back()->withErrors(['email' => __($status)]);
+    }
+
+    /**
+     * Reset user's password using token via Laravel's Password facade.
+     */
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'token' => ['required'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+        ]);
+
+        $status = PasswordFacade::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->save();
+            }
+        );
+
+        return $status === PasswordFacade::PASSWORD_RESET
+            ? redirect()->route('login')->with('status', __($status))
+            : back()->withErrors(['email' => [__($status)]]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════

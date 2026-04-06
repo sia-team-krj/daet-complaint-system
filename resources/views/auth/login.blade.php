@@ -6,11 +6,15 @@
     Add A notice : Something went wrong and refresh the page, instead of displaying  419 Page Expired
 --}}
 <div class="auth-root">
-  <div class="auth-bg"></div>
-  <div class="auth-glow-tr"></div>
-  <div class="auth-glow-bl"></div>
-  <div class="auth-bar"></div>
-  <div class="auth-wm">DAET</div>
+
+  {{-- ALL decorative elements wrapped so only THEY get clipped, not the fixed navbar --}}
+  <div class="auth-decorations">
+    <div class="auth-bg"></div>
+    <div class="auth-glow-tr"></div>
+    <div class="auth-glow-bl"></div>
+    <div class="auth-bar"></div>
+    <div class="auth-wm">DAET</div>
+  </div>
 
   <div class="auth-layout">
 
@@ -69,7 +73,6 @@
           <div class="auth-alert alert-success fu">{{ session('status') }}</div>
         @endif
 
-        {{-- <form method="POST" action=""> --}}
         <form method="POST" action="{{ route('login') }}">
           @csrf
 
@@ -100,11 +103,9 @@
               <input type="checkbox" name="remember">
               <span class="field-check-label">Keep me signed in</span>
             </label>
-            {{-- <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a> --}}
-            <a href="" class="forgot-link">Forgot Password?</a>
+            <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>
           </div>
-          {{-- TODO : Add Loading uppon pressing button submit,
-          --}}
+
           <button type="submit" class="btn-submit fu d5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             Sign In to Your Account
@@ -118,7 +119,7 @@
 
           <p class="auth-alt-link fu d5">
             New to Daet Listens?
-            <a href="{{ route('register') }}"  wire:navigate >Create an account &rarr;</a>
+            <a href="{{ route('register') }}" wire:navigate>Create an account &rarr;</a>
           </p>
         </form>
       </div>
@@ -149,77 +150,77 @@
   .auth-root, .auth-root * { box-sizing: border-box; }
 
   /*
-   * auth-root fills exactly the space below the fixed 64px navbar.
-   * position:fixed keeps the navbar visually separate at ALL widths.
-   * overflow-y:auto on auth-root itself means the whole page scrolls
-   * if content is taller than the viewport (e.g. small laptops).
+   * KEY FIX: auth-root itself has NO overflow restriction.
+   * The fixed navbar (z-index:50) renders independently of this element.
+   * Only the inner .auth-decorations wrapper clips its children.
    */
   .auth-root {
-    font-family: 'DM Sans', sans-serif;
-    position: fixed;
-    top: 64px; left: 0; right: 0; bottom: 0;
-    background: var(--navy);
-    overflow-y: auto;
+      font-family: 'DM Sans', sans-serif;
+      padding-top: 64px;
+      min-height: 100svh;
+      background: var(--navy);
+      position: relative;
+      display: flex;
+      flex-direction: column;
   }
 
-  /* Diagonal texture */
+  /*
+   * This wrapper clips ONLY the decorative blobs/watermark.
+   * It is position:absolute so it never affects the navbar.
+   */
+  .auth-decorations {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .auth-bg {
-    position: absolute; inset: 0; pointer-events: none;
+    position: absolute; inset: 0;
     background-image: repeating-linear-gradient(
       -45deg, transparent, transparent 40px,
       rgba(201,168,76,0.025) 40px, rgba(201,168,76,0.025) 41px
     );
   }
-  /* Glow top-right */
   .auth-glow-tr {
     position: absolute; top: -20%; right: -8%;
     width: 50vw; height: 50vw; max-width: 700px; max-height: 700px;
     background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 68%);
-    pointer-events: none;
   }
-  /* Glow bottom-left */
   .auth-glow-bl {
     position: absolute; bottom: -20%; left: -8%;
     width: 40vw; height: 40vw; max-width: 560px; max-height: 560px;
     background: radial-gradient(ellipse, rgba(26,53,96,0.6) 0%, transparent 70%);
-    pointer-events: none;
   }
-  /* Left gold accent bar */
   .auth-bar {
     position: absolute; top: 0; left: 0;
     width: 3px; height: 100%;
     background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.06));
   }
-  /* Watermark */
   .auth-wm {
-    position: absolute; bottom: -4%; right: -1%;
+    position: absolute; bottom: -4%; right: 0;
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(80px, 18vw, 280px); font-weight: 700;
     color: rgba(255,255,255,0.018); line-height: 1;
-    pointer-events: none; user-select: none; letter-spacing: -0.02em;
+    user-select: none; letter-spacing: -0.02em;
   }
 
-  /*
-   * Two-column grid.
-   * min-height: 100% means it fills the scrollable area when content is short,
-   * but grows taller on small screens so nothing gets cropped.
-   */
+  /* Two-column grid */
   .auth-layout {
     position: relative; z-index: 2;
     width: 100%; min-height: 100%;
+    flex: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    /* Both columns share the same align-items so they're always the same height */
   }
 
   /* ─── Brand panel (LEFT) ─── */
   .auth-brand {
-    display: flex; flex-direction: column; justify-content: center; align-items:center; text-align:center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
     padding: clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px) clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px);
     position: relative;
   }
-
-  /* Vertical separator */
   .auth-brand::after {
     content: '';
     position: absolute; top: 8%; right: 0;
@@ -297,12 +298,10 @@
   /* ─── Form panel (RIGHT) ─── */
   .auth-form-panel {
     display: flex; flex-direction: column;
-    justify-content: center;     /* vertically centered — matches brand panel */
+    justify-content: center;
     align-items: center;
     padding: clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px) clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px);
   }
-
-  /* Form card — max-width so it doesn't stretch silly wide on 1920px */
   .auth-form-wrap {
     width: 100%;
     max-width: min(420px, 90%);
@@ -377,7 +376,10 @@
     border: 1.5px solid var(--navy); border-top: none; border-left: none; transform: rotate(45deg);
   }
   .field-check-label { font-size: 11.5px; color: rgba(255,255,255,0.4); user-select: none; }
-  .forgot-link { font-size: 11.5px; color: rgba(201,168,76,0.6); text-decoration: none; font-weight: 500; transition: color 0.2s; white-space: nowrap; }
+  .forgot-link {
+    font-size: 11.5px; color: rgba(201,168,76,0.6);
+    text-decoration: none; font-weight: 500; transition: color 0.2s; white-space: nowrap;
+  }
   .forgot-link:hover { color: var(--gold); }
 
   /* Submit */
@@ -409,11 +411,10 @@
 
   /* Footer */
   .auth-footer {
-    position: fixed; bottom: 0; left: 0; right: 0;
+    position: relative; z-index: 2;
     background: #060f1e; border-top: 1px solid rgba(201,168,76,0.1);
     padding: 10px clamp(20px, 3vw, 48px);
     display: flex; align-items: center; justify-content: space-between;
-    z-index: 100;
   }
   .auth-footer p { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.06em; }
   .auth-footer strong { color: rgba(201,168,76,0.4); }
@@ -421,28 +422,26 @@
 
   /* Animations */
   @keyframes fadeUp { from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);} }
-  .fu{animation:fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both;}
-  .d1{animation-delay:0.04s;}.d2{animation-delay:0.16s;}
-  .d3{animation-delay:0.28s;}.d4{animation-delay:0.40s;}
-  .d5{animation-delay:0.52s;}
+  .fu  { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both; }
+  .d1  { animation-delay: 0.04s; } .d2 { animation-delay: 0.16s; }
+  .d3  { animation-delay: 0.28s; } .d4 { animation-delay: 0.40s; }
+  .d5  { animation-delay: 0.52s; }
 
-  /* ── Responsive ── */
-
-  /* Tablet: still two columns but tighter */
+  /* ── Tablet ── */
   @media (max-width: 1100px) and (min-width: 769px) {
     .auth-brand { padding: 40px 32px 40px 40px; }
     .auth-form-panel { padding: 40px 40px 40px 32px; }
     .auth-brand-desc { max-width: 100%; }
   }
 
-  /* Mobile: single column, auth-root scrolls normally */
+  /* ── Mobile ── */
   @media (max-width: 768px) {
-    .auth-root { position: static; min-height: calc(100svh - 64px); overflow: visible; }
+    .auth-root { min-height: calc(100svh - 64px); }
     .auth-layout { grid-template-columns: 1fr; min-height: calc(100svh - 64px); }
     .auth-brand { display: none; }
     .auth-form-panel { padding: 48px 24px 80px; justify-content: flex-start; }
-    .auth-wm { display: none; }
-    .auth-footer { position: static; margin-top: 0; }
+    .auth-decorations .auth-wm { display: none; }
+    .auth-footer { position: static; }
   }
 
   @media (max-width: 480px) {
@@ -450,6 +449,5 @@
     .field-opts { flex-direction: column; align-items: flex-start; }
   }
 </style>
-
 
 @endsection

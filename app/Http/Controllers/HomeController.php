@@ -6,10 +6,9 @@ class HomeController extends Controller
 {
     public function home()
     {
-        if (auth()->check()) {
-            return view("pages.home.dashboard");
-        }
-
-        return view("pages.home.guest");
+    if (auth()->check()) {
+        return redirect()->route('dashboard'); 
+    }
+       return view("pages.home.guest");
     }
 }

@@ -3,7 +3,6 @@
 @section('content')
 
 <style>
-
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
@@ -20,19 +19,31 @@
   .auth-root, .auth-root * { box-sizing: border-box; }
 
   /*
-   * Register has more form fields so the right panel CAN overflow vertically
-   * on short screens. We allow auth-root itself to scroll.
+   * KEY FIX: auth-root itself has NO overflow restriction.
+   * Only .auth-decorations clips its children.
    */
   .auth-root {
     font-family: 'DM Sans', sans-serif;
-    position: fixed;
-    top: 64px; left: 0; right: 0; bottom: 0;
+    padding-top: 64px;
+    min-height: 100svh;
     background: var(--navy);
-    overflow-y: auto;
+    position: relative;
+    /* NO overflow-x: hidden here */
+  }
+
+  /*
+   * Clips ONLY the decorative blobs/watermark — never touches the fixed navbar.
+   */
+  .auth-decorations {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
   }
 
   .auth-bg {
-    position: absolute; inset: 0; pointer-events: none;
+    position: absolute; inset: 0;
     background-image: repeating-linear-gradient(
       -45deg, transparent, transparent 40px,
       rgba(201,168,76,0.025) 40px, rgba(201,168,76,0.025) 41px
@@ -42,24 +53,22 @@
     position: absolute; top: -20%; right: -8%;
     width: 50vw; height: 50vw; max-width: 700px; max-height: 700px;
     background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 68%);
-    pointer-events: none;
   }
   .auth-glow-bl {
     position: absolute; bottom: -20%; left: -8%;
     width: 40vw; height: 40vw; max-width: 560px; max-height: 560px;
     background: radial-gradient(ellipse, rgba(26,53,96,0.6) 0%, transparent 70%);
-    pointer-events: none;
   }
   .auth-bar {
     position: absolute; top: 0; left: 0; width: 3px; height: 100%;
     background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.06));
   }
   .auth-wm {
-    position: absolute; bottom: -4%; right: -1%;
+    position: absolute; bottom: -4%; right: 0;
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(80px, 18vw, 280px); font-weight: 700;
     color: rgba(255,255,255,0.018); line-height: 1;
-    pointer-events: none; user-select: none; letter-spacing: -0.02em;
+    user-select: none; letter-spacing: -0.02em;
   }
 
   /* Two-column grid — min-height grows with content */
@@ -71,14 +80,11 @@
 
   /* ─── Brand panel (LEFT) ─── */
   .auth-brand {
-    display: flex; flex-direction: column; justify-content: center; align-items:center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
     padding: clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px) clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px);
-    position: relative;
-    /* Sticky so brand panel scrolls with the page but stays in view */
     position: sticky; top: 0; align-self: start;
     min-height: calc(100vh - 64px);
   }
-
   .auth-brand::after {
     content: ''; position: absolute; top: 8%; right: 0;
     width: 1px; height: 84%;
@@ -99,7 +105,7 @@
   @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.6);} }
 
   .auth-brand-title {
-    text-align:center;
+    text-align: center;
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(28px, 3.2vw, 56px); font-weight: 700;
     line-height: 1.05; color: var(--white);
@@ -129,7 +135,6 @@
     justify-content: center; align-items: center;
     padding: clamp(40px, 5vh, 72px) clamp(40px, 5vw, 80px) clamp(48px, 6vh, 80px) clamp(32px, 4vw, 64px);
   }
-
   .auth-form-wrap {
     width: 100%;
     max-width: min(440px, 90%);
@@ -192,7 +197,13 @@
   .auth-alert { border-radius: 4px; padding: 12px 16px; font-size: 12.5px; line-height: 1.6; margin-bottom: 18px; }
   .alert-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
 
-  .auth-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #060f1e; border-top: 1px solid rgba(201,168,76,0.1); padding: 10px clamp(20px, 3vw, 48px); display: flex; align-items: center; justify-content: space-between; z-index: 100; }
+  /* Footer */
+  .auth-footer {
+    position: relative; z-index: 2;
+    background: #060f1e; border-top: 1px solid rgba(201,168,76,0.1);
+    padding: 10px clamp(20px, 3vw, 48px);
+    display: flex; align-items: center; justify-content: space-between;
+  }
   .auth-footer p { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.06em; }
   .auth-footer strong { color: rgba(201,168,76,0.4); }
   .footer-seal { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.12); }
@@ -211,11 +222,11 @@
 
   /* Mobile */
   @media (max-width: 768px) {
-    .auth-root { position: static; min-height: calc(100svh - 64px); overflow: visible; }
+    .auth-root { min-height: calc(100svh - 64px); }
     .auth-layout { grid-template-columns: 1fr; }
     .auth-brand { display: none; }
     .auth-form-panel { padding: 48px 24px 90px; justify-content: flex-start; }
-    .auth-wm { display: none; }
+    .auth-decorations .auth-wm { display: none; }
     .auth-footer { position: static; }
   }
 
@@ -226,11 +237,15 @@
 </style>
 
 <div class="auth-root">
-  <div class="auth-bg"></div>
-  <div class="auth-glow-tr"></div>
-  <div class="auth-glow-bl"></div>
-  <div class="auth-bar"></div>
-  <div class="auth-wm">DAET</div>
+
+  {{-- ALL decorative elements wrapped so only THEY get clipped, not the fixed navbar --}}
+  <div class="auth-decorations">
+    <div class="auth-bg"></div>
+    <div class="auth-glow-tr"></div>
+    <div class="auth-glow-bl"></div>
+    <div class="auth-bar"></div>
+    <div class="auth-wm">DAET</div>
+  </div>
 
   <div class="auth-layout">
 
@@ -282,8 +297,7 @@
           </div>
         @endif
 
-        {{-- <form method="POST" action="{{ route('register') }}"> --}}
-        <form method="POST" action="">
+        <form method="POST" action="{{ route('register') }}">
           @csrf
 
           <div class="field-row-2 fu d3">
@@ -327,33 +341,33 @@
             <label class="field-label" for="barangay">Barangay</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-              <select id="barangay" name="barangay" class="field-select" >
-                  <option value="" disabled selected>Select your barangay</option>
-                    <option>Alawihao</option>
-                    <option>Awitan</option>
-                    <option>Bagasbas</option>
-                    <option>Barangay I (Hilahod)</option>
-                    <option>Barangay II (Pasig)</option>
-                    <option>Barangay III (Iraya)</option>
-                    <option>Barangay IV (Mantagbac)</option>
-                    <option>Barangay V (Pandan)</option>
-                    <option>Barangay VI (Centro)</option>
-                    <option>Barangay VII (Diego Liñan)</option>
-                    <option>Barangay VIII (Salcedo)</option>
-                    <option>Bibirao</option>
-                    <option>Borabod</option>
-                    <option>Calasgasan</option>
-                    <option>Camambugan</option>
-                    <option>Cobangbang</option>
-                    <option>Dogongan</option>
-                    <option>Gahonon</option>
-                    <option>Gubat (Moreno, Gubat, Mandulongan)</option>
-                    <option>Lag-on</option>
-                    <option>Magang</option>
-                    <option>Mambalite</option>
-                    <option>Mancruz</option>
-                    <option>Pamorangon</option>
-                    <option>San Isidro</option>
+              <select id="barangay" name="barangay" class="field-select">
+                <option value="" disabled selected>Select your barangay</option>
+                <option>Alawihao</option>
+                <option>Awitan</option>
+                <option>Bagasbas</option>
+                <option>Barangay I (Hilahod)</option>
+                <option>Barangay II (Pasig)</option>
+                <option>Barangay III (Iraya)</option>
+                <option>Barangay IV (Mantagbac)</option>
+                <option>Barangay V (Pandan)</option>
+                <option>Barangay VI (Centro)</option>
+                <option>Barangay VII (Diego Liñan)</option>
+                <option>Barangay VIII (Salcedo)</option>
+                <option>Bibirao</option>
+                <option>Borabod</option>
+                <option>Calasgasan</option>
+                <option>Camambugan</option>
+                <option>Cobangbang</option>
+                <option>Dogongan</option>
+                <option>Gahonon</option>
+                <option>Gubat (Moreno, Gubat, Mandulongan)</option>
+                <option>Lag-on</option>
+                <option>Magang</option>
+                <option>Mambalite</option>
+                <option>Mancruz</option>
+                <option>Pamorangon</option>
+                <option>San Isidro</option>
               </select>
               <span class="field-select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
