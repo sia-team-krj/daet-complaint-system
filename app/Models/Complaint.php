@@ -3,109 +3,180 @@
 namespace App\Models;
 
 use App\Enums\ComplaintStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Complaint extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'user_id',
-        'department_id',
-        'category',
-        'title',
-        'description',
-        'image_path',
-        'latitude',
-        'longitude',
-        'address_text',
-        'urgency',
-        'status',
-        'is_public',
+        "ticket_id",
+        "user_id",
+        "department_id",
+        "category",
+        "title",
+        "description",
+        "image_path",
+        "latitude",
+        "longitude",
+        "address_text",
+        "urgency",
+        "status",
+        "is_public",
     ];
 
-    // ticket_id is generated in booted() — never mass-assigned
-    protected $guarded = ['ticket_id'];
+    protected function casts(): array
+    {
+        return [
+            "is_public" => "boolean",
+            "latitude" => "decimal:8",
+            "longitude" => "decimal:8",
+        ];
+    }
 
-    protected $casts = [
-        'status' => ComplaintStatus::class,
-    ];
+    // ─────────────────────────────────────────────
+    // TICKET ID GENERATION
+    // ─────────────────────────────────────────────
 
     /**
-     * Use booted() — NOT boot(). This is the correct Laravel 9+ pattern.
-     * NEVER use Str::random() for ticket_id — causes duplicates under concurrent load.
+     * booted() is the correct Laravel 9+ pattern.
+     * Do NOT use the old boot() method — it requires parent::boot()
+     * and can conflict with trait-level boot methods.
+     *
+     * Ticket ID format: COMP-2026-00001
+     *
+     * WHY sequential and not Str::random()?
+     * Str::random(6) under concurrent submissions can produce duplicates
+     * (birthday problem). Sequential IDs are collision-free.
+     *
+     * withTrashed() includes soft-deleted records in the count so
+     * ticket IDs are never reused after a soft delete.
      */
     protected static function booted(): void
     {
         static::creating(function (Complaint $complaint) {
-            $year = date('Y');
-            // withTrashed() ensures soft-deleted complaints are counted — no gaps in numbering
-            $next = static::withTrashed()
-                          ->whereYear('created_at', $year)
-                          ->count() + 1;
+            $year = date("Y");
+            $count = static::withTrashed()
+                ->whereYear("created_at", $year)
+                ->count();
 
-            $complaint->ticket_id = 'COMP-' . $year . '-' . str_pad($next, 5, '0', STR_PAD_LEFT);
+            $complaint->ticket_id =
+                "COMP-" .
+                $year .
+                "-" .
+                str_pad($count + 1, 5, "0", STR_PAD_LEFT);
         });
     }
 
-    // ── Relationships ────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // RELATIONSHIPS
+    // ─────────────────────────────────────────────
 
+    /**
+     * The citizen who filed the complaint.
+     * May be NULL if the user's account was soft-deleted.
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * The department responsible for resolving this complaint.
+     */
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
     /**
-     * Latest logs first — used for status timeline display.
-     * NEVER update or delete ComplaintLog rows. They are immutable audit records.
+     * The full audit trail for this complaint.
+     * Ordered newest-first so the citizen sees the latest update at the top.
      */
     public function logs(): HasMany
     {
-        return $this->hasMany(ComplaintLog::class)->latest('created_at');
+        return $this->hasMany(ComplaintLog::class)->latest();
     }
 
     /**
-     * Staff member assigned to handle this complaint (if any)
+     * The most recent log entry — useful for showing "last updated by X".
      */
-    public function assignedStaff(): BelongsTo
+    public function latestLog(): HasMany
     {
-        return $this->belongsTo(User::class, 'assigned_staff_id');
+        return $this->hasMany(ComplaintLog::class)->latest()->limit(1);
     }
 
+    // ─────────────────────────────────────────────
+    // ACCESSORS
+    // ─────────────────────────────────────────────
+
     /**
-     * Returns the ComplaintStatus enum instance for this complaint.
-     * Always use this — never compare raw status strings in PHP logic.
+     * Returns the ComplaintStatus enum instance for the current status.
+     * Usage: $complaint->statusEnum->label()
+     *        $complaint->statusEnum->badgeColor()
      */
-    public function statusEnum(): ComplaintStatus
+    public function getStatusEnumAttribute(): ComplaintStatus
     {
-        return ComplaintStatus::from($this->status instanceof ComplaintStatus
-            ? $this->status->value
-            : $this->status);
+        return ComplaintStatus::from($this->status);
     }
 
-    // ── Accessors ────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // SCOPES
+    // ─────────────────────────────────────────────
 
-    /**
-     * Accessor for formatted latitude (6 decimal places).
-     */
-    public function getLatitudeAttribute(?float $value): ?float
+    public function scopePending($query)
     {
-        return $value !== null ? round($value, 6) : null;
+        return $query->whereIn("status", [
+            ComplaintStatus::Submitted->value,
+            ComplaintStatus::UnderReview->value,
+            ComplaintStatus::InProgress->value,
+        ]);
     }
 
-    /**
-     * Accessor for formatted longitude (6 decimal places).
-     */
-    public function getLongitudeAttribute(?float $value): ?float
+    public function scopeResolved($query)
     {
-        return $value !== null ? round($value, 6) : null;
+        return $query->where("status", ComplaintStatus::Resolved->value);
+    }
+
+    public function scopePublic($query)
+    {
+        return $query->where("is_public", true);
+    }
+
+    public function scopeForDepartment($query, int $departmentId)
+    {
+        return $query->where("department_id", $departmentId);
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+
+    /**
+     * Log a status change.
+     * ALWAYS call this when updating status — never update status without logging.
+     *
+     * Usage:
+     *   $complaint->logStatus('In Progress', auth()->id(), 'Contractor dispatched');
+     */
+    public function logStatus(
+        string $newStatus,
+        ?int $actorId = null,
+        ?string $comment = null,
+    ): void {
+        $previous = $this->status;
+
+        $this->update(["status" => $newStatus]);
+
+        $this->logs()->create([
+            "actor_id" => $actorId ?? auth()->id(),
+            "previous_status" => $previous,
+            "new_status" => $newStatus,
+            "comment" => $comment,
+        ]);
     }
 }

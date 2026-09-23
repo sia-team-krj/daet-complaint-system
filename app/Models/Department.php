@@ -10,35 +10,21 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'code',
-        'description',
-        'is_active',
-    ];
+    protected $fillable = ["name", "code", "description", "is_active"];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
-
-    /**
-     * Staff members assigned to this department
-     */
-    public function staff(): HasMany
+    protected function casts(): array
     {
-        return $this->hasMany(User::class)->where('role', 'staff');
+        return [
+            "is_active" => "boolean",
+        ];
     }
 
-    /**
-     * Users assigned to this department (staff and admins)
-     */
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class);
-    }
+    // ─────────────────────────────────────────────
+    // RELATIONSHIPS
+    // ─────────────────────────────────────────────
 
     /**
-     * Complaints routed to this department
+     * All complaints assigned to this department.
      */
     public function complaints(): HasMany
     {
@@ -46,10 +32,34 @@ class Department extends Model
     }
 
     /**
-     * Scope for active departments only
+     * All staff members (users) belonging to this department.
      */
+    public function staff(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    // ─────────────────────────────────────────────
+    // SCOPES
+    // ─────────────────────────────────────────────
+
     public function scopeActive($query)
     {
-        return $query->where('is_active', 1);
+        return $query->where("is_active", true);
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+
+    /**
+     * Count of pending complaints for this department.
+     * Used on the staff dashboard badge/counter.
+     */
+    public function pendingCount(): int
+    {
+        return $this->complaints()
+            ->whereIn("status", ["Submitted", "Under Review", "In Progress"])
+            ->count();
     }
 }

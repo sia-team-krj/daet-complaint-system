@@ -1,91 +1,104 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ComplaintController;
-
-use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AdminController;
-use App\Http\Middleware\StaffMiddleware;
-use App\Http\Middleware\AdminMiddleware;
+use App\Http\Controllers\TransparencyController;
+use App\Http\Controllers\RewardsController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 
-// ── Public ─────────────────────────────
-Route::get("/", [HomeController::class, "home"])->name("home");
+/*
+|--------------------------------------------------------------------------
+| PUBLIC ROUTES — no login required
+|--------------------------------------------------------------------------
+*/
 
-Route::view("/transparency", "pages.transparency.index")->name("transparency");
-Route::view("/rewards", "pages.rewards.index")->name("rewards");
+Route::get("/", [HomeController::class, "index"])->name("home");
+Route::get("/transparency", [TransparencyController::class, "index"])->name(
+    "transparency",
+);
+Route::get("/rewards", [RewardsController::class, "index"])->name("rewards");
 
-// ── Guest only ─────────────────────────
-Route::middleware("guest")->group(function () {
-    Route::get("/login", [AuthController::class, "showLogin"])->name("login");
-    Route::post("/login", [AuthController::class, "login"])->name("login.submit");
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES — login, register, logout
+|--------------------------------------------------------------------------
+*/
 
-    Route::get("/register", [AuthController::class, "showRegister"])->name("register");
-    Route::post("/register", [AuthController::class, "register"])->name("register.submit");
+// Register
+Route::get("/register", [AuthController::class, "showRegister"])
+    ->middleware("guest")
+    ->name("register");
 
-    // Password reset routes
-    Route::get('/forgot-password', function () {
-        return view('auth.forgot-password');
-    })->name('password.request');
+Route::post("/register", [AuthController::class, "register"])->middleware(
+    "guest",
+);
 
-    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
-        ->name('password.email');
+// Login
+Route::get("/login", [AuthController::class, "showLogin"])
+    ->middleware("guest")
+    ->name("login");
 
-    Route::get('/reset-password/{token}', function (string $token) {
-        return view('auth.reset-password', [
-            'token' => $token,
-            'email' => request('email', '')
-        ]);
-    })->name('password.reset');
+Route::post("/login", [AuthController::class, "login"])->middleware("guest");
 
-    Route::post('/reset-password', [AuthController::class, 'resetPassword'])
-        ->name('password.update');
+// Logout
+Route::post("/logout", [AuthController::class, "logout"])
+    ->middleware("auth")
+    ->name("logout");
+
+// TODO: Password reset routes
+// Route::get('/forgot-password', ...)->name('password.request');
+// Route::post('/forgot-password', ...)->name('password.email');
+// Route::get('/reset-password/{token}', ...)->name('password.reset');
+// Route::post('/reset-password', ...)->name('password.update');
+
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED ROUTES — must be logged in + email verified
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(["auth", "verified"])->group(function () {
+    Route::get("/dashboard", [DashboardController::class, "index"])->name(
+        "dashboard",
+    );
+    Route::get("/profile", [ProfileController::class, "index"])->name(
+        "profile",
+    );
+
+    // TODO: Complaints
+    // Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
+    // Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    // Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show');
+    // Route::get('/track', [ComplaintController::class, 'track'])->name('complaints.track');
 });
 
-// ── Auth only ──────────────────────────
-Route::middleware("auth")->group(function () {
+/*
+|--------------------------------------------------------------------------
+| STAFF ROUTES
+|--------------------------------------------------------------------------
+*/
 
-    Route::post("/logout", [AuthController::class, "logout"])->name("logout");
-
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
-    Route::get('/complaints/success/{complaint}', [ComplaintController::class, 'success'])->name('complaints.success')->can('view', 'complaint');
-    Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show')->can('view', 'complaint');
-    Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
-    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
-
-    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
-    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
-});
-
-// ── Admin ──────────────────────────────
-Route::middleware(["auth", AdminMiddleware::class])
-    ->prefix("admin")
-    ->name("admin.")
+Route::middleware(["auth", "verified", "role:staff,admin"])
+    ->prefix("staff")
     ->group(function () {
-        Route::get("/dashboard", [AdminController::class, "dashboard"])->name("dashboard");
-        Route::get("/complaints", [AdminController::class, "complaintsIndex"])->name("complaints.index");
-        Route::get("/complaints/export", [AdminController::class, "exportComplaints"])->name("complaints.export");
-        Route::post("/complaints/bulk-reassign", [AdminController::class, "bulkReassign"])->name("complaints.bulk-reassign");
-        Route::get("/complaints/{complaint}", [AdminController::class, "complaintShow"])->name("complaints.show");
-        Route::put("/complaints/{complaint}", [AdminController::class, "complaintUpdate"])->name("complaints.update");
-        Route::get("/staff", [AdminController::class, "staffIndex"])->name("staff.index");
-        Route::get("/staff/create", [AdminController::class, "staffCreate"])->name("staff.create");
-        Route::post("/staff", [AdminController::class, "staffStore"])->name("staff.store");
-        Route::patch("/staff/{user}/department", [AdminController::class, "staffUpdateDepartment"])->name("staff.department");
+        // TODO: Staff inbox, status updates
     });
 
-// ── Staff ───────────────────────────────
-Route::middleware(["auth", StaffMiddleware::class])
-    ->prefix("staff")
-    ->name("staff.")
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(["auth", "verified", "role:admin"])
+    ->prefix("admin")
     ->group(function () {
-        Route::get("/dashboard", [StaffController::class, "dashboard"])->name("dashboard");
-        Route::get("/complaints/{complaint}", [StaffController::class, "show"])->name("complaints.show");
-        Route::put("/complaints/{complaint}", [StaffController::class, "update"])->name("complaints.update");
+        Route::get("/dashboard", [
+            AdminDashboardController::class,
+            "index",
+        ])->name("admin.dashboard");
+        // TODO: User management, department reassignment
     });
