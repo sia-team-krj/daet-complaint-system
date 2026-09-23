@@ -9,7 +9,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!auth()->check() || !auth()->user()->is_admin) {
+        if (!auth()->check() || auth()->user()->role !== 'admin') {
             return redirect()
                 ->route("dashboard")
                 ->with("error", "Access denied. Admins only.");

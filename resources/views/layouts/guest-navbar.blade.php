@@ -15,27 +15,27 @@
 
       {{-- Desktop Center Links --}}
       <ul class="nav-links {{ Request::is('transparency') ? 'active-ui' : '' }}">
-        <li><a href="{{ url('/') }}" wire:navigate  class="nav-link">Home</a></li>
-        <li><a href="/#process"  class="nav-link">Process</a></li>
-        <li><a href="/#features"  class="nav-link">Features</a></li>
+        <li><a href="{{ url('/') }}" wire:navigate class="nav-link">Home</a></li>
+        <li><a href="/#process" class="nav-link">Process</a></li>
+        <li><a href="/#features" class="nav-link">Features</a></li>
         <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">Transparency</a></li>
         <li><a href="{{ url('/rewards') }}" wire:navigate class="nav-link">Rewards</a></li>
       </ul>
 
       {{-- Desktop Right --}}
       <ul class="nav-actions">
-          <li><a href="{{ route('login') }}"  wire:navigate  class="nav-link">Login</a></li>
-          <li><a href="{{ route('register') }}"  wire:navigate class="btn-nav-cta">Get Started</a></li>
+        <li><a href="{{ route('login') }}" wire:navigate class="nav-link">Login</a></li>
+        <li><a href="{{ route('register') }}" wire:navigate class="btn-nav-cta">Get Started</a></li>
       </ul>
 
       {{-- Mobile Right --}}
       <div class="nav-mobile-right">
         @auth
-          <a href="{{ route('complaints.create') }}"  wire:navigate class="btn-nav-cta nav-cta-sm">File</a>
+          <a href="{{ route('complaints.create') }}" wire:navigate class="btn-nav-cta nav-cta-sm">File</a>
         @else
-          <a href="{{ route('register') }}"  wire:navigate class="btn-nav-cta nav-cta-sm">Get Started</a>
+          <a href="{{ route('register') }}" wire:navigate class="btn-nav-cta nav-cta-sm">Get Started</a>
         @endauth
-        <button id="mobile-menu-btn" aria-label="Toggle menu" class="hamburger-btn">
+        <button id="mobile-menu-btn" aria-label="Toggle menu" class="hamburger-btn" type="button">
           <span class="hamburger-line"></span>
           <span class="hamburger-line"></span>
           <span class="hamburger-line" style="width:14px"></span>
@@ -46,13 +46,13 @@
   </div>
 
   {{-- Mobile Dropdown --}}
-  <div id="mobile-menu" class="mobile-menu hidden">
+  <div id="mobile-menu" class="mobile-menu" style="display:none;">
     <div class="mobile-menu-inner">
-      <a href="{{ url('/') }}"  wire:navigate class="mobile-nav-link">Home</a>
-      <a href="{{ url('/') }}#process"   wire:navigate class="mobile-nav-link">Process</a>
-      <a href="{{ url('/transparency') }}"  wire:navigate class="mobile-nav-link">Transparency</a>
-      <a href="{{ url('/') }}#features"   wire:navigate class="mobile-nav-link">Features</a>
-      <a href="{{ url('/rewards') }}"   wire:navigate class="mobile-nav-link">Rewards</a>
+      <a href="{{ url('/') }}" wire:navigate class="mobile-nav-link">Home</a>
+      <a href="{{ url('/') }}#process" class="mobile-nav-link">Process</a>
+      <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">Transparency</a>
+      <a href="{{ url('/') }}#features" class="mobile-nav-link">Features</a>
+      <a href="{{ url('/rewards') }}" wire:navigate class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
       @auth
         <div class="mobile-user-info">
@@ -67,7 +67,7 @@
         <div class="mobile-divider"></div>
         <a href="{{ route('profile') }}" class="mobile-nav-link">My Account</a>
         <a href="#" class="mobile-nav-link">My Complaints</a>
-        @if(auth()->user()->is_admin)
+        @if(auth()->user()->role === 'admin')
           <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">Admin Dashboard</a>
         @endif
         <div class="mobile-divider"></div>
@@ -79,8 +79,8 @@
           </button>
         </form>
       @else
-        <a href="{{ route('login') }}"  wire:navigate class="mobile-nav-link">Login</a>
-        <a href="{{ route('register') }}"  wire:navigate class="mobile-nav-link" style="color:#C9A84C;">Get Started</a>
+        <a href="{{ route('login') }}" wire:navigate class="mobile-nav-link">Login</a>
+        <a href="{{ route('register') }}" wire:navigate class="mobile-nav-link" style="color:#C9A84C;">Get Started</a>
       @endauth
     </div>
   </div>
@@ -147,76 +147,43 @@
   .btn-nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
   .nav-cta-sm { font-size: 11px; padding: 7px 14px; }
 
-  /* ── User dropdown ── */
-  .nav-dropdown-wrap { position: relative; }
-
-  .nav-user-btn {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2);
-    border-radius: 8px; padding: 5px 10px 5px 6px;
-    cursor: pointer; transition: background 0.2s, border-color 0.2s;
-    color: rgba(255,255,255,0.75);
-  }
-  .nav-user-btn:hover { background: rgba(201,168,76,0.08); border-color: rgba(201,168,76,0.4); }
-
-  .user-avatar {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: linear-gradient(135deg, #C9A84C, #E2C06A);
-    color: #0B1F3A; font-family: 'DM Sans', sans-serif;
-    font-size: 11px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
+  /* ── Mobile right cluster ── */
+  .nav-mobile-right {
+    display: none;
+    align-items: center;
+    gap: 10px;
     flex-shrink: 0;
   }
-  .user-name { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; white-space: nowrap; }
-  .dropdown-chevron { color: rgba(201,168,76,0.6); transition: transform 0.2s; flex-shrink: 0; }
-  .nav-user-btn[aria-expanded="true"] .dropdown-chevron { transform: rotate(180deg); }
-
-  .nav-dropdown {
-    position: absolute; top: calc(100% + 10px); right: 0;
-    width: 220px;
-    background: #0e2040; border: 1px solid rgba(201,168,76,0.18);
-    border-radius: 10px; padding: 6px;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-    opacity: 0; visibility: hidden; transform: translateY(-6px);
-    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
-    z-index: 200;
+  @media (max-width: 768px) {
+    .nav-mobile-right { display: flex; }
   }
-  .nav-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
-
-  .dropdown-header { padding: 8px 10px 10px; }
-  .dropdown-name { display: block; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; color: #fff; }
-  .dropdown-email { display: block; font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; word-break: break-all; }
-
-  .dropdown-divider { height: 1px; background: rgba(201,168,76,0.12); margin: 4px 0; }
-
-  .dropdown-item {
-    display: flex; align-items: center; gap: 9px;
-    width: 100%; padding: 9px 10px; border-radius: 6px;
-    font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 500;
-    color: rgba(255,255,255,0.6); text-decoration: none;
-    background: none; border: none; cursor: pointer; text-align: left;
-    transition: background 0.15s, color 0.15s; letter-spacing: 0.02em;
-  }
-  .dropdown-item:hover { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.9); }
-  .dropdown-item svg { flex-shrink: 0; opacity: 0.6; }
-
-  .dropdown-logout { color: rgba(239,68,68,0.7); }
-  .dropdown-logout:hover { background: rgba(239,68,68,0.08); color: #f87171; }
-  .dropdown-logout svg { opacity: 0.7; }
-
-  /* ── Mobile right cluster ── */
-  .nav-mobile-right { display: none; align-items: center; gap: 10px; }
-  @media (max-width: 768px) { .nav-mobile-right { display: flex; } }
 
   /* ── Hamburger ── */
   .hamburger-btn {
-    width: 36px; height: 36px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 5px;
-    border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
-    background: transparent; cursor: pointer; transition: border-color 0.2s;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    padding: 0;
+    flex-shrink: 0;
   }
   .hamburger-btn:hover { border-color: rgba(201,168,76,0.4); }
-  .hamburger-line { display: block; height: 1.5px; width: 20px; background: rgba(255,255,255,0.7); border-radius: 2px; transition: background 0.2s; }
+  .hamburger-line {
+    display: block;
+    height: 1.5px;
+    width: 20px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
   .hamburger-btn:hover .hamburger-line { background: #C9A84C; }
 
   /* ── Mobile menu ── */
@@ -254,28 +221,50 @@
 </style>
 
 <script>
-  document.addEventListener('livewire:navigated', () => {
-      const handleAnchorClick = (e) => {
-          const href = e.currentTarget.getAttribute('href');
+  function initGuestNavbar() {
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
 
-          // Check if link is an internal anchor (e.g., /#features)
-          if (href.startsWith('/#') || href.startsWith('#')) {
-              const targetId = href.split('#')[1];
-              const targetElement = document.getElementById(targetId);
+    if (!btn || !menu) return;
 
-              // If we are already on the page where the ID exists
-              if (targetElement) {
-                  e.preventDefault();
-                  targetElement.scrollIntoView({ behavior: 'smooth' });
-                  // Update URL without refreshing
-                  history.pushState(null, null, href);
-              }
+    // Clone to strip any previously attached listeners (safe for Livewire re-renders)
+    const freshBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(freshBtn, btn);
+
+    freshBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const isHidden = menu.style.display === 'none' || menu.style.display === '';
+      menu.style.display = isHidden ? 'block' : 'none';
+    });
+
+    // Close menu on outside click
+    document.addEventListener('click', function handleOutside(e) {
+      if (!menu.contains(e.target) && e.target !== freshBtn && !freshBtn.contains(e.target)) {
+        menu.style.display = 'none';
+      }
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href*="#"]').forEach(link => {
+      link.addEventListener('click', function (e) {
+        const href = this.getAttribute('href');
+        if (href.startsWith('/#') || href.startsWith('#')) {
+          const targetId = href.split('#')[1];
+          const target = document.getElementById(targetId);
+          if (target) {
+            e.preventDefault();
+            menu.style.display = 'none';
+            target.scrollIntoView({ behavior: 'smooth' });
+            history.pushState(null, null, href);
           }
-      };
-
-      // Attach to all nav links that have a '#' in the href
-      document.querySelectorAll('a[href*="#"]').forEach(link => {
-          link.addEventListener('click', handleAnchorClick);
+        }
       });
-  });
+    });
+  }
+
+  // Run on initial page load
+  document.addEventListener('DOMContentLoaded', initGuestNavbar);
+
+  // Re-run after every Livewire navigation (wire:navigate)
+  document.addEventListener('livewire:navigated', initGuestNavbar);
 </script>

@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        'minio' => [
+            'driver' => 's3',
+            'key' => env('MINIO_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('MINIO_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => env('MINIO_DEFAULT_REGION', env('AWS_DEFAULT_REGION', 'us-east-1')),
+            'bucket' => env('MINIO_BUCKET', env('AWS_BUCKET', 'daet-complaints')),
+            'url' => env('MINIO_URL', env('AWS_URL')),
+            'endpoint' => env('MINIO_ENDPOINT', env('AWS_ENDPOINT', 'http://minio:9000')),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

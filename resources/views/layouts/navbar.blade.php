@@ -20,8 +20,10 @@
 
       {{-- Desktop Right --}}
       <ul class="nav-actions">
-          @if(auth()->user()->is_admin)
+          @if(auth()->user()->role === 'admin')
             <li><a href="{{ route('admin.dashboard') }}" class="nav-link">Admin Dashboard</a></li>
+          @elseif(auth()->user()->role === 'staff')
+            <li><a href="{{ route('staff.dashboard') }}" class="nav-link">Staff Dashboard</a></li>
           @endif
 
         <li>
@@ -48,7 +50,7 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               My Account
             </a>
-            <a href="#" class="dropdown-item">
+            <a href="{{ route('complaints.index') }}" class="dropdown-item" wire:navigate>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               My Complaints
             </a>
@@ -101,9 +103,11 @@
 
       {{-- Account links --}}
       <a href="{{ route('profile') }}" class="mobile-nav-link">My Account</a>
-      <a href="#" class="mobile-nav-link">My Complaints</a>
-      @if(auth()->user()->is_admin)
+      <a href="{{ route('complaints.index') }}" wire:navigate class="mobile-nav-link">My Complaints</a>
+      @if(auth()->user()->role === 'admin')
         <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">Admin Dashboard</a>
+      @elseif(auth()->user()->role === 'staff')
+        <a href="{{ route('staff.dashboard') }}" class="mobile-nav-link">Staff Dashboard</a>
       @endif
       <div class="mobile-divider"></div>
 
@@ -322,5 +326,42 @@
   document.addEventListener('DOMContentLoaded', initNavbar);
 
   // Run every time Livewire finishes navigating
+  document.addEventListener('livewire:navigated', initNavbar);
+</script>
+
+<script>
+  function initNavbar() {
+    // ── Mobile menu ──
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileBtn && mobileMenu) {
+      const newBtn = mobileBtn.cloneNode(true);
+      mobileBtn.parentNode.replaceChild(newBtn, mobileBtn);
+      newBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+
+    // ── User dropdown ──
+    const userBtn = document.getElementById('user-menu-btn');
+    const userDropdown = document.getElementById('user-dropdown');
+    if (userBtn && userDropdown) {
+      const newUserBtn = userBtn.cloneNode(true);
+      userBtn.parentNode.replaceChild(newUserBtn, userBtn);
+      newUserBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = userDropdown.classList.contains('open');
+        userDropdown.classList.toggle('open');
+        newUserBtn.setAttribute('aria-expanded', String(!isOpen));
+      });
+      document.addEventListener('click', () => {
+        userDropdown.classList.remove('open');
+        const btn = document.getElementById('user-menu-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initNavbar);
   document.addEventListener('livewire:navigated', initNavbar);
 </script>
