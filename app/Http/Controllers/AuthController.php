@@ -16,34 +16,6 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    private const BARANGAYS = [
-        "Alawihao",
-        "Awitan",
-        "Bagasbas",
-        "Barangay I (Hilahod)",
-        "Barangay II (Pasig)",
-        "Barangay III (Iraya)",
-        "Barangay IV (Mantagbac)",
-        "Barangay V (Pandan)",
-        "Barangay VI (Centro)",
-        "Barangay VII (Diego Liñan)",
-        "Barangay VIII (Salcedo)",
-        "Bibirao",
-        "Borabod",
-        "Calasgasan",
-        "Camambugan",
-        "Cobangbang",
-        "Dogongan",
-        "Gahonon",
-        "Gubat (Moreno, Gubat, Mandulongan)",
-        "Lag-on",
-        "Magang",
-        "Mambalite",
-        "Mancruz",
-        "Pamorangon",
-        "San Isidro",
-    ];
-
     // ══════════════════════════════════════════════════════════════════════════
     //  REGISTER
     // ══════════════════════════════════════════════════════════════════════════
@@ -76,25 +48,23 @@ class AuthController extends Controller
                     "max:255",
                     "unique:users,email",
                 ],
-                "contact_number" => [
-                    "nullable",
-                    "string",
-                    'regex:/^9\d{9}$/', // 10 digits, starts with 9
-                ],
+
+                // Register form sends 'phone' — maps to contact_number column.
+                // PH mobile format: 11 digits starting with 09 e.g. 09171234567
+                "phone" => ["nullable", "string", 'regex:/^09\d{9}$/'],
+
                 "barangay" => [
                     "nullable",
                     "string",
-                    "in:" . implode(",", self::BARANGAYS),
+                    "in:" . implode(",", User::BARANGAYS),
                 ],
+
                 "password" => [
                     "required",
                     "confirmed",
-                    Password::min(8)
-                        ->mixedCase()
-                        ->numbers()
-                        ->symbols()
-                        ->uncompromised(),
+                    Password::min(8)->mixedCase()->numbers()->uncompromised(),
                 ],
+
                 "terms" => ["accepted"],
             ],
             [
@@ -103,8 +73,8 @@ class AuthController extends Controller
                 "last_name.regex" =>
                     "Last name may only contain letters, spaces, hyphens, and dots.",
                 "email.unique" => "This email address is already registered.",
-                "contact_number.regex" =>
-                    "Enter a valid 10-digit mobile number starting with 9 (e.g. 9171234567).",
+                "phone.regex" =>
+                    "Enter a valid 11-digit PH mobile number starting with 09 (e.g. 09171234567).",
                 "barangay.in" => "The selected barangay is not valid.",
                 "password.confirmed" => "Password confirmation does not match.",
                 "password.uncompromised" =>
@@ -118,7 +88,7 @@ class AuthController extends Controller
             "first_name" => $request->first_name,
             "last_name" => $request->last_name,
             "email" => $request->email,
-            "contact_number" => $request->contact_number,
+            "contact_number" => $request->phone, // form sends 'phone', column is 'contact_number'
             "barangay" => $request->barangay,
             "password" => Hash::make($request->password),
         ]);

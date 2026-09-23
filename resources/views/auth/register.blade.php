@@ -328,32 +328,11 @@
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
               <select id="barangay" name="barangay" class="field-select" >
-                  <option value="" disabled selected>Select your barangay</option>
-                    <option>Alawihao</option>
-                    <option>Awitan</option>
-                    <option>Bagasbas</option>
-                    <option>Barangay I (Hilahod)</option>
-                    <option>Barangay II (Pasig)</option>
-                    <option>Barangay III (Iraya)</option>
-                    <option>Barangay IV (Mantagbac)</option>
-                    <option>Barangay V (Pandan)</option>
-                    <option>Barangay VI (Centro)</option>
-                    <option>Barangay VII (Diego Liñan)</option>
-                    <option>Barangay VIII (Salcedo)</option>
-                    <option>Bibirao</option>
-                    <option>Borabod</option>
-                    <option>Calasgasan</option>
-                    <option>Camambugan</option>
-                    <option>Cobangbang</option>
-                    <option>Dogongan</option>
-                    <option>Gahonon</option>
-                    <option>Gubat (Moreno, Gubat, Mandulongan)</option>
-                    <option>Lag-on</option>
-                    <option>Magang</option>
-                    <option>Mambalite</option>
-                    <option>Mancruz</option>
-                    <option>Pamorangon</option>
-                    <option>San Isidro</option>
+                  @foreach(App\Models\User::BARANGAYS as $barangay)
+                      <option value="{{ $barangay }}" {{ old('barangay') === $barangay ? 'selected' : '' }}>
+                          {{ $barangay }}
+                      </option>
+                  @endforeach
               </select>
               <span class="field-select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
