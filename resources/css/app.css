@@ -4980,7 +4980,13 @@ select.staff-input option {
     min-width: 0;
 }
 
+.admin-user-detail-page .admin-breadcrumb span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .admin-user-profile-copy h2 {
+    overflow-wrap: anywhere;
     margin: 0;
     color: var(--color-white);
     font-family: var(--font-display);
