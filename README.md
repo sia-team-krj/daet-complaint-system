@@ -6,7 +6,7 @@ A specialized, geo-spatial platform designed for the **Local Government Unit (LG
 
 The website is currently available to devices connected to the authorized Tailscale network at:
 
-**[Open Daet Listens on Tailscale](http://leaf-1.tail05a1ab.ts.net:8000)**
+**[Open Daet Listens on Tailscale](https://leaf-1.tail05a1ab.ts.net)**
 
 If MagicDNS does not resolve on a phone, use the Tailscale IP fallback: [http://100.88.237.96:8000](http://100.88.237.96:8000).
 
