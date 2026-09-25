@@ -742,7 +742,8 @@
 
             .transparency-table tbody tr {
                 display: grid;
-                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                align-items: start;
                 gap: 8px 12px;
                 padding: 12px;
                 border: 1px solid rgba(201, 168, 76, 0.25);
@@ -755,7 +756,10 @@
             }
 
             .transparency-table td {
-                display: block;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: flex-start;
                 min-width: 0;
                 padding: 0;
                 border: 0;
@@ -778,10 +782,37 @@
                 grid-row: 1;
             }
 
+            .transparency-cell-department {
+                grid-column: 2;
+                grid-row: 1;
+                align-items: flex-end;
+                text-align: right;
+            }
+
+            .transparency-cell-department::before {
+                text-align: right;
+            }
+
+            .transparency-cell-category {
+                grid-column: 1;
+                grid-row: 2;
+            }
+
+            .transparency-cell-location {
+                grid-column: 2;
+                grid-row: 2;
+                align-items: flex-end;
+                text-align: right;
+            }
+
+            .transparency-cell-location::before {
+                text-align: right;
+            }
+
             .transparency-cell-status {
                 grid-column: 1 / -1;
-                grid-row: 2;
-                justify-self: start;
+                grid-row: 3;
+                align-items: flex-start;
                 text-align: left;
             }
 
@@ -791,32 +822,7 @@
 
             .transparency-cell-complaint {
                 grid-column: 1 / -1;
-                grid-row: 3;
-            }
-
-            .transparency-cell-category {
-                grid-column: 2;
-                grid-row: 1;
-                text-align: right;
-            }
-
-            .transparency-cell-category::before {
-                text-align: right;
-            }
-
-            .transparency-cell-department {
-                grid-column: 1;
                 grid-row: 4;
-            }
-
-            .transparency-cell-location {
-                grid-column: 2;
-                grid-row: 4;
-                text-align: right;
-            }
-
-            .transparency-cell-location::before {
-                text-align: right;
             }
 
             .transparency-cell-date {
