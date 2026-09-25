@@ -3518,7 +3518,7 @@ select.staff-input option {
 
 .staff-queue-page-label {
     flex-shrink: 0;
-    padding: 6px 9px;
+    padding: 5px 8px;
     color: var(--color-gold-light);
     background: rgba(201, 168, 76, 0.09);
     border: 1px solid var(--border-gold);
@@ -3534,6 +3534,29 @@ select.staff-input option {
 
 .staff-queue-table {
     min-width: 900px;
+}
+
+.staff-queue-table th {
+    padding: 9px 12px;
+}
+
+.staff-queue-table td {
+    padding: 9px 12px;
+}
+
+.staff-queue-table .staff-status {
+    min-height: 21px;
+    padding: 3px 7px;
+    font-size: 9px;
+}
+
+.staff-queue-table .staff-age-pill {
+    padding: 3px 6px;
+}
+
+.staff-queue-table .staff-button--compact {
+    min-height: 28px;
+    padding: 5px 8px;
 }
 
 .staff-queue-table th:last-child,
@@ -3556,13 +3579,13 @@ select.staff-input option {
 
 .staff-queue-title {
     display: block;
-    max-width: 260px;
+    max-width: 230px;
     overflow: hidden;
     color: var(--color-white);
     font-family: var(--font-display);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.18;
     text-overflow: ellipsis;
     text-decoration: none;
     white-space: nowrap;
@@ -3576,9 +3599,9 @@ select.staff-input option {
 
 .staff-queue-subtext {
     display: block;
-    margin-top: 5px;
+    margin-top: 3px;
     color: rgba(255, 255, 255, 0.46);
-    font-size: 10px;
+    font-size: 9px;
     line-height: 1.35;
     white-space: nowrap;
 }
@@ -3595,8 +3618,8 @@ select.staff-input option {
 .staff-queue-priority {
     display: inline-flex;
     align-items: center;
-    min-height: 23px;
-    padding: 4px 8px;
+    min-height: 21px;
+    padding: 3px 7px;
     border: 1px solid transparent;
     border-radius: 4px;
     font-size: 10px;
@@ -3636,7 +3659,7 @@ select.staff-input option {
 }
 
 .staff-queue-empty {
-    padding: 44px 20px !important;
+    padding: 32px 20px !important;
     text-align: center;
 }
 
