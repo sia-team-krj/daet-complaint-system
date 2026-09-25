@@ -47,6 +47,24 @@ php -d upload_max_filesize=25M \
 
 Do not run Composer/Vite development mode at the same time as this server; both use port `8000`. PostgreSQL, Redis, Mailpit, and MinIO remain bound to localhost.
 
+## Restart helper
+
+From the project root, restart only the Laravel PHP server with:
+
+```bash
+./restart-daet-listen.sh
+```
+
+The helper safely finds and stops the existing PHP listener on port `8000`, starts it again with the upload limits above, writes its PID to `/tmp/daet-listen-server.pid`, and logs output to `storage/logs/daet-listen-server.log`.
+
+Optional maintenance runs are available:
+
+```bash
+./restart-daet-listen.sh --with-services --migrate --build
+```
+
+Use `./restart-daet-listen.sh --help` to see all options. The helper does not change the Tailscale Funnel configuration; verify it afterward with `tailscale funnel status`.
+
 ## Enable or verify Funnel
 
 ```bash
