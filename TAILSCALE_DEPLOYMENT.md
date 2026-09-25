@@ -5,7 +5,10 @@ The Daet Listens website is served directly on the host's Tailscale interface. I
 ## Current endpoint
 
 - Tailscale IP: `100.88.237.96`
-- MagicDNS URL: `http://leaf-1.tail05a1ab.ts.net:8000`
+- MagicDNS URL: [http://leaf-1.tail05a1ab.ts.net:8000](http://leaf-1.tail05a1ab.ts.net:8000)
+- Status: direct Tailscale binding is active and verified
+
+> `tailscale serve status` may show `No serve config`. That is expected for this setup: Laravel is bound directly to the Tailscale IP, not proxied through Tailscale Serve.
 
 ## Start
 
@@ -26,7 +29,19 @@ curl http://100.88.237.96:8000/
 curl http://leaf-1.tail05a1ab.ts.net:8000/
 ```
 
+## Port already in use
+
+If the start command reports `Address already in use`, the detached Tailscale server is already running. Check it before starting another process:
+
+```bash
+ss -ltnp | grep 100.88.237.96:8000
+curl http://leaf-1.tail05a1ab.ts.net:8000/
+```
+
+Only restart it when the existing listener should be replaced.
+
 The LAN address `192.168.1.32:8000` should not accept connections.
+
 
 ## Optional HTTPS
 
