@@ -8,10 +8,13 @@
             <h1 class="admin-page-title">System overview</h1>
             <p class="admin-page-description">Monitor service requests, department routing, and unresolved community issues across Daet.</p>
         </div>
-        <a href="{{ route('admin.complaints.index') }}" class="admin-button admin-button--primary">
-            Review all complaints
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
-        </a>
+        <div class="admin-header-actions">
+            <a href="{{ route('admin.users.index') }}" class="admin-button admin-button--secondary">Manage users</a>
+            <a href="{{ route('admin.complaints.index') }}" class="admin-button admin-button--primary">
+                Review all complaints
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
+            </a>
+        </div>
     </header>
 
     @include('admin.partials.flash')

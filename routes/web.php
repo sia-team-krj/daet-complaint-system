@@ -9,6 +9,7 @@ use App\Http\Controllers\TransparencyController;
 use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInvitationController;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\StaffController;
@@ -133,6 +134,10 @@ Route::middleware(["auth", "role:admin"])
         Route::put("/complaints/{complaint}", [AdminController::class, "complaintUpdate"])->name("admin.complaints.update");
         Route::get("/departments", [AdminController::class, "departmentsIndex"])->name("admin.departments.index");
         Route::post("/departments", [AdminController::class, "departmentStore"])->name("admin.departments.store");
+        Route::get("/users", [AdminUserController::class, "index"])->name("admin.users.index");
+        Route::get("/users/{user}", [AdminUserController::class, "show"])->name("admin.users.show");
+        Route::patch("/users/{user}", [AdminUserController::class, "update"])->name("admin.users.update");
+        Route::post("/users/{user}/toggle", [AdminUserController::class, "toggle"])->name("admin.users.toggle");
         Route::get("/staff", [AdminController::class, "staffIndex"])->name("admin.staff.index");
         Route::get("/staff/create", [AdminController::class, "staffCreate"])->name("admin.staff.create");
         Route::post("/staff", [AdminController::class, "staffStore"])->name("admin.staff.store");

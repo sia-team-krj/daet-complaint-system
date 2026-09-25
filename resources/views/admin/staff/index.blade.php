@@ -6,9 +6,10 @@
     <header class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Staff accounts</h1>
-            <p class="admin-page-description">Manage department assignments and access for municipal staff accounts.</p>
+            <p class="admin-page-description">A focused view of municipal staff accounts. Use User management for resident accounts, role changes, and the complete access directory.</p>
         </div>
         <div class="admin-header-actions">
+            <a href="{{ route('admin.users.index', ['role' => 'staff']) }}" class="admin-button admin-button--secondary">Open user directory</a>
             <a href="{{ route('admin.staff.create') }}" class="admin-button admin-button--secondary">Create directly</a>
             <a href="{{ route('admin.invitations.index') }}" class="admin-button admin-button--primary">Invite staff</a>
         </div>
