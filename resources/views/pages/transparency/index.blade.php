@@ -779,39 +779,44 @@
             }
 
             .transparency-cell-status {
-                grid-column: 2;
-                grid-row: 1;
-                justify-self: end;
-                text-align: right;
+                grid-column: 1 / -1;
+                grid-row: 2;
+                justify-self: start;
+                text-align: left;
             }
 
             .transparency-cell-status::before {
-                text-align: right;
+                text-align: left;
             }
 
             .transparency-cell-complaint {
                 grid-column: 1 / -1;
-                grid-row: 2;
+                grid-row: 3;
             }
 
             .transparency-cell-category {
-                grid-column: 1;
-                grid-row: 3;
+                grid-column: 2;
+                grid-row: 1;
+                text-align: right;
+            }
+
+            .transparency-cell-category::before {
+                text-align: right;
             }
 
             .transparency-cell-department {
-                grid-column: 2;
-                grid-row: 3;
-                text-align: right;
-            }
-
-            .transparency-cell-department::before {
-                text-align: right;
+                grid-column: 1;
+                grid-row: 4;
             }
 
             .transparency-cell-location {
-                grid-column: 1 / -1;
+                grid-column: 2;
                 grid-row: 4;
+                text-align: right;
+            }
+
+            .transparency-cell-location::before {
+                text-align: right;
             }
 
             .transparency-cell-date {
