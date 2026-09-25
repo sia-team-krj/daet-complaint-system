@@ -388,6 +388,15 @@
     width: 100%;
     display: block;
   }
+  .photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .photo-gallery .photo-wrap img {
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
 
   .form-group { margin-bottom: 20px; }
   .form-group:last-child { margin-bottom: 0; }
@@ -859,18 +868,22 @@
         </div>
 
         {{-- Photo Card (conditional) --}}
-        @if($complaint->image_path)
+        @if($complaint->evidence_images)
           <div class="card">
             <div class="card-header">
               <div class="card-header-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
               </div>
-              <div class="card-header-title">Attached Photo</div>
+              <div class="card-header-title">Attached Photos @if($complaint->evidence_image_count > 1)<small>({{ $complaint->evidence_image_count }})</small>@endif</div>
             </div>
             <div class="card-body">
-              <a href="{{ Storage::url($complaint->image_path) }}" target="_blank" class="photo-wrap">
-                <img src="{{ Storage::url($complaint->image_path) }}" alt="Complaint photo">
-              </a>
+              <div class="photo-gallery">
+                @foreach($complaint->evidence_images as $imageIndex => $imagePath)
+                  <a href="{{ route('complaints.evidence', [$complaint, $imageIndex]) }}" target="_blank" rel="noopener" class="photo-wrap">
+                    <img src="{{ route('complaints.evidence', [$complaint, $imageIndex]) }}" alt="Complaint evidence photo {{ $imageIndex + 1 }}" loading="lazy">
+                  </a>
+                @endforeach
+              </div>
             </div>
           </div>
         @endif

@@ -31,6 +31,8 @@ class ComplaintReviewWorkflowTest extends TestCase
         $this->actingAs($resident)
             ->get(route('complaints.create'))
             ->assertOk()
+            ->assertSee('name="images[]"', false)
+            ->assertSee('capture="environment"', false)
             ->assertDontSee('name="urgency"', false)
             ->assertDontSee('Urgency Level', false);
 
@@ -71,9 +73,88 @@ class ComplaintReviewWorkflowTest extends TestCase
                 'description' => 'This report does not include the required photo evidence.',
                 'terms' => '1',
             ])
-            ->assertSessionHasErrors('image');
+            ->assertSessionHasErrors('images');
 
         $this->assertDatabaseCount('complaints', 0);
+    }
+
+    public function test_resident_can_attach_up_to_five_photos_and_all_paths_are_recorded(): void
+    {
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        $response = $this->actingAs($resident)->post(route('complaints.store'), [
+            'category' => 'road_damage',
+            'title' => 'Multiple evidence photos',
+            'description' => 'Several clear photos show the damage and the area around the reported issue.',
+            'images' => $this->complaintEvidenceSet(5),
+            'terms' => '1',
+        ]);
+
+        $response->assertRedirect();
+        $complaint = Complaint::latest('id')->firstOrFail();
+
+        $this->assertCount(5, $complaint->image_paths);
+        $this->assertSame($complaint->image_paths[0], $complaint->image_path);
+        $this->assertCount(5, Storage::disk('minio')->allFiles('complaints'));
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'complaint.filed',
+            'subject_id' => $complaint->id,
+        ]);
+    }
+
+    public function test_camera_photo_is_accepted_as_evidence(): void
+    {
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($resident)->post(route('complaints.store'), [
+            'category' => 'flooding',
+            'title' => 'Photo taken at the flood site',
+            'description' => 'The attached camera photo shows the flooded roadway near the community entrance.',
+            'camera_photo' => $this->complaintEvidence(),
+            'terms' => '1',
+        ])->assertRedirect();
+
+        $complaint = Complaint::latest('id')->firstOrFail();
+
+        $this->assertCount(1, $complaint->image_paths);
+        $this->assertSame($complaint->image_path, $complaint->image_paths[0]);
+    }
+
+    public function test_more_than_five_photos_are_rejected(): void
+    {
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($resident)->post(route('complaints.store'), [
+            'category' => 'road_damage',
+            'title' => 'Too many evidence photos',
+            'description' => 'This report includes more photos than the allowed evidence limit for one complaint.',
+            'images' => $this->complaintEvidenceSet(6),
+            'terms' => '1',
+        ])->assertSessionHasErrors('images');
+
+        $this->assertDatabaseCount('complaints', 0);
+    }
+
+    public function test_evidence_is_streamed_only_to_authorized_users(): void
+    {
+        $owner = User::factory()->create(['role' => 'citizen']);
+        $otherResident = User::factory()->create(['role' => 'citizen']);
+        $complaint = Complaint::factory()->create([
+            'user_id' => $owner->id,
+            'image_path' => 'complaints/evidence.png',
+            'image_paths' => ['complaints/evidence.png'],
+        ]);
+        Storage::disk('minio')->put('complaints/evidence.png', 'private-image-bytes');
+
+        $this->actingAs($owner)
+            ->get(route('complaints.evidence', [$complaint, 0]))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('Cache-Control', 'max-age=3600, private');
+
+        $this->actingAs($otherResident)
+            ->get(route('complaints.evidence', [$complaint, 0]))
+            ->assertForbidden();
     }
 
     public function test_staff_sees_only_a_resident_alias_while_admin_can_see_real_identity(): void

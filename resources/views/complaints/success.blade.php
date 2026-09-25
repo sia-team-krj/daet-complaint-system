@@ -193,6 +193,7 @@
     
     <div class="handling-note">
       Your complaint has been received and assigned to the appropriate department for verification.
+      {{ $complaint->evidence_image_count }} {{ \Illuminate\Support\Str::plural('photo', $complaint->evidence_image_count) }} attached for review.
       The department will review the report and confirm its priority before work begins.
       @if(session('complaint_location_source') === 'photo_gps')
         The location embedded in your photo was used to place the report.

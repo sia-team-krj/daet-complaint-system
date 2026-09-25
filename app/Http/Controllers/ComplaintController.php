@@ -14,9 +14,12 @@ use App\Services\DepartmentRouter;
 use App\Services\PhotoLocationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class ComplaintController extends Controller
 {
@@ -45,7 +48,7 @@ class ComplaintController extends Controller
     public function index(Request $request)
     {
         $query = Complaint::where('user_id', Auth::id())
-                          ->with(['department', 'logs']);
+            ->with(['department', 'logs']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -54,7 +57,7 @@ class ComplaintController extends Controller
 
         // Search by ticket_id
         if ($request->filled('search')) {
-            $query->where('ticket_id', 'ILIKE', '%' . $request->search . '%');
+            $query->where('ticket_id', 'ILIKE', '%'.$request->search.'%');
         }
 
         $complaints = $query->latest()->paginate(12)->withQueryString();
@@ -78,6 +81,61 @@ class ComplaintController extends Controller
     }
 
     /**
+     * Stream private evidence media through the application after authorization.
+     */
+    public function evidence(Complaint $complaint, int $index): StreamedResponse
+    {
+        $this->authorize('view', $complaint);
+
+        $paths = $complaint->evidence_images;
+
+        if (! array_key_exists($index, $paths)) {
+            abort(404);
+        }
+
+        $path = $paths[$index];
+        $disk = Storage::disk('minio');
+
+        try {
+            if (! $disk->exists($path)) {
+                abort(404);
+            }
+
+            $stream = $disk->readStream($path);
+            $size = $disk->size($path);
+        } catch (Throwable) {
+            abort(404);
+        }
+
+        if (! is_resource($stream)) {
+            abort(404);
+        }
+
+        $response = response()->stream(function () use ($stream): void {
+            fpassthru($stream);
+            fclose($stream);
+        });
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $contentType = match ($extension) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            default => 'application/octet-stream',
+        };
+
+        $response->headers->set('Content-Type', $contentType);
+        $response->headers->set('Cache-Control', 'private, max-age=3600');
+        $response->headers->set('Content-Disposition', 'inline; filename="complaint-evidence-'.($index + 1).'.'.$extension.'"');
+
+        if (is_int($size) || (is_string($size) && ctype_digit($size))) {
+            $response->headers->set('Content-Length', (string) $size);
+        }
+
+        return $response;
+    }
+
+    /**
      * Show the complaint creation form.
      */
     public function create()
@@ -90,7 +148,7 @@ class ComplaintController extends Controller
     /**
      * Store a new complaint with automatic department routing.
      * - Maps category to department automatically.
-     * - Stores the required evidence photo and uses its GPS metadata when present.
+     * - Stores up to five required evidence photos and uses GPS metadata when present.
      * - Creates the complaint record.
      * - Creates the first ComplaintLog entry (status = Submitted).
      * - All in a single DB transaction.
@@ -101,99 +159,151 @@ class ComplaintController extends Controller
         ComplaintDetectionService $detector,
         ComplaintPriorityService $priorityService,
         PhotoLocationService $photoLocationService,
-    )
-    {
+    ) {
         $validated = $request->validate([
-            'category'    => ['required', 'string', 'in:' . implode(',', self::VALID_CATEGORIES)],
-            'title'       => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', 'in:'.implode(',', self::VALID_CATEGORIES)],
+            'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'min:20'],
-            'image'       => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], // 5MB max
-            'terms'       => ['accepted'],
-            'latitude'    => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude'   => ['nullable', 'numeric', 'between:-180,180'],
-            'address_text'=> ['nullable', 'string', 'max:500'],
+            // `images` is the current field. `image` remains accepted for old
+            // clients and existing bookmarked forms during the transition.
+            'images' => ['nullable', 'array', 'min:1', 'max:5'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'camera_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'terms' => ['accepted'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'address_text' => ['nullable', 'string', 'max:500'],
         ]);
+
+        $photos = $this->evidencePhotos($request);
+
+        if ($photos === []) {
+            return back()
+                ->withInput()
+                ->withErrors(['images' => 'Add at least one clear photo of the issue.']);
+        }
+
+        if (count($photos) > 5) {
+            return back()
+                ->withInput()
+                ->withErrors(['images' => 'You can attach a maximum of five photos.']);
+        }
 
         // Resolve department by category code
         $department = DepartmentRouter::resolve($validated['category']);
 
-        // Read GPS metadata before storing the evidence image. Photo GPS is
-        // preferred; the address/map remains a fallback for images without
-        // location metadata.
-        $photo = $request->file('image');
-        $photoLocation = $photoLocationService->extract($photo);
-        $imagePath = $photo->store('complaints', 'minio');
+        // Read GPS metadata before storing the evidence photos. The first photo
+        // with valid GPS wins; address/map remains the fallback for images
+        // without location metadata.
+        $photoLocation = null;
+        foreach ($photos as $photo) {
+            $photoLocation = $photoLocationService->extract($photo);
+
+            if ($photoLocation) {
+                break;
+            }
+        }
+
+        $imagePaths = [];
+        try {
+            foreach ($photos as $photo) {
+                $path = $photo->store('complaints', 'minio');
+
+                if (! is_string($path) || $path === '') {
+                    throw new \RuntimeException('The evidence photo could not be stored.');
+                }
+
+                $imagePaths[] = $path;
+            }
+        } catch (Throwable $exception) {
+            Storage::disk('minio')->delete($imagePaths);
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['images' => 'We could not save the photos. Please try again.']);
+        }
+
+        $imagePath = $imagePaths[0];
         $locationSource = $photoLocation
             ? 'photo_gps'
             : (filled($validated['latitude'] ?? null) && filled($validated['longitude'] ?? null)
                 ? 'map'
                 : (filled($validated['address_text'] ?? null) ? 'address' : 'none'));
 
-        $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $photoLocation, $locationSource, $activityLogger, $detector, $priorityService) {
-            $complaint = Complaint::create([
-                'user_id'       => Auth::id(),
-                'department_id' => $department?->id,
-                'category'      => $validated['category'],
-                'title'         => $validated['title'],
-                'description'   => $validated['description'],
-                'image_path'    => $imagePath,
-                'latitude'      => $photoLocation['latitude'] ?? $validated['latitude'] ?? null,
-                'longitude'     => $photoLocation['longitude'] ?? $validated['longitude'] ?? null,
-                'address_text'  => $validated['address_text'] ?? null,
-                'status'          => ComplaintStatus::Submitted->value,
-                'is_public'       => 0,
-                'review_status'   => ComplaintReviewStatus::Pending->value,
-                'suggested_priority' => 'routine',
-            ]);
+        try {
+            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $photoLocation, $locationSource, $activityLogger, $detector, $priorityService) {
+                $complaint = Complaint::create([
+                    'user_id' => Auth::id(),
+                    'department_id' => $department?->id,
+                    'category' => $validated['category'],
+                    'title' => $validated['title'],
+                    'description' => $validated['description'],
+                    'image_path' => $imagePath,
+                    'image_paths' => $imagePaths,
+                    'latitude' => $photoLocation['latitude'] ?? $validated['latitude'] ?? null,
+                    'longitude' => $photoLocation['longitude'] ?? $validated['longitude'] ?? null,
+                    'address_text' => $validated['address_text'] ?? null,
+                    'status' => ComplaintStatus::Submitted->value,
+                    'is_public' => 0,
+                    'review_status' => ComplaintReviewStatus::Pending->value,
+                    'suggested_priority' => 'routine',
+                ]);
 
-            $suggestion = $priorityService->suggest($complaint);
-            $complaint->update([
-                'suggested_priority' => $suggestion['priority'],
-                'suggestion_reasons' => $suggestion['reasons'],
-            ]);
-
-            // First log entry — previous_status is null (brand new complaint)
-            // NEVER update this log. It is an immutable record.
-            ComplaintLog::create([
-                'complaint_id'    => $complaint->id,
-                'actor_id'        => Auth::id(),
-                'previous_status' => null,
-                'new_status'      => ComplaintStatus::Submitted->value,
-                'comment'         => 'Complaint filed and routed to ' . ($department?->name ?? 'General Services Office') . ' for department verification.',
-            ]);
-
-            $moderation = $detector->evaluate($complaint);
-            if ($complaint->isModerationFlagged()) {
-                $activityLogger->log(
-                    'complaint.moderation_flagged',
-                    "Complaint {$complaint->ticket_id} was flagged for staff review.",
-                    $complaint,
-                    metadata: [
-                        'spam_status' => $moderation['spam_status'],
-                        'spam_score' => $moderation['spam_score'],
-                        'reasons' => $moderation['reasons'],
-                        'duplicate_of_id' => $moderation['duplicate_of_id'],
-                        'similarity_score' => $moderation['similarity_score'],
-                    ],
-                );
-            }
-
-            $activityLogger->log(
-                'complaint.filed',
-                "Complaint {$complaint->ticket_id} filed and routed to " . ($department?->name ?? 'General Services Office') . '.',
-                $complaint,
-                metadata: [
-                    'category' => $complaint->category,
+                $suggestion = $priorityService->suggest($complaint);
+                $complaint->update([
                     'suggested_priority' => $suggestion['priority'],
                     'suggestion_reasons' => $suggestion['reasons'],
-                    'review_status' => $complaint->review_status,
-                    'location_source' => $locationSource,
-                    'department' => $department?->name,
-                ],
-            );
+                ]);
 
-            return $complaint;
-        });
+                // First log entry — previous_status is null (brand new complaint)
+                // NEVER update this log. It is an immutable record.
+                ComplaintLog::create([
+                    'complaint_id' => $complaint->id,
+                    'actor_id' => Auth::id(),
+                    'previous_status' => null,
+                    'new_status' => ComplaintStatus::Submitted->value,
+                    'comment' => 'Complaint filed and routed to '.($department?->name ?? 'General Services Office').' for department verification.',
+                ]);
+
+                $moderation = $detector->evaluate($complaint);
+                if ($complaint->isModerationFlagged()) {
+                    $activityLogger->log(
+                        'complaint.moderation_flagged',
+                        "Complaint {$complaint->ticket_id} was flagged for staff review.",
+                        $complaint,
+                        metadata: [
+                            'spam_status' => $moderation['spam_status'],
+                            'spam_score' => $moderation['spam_score'],
+                            'reasons' => $moderation['reasons'],
+                            'duplicate_of_id' => $moderation['duplicate_of_id'],
+                            'similarity_score' => $moderation['similarity_score'],
+                        ],
+                    );
+                }
+
+                $activityLogger->log(
+                    'complaint.filed',
+                    "Complaint {$complaint->ticket_id} filed and routed to ".($department?->name ?? 'General Services Office').'.',
+                    $complaint,
+                    metadata: [
+                        'category' => $complaint->category,
+                        'suggested_priority' => $suggestion['priority'],
+                        'suggestion_reasons' => $suggestion['reasons'],
+                        'review_status' => $complaint->review_status,
+                        'location_source' => $locationSource,
+                        'evidence_count' => count($imagePaths),
+                        'department' => $department?->name,
+                    ],
+                );
+
+                return $complaint;
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('minio')->delete($imagePaths);
+            throw $exception;
+        }
 
         // Store ticket_id for redirect
         session([
@@ -205,12 +315,45 @@ class ComplaintController extends Controller
     }
 
     /**
+     * Normalize the current and legacy upload fields into one bounded list.
+     *
+     * @return array<int, UploadedFile>
+     */
+    private function evidencePhotos(Request $request): array
+    {
+        $photos = $request->file('images', []);
+
+        if ($photos instanceof UploadedFile) {
+            $photos = [$photos];
+        } elseif (! is_array($photos)) {
+            $photos = [];
+        }
+
+        $cameraPhoto = $request->file('camera_photo');
+        $legacyPhoto = $request->file('image');
+
+        if ($cameraPhoto) {
+            $photos[] = $cameraPhoto;
+        }
+
+        if ($legacyPhoto) {
+            $photos[] = $legacyPhoto;
+        }
+
+        return array_values(array_filter(
+            $photos,
+            fn (mixed $photo): bool => $photo instanceof UploadedFile && $photo->isValid(),
+        ));
+    }
+
+    /**
      * Show success/confirmation page after submission.
      */
     public function success(Complaint $complaint)
     {
         $this->authorize('view', $complaint);
         $complaint->load('department');
+
         return view('complaints.success', compact('complaint'));
     }
 

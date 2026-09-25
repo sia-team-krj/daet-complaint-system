@@ -5154,3 +5154,51 @@ select.staff-input option {
         grid-template-columns: 1fr;
     }
 }
+
+.admin-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.admin-evidence-card {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+    padding: 7px;
+    color: var(--color-gold-light);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-gold);
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.18s, border-color 0.18s, transform 0.18s;
+}
+
+.admin-evidence-card:hover,
+.admin-evidence-card:focus-visible {
+    background: rgba(255, 255, 255, 0.075);
+    border-color: rgba(201, 168, 76, 0.48);
+    transform: translateY(-1px);
+}
+
+.admin-evidence-card img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 3px;
+}
+
+.admin-evidence-card span {
+    overflow: hidden;
+    font-size: 10px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 540px) {
+    .admin-evidence-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

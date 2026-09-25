@@ -23,6 +23,7 @@ class Complaint extends Model
         "title",
         "description",
         "image_path",
+        "image_paths",
         "latitude",
         "longitude",
         "address_text",
@@ -49,6 +50,7 @@ class Complaint extends Model
     {
         return [
             "is_public" => "boolean",
+            "image_paths" => "array",
             "spam_status" => "string",
             "spam_score" => "integer",
             "spam_reasons" => "array",
@@ -161,6 +163,34 @@ class Complaint extends Model
     // ─────────────────────────────────────────────
     // ACCESSORS
     // ─────────────────────────────────────────────
+
+    /**
+     * All evidence photo paths, with a fallback for complaints created before
+     * the multi-photo field existed.
+     *
+     * @return array<int, string>
+     */
+    public function getEvidenceImagesAttribute(): array
+    {
+        $paths = $this->image_paths;
+
+        if (is_array($paths) && $paths !== []) {
+            return array_values(array_filter(
+                $paths,
+                fn (mixed $path): bool => is_string($path) && trim($path) !== '',
+            ));
+        }
+
+        return filled($this->image_path) ? [$this->image_path] : [];
+    }
+
+    /**
+     * Number of evidence photos attached to the complaint.
+     */
+    public function getEvidenceImageCountAttribute(): int
+    {
+        return count($this->evidence_images);
+    }
 
     /**
      * Returns the ComplaintStatus enum instance for the current status.

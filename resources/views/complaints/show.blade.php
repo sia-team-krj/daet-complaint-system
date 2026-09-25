@@ -184,6 +184,19 @@
     width: 100%; height: auto; display: block;
     max-height: 400px; object-fit: contain;
   }
+  .image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    padding: 16px;
+  }
+  .image-gallery .image-wrap {
+    min-width: 0;
+  }
+  .image-gallery .image-wrap img {
+    max-height: 260px;
+    object-fit: cover;
+  }
   .no-image {
     padding: 40px; text-align: center;
     color: var(--text-muted); font-size: 13px;
@@ -389,32 +402,29 @@
           </div>
         </div>
 
-        {{-- Attached Image --}}
+        {{-- Attached Photos --}}
         <div class="detail-card" style="margin-bottom: 24px;">
           <div class="detail-card-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            <span class="detail-card-title">Attached Photo</span>
+            <span class="detail-card-title">Attached Photos @if($complaint->evidence_image_count > 1)<small>({{ $complaint->evidence_image_count }})</small>@endif</span>
           </div>
           <div class="detail-card-body" style="padding: 0;">
-            @if($complaint->image_path)
-              <div class="image-wrap">
-                @php
-                  $minioUrl = str_replace('http://minio:9000', 'http://localhost:9000', env('MINIO_ENDPOINT', 'http://localhost:9000'));
-                  $imageUrl = $minioUrl . '/' . env('MINIO_BUCKET', 'daet-complaints') . '/' . $complaint->image_path;
-                @endphp
-                <img src="{{ $imageUrl }}" 
-                     alt="Complaint photo" 
-                     style="max-width: 100%; height: auto; display: block;"
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <div style="display: none; padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px;">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                  <div>Image unavailable. <br><small>Make sure MinIO bucket is public: <code>mc anonymous set public local/daet-complaints</code></small></div>
-                </div>
+            @if($complaint->evidence_images)
+              <div class="image-gallery">
+                @foreach($complaint->evidence_images as $imageIndex => $imagePath)
+                  @php
+                    $imageUrl = route('complaints.evidence', [$complaint, $imageIndex]);
+                  @endphp
+                  <a class="image-wrap" href="{{ $imageUrl }}" target="_blank" rel="noopener">
+                    <img src="{{ $imageUrl }}" alt="Complaint evidence photo {{ $imageIndex + 1 }}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span style="display: none; padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">Image unavailable</span>
+                  </a>
+                @endforeach
               </div>
             @else
               <div class="no-image">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <div>No photo attached to this complaint</div>
+                <div>No photos attached to this complaint</div>
               </div>
             @endif
           </div>

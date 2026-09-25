@@ -76,6 +76,27 @@
                     </dl>
                 </div>
             </section>
+
+            @if($complaint->evidence_images)
+                <section class="admin-panel" aria-labelledby="evidence-title">
+                    <div class="admin-panel-heading">
+                        <div>
+                            <h2 id="evidence-title" class="admin-panel-title">Evidence photos</h2>
+                            <p class="admin-section-description">{{ $complaint->evidence_image_count }} {{ \Illuminate\Support\Str::plural('photo', $complaint->evidence_image_count) }} attached to this report.</p>
+                        </div>
+                    </div>
+                    <div class="admin-panel-body">
+                        <div class="admin-evidence-grid">
+                            @foreach($complaint->evidence_images as $imageIndex => $imagePath)
+                                <a href="{{ route('complaints.evidence', [$complaint, $imageIndex]) }}" target="_blank" rel="noopener" class="admin-evidence-card">
+                                    <img src="{{ route('complaints.evidence', [$complaint, $imageIndex]) }}" alt="Complaint evidence photo {{ $imageIndex + 1 }}" loading="lazy">
+                                    <span>Photo {{ $imageIndex + 1 }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            @endif
         </div>
 
         <aside class="admin-detail-aside">

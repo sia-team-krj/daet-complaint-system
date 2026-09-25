@@ -92,6 +92,9 @@ Route::middleware(["auth"])->group(function () {
     Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
     Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
     Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::get('/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'evidence'])
+        ->whereNumber('index')
+        ->name('complaints.evidence');
     Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show');
     Route::get('/complaints/{complaint}/success', [ComplaintController::class, 'success'])->name('complaints.success');
     Route::get('/track', [ComplaintController::class, 'track'])->name('complaints.track');

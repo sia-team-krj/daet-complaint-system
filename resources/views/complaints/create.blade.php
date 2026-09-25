@@ -443,13 +443,14 @@
             background: rgba(201, 168, 76, 0.08);
         }
 
-        .filing-upload input {
+        .filing-upload__input {
             position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            opacity: 0;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
         }
 
         .filing-upload__icon {
@@ -464,22 +465,116 @@
             font-size: 13px;
         }
 
-        .filing-upload span {
+        .filing-upload > span {
             color: var(--filing-muted);
             font-size: 11px;
         }
 
+        .filing-upload__actions {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .filing-upload__action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 8px 13px;
+            border: 1px solid rgba(201, 168, 76, 0.5);
+            border-radius: 4px;
+            color: #8b6719;
+            background: #fff;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .filing-upload__action:hover,
+        .filing-upload__action:focus-visible {
+            color: var(--filing-navy);
+            background: var(--filing-gold-pale);
+            border-color: var(--filing-gold);
+        }
+
+        .filing-upload__action--camera {
+            color: var(--filing-navy);
+            background: var(--filing-gold-pale);
+        }
+
+        .filing-upload__counter {
+            margin-top: 13px;
+            color: var(--filing-muted);
+            font-size: 10px;
+        }
+
+        .filing-upload__counter strong {
+            display: inline;
+            margin: 0;
+            color: var(--filing-navy);
+            font-size: 10px;
+        }
+
+        .filing-upload__previews {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+            gap: 9px;
+            margin-top: 15px;
+        }
+
         .filing-upload__preview {
-            display: none;
-            margin-top: 14px;
+            position: relative;
+            min-width: 0;
+            aspect-ratio: 1;
+            overflow: hidden;
+            border: 1px solid var(--filing-border);
+            border-radius: 4px;
+            background: var(--filing-cream-dark);
         }
 
         .filing-upload__preview img {
             display: block;
-            max-height: 170px;
-            margin: 0 auto;
-            border: 1px solid var(--filing-border);
-            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .filing-upload__remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            color: #fff;
+            background: rgba(11, 31, 58, 0.78);
+            font: inherit;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .filing-upload__remove:hover,
+        .filing-upload__remove:focus-visible {
+            background: var(--filing-navy);
+            border-color: var(--filing-gold-light);
+        }
+
+        .filing-upload__error {
+            margin-top: 10px;
+            color: #b91c1c;
+            font-size: 11px;
+            line-height: 1.45;
         }
 
         .filing-map {
@@ -980,17 +1075,26 @@
                                 <span><strong>No urgency selection is needed.</strong> The system will suggest a priority from your category and description. The responsible department verifies the report and confirms the final priority.</span>
                             </div>
                             <div class="filing-field">
-                                <label for="image">Photo evidence <span>*</span></label>
-                                <p class="filing-field__hint">Required. Use a clear photo taken at the issue location. If location services were enabled, its GPS coordinates will be used to place the report. JPG, PNG, or WEBP, up to 5 MB.</p>
+                                <label for="images-input">Photo evidence <span>*</span></label>
+                                <p class="filing-field__hint">Required. Add up to five clear photos taken at the issue location. GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
                                 <div class="filing-upload" id="upload-zone">
-                                    <input type="file" name="image" id="image-input" accept="image/jpeg,image/png,image/webp" required>
+                                    <input class="filing-upload__input" type="file" name="images[]" id="images-input" accept="image/jpeg,image/png,image/webp" multiple>
+                                    <input class="filing-upload__input" type="file" name="camera_photo" id="camera-input" accept="image/jpeg,image/png,image/webp" capture="environment">
                                     <div class="filing-upload__icon">
                                         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
                                     </div>
-                                    <strong>Click to add a photo</strong>
-                                    <span>or drag and drop it here</span>
-                                    <div class="filing-upload__preview" id="upload-preview"><img id="preview-img" src="" alt="Selected complaint evidence preview"></div>
+                                    <strong>Add up to five photos</strong>
+                                    <span>Choose from your device or use your phone’s camera.</span>
+                                    <div class="filing-upload__actions">
+                                        <button type="button" class="filing-upload__action" data-upload-trigger="images-input">Choose photos</button>
+                                        <button type="button" class="filing-upload__action filing-upload__action--camera" data-upload-trigger="camera-input">Use camera</button>
+                                    </div>
+                                    <div class="filing-upload__counter"><strong id="photo-count">0 / 5</strong> photos attached</div>
+                                    <div class="filing-upload__previews" id="upload-previews" aria-live="polite"></div>
+                                    <div class="filing-upload__error" id="upload-client-error" role="alert" hidden></div>
                                 </div>
+                                @error('images') <div class="filing-error">{{ $message }}</div> @enderror
+                                @error('camera_photo') <div class="filing-error">{{ $message }}</div> @enderror
                                 @error('image') <div class="filing-error">{{ $message }}</div> @enderror
                             </div>
                         </div>
@@ -1050,7 +1154,7 @@
                         <ul class="filing-aside-list">
                             <li>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="8" cy="9" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
-                                <span>Take the required photo at the issue location; keep location services enabled when possible.</span>
+                                <span>Take one or more clear photos at the issue location; keep location services enabled when possible.</span>
                             </li>
                             <li>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
@@ -1096,10 +1200,12 @@
                 if (!form || form.dataset.filingInitialized === 'true') return;
                 form.dataset.filingInitialized = 'true';
 
-                const imageInput = document.getElementById('image-input');
-                const preview = document.getElementById('upload-preview');
-                const previewImage = document.getElementById('preview-img');
+                const imagesInput = document.getElementById('images-input');
+                const cameraInput = document.getElementById('camera-input');
                 const uploadZone = document.getElementById('upload-zone');
+                const uploadPreviews = document.getElementById('upload-previews');
+                const photoCount = document.getElementById('photo-count');
+                const clientUploadError = document.getElementById('upload-client-error');
                 const categorySelect = document.getElementById('category');
                 const departmentHint = document.getElementById('department-hint');
                 const departmentName = document.getElementById('department-name');
@@ -1141,20 +1247,131 @@
 
                 addressInput?.addEventListener('input', updateSummary);
 
-                if (imageInput && preview && previewImage) {
-                    imageInput.addEventListener('change', () => {
-                        const file = imageInput.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            previewImage.src = event.target.result;
-                            preview.style.display = 'block';
-                        };
-                        reader.readAsDataURL(file);
+                const maxPhotos = 5;
+                const maxPhotoBytes = 5 * 1024 * 1024;
+                let selectedPhotos = [];
+                let previewUrls = [];
+
+                const showUploadError = (message) => {
+                    if (!clientUploadError) return;
+                    clientUploadError.textContent = message;
+                    clientUploadError.hidden = !message;
+                };
+
+                const isAllowedPhoto = (file) => {
+                    const allowedType = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+                    const allowedName = /\.(jpe?g|png|webp)$/i.test(file.name);
+                    return file.size > 0 && file.size <= maxPhotoBytes && (allowedType || allowedName);
+                };
+
+                const syncGalleryInput = () => {
+                    if (!imagesInput || typeof DataTransfer === 'undefined') return false;
+
+                    try {
+                        const transfer = new DataTransfer();
+                        selectedPhotos.forEach(({ file }) => transfer.items.add(file));
+                        imagesInput.files = transfer.files;
+                        return true;
+                    } catch (error) {
+                        return false;
+                    }
+                };
+
+                const renderPhotoPreviews = () => {
+                    if (!uploadPreviews || !photoCount) return;
+
+                    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+                    previewUrls = [];
+                    uploadPreviews.replaceChildren();
+                    photoCount.textContent = `${selectedPhotos.length} / ${maxPhotos}`;
+
+                    selectedPhotos.forEach(({ id, file }) => {
+                        const preview = document.createElement('div');
+                        preview.className = 'filing-upload__preview';
+
+                        const image = document.createElement('img');
+                        const objectUrl = URL.createObjectURL(file);
+                        previewUrls.push(objectUrl);
+                        image.src = objectUrl;
+                        image.alt = `Selected evidence photo ${file.name}`;
+                        preview.appendChild(image);
+
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'filing-upload__remove';
+                        remove.setAttribute('aria-label', `Remove ${file.name}`);
+                        remove.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
+                        remove.addEventListener('click', () => {
+                            selectedPhotos = selectedPhotos.filter((photo) => photo.id !== id);
+                            syncGalleryInput();
+                            showUploadError('');
+                            renderPhotoPreviews();
+                        });
+                        preview.appendChild(remove);
+                        uploadPreviews.appendChild(preview);
                     });
-                }
+                };
+
+                const addPhotos = (files) => {
+                    const incoming = Array.from(files || []);
+                    const invalid = incoming.find((file) => !isAllowedPhoto(file));
+
+                    if (invalid) {
+                        showUploadError('Use JPG, PNG, or WEBP photos no larger than 5 MB each.');
+                        return;
+                    }
+
+                    const existingKeys = new Set(selectedPhotos.map(({ file }) => `${file.name}-${file.size}-${file.lastModified}`));
+                    const unique = incoming.filter((file) => {
+                        const key = `${file.name}-${file.size}-${file.lastModified}`;
+                        if (existingKeys.has(key)) return false;
+                        existingKeys.add(key);
+                        return true;
+                    });
+                    const availableSlots = maxPhotos - selectedPhotos.length;
+
+                    if (unique.length > availableSlots) {
+                        showUploadError(`You can attach a maximum of ${maxPhotos} photos.`);
+                    } else {
+                        showUploadError('');
+                    }
+
+                    unique.slice(0, Math.max(availableSlots, 0)).forEach((file, index) => {
+                        selectedPhotos.push({
+                            id: `${Date.now()}-${index}-${file.name}-${file.size}`,
+                            file,
+                        });
+                    });
+
+                    syncGalleryInput();
+                    renderPhotoPreviews();
+                };
+
+                document.querySelectorAll('[data-upload-trigger]').forEach((trigger) => {
+                    trigger.addEventListener('click', () => {
+                        const input = document.getElementById(trigger.dataset.uploadTrigger);
+                        input?.click();
+                    });
+                });
+
+                imagesInput?.addEventListener('change', () => {
+                    addPhotos(imagesInput.files);
+                });
+
+                cameraInput?.addEventListener('change', () => {
+                    if (!cameraInput.files?.length) return;
+                    addPhotos(cameraInput.files);
+                    if (syncGalleryInput()) {
+                        cameraInput.value = '';
+                    }
+                });
 
                 if (uploadZone) {
+                    uploadZone.addEventListener('click', (event) => {
+                        if (event.target === imagesInput || event.target === cameraInput || event.target.closest('button')) return;
+                        imagesInput?.click();
+                    });
+
                     uploadZone.addEventListener('dragover', (event) => {
                         event.preventDefault();
                         uploadZone.classList.add('is-dragging');
@@ -1163,10 +1380,7 @@
                     uploadZone.addEventListener('drop', (event) => {
                         event.preventDefault();
                         uploadZone.classList.remove('is-dragging');
-                        if (event.dataTransfer?.files?.length && imageInput) {
-                            imageInput.files = event.dataTransfer.files;
-                            imageInput.dispatchEvent(new Event('change'));
-                        }
+                        addPhotos(event.dataTransfer?.files);
                     });
                 }
 
@@ -1236,7 +1450,14 @@
 
                 initializeMap();
 
-                form.addEventListener('submit', () => {
+                form.addEventListener('submit', (event) => {
+                    if (selectedPhotos.length === 0) {
+                        event.preventDefault();
+                        showUploadError('Add at least one clear photo before submitting.');
+                        document.querySelector('[data-upload-trigger="images-input"]')?.focus();
+                        return;
+                    }
+
                     if (!submitButton) return;
                     submitButton.disabled = true;
                     submitButton.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path></svg> Sending for review...';
