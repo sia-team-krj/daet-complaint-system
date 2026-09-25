@@ -43,7 +43,26 @@ Only restart it when the existing listener should be replaced.
 The LAN address `192.168.1.32:8000` should not accept connections.
 
 
-## Optional HTTPS
+## Mobile loading troubleshooting
+
+If the MagicDNS URL stays on a loading screen, open the raw Tailscale IP first:
+
+```text
+http://100.88.237.96:8000
+```
+
+Make sure the phone's Tailscale app is connected to the same tailnet. The URL must use `http://`; the direct port is not HTTPS.
+
+If the browser automatically expects HTTPS, configure Tailscale Serve:
+
+```bash
+sudo tailscale set --operator="$USER"
+tailscale serve --bg --yes http://100.88.237.96:8000
+tailscale serve status
+```
+
+Then open the HTTPS MagicDNS URL shown by `tailscale serve status`, without `:8000`.
+
 
 Tailscale Serve requires a one-time operator permission:
 

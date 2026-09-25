@@ -8,4 +8,6 @@ The website is currently available to devices connected to the authorized Tailsc
 
 **[Open Daet Listens on Tailscale](http://leaf-1.tail05a1ab.ts.net:8000)**
 
+If MagicDNS does not resolve on a phone, use the Tailscale IP fallback: [http://100.88.237.96:8000](http://100.88.237.96:8000).
+
 The LAN address is intentionally not exposed. See the full [Tailscale deployment guide](TAILSCALE_DEPLOYMENT.md) for startup, verification, and optional HTTPS instructions.
