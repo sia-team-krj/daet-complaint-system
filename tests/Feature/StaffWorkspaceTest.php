@@ -100,6 +100,27 @@ class StaffWorkspaceTest extends TestCase
         $this->assertSame(5, substr_count($response->getContent(), '<tr class="staff-queue-row'));
     }
 
+    public function test_staff_queue_formats_ticket_age_in_compact_units(): void
+    {
+        $this->seed(DepartmentSeeder::class);
+        $engineering = Department::where('code', 'ENG')->firstOrFail();
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'department_id' => $engineering->id,
+        ]);
+        $complaint = Complaint::factory()->create([
+            'department_id' => $engineering->id,
+            'user_id' => User::factory()->create(['role' => 'citizen'])->id,
+            'created_at' => now()->subHours(2),
+            'updated_at' => now()->subHours(2),
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.complaints.index'))
+            ->assertOk()
+            ->assertSee('2 hours open');
+    }
+
     public function test_staff_activity_has_a_dedicated_route(): void
     {
         $this->seed(DepartmentSeeder::class);

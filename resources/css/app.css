@@ -3516,9 +3516,26 @@ select.staff-input option {
     gap: 16px;
 }
 
+.staff-queue-section {
+    gap: 11px;
+}
+
+.staff-queue-section .staff-section-title {
+    font-size: 21px;
+}
+
+.staff-queue-section .staff-section-description {
+    margin-top: 5px;
+    font-size: 11px;
+}
+
+.staff-queue-section .staff-pagination {
+    margin-top: 0;
+}
+
 .staff-queue-page-label {
     flex-shrink: 0;
-    padding: 5px 8px;
+    padding: 4px 7px;
     color: var(--color-gold-light);
     background: rgba(201, 168, 76, 0.09);
     border: 1px solid var(--border-gold);
@@ -3534,29 +3551,30 @@ select.staff-input option {
 
 .staff-queue-table {
     min-width: 900px;
+    font-size: 11px;
 }
 
 .staff-queue-table th {
-    padding: 9px 12px;
+    padding: 7px 10px;
 }
 
 .staff-queue-table td {
-    padding: 9px 12px;
+    padding: 7px 10px;
 }
 
 .staff-queue-table .staff-status {
-    min-height: 21px;
-    padding: 3px 7px;
+    min-height: 19px;
+    padding: 2px 6px;
     font-size: 9px;
 }
 
 .staff-queue-table .staff-age-pill {
-    padding: 3px 6px;
+    padding: 2px 5px;
 }
 
 .staff-queue-table .staff-button--compact {
-    min-height: 28px;
-    padding: 5px 8px;
+    min-height: 25px;
+    padding: 4px 7px;
 }
 
 .staff-queue-table th:last-child,
@@ -3579,13 +3597,13 @@ select.staff-input option {
 
 .staff-queue-title {
     display: block;
-    max-width: 230px;
+    max-width: 210px;
     overflow: hidden;
     color: var(--color-white);
     font-family: var(--font-display);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    line-height: 1.18;
+    line-height: 1.1;
     text-overflow: ellipsis;
     text-decoration: none;
     white-space: nowrap;
@@ -3599,10 +3617,10 @@ select.staff-input option {
 
 .staff-queue-subtext {
     display: block;
-    margin-top: 3px;
+    margin-top: 2px;
     color: rgba(255, 255, 255, 0.46);
     font-size: 9px;
-    line-height: 1.35;
+    line-height: 1.15;
     white-space: nowrap;
 }
 
@@ -3612,14 +3630,14 @@ select.staff-input option {
 }
 
 .staff-queue-secondary-status {
-    margin-top: 5px;
+    margin-top: 3px;
 }
 
 .staff-queue-priority {
     display: inline-flex;
     align-items: center;
-    min-height: 21px;
-    padding: 3px 7px;
+    min-height: 19px;
+    padding: 2px 6px;
     border: 1px solid transparent;
     border-radius: 4px;
     font-size: 10px;
@@ -3659,7 +3677,7 @@ select.staff-input option {
 }
 
 .staff-queue-empty {
-    padding: 32px 20px !important;
+    padding: 24px 20px !important;
     text-align: center;
 }
 

@@ -61,7 +61,7 @@
         </form>
     </section>
 
-    <section class="staff-list-section" aria-labelledby="queue-list-title">
+    <section class="staff-list-section staff-queue-section" aria-labelledby="queue-list-title">
         <div class="staff-section-heading">
             <div>
                 <h2 id="queue-list-title" class="staff-section-title">Complaint queue table</h2>
@@ -89,8 +89,26 @@
                 <tbody>
                     @forelse($complaints as $complaint)
                         @php
-                            $daysOpen = $complaint->created_at->diffInDays(now());
-                            $ageClass = $daysOpen > 14 ? 'staff-queue-row--overdue' : ($daysOpen > 7 ? 'staff-queue-row--aging' : 'staff-queue-row--normal');
+                            $ageNow = now();
+                            $ageSeconds = max(0, (int) $complaint->created_at->diffInSeconds($ageNow));
+                            $ageDays = (int) floor($ageSeconds / 86400);
+                            $ageClass = $ageDays > 14 ? 'staff-queue-row--overdue' : ($ageDays > 7 ? 'staff-queue-row--aging' : 'staff-queue-row--normal');
+
+                            if ($ageSeconds < 60) {
+                                $ageValue = 1;
+                                $ageUnit = 'minute';
+                            } elseif ($ageSeconds < 3600) {
+                                $ageValue = max(1, (int) floor($ageSeconds / 60));
+                                $ageUnit = 'minute';
+                            } elseif ($ageSeconds < 86400) {
+                                $ageValue = max(1, (int) floor($ageSeconds / 3600));
+                                $ageUnit = 'hour';
+                            } else {
+                                $ageValue = max(1, (int) floor($ageSeconds / 86400));
+                                $ageUnit = 'day';
+                            }
+
+                            $ageLabel = $ageValue.' '.Str::plural($ageUnit, $ageValue);
                             $priority = $complaint->confirmedPriorityEnum?->label() ?? $complaint->suggestedPriorityEnum->label();
                             $priorityValue = $complaint->confirmedPriorityEnum?->value ?? $complaint->suggested_priority ?? 'unset';
                         @endphp
@@ -117,7 +135,7 @@
                                 <span class="staff-queue-subtext">Suggested: {{ $complaint->suggestedPriorityEnum->label() }}</span>
                             </td>
                             <td data-label="Age">
-                                <span class="staff-age-pill">{{ $daysOpen }} {{ Str::plural('day', $daysOpen) }} open</span>
+                                <span class="staff-age-pill">{{ $ageLabel }} open</span>
                             </td>
                             <td data-label="Action">
                                 <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-button staff-button--compact staff-button--primary">Review</a>
