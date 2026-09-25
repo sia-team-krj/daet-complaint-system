@@ -7,6 +7,7 @@ services:
             POSTGRES_DB: "${DB_DATABASE}"
             POSTGRES_USER: "${DB_USERNAME}"
             POSTGRES_PASSWORD: "${DB_PASSWORD:-secret}"
+        command: ["postgres", "-c", "listen_addresses=127.0.0.1"]
         volumes:
             - pgsql-data:/var/lib/postgresql/data
         healthcheck:
@@ -24,6 +25,7 @@ services:
     redis:
         image: "redis:alpine"
         network_mode: "host"
+        command: ["redis-server", "--bind", "127.0.0.1", "--protected-mode", "yes"]
         volumes:
             - redis-data:/data
         healthcheck:
@@ -37,6 +39,7 @@ services:
     mailpit:
         image: "axllent/mailpit:latest"
         network_mode: "host"
+        command: ["--listen", "127.0.0.1:8025", "--smtp", "127.0.0.1:1025"]
         healthcheck:
             test:
                 - CMD
@@ -54,7 +57,7 @@ services:
             MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-password}"
         volumes:
             - minio-data:/data
-        command: 'minio server /data --console-address ":8900"'
+        command: 'minio server /data --address "127.0.0.1:9000" --console-address "127.0.0.1:8900"'
         healthcheck:
             test:
                 - CMD
