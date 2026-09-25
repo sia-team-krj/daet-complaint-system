@@ -9,13 +9,16 @@ use App\Mail\ComplaintUpdatedMail;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Services\ActivityLogger;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use Throwable;
 
 class StaffController extends Controller
 {
@@ -26,13 +29,13 @@ class StaffController extends Controller
     {
         $user = Auth::user();
         $departmentId = $user->department_id;
-        
+
         $query = Complaint::with(['user', 'department', 'logs.actor']);
-        
+
         if ($departmentId) {
             $query->where('department_id', $departmentId);
         }
-        
+
         return $query;
     }
 
@@ -137,16 +140,16 @@ class StaffController extends Controller
     private function calculateAvgResolutionDays(?int $departmentId): ?float
     {
         $query = Complaint::where('status', ComplaintStatus::Resolved->value);
-        
+
         if ($departmentId) {
             $query->where('department_id', $departmentId);
         }
-        
+
         $avgDays = $query
             ->selectRaw('AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400) as avg_days')
             ->first()
             ->avg_days;
-        
+
         return $avgDays ? round($avgDays, 1) : null;
     }
 
@@ -193,9 +196,9 @@ class StaffController extends Controller
         if ($search) {
             $query->where(function ($searchQuery) use ($search) {
                 $searchQuery
-                    ->where('ticket_id', 'ILIKE', '%' . $search . '%')
-                    ->orWhere('title', 'ILIKE', '%' . $search . '%')
-                    ->orWhere('description', 'ILIKE', '%' . $search . '%');
+                    ->where('ticket_id', 'ILIKE', '%'.$search.'%')
+                    ->orWhere('title', 'ILIKE', '%'.$search.'%')
+                    ->orWhere('description', 'ILIKE', '%'.$search.'%');
             });
         }
 
@@ -240,16 +243,16 @@ class StaffController extends Controller
     public function show(Complaint $complaint): View
     {
         $user = Auth::user();
-        
+
         // Authorization: staff can only view their department's complaints
         if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
             abort(403, 'This complaint is not assigned to your department.');
         }
 
         $complaint->load(['user', 'department', 'logs.actor', 'reviewedBy']);
-        
+
         // Status options for dropdown (excluding current status to force change)
-        $statuses = array_filter(ComplaintStatus::cases(), fn($s) => $s->value !== $complaint->statusEnum->value);
+        $statuses = array_filter(ComplaintStatus::cases(), fn ($s) => $s->value !== $complaint->statusEnum->value);
         $reviewStatusOptions = ComplaintReviewStatus::cases();
         $priorityOptions = ComplaintPriority::cases();
 
@@ -285,7 +288,7 @@ class StaffController extends Controller
             ? ComplaintPriority::from($validated['confirmed_priority'])
             : null;
 
-        if ($reviewStatus === ComplaintReviewStatus::Verified && !$confirmedPriority) {
+        if ($reviewStatus === ComplaintReviewStatus::Verified && ! $confirmedPriority) {
             return back()->with('error', 'A confirmed priority is required before verifying a complaint.');
         }
 
@@ -324,8 +327,8 @@ class StaffController extends Controller
 
             $priorityText = $confirmedPriority?->label() ?? 'Not confirmed';
             $comment = "Department review: {$reviewStatus->label()}; confirmed priority: {$priorityText}.";
-            if (!empty($complaint->review_notes)) {
-                $comment .= ' Review notes: ' . $complaint->review_notes;
+            if (! empty($complaint->review_notes)) {
+                $comment .= ' Review notes: '.$complaint->review_notes;
             }
 
             ComplaintLog::create([
@@ -357,27 +360,34 @@ class StaffController extends Controller
     }
 
     /**
-     * Update complaint status and add staff note (with optional internal note)
+     * Update complaint status and add a public response with optional internal note.
+     * Processing and resolution updates require documentation photos as proof.
      */
     public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger): RedirectResponse
     {
         $user = Auth::user();
-        
+
         // Authorization check
         if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
             return back()->with('error', 'You cannot update complaints outside your department.');
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'string'],
+            'status' => ['required', Rule::enum(ComplaintStatus::class)],
             'note' => ['required', 'string', 'min:10', 'max:2000'],
             'internal_note' => ['nullable', 'string', 'max:2000'],
+            'documentation_images' => ['nullable', 'array', 'max:5'],
+            'documentation_images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'documentation_camera_photos' => ['nullable', 'array', 'max:5'],
+            'documentation_camera_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            // Accept the original singular field while older forms are in circulation.
+            'documentation_camera_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $oldStatus = $complaint->statusEnum;
         $newStatus = ComplaintStatus::from($validated['status']);
 
-        if (!$complaint->isVerified() && $newStatus !== ComplaintStatus::Submitted) {
+        if (! $complaint->isVerified() && $newStatus !== ComplaintStatus::Submitted) {
             return back()->with('error', 'This complaint must pass department review before its status can advance.');
         }
 
@@ -387,53 +397,100 @@ class StaffController extends Controller
         }
 
         // Enforce valid transitions using the enum's allowedTransitions
-        if (!$oldStatus->canTransitionTo($newStatus)) {
-            return back()->with('error', 'Invalid status transition from ' . $oldStatus->label() . ' to ' . $newStatus->label() . '.');
+        if (! $oldStatus->canTransitionTo($newStatus)) {
+            return back()->with('error', 'Invalid status transition from '.$oldStatus->label().' to '.$newStatus->label().'.');
         }
 
-        DB::transaction(function () use ($complaint, $oldStatus, $newStatus, $validated, $user, $activityLogger): void {
-            $complaint->update([
-                'status' => $newStatus->value,
+        $documentationPhotos = $this->documentationPhotos($request);
+        $documentationRequired = in_array($newStatus, [
+            ComplaintStatus::InProgress,
+            ComplaintStatus::Resolved,
+        ], true);
+
+        if ($documentationRequired && $documentationPhotos === []) {
+            return back()->withErrors([
+                'documentation_images' => 'Attach at least one documentation photo before marking this complaint as '.strtolower($newStatus->label()).'.',
             ]);
+        }
 
-            ComplaintLog::create([
-                'complaint_id' => $complaint->id,
-                'previous_status' => $oldStatus->value,
-                'new_status' => $newStatus->value,
-                'comment' => $validated['note'],
-                'actor_id' => $user->id,
-                'is_internal' => false,
+        if (count($documentationPhotos) > 5) {
+            return back()->withErrors([
+                'documentation_images' => 'You can attach a maximum of five documentation photos.',
             ]);
+        }
 
-            $activityLogger->log(
-                'complaint.status_updated',
-                "Complaint {$complaint->ticket_id} moved from {$oldStatus->label()} to {$newStatus->label()}.",
-                $complaint,
-                metadata: [
-                    'previous_status' => $oldStatus->value,
-                    'new_status' => $newStatus->value,
-                    'public_note' => $validated['note'],
-                ],
-            );
+        $documentationPaths = [];
+        if ($documentationPhotos !== []) {
+            try {
+                foreach ($documentationPhotos as $photo) {
+                    $path = $photo->store("complaint-updates/{$complaint->id}", 'minio');
 
-            if (!empty($validated['internal_note'])) {
+                    if (! is_string($path) || $path === '') {
+                        throw new \RuntimeException('The documentation photo could not be stored.');
+                    }
+
+                    $documentationPaths[] = $path;
+                }
+            } catch (Throwable $exception) {
+                Storage::disk('minio')->delete($documentationPaths);
+                report($exception);
+
+                return back()->withErrors([
+                    'documentation_images' => 'We could not save the documentation photos. Please try again.',
+                ]);
+            }
+        }
+
+        try {
+            DB::transaction(function () use ($complaint, $oldStatus, $newStatus, $validated, $user, $activityLogger, $documentationPaths): void {
+                $complaint->update([
+                    'status' => $newStatus->value,
+                ]);
+
                 ComplaintLog::create([
                     'complaint_id' => $complaint->id,
-                    'previous_status' => null,
-                    'new_status' => $oldStatus->value,
-                    'comment' => $validated['internal_note'],
+                    'previous_status' => $oldStatus->value,
+                    'new_status' => $newStatus->value,
+                    'comment' => $validated['note'],
+                    'documentation_paths' => $documentationPaths !== [] ? $documentationPaths : null,
                     'actor_id' => $user->id,
-                    'is_internal' => true,
+                    'is_internal' => false,
                 ]);
 
                 $activityLogger->log(
-                    'complaint.internal_note_added',
-                    "Internal note added to complaint {$complaint->ticket_id}.",
+                    'complaint.status_updated',
+                    "Complaint {$complaint->ticket_id} moved from {$oldStatus->label()} to {$newStatus->label()}.",
                     $complaint,
-                    metadata: ['note' => $validated['internal_note']],
+                    metadata: [
+                        'previous_status' => $oldStatus->value,
+                        'new_status' => $newStatus->value,
+                        'public_note' => $validated['note'],
+                        'documentation_count' => count($documentationPaths),
+                    ],
                 );
-            }
-        });
+
+                if (! empty($validated['internal_note'])) {
+                    ComplaintLog::create([
+                        'complaint_id' => $complaint->id,
+                        'previous_status' => null,
+                        'new_status' => $oldStatus->value,
+                        'comment' => $validated['internal_note'],
+                        'actor_id' => $user->id,
+                        'is_internal' => true,
+                    ]);
+
+                    $activityLogger->log(
+                        'complaint.internal_note_added',
+                        "Internal note added to complaint {$complaint->ticket_id}.",
+                        $complaint,
+                        metadata: ['note' => $validated['internal_note']],
+                    );
+                }
+            });
+        } catch (Throwable $exception) {
+            Storage::disk('minio')->delete($documentationPaths);
+            throw $exception;
+        }
 
         // Send email notification to citizen
         Mail::to($complaint->user->email)->send(
@@ -443,5 +500,39 @@ class StaffController extends Controller
         return redirect()
             ->route('staff.complaints.show', $complaint)
             ->with('status', 'Response sent and status updated successfully.');
+    }
+
+    /**
+     * Normalize gallery and camera documentation uploads.
+     *
+     * @return array<int, UploadedFile>
+     */
+    private function documentationPhotos(Request $request): array
+    {
+        $photos = $request->file('documentation_images', []);
+
+        if ($photos instanceof UploadedFile) {
+            $photos = [$photos];
+        } elseif (! is_array($photos)) {
+            $photos = [];
+        }
+
+        $cameraPhotos = $request->file('documentation_camera_photos', []);
+        if ($cameraPhotos instanceof UploadedFile) {
+            $cameraPhotos = [$cameraPhotos];
+        } elseif (! is_array($cameraPhotos)) {
+            $cameraPhotos = [];
+        }
+        $photos = array_merge($photos, $cameraPhotos);
+
+        $legacyCameraPhoto = $request->file('documentation_camera_photo');
+        if ($legacyCameraPhoto) {
+            $photos[] = $legacyCameraPhoto;
+        }
+
+        return array_values(array_filter(
+            $photos,
+            fn (mixed $photo): bool => $photo instanceof UploadedFile && $photo->isValid(),
+        ));
     }
 }

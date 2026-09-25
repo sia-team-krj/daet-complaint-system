@@ -93,7 +93,38 @@ class ComplaintController extends Controller
             abort(404);
         }
 
-        $path = $paths[$index];
+        return $this->streamPrivateImage($paths[$index], 'complaint-evidence', $index);
+    }
+
+    /**
+     * Stream documentation attached to an immutable complaint update.
+     */
+    public function updateEvidence(Complaint $complaint, ComplaintLog $log, int $index): StreamedResponse
+    {
+        if ((int) $log->complaint_id !== (int) $complaint->id) {
+            abort(404);
+        }
+
+        $this->authorize('view', $complaint);
+
+        if ($log->is_internal && ! in_array(Auth::user()->role, ['staff', 'admin'], true)) {
+            abort(403);
+        }
+
+        $paths = $log->documentation_images;
+
+        if (! array_key_exists($index, $paths)) {
+            abort(404);
+        }
+
+        return $this->streamPrivateImage($paths[$index], 'complaint-update', $index);
+    }
+
+    /**
+     * Stream an authorized image from private MinIO storage.
+     */
+    private function streamPrivateImage(string $path, string $prefix, int $index): StreamedResponse
+    {
         $disk = Storage::disk('minio');
 
         try {
@@ -126,7 +157,7 @@ class ComplaintController extends Controller
 
         $response->headers->set('Content-Type', $contentType);
         $response->headers->set('Cache-Control', 'private, max-age=3600');
-        $response->headers->set('Content-Disposition', 'inline; filename="complaint-evidence-'.($index + 1).'.'.$extension.'"');
+        $response->headers->set('Content-Disposition', 'inline; filename="'.$prefix.'-'.($index + 1).'.'.$extension.'"');
 
         if (is_int($size) || (is_string($size) && ctype_digit($size))) {
             $response->headers->set('Content-Length', (string) $size);

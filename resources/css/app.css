@@ -5189,6 +5189,11 @@ select.staff-input option {
     border-radius: 3px;
 }
 
+.admin-timeline-evidence {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    margin-top: 10px;
+}
+
 .admin-evidence-card span {
     overflow: hidden;
     font-size: 10px;

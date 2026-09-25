@@ -267,6 +267,25 @@
   .timeline-actor {
     font-weight: 600; color: var(--gold);
   }
+  .timeline-evidence {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    margin: 10px 0 8px;
+  }
+  .timeline-evidence a {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--border-gold);
+    border-radius: 4px;
+    background: var(--cream-dark);
+  }
+  .timeline-evidence img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
 
   /* ── Back Button ── */
   .back-btn {
@@ -486,6 +505,17 @@
                     @if($log->comment)
                       <div class="timeline-note">{{ $log->comment }}</div>
                     @endif
+
+                    @if($log->documentation_images)
+                      <div class="timeline-evidence" aria-label="Documentation photos">
+                        @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                          <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
+                          </a>
+                        @endforeach
+                      </div>
+                    @endif
+
                     <div class="timeline-meta">
                       <span class="timeline-actor">Responded by {{ $complaint->department->name ?? 'LGU' }} Staff</span>
                       • {{ $log->created_at->diffForHumans() }}

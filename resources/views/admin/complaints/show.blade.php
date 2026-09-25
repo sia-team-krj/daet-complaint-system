@@ -193,6 +193,16 @@
                                 <div>
                                     <p class="admin-timeline-status">{{ $log->previous_status ?? 'Complaint filed' }} <span aria-hidden="true">→</span> {{ $log->new_status }}</p>
                                     @if($log->comment)<p class="admin-timeline-comment">{{ $log->comment }}</p>@endif
+                                    @if($log->documentation_images)
+                                        <div class="admin-evidence-grid admin-timeline-evidence">
+                                            @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                                                <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener" class="admin-evidence-card">
+                                                    <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
+                                                    <span>Proof {{ $documentationIndex + 1 }}</span>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     <p class="admin-timeline-meta">{{ $log->actor?->full_name ?? 'System' }} · {{ $log->created_at?->format('M j, Y g:i A') }}</p>
                                 </div>
                             </li>

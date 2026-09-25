@@ -398,6 +398,189 @@
     object-fit: cover;
   }
 
+  .documentation-field {
+    padding: 15px;
+    background: rgba(201, 168, 76, 0.055);
+    border: 1px solid rgba(201, 168, 76, 0.24);
+    border-radius: 5px;
+  }
+  .documentation-field .form-label {
+    color: var(--gold-light);
+  }
+  .documentation-field .form-hint {
+    margin: 0 0 12px;
+  }
+  .documentation-sources {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .documentation-source {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    min-width: 0;
+    padding: 13px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(201, 168, 76, 0.22);
+    border-radius: 5px;
+  }
+  .documentation-source--camera {
+    background: rgba(201, 168, 76, 0.07);
+    border-color: rgba(201, 168, 76, 0.42);
+  }
+  .documentation-source__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--gold-light);
+    background: rgba(201, 168, 76, 0.12);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    border-radius: 4px;
+  }
+  .documentation-source__icon svg {
+    width: 17px;
+    height: 17px;
+  }
+  .documentation-source__copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .documentation-source__copy strong {
+    color: var(--white);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .documentation-source__copy span {
+    color: var(--text-dim);
+    font-size: 10px;
+    line-height: 1.45;
+  }
+  .documentation-source__action {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    margin-top: 3px;
+    padding: 6px 10px;
+    color: var(--gold-light);
+    background: transparent;
+    border: 1px solid rgba(201, 168, 76, 0.42);
+    border-radius: 4px;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.18s, color 0.18s, border-color 0.18s;
+  }
+  .documentation-source__action:hover,
+  .documentation-source__action:focus-visible {
+    color: var(--navy);
+    background: var(--gold-light);
+    border-color: var(--gold-light);
+  }
+  .documentation-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .documentation-selection {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    margin-top: 11px;
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+  .documentation-selection strong {
+    color: var(--gold-light);
+    font-size: 10px;
+  }
+  .documentation-client-error {
+    margin-top: 7px;
+    color: #fca5a5;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .documentation-previews {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 8px;
+    margin-top: 11px;
+  }
+  .documentation-previews:empty {
+    display: none;
+  }
+  .documentation-preview {
+    position: relative;
+    min-width: 0;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .documentation-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .documentation-preview-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    color: #fff;
+    background: rgba(11, 31, 58, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .documentation-preview-remove:hover,
+  .documentation-preview-remove:focus-visible {
+    background: var(--navy);
+    border-color: var(--gold-light);
+  }
+  .documentation-preview-remove svg {
+    width: 13px;
+    height: 13px;
+  }
+  .timeline-evidence {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+    gap: 7px;
+    margin: 10px 0;
+  }
+  .timeline-evidence a {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--border-gold);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .timeline-evidence img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
   .form-group { margin-bottom: 20px; }
   .form-group:last-child { margin-bottom: 0; }
   .form-label {
@@ -410,6 +593,12 @@
     text-transform: uppercase;
     color: rgba(255,255,255,0.6);
     margin-bottom: 10px;
+  }
+  .form-label-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: currentColor;
   }
   .form-label .indicator {
     width: 6px;
@@ -595,7 +784,9 @@
   }
 
   .timeline-tag {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
@@ -603,6 +794,11 @@
     padding: 3px 10px;
     border-radius: 3px;
     margin-right: 8px;
+  }
+  .timeline-tag svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
   }
   .tag-public {
     background: rgba(63,203,111,0.12);
@@ -670,6 +866,9 @@
     .map-container, .map-placeholder { height: 220px; }
     .breadcrumb { flex-wrap: wrap; }
     .review-summary { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .documentation-sources { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -901,13 +1100,13 @@
             <div class="card-header-title">Add Response</div>
           </div>
           <div class="card-body">
-            <form method="POST" action="{{ route('staff.complaints.update', $complaint) }}">
+            <form id="staff-response-form" method="POST" action="{{ route('staff.complaints.update', $complaint) }}" enctype="multipart/form-data">
               @csrf
               @method('PUT')
 
               <div class="form-group">
                 <label class="form-label">Status</label>
-                <select name="status" class="form-select" required>
+                <select name="status" id="staff-status-select" class="form-select" required>
                   @foreach($statuses as $statusOption)
                     <option value="{{ $statusOption->value }}" {{ $complaint->statusEnum->value === $statusOption->value ? 'selected' : '' }}>
                       {{ $statusOption->label() }}
@@ -928,10 +1127,54 @@
                 @enderror
               </div>
 
+              <div class="form-group documentation-field">
+                <label class="form-label" for="documentation_images">Documentation proof</label>
+                <p class="form-hint">Required when moving this complaint to <strong>In Progress</strong> or <strong>Resolved</strong>. Add up to five clear photos showing the work being done or completed.</p>
+                <div class="documentation-sources" role="group" aria-label="Documentation photo sources">
+                  <div class="documentation-source">
+                    <span class="documentation-source__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
+                    </span>
+                    <span class="documentation-source__copy">
+                      <strong>Photo library</strong>
+                      <span>Select up to five existing images from this device.</span>
+                    </span>
+                    <button type="button" class="documentation-source__action" data-documentation-trigger="documentation_images">Choose photos</button>
+                    <input class="documentation-file-input" type="file" name="documentation_images[]" id="documentation_images" accept="image/jpeg,image/png,image/webp" multiple>
+                  </div>
+                  <div class="documentation-source documentation-source--camera">
+                    <span class="documentation-source__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l1.5-2h7L17 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+                    </span>
+                    <span class="documentation-source__copy">
+                      <strong>Use camera</strong>
+                      <span>Capture a clear proof photo at the work site.</span>
+                    </span>
+                    <button type="button" class="documentation-source__action" data-documentation-trigger="documentation_camera_photos">Open camera</button>
+                    <input class="documentation-file-input" type="file" name="documentation_camera_photos[]" id="documentation_camera_photos" accept="image/jpeg,image/png,image/webp" capture="environment" multiple>
+                  </div>
+                </div>
+                <div class="documentation-selection" aria-live="polite">
+                  <strong id="documentation-selected-count">0 / 5</strong>
+                  <span>documentation photos selected</span>
+                </div>
+                <div class="documentation-previews" id="documentation-previews" aria-label="Selected documentation previews"></div>
+                <div class="documentation-client-error" id="documentation-client-error" role="alert" hidden></div>
+                @error('documentation_images')
+                  <div class="form-error">{{ $message }}</div>
+                @enderror
+                @error('documentation_camera_photos')
+                  <div class="form-error">{{ $message }}</div>
+                @enderror
+                @error('documentation_camera_photo')
+                  <div class="form-error">{{ $message }}</div>
+                @enderror
+              </div>
+
               <div class="form-group internal-field">
                 <label class="form-label">
-                  <span class="indicator indicator-amber"></span>
-                  🔒 Internal Note
+                  <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+                  <span>Internal Note</span>
                 </label>
                 <textarea name="internal_note" class="form-textarea" placeholder="Staff-only note, not visible to citizen...">{{ old('internal_note') }}</textarea>
                 <div class="internal-hint">
@@ -982,8 +1225,24 @@
                       <div class="timeline-note">{{ $log->comment }}</div>
                     @endif
 
+                    @if($log->documentation_images)
+                      <div class="timeline-evidence" aria-label="Documentation photos">
+                        @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                          <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
+                            <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
+                          </a>
+                        @endforeach
+                      </div>
+                    @endif
+
                     <span class="timeline-tag {{ $log->is_internal ? 'tag-internal' : 'tag-public' }}">
-                      {{ $log->is_internal ? '🔒 Internal' : '✓ Public' }}
+                      @if($log->is_internal)
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+                        <span>Internal</span>
+                      @else
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg>
+                        <span>Public</span>
+                      @endif
                     </span>
                     <div class="timeline-time">{{ $log->created_at->diffForHumans() }}</div>
                   </div>
@@ -997,3 +1256,133 @@
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (() => {
+        const initializeDocumentationProof = () => {
+            const form = document.getElementById('staff-response-form');
+            if (!form || form.dataset.documentationProofInitialized === 'true') return;
+            form.dataset.documentationProofInitialized = 'true';
+
+            const galleryInput = document.getElementById('documentation_images');
+            const cameraInput = document.getElementById('documentation_camera_photos');
+            const previews = document.getElementById('documentation-previews');
+            const count = document.getElementById('documentation-selected-count');
+            const clientError = document.getElementById('documentation-client-error');
+            const maxPhotos = 5;
+            let galleryFiles = [];
+            let cameraFiles = [];
+            let previewUrls = [];
+
+            const syncInput = (input, files) => {
+                if (!input) return false;
+                if (files.length === 0) {
+                    input.value = '';
+                    return true;
+                }
+
+                if (typeof DataTransfer === 'undefined') return false;
+
+                const transfer = new DataTransfer();
+                files.forEach((file) => transfer.items.add(file));
+                input.files = transfer.files;
+                return true;
+            };
+
+            const selectedFiles = () => [
+                ...galleryFiles.map((file, index) => ({ file, source: 'gallery', index })),
+                ...cameraFiles.map((file, index) => ({ file, source: 'camera', index })),
+            ];
+
+            const renderPreviews = () => {
+                previewUrls.forEach((url) => URL.revokeObjectURL(url));
+                previewUrls = [];
+                if (!previews) return;
+
+                previews.replaceChildren();
+                selectedFiles().forEach(({ file, source, index }) => {
+                    const preview = document.createElement('div');
+                    preview.className = 'documentation-preview';
+
+                    const image = document.createElement('img');
+                    const objectUrl = URL.createObjectURL(file);
+                    previewUrls.push(objectUrl);
+                    image.src = objectUrl;
+                    image.alt = `Selected documentation preview: ${file.name}`;
+                    preview.appendChild(image);
+
+                    const remove = document.createElement('button');
+                    remove.type = 'button';
+                    remove.className = 'documentation-preview-remove';
+                    remove.setAttribute('aria-label', `Remove ${file.name}`);
+                    remove.title = 'Remove photo';
+                    remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
+                    remove.addEventListener('click', () => {
+                        if (source === 'gallery') {
+                            galleryFiles.splice(index, 1);
+                            syncInput(galleryInput, galleryFiles);
+                        } else {
+                            cameraFiles.splice(index, 1);
+                            syncInput(cameraInput, cameraFiles);
+                        }
+                        renderPreviews();
+                    });
+                    preview.appendChild(remove);
+                    previews.appendChild(preview);
+                });
+
+                const files = selectedFiles();
+                if (count) count.textContent = `${files.length} / ${maxPhotos}`;
+                if (clientError) {
+                    clientError.hidden = files.length <= maxPhotos;
+                    clientError.textContent = files.length > maxPhotos
+                        ? `Select no more than ${maxPhotos} documentation photos.`
+                        : '';
+                }
+            };
+
+            document.querySelectorAll('[data-documentation-trigger]').forEach((trigger) => {
+                trigger.addEventListener('click', () => {
+                    document.getElementById(trigger.dataset.documentationTrigger)?.click();
+                });
+            });
+
+            galleryInput?.addEventListener('change', () => {
+                galleryFiles = Array.from(galleryInput.files || []);
+                renderPreviews();
+            });
+
+            cameraInput?.addEventListener('change', () => {
+                const incoming = Array.from(cameraInput.files || []);
+
+                if (incoming.length === 1) {
+                    cameraFiles.push(incoming[0]);
+                } else {
+                    const existingKeys = new Set(cameraFiles.map((file) => `${file.name}-${file.size}-${file.lastModified}`));
+                    incoming.forEach((file) => {
+                        const key = `${file.name}-${file.size}-${file.lastModified}`;
+                        if (!existingKeys.has(key)) {
+                            cameraFiles.push(file);
+                            existingKeys.add(key);
+                        }
+                    });
+                }
+
+                syncInput(cameraInput, cameraFiles);
+                renderPreviews();
+            });
+
+            renderPreviews();
+        };
+
+        const scheduleDocumentationProof = () => window.setTimeout(initializeDocumentationProof, 80);
+        document.addEventListener('livewire:navigated', scheduleDocumentationProof);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', scheduleDocumentationProof);
+        } else {
+            scheduleDocumentationProof();
+        }
+    })();
+</script>
+@endpush

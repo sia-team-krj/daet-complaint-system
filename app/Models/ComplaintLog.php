@@ -17,11 +17,13 @@ class ComplaintLog extends Model
         'previous_status',
         'new_status',
         'comment',
+        'documentation_paths',
         'is_internal',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
+        'documentation_paths' => 'array',
         'is_internal' => 'boolean',
     ];
 
@@ -33,6 +35,29 @@ class ComplaintLog extends Model
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    /**
+     * Documentation photos attached to this immutable status update.
+     *
+     * @return array<int, string>
+     */
+    public function getDocumentationImagesAttribute(): array
+    {
+        return is_array($this->documentation_paths)
+            ? array_values(array_filter(
+                $this->documentation_paths,
+                fn (mixed $path): bool => is_string($path) && trim($path) !== '',
+            ))
+            : [];
+    }
+
+    /**
+     * Number of documentation photos attached to the update.
+     */
+    public function getDocumentationImageCountAttribute(): int
+    {
+        return count($this->documentation_images);
     }
 
     /**
