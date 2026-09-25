@@ -1,15 +1,16 @@
-# Tailscale-Only Website Deployment
+# Tailscale Funnel Website Deployment
 
-The Daet Listens website is available only to authorized devices on the Tailscale tailnet. The Laravel server binds to the host's Tailscale interface, while support services remain on localhost.
+The Daet Listens website is publicly available through Tailscale Funnel. The Laravel server binds to the host's Tailscale interface, and Funnel proxies the public HTTPS URL to it.
 
-## Current endpoint
+## Public endpoint
 
-- Private HTTPS URL: [https://leaf-1.tail05a1ab.ts.net](https://leaf-1.tail05a1ab.ts.net)
-- Tailscale IP: `100.88.237.96`
+- Public HTTPS URL: [https://leaf-1.tail05a1ab.ts.net](https://leaf-1.tail05a1ab.ts.net)
+- Tailscale backend IP: `100.88.237.96`
 - Direct backend URL: `http://100.88.237.96:8000`
-- LAN address: `192.168.1.32:8000` (not exposed)
 
-## Start
+Anyone with the public URL can view public pages. Daet Listens authentication is still required for resident, staff, and admin areas.
+
+## Start the backend
 
 ```bash
 docker compose up -d pgsql redis mailpit minio
@@ -18,44 +19,44 @@ APP_URL="https://leaf-1.tail05a1ab.ts.net" \
   php artisan serve --host=100.88.237.96 --port=8000
 ```
 
-Tailscale Serve proxies the private HTTPS URL to the local Tailscale-bound Laravel server.
+The Laravel server listens on the Tailscale IP. PostgreSQL, Redis, Mailpit, and MinIO remain bound to localhost.
+
+## Enable or verify Funnel
+
+```bash
+tailscale funnel --bg --yes http://100.88.237.96:8000
+tailscale funnel status
+```
+
+The status should report:
+
+```text
+https://leaf-1.tail05a1ab.ts.net (Funnel on)
+```
 
 ## Verify
 
 ```bash
-ss -ltnp | grep 100.88.237.96:8000
-curl http://100.88.237.96:8000/
 curl https://leaf-1.tail05a1ab.ts.net/
-tailscale serve status
+ss -ltnp | grep 100.88.237.96:8000
 ```
 
-The LAN address should not accept connections.
+The public URL should return the application without requiring a Tailscale login on the visitor's device.
 
-## Port already in use
+## Disable public access
 
-If the start command reports `Address already in use`, the detached Tailscale server is already running. Check it before starting another process:
+To turn off public exposure and return to Tailscale Serve/private access:
 
 ```bash
-ss -ltnp | grep 100.88.237.96:8000
-curl https://leaf-1.tail05a1ab.ts.net/
-```
-
-Only restart it when the existing listener should be replaced.
-
-## Mobile loading troubleshooting
-
-Make sure the phone's Tailscale app is connected to the same tailnet. Use the HTTPS MagicDNS URL first. If MagicDNS does not resolve, use the direct Tailscale IP fallback:
-
-```text
-http://100.88.237.96:8000
-```
-
-Tailscale Serve requires a one-time operator permission on the host:
-
-```bash
-sudo tailscale set --operator="$USER"
+tailscale funnel --https=443 off
 tailscale serve --bg --yes http://100.88.237.96:8000
-tailscale serve status
 ```
 
-The `tailscale serve status` output should identify the HTTPS endpoint as tailnet-only.
+Review the current exposure with:
+
+```bash
+tailscale serve status
+tailscale funnel status
+```
+
+> Funnel exposes the public website to the internet. Do not enable it on an environment containing sensitive data or demo credentials without reviewing the deployment.
