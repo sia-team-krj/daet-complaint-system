@@ -55,15 +55,27 @@ From the project root, restart only the Laravel PHP server with:
 ./restart-daet-listen.sh
 ```
 
-The helper safely finds and stops the existing PHP listener on port `8000`, starts it again with the upload limits above, writes its PID to `/tmp/daet-listen-server.pid`, and logs output to `storage/logs/daet-listen-server.log`.
+The helper safely finds and stops the existing PHP listener on port `8000`, discovers the current Tailscale IPv4 address, waits for that address to be available, starts Laravel again with the upload limits above, writes its PID to `/tmp/daet-listen-server.pid`, and logs output to `storage/logs/daet-listen-server.log`.
 
 Optional maintenance runs are available:
 
 ```bash
 ./restart-daet-listen.sh --with-services --migrate --build
+
+The `--with-services` option waits for the container health checks before running migrations or starting Laravel.
 ```
 
 Use `./restart-daet-listen.sh --help` to see all options. The helper does not change the Tailscale Funnel configuration; verify it afterward with `tailscale funnel status`.
+
+## Keep the host awake
+
+For a temporary session that keeps the device from sleeping while the laptop lid is closed, run:
+
+```bash
+./keep-device-awake.sh
+```
+
+Press `Ctrl+C` to release the inhibitor. The helper uses `systemd-inhibit` to block idle sleep, suspend, and lid-switch sleep. It does not change permanent power settings. If the device uses Wi-Fi, closing the lid may still cause a network or router power-save event; use Ethernet or disable Wi-Fi power saving for a long-running public deployment.
 
 ## Enable or verify Funnel
 

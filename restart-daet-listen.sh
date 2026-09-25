@@ -8,7 +8,7 @@ SERVER_SCRIPT="$ROOT_DIR/vendor/laravel/framework/src/Illuminate/Foundation/reso
 LOG_FILE="${DAET_LISTEN_LOG_FILE:-$ROOT_DIR/storage/logs/daet-listen-server.log}"
 PID_FILE="${DAET_LISTEN_PID_FILE:-/tmp/daet-listen-server.pid}"
 
-BIND_HOST="${DAET_BIND_HOST:-100.88.237.96}"
+BIND_HOST="${DAET_BIND_HOST:-}"
 PORT="${DAET_PORT:-8000}"
 PUBLIC_URL="${APP_URL:-https://leaf-1.tail05a1ab.ts.net}"
 MINIO_BUCKET="${MINIO_BUCKET:-local}"
@@ -28,7 +28,7 @@ Usage: ./restart-daet-listen.sh [options]
 Safely restarts the Laravel PHP server used by Tailscale Funnel.
 
 Options:
-  --with-services   Start PostgreSQL, Redis, Mailpit, and MinIO first
+  --with-services   Start and wait for PostgreSQL, Redis, Mailpit, and MinIO
   --migrate         Run php artisan migrate --force before starting
   --build           Run npm run build before starting
   --all             Run --with-services, --migrate, and --build
@@ -89,11 +89,23 @@ if [[ ! -f "$SERVER_SCRIPT" ]]; then
     exit 1
 fi
 
+if [[ -z "$BIND_HOST" || "$BIND_HOST" == "auto" ]]; then
+    if command -v tailscale >/dev/null 2>&1; then
+        BIND_HOST="$(tailscale ip -4 2>/dev/null | awk 'NF { print; exit }')"
+    fi
+fi
+
+if [[ -z "$BIND_HOST" ]]; then
+    printf 'Could not determine the Tailscale IPv4 address.\n' >&2
+    printf 'Connect Tailscale or set DAET_BIND_HOST explicitly.\n' >&2
+    exit 1
+fi
+
 cd "$ROOT_DIR"
 
 if ((WITH_SERVICES)); then
     printf 'Starting support services...\n'
-    docker compose up -d pgsql redis mailpit minio
+    docker compose up -d --wait --wait-timeout 60 pgsql redis mailpit minio
 fi
 
 if ((RUN_MIGRATIONS)); then
@@ -108,6 +120,27 @@ fi
 
 listener_pids() {
     lsof -nP -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true
+}
+
+wait_for_bind_host() {
+    if [[ "$BIND_HOST" == "0.0.0.0" || "$BIND_HOST" == "127.0.0.1" ]]; then
+        return 0
+    fi
+
+    if ! command -v ip >/dev/null 2>&1; then
+        printf 'The ip command is required to verify the Tailscale address.\n' >&2
+        return 1
+    fi
+
+    for _ in {1..20}; do
+        if ip -4 addr show dev tailscale0 2>/dev/null | grep -Fq " $BIND_HOST/"; then
+            return 0
+        fi
+        sleep 0.5
+    done
+
+    printf 'Tailscale address %s is not available yet.\n' "$BIND_HOST" >&2
+    return 1
 }
 
 is_our_server() {
@@ -168,28 +201,47 @@ fi
 rm -f "$PID_FILE"
 mkdir -p "$(dirname -- "$LOG_FILE")"
 
-printf 'Starting Laravel on %s:%s...\n' "$BIND_HOST" "$PORT"
-(
-    cd "$PUBLIC_DIR"
-    nohup env \
-        APP_URL="$PUBLIC_URL" \
-        MINIO_BUCKET="$MINIO_BUCKET" \
-        "$PHP_BIN" \
-        -d upload_max_filesize="$UPLOAD_MAX_FILESIZE" \
-        -d post_max_size="$POST_MAX_SIZE" \
-        -d max_file_uploads="$MAX_FILE_UPLOADS" \
-        -S "$BIND_HOST:$PORT" \
-        "$SERVER_SCRIPT" \
-        >>"$LOG_FILE" 2>&1 &
-    printf '%s\n' "$!" > "$PID_FILE"
-)
+if ! wait_for_bind_host; then
+    printf 'Nothing was started because the bind address is unavailable.\n' >&2
+    exit 1
+fi
 
-sleep 1
-pid="$(cat "$PID_FILE")"
-if ! kill -0 "$pid" 2>/dev/null; then
+printf 'Starting Laravel on %s:%s...\n' "$BIND_HOST" "$PORT"
+start_failed=0
+for attempt in 1 2 3; do
+    printf '\n[%s] Starting Laravel (attempt %s/3)...\n' "$(date -Is)" "$attempt" >>"$LOG_FILE"
+    (
+        cd "$PUBLIC_DIR"
+        nohup env \
+            APP_URL="$PUBLIC_URL" \
+            MINIO_BUCKET="$MINIO_BUCKET" \
+            "$PHP_BIN" \
+            -d upload_max_filesize="$UPLOAD_MAX_FILESIZE" \
+            -d post_max_size="$POST_MAX_SIZE" \
+            -d max_file_uploads="$MAX_FILE_UPLOADS" \
+            -S "$BIND_HOST:$PORT" \
+            "$SERVER_SCRIPT" \
+            >>"$LOG_FILE" 2>&1 &
+        printf '%s\n' "$!" > "$PID_FILE"
+    )
+
+    pid="$(cat "$PID_FILE")"
+    for _ in {1..10}; do
+        if kill -0 "$pid" 2>/dev/null && listener_pids | grep -Fxq "$pid"; then
+            start_failed=0
+            break 2
+        fi
+        sleep 0.5
+    done
+
+    start_failed=1
+    rm -f "$PID_FILE"
+    sleep 1
+done
+
+if ((start_failed)); then
     printf 'Laravel failed to start. Recent log output:\n' >&2
     tail -n 30 "$LOG_FILE" >&2 || true
-    rm -f "$PID_FILE"
     exit 1
 fi
 
