@@ -68,6 +68,38 @@ class StaffWorkspaceTest extends TestCase
             ->assertDontSee($otherComplaint->title);
     }
 
+    public function test_staff_queue_uses_a_table_and_limits_each_page_to_five_complaints(): void
+    {
+        $this->seed(DepartmentSeeder::class);
+        $engineering = Department::where('code', 'ENG')->firstOrFail();
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'department_id' => $engineering->id,
+        ]);
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        $complaints = collect(range(1, 6))->map(function (int $index) use ($engineering, $resident): Complaint {
+            return Complaint::factory()->create([
+                'department_id' => $engineering->id,
+                'user_id' => $resident->id,
+                'title' => "Queue item {$index}",
+                'created_at' => now()->subDays(10 - $index),
+                'updated_at' => now()->subDays(10 - $index),
+            ]);
+        });
+
+        $response = $this->actingAs($staff)
+            ->get(route('staff.complaints.index'))
+            ->assertOk()
+            ->assertSee('Complaint queue table')
+            ->assertSee('5 per page')
+            ->assertSee('staff-queue-table', false)
+            ->assertSee('page=2', false)
+            ->assertDontSee($complaints->last()->ticket_id);
+
+        $this->assertSame(5, substr_count($response->getContent(), '<tr class="staff-queue-row'));
+    }
+
     public function test_staff_activity_has_a_dedicated_route(): void
     {
         $this->seed(DepartmentSeeder::class);

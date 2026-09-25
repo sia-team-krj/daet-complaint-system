@@ -64,48 +64,78 @@
     <section class="staff-list-section" aria-labelledby="queue-list-title">
         <div class="staff-section-heading">
             <div>
-                <h2 id="queue-list-title" class="staff-section-title">All queue items</h2>
-                <p class="staff-section-description">{{ $complaints->total() }} {{ Str::plural('complaint', $complaints->total()) }} found.</p>
+                <h2 id="queue-list-title" class="staff-section-title">Complaint queue table</h2>
+                <p class="staff-section-description">{{ $complaints->total() }} {{ Str::plural('complaint', $complaints->total()) }} found · 5 per page.</p>
             </div>
+            @if($complaints->hasPages())
+                <span class="staff-queue-page-label">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }}</span>
+            @endif
         </div>
 
-        <div class="staff-complaint-list">
-            @forelse($complaints as $complaint)
-                @php
-                    $daysOpen = $complaint->created_at->diffInDays(now());
-                    $ageClass = $daysOpen > 14 ? 'staff-complaint-row--overdue' : ($daysOpen > 7 ? 'staff-complaint-row--aging' : 'staff-complaint-row--normal');
-                @endphp
-                <article class="staff-complaint-row {{ $ageClass }}">
-                    <div class="staff-complaint-row-top">
-                        <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-ticket-id">{{ $complaint->ticket_id }}</a>
-                        <span class="staff-status staff-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
-                        <span class="staff-status staff-status--{{ str($complaint->review_status)->slug() }}">{{ $complaint->reviewStatusEnum->label() }}</span>
-                        <span class="staff-priority-label">Suggested: {{ $complaint->suggestedPriorityEnum->label() }} · Confirmed: {{ $complaint->confirmedPriorityEnum?->label() ?? 'Pending' }}</span>
-                        @if($complaint->isModerationFlagged())
-                            <span class="staff-status staff-status--warning">{{ $complaint->moderationLabel() }}</span>
-                        @endif
-                    </div>
-                    <div class="staff-complaint-row-body">
-                        <div class="staff-complaint-copy">
-                            <h3>{{ $complaint->title }}</h3>
-                            <p>{{ str($complaint->category)->replace('_', ' ')->title() }}</p>
-                        </div>
-                        <div class="staff-complaint-meta">
-                            <span>Filed {{ $complaint->created_at->format('M j, Y') }}</span>
-                            <span class="staff-age-pill">{{ $daysOpen }} {{ Str::plural('day', $daysOpen) }} open</span>
-                        </div>
-                        <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-button staff-button--compact staff-button--primary">Review complaint</a>
-                    </div>
-                </article>
-            @empty
-                <div class="staff-empty-state">
-                    <div class="staff-empty-icon" aria-hidden="true">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h5"></path></svg>
-                    </div>
-                    <h2>No complaints found</h2>
-                    <p>There are no complaints matching these filters.</p>
-                </div>
-            @endforelse
+        <div class="admin-table-wrap staff-queue-table-wrap">
+            <table class="admin-table staff-queue-table">
+                <caption class="sr-only">Complaint queue. Five complaints are shown per page.</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Ticket</th>
+                        <th scope="col">Complaint</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Review</th>
+                        <th scope="col">Priority</th>
+                        <th scope="col">Age</th>
+                        <th scope="col"><span class="sr-only">Action</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($complaints as $complaint)
+                        @php
+                            $daysOpen = $complaint->created_at->diffInDays(now());
+                            $ageClass = $daysOpen > 14 ? 'staff-queue-row--overdue' : ($daysOpen > 7 ? 'staff-queue-row--aging' : 'staff-queue-row--normal');
+                            $priority = $complaint->confirmedPriorityEnum?->label() ?? $complaint->suggestedPriorityEnum->label();
+                            $priorityValue = $complaint->confirmedPriorityEnum?->value ?? $complaint->suggested_priority ?? 'unset';
+                        @endphp
+                        <tr class="staff-queue-row {{ $ageClass }}">
+                            <td data-label="Ticket">
+                                <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-ticket-id">{{ $complaint->ticket_id }}</a>
+                                <span class="staff-queue-subtext">Filed {{ $complaint->created_at->format('M j, Y') }}</span>
+                            </td>
+                            <td data-label="Complaint">
+                                <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-queue-title">{{ $complaint->title }}</a>
+                                <span class="staff-queue-subtext">{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
+                            </td>
+                            <td data-label="Status">
+                                <span class="staff-status staff-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
+                                @if($complaint->isModerationFlagged())
+                                    <span class="staff-status staff-status--warning staff-queue-secondary-status">{{ $complaint->moderationLabel() }}</span>
+                                @endif
+                            </td>
+                            <td data-label="Review">
+                                <span class="staff-status staff-status--{{ str($complaint->review_status)->slug() }}">{{ $complaint->reviewStatusEnum->label() }}</span>
+                            </td>
+                            <td data-label="Priority">
+                                <span class="staff-queue-priority staff-queue-priority--{{ str($priorityValue)->slug() }}">{{ $priority }}</span>
+                                <span class="staff-queue-subtext">Suggested: {{ $complaint->suggestedPriorityEnum->label() }}</span>
+                            </td>
+                            <td data-label="Age">
+                                <span class="staff-age-pill">{{ $daysOpen }} {{ Str::plural('day', $daysOpen) }} open</span>
+                            </td>
+                            <td data-label="Action">
+                                <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-button staff-button--compact staff-button--primary">Review</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="staff-queue-empty">
+                                <div class="staff-empty-icon" aria-hidden="true">
+                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h5"></path></svg>
+                                </div>
+                                <strong>No complaints found</strong>
+                                <span>There are no complaints matching these filters.</span>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
         @if($complaints->hasPages())

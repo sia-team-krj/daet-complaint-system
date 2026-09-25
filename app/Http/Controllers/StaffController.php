@@ -206,7 +206,7 @@ class StaffController extends Controller
             ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
             ->orderBy('created_at', 'asc')
-            ->paginate(10)
+            ->paginate(5)
             ->withQueryString();
 
         $stats = [

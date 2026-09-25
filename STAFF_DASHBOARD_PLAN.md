@@ -50,7 +50,7 @@ Add a staff complaint index route as a real queue destination, scoped to the aut
 - Add a department context header.
 - Keep queue and my-activity tabs as first-class navigation.
 - Make status filters, search, complaint rows, urgency, assignment, and update actions easier to scan.
-- Preserve current pagination and department authorization.
+- Render the queue as a responsive table with five complaints per page and preserve department authorization.
 - Add empty states for no queue items and no personal activity.
 - Keep the existing complaint status and mail behavior unchanged.
 
