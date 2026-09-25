@@ -50,6 +50,6 @@ Private complaints will not be searchable on the public page. Authenticated resi
 
 - Add tests for public/private filtering, spam exclusion, approximate coordinates, table rendering, filters, and authenticated layout assets.
 - Add public detail coverage for progress dates, resident evidence, public documentation, privacy redaction, and administrator navigation.
-- `php artisan test`: 83 tests / 397 assertions passing.
+- `php artisan test`: 83 tests / 399 assertions passing.
 - `npm run build` and `php artisan view:cache` complete successfully.
 - Impeccable detection completed with no findings on the changed transparency surfaces.

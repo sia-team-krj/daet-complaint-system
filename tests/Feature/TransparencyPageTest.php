@@ -91,6 +91,8 @@ class TransparencyPageTest extends TestCase
             ->assertSee($publicOne->title)
             ->assertSee($publicTwo->title)
             ->assertSee(route('transparency.complaints.show', $publicOne), false)
+            ->assertSee('transparency-mobile-list', false)
+            ->assertSee('data-report-id="'.$publicOne->ticket_id.'"', false)
             ->assertSee('All public complaints.')
             ->assertSee('Barangay VI, Daet')
             ->assertSee('Community neighbor')

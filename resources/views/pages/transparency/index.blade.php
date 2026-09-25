@@ -456,6 +456,10 @@
             overflow-x: auto;
         }
 
+        .transparency-mobile-list {
+            display: none;
+        }
+
         .transparency-table {
             width: 100%;
             min-width: 920px;
@@ -736,122 +740,128 @@
                 padding: 11px 15px;
             }
 
-            .transparency-table-scroll {
-                overflow: visible;
-            }
-
-            .transparency-table {
-                display: block;
-                min-width: 0;
-            }
-
-            .transparency-table thead {
+            .transparency-desktop-table {
                 display: none;
             }
 
-            .transparency-table tbody {
+            .transparency-mobile-list {
                 display: grid;
                 gap: 10px;
-                padding: 12px;
             }
 
-            .transparency-table tbody tr {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                align-items: start;
-                gap: 8px 12px;
-                padding: 12px;
+            .transparency-mobile-card {
+                min-width: 0;
+                padding: 13px;
                 border: 1px solid rgba(201, 168, 76, 0.25);
                 border-radius: 6px;
                 background: #fff;
             }
 
-            .transparency-table tbody tr[hidden] {
+            .transparency-mobile-card[hidden] {
                 display: none;
             }
 
-            .transparency-table td {
+            .transparency-mobile-card__top {
                 display: flex;
-                flex-direction: column;
                 align-items: flex-start;
-                justify-content: flex-start;
+                justify-content: space-between;
+                gap: 10px;
+            }
+
+            .transparency-mobile-ticket {
                 min-width: 0;
-                padding: 0;
-                border: 0;
+                overflow: hidden;
+                color: #8b6719;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-decoration: none;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .transparency-mobile-card__title {
+                display: block;
+                margin-top: 10px;
+                color: var(--tp-navy);
+                font-family: "Cormorant Garamond", Georgia, serif;
+                font-size: 21px;
+                font-weight: 700;
+                line-height: 1.05;
+                overflow-wrap: break-word;
+                text-decoration: none;
+                word-break: normal;
+            }
+
+            .transparency-mobile-card__reporter {
+                display: block;
+                margin-top: 4px;
+                color: var(--tp-muted);
                 font-size: 10px;
             }
 
-            .transparency-table td::before {
-                display: block;
+            .transparency-mobile-card__meta {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 9px 12px;
+                margin-top: 13px;
+            }
+
+            .transparency-mobile-card__meta > div {
+                min-width: 0;
+            }
+
+            .transparency-mobile-card__meta dt {
                 margin-bottom: 3px;
                 color: var(--tp-muted);
-                content: attr(data-label);
                 font-size: 8px;
                 font-weight: 700;
                 letter-spacing: 0.08em;
                 text-transform: uppercase;
             }
 
-            .transparency-cell-ticket {
-                grid-column: 1;
-                grid-row: 1;
+            .transparency-mobile-card__meta dd {
+                min-width: 0;
+                margin: 0;
+                color: var(--tp-ink);
+                font-size: 10px;
+                line-height: 1.4;
+                overflow-wrap: anywhere;
+                word-break: normal;
             }
 
-            .transparency-cell-department {
-                grid-column: 2;
-                grid-row: 1;
-                align-items: flex-end;
-                text-align: right;
+            .transparency-mobile-card__footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-top: 13px;
+                padding-top: 10px;
+                border-top: 1px solid rgba(11, 31, 58, 0.08);
             }
 
-            .transparency-cell-department::before {
-                text-align: right;
+            .transparency-mobile-card__footer .transparency-row-link {
+                margin-top: 0;
             }
 
-            .transparency-cell-category {
-                grid-column: 1;
-                grid-row: 2;
+            .transparency-mobile-empty {
+                padding: 28px 16px;
+                color: var(--tp-muted);
+                text-align: center;
             }
 
-            .transparency-cell-location {
-                grid-column: 2;
-                grid-row: 2;
-                align-items: flex-end;
-                text-align: right;
+            .transparency-mobile-empty strong {
+                display: block;
+                margin-bottom: 5px;
+                color: var(--tp-navy);
+                font-family: "Cormorant Garamond", Georgia, serif;
+                font-size: 22px;
             }
 
-            .transparency-cell-location::before {
-                text-align: right;
-            }
-
-            .transparency-cell-status {
-                grid-column: 1 / -1;
-                grid-row: 3;
-                align-items: flex-start;
-                text-align: left;
-            }
-
-            .transparency-cell-status::before {
-                text-align: left;
-            }
-
-            .transparency-cell-complaint {
-                grid-column: 1 / -1;
-                grid-row: 4;
-            }
-
-            .transparency-cell-date {
-                grid-column: 1 / -1;
-                grid-row: 5;
-            }
-
-            .transparency-complaint-title {
-                max-width: none;
-                font-size: 13px;
-            }
-
-            .transparency-row-link {
-                margin-top: 5px;
+            .transparency-mobile-empty p {
+                margin: 0;
+                font-size: 11px;
+                line-height: 1.5;
             }
 
             .transparency-footer {
@@ -1011,7 +1021,7 @@
                         <span>Public visibility only</span>
                     </div>
 
-                    <div class="transparency-table-scroll">
+                    <div class="transparency-table-scroll transparency-desktop-table">
                         <table class="transparency-table">
                             <thead>
                                 <tr>
@@ -1028,6 +1038,7 @@
                                 @forelse($reports as $report)
                                     <tr
                                         data-report-row
+                                        data-report-id="{{ $report['ticket_id'] }}"
                                         data-search="{{ strtolower(implode(' ', [$report['ticket_id'], $report['title'], $report['category_label'], $report['department'], $report['location'], $report['reporter']])) }}"
                                         data-department="{{ $report['department'] }}"
                                         data-category="{{ $report['category'] }}"
@@ -1056,7 +1067,7 @@
                                         </td>
                                     </tr>
                                 @endforelse
-                                <tr id="complaint-no-results" class="transparency-empty-row" hidden>
+                                <tr id="complaint-no-results" data-no-results class="transparency-empty-row" hidden>
                                     <td colspan="7">
                                         <strong>No matching complaints.</strong>
                                         Try a different search term or reset the filters.
@@ -1064,6 +1075,46 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="transparency-mobile-list" aria-label="Public complaint list">
+                        @forelse($reports as $report)
+                            <article
+                                class="transparency-mobile-card"
+                                data-report-row
+                                data-report-id="{{ $report['ticket_id'] }}"
+                                data-search="{{ strtolower(implode(' ', [$report['ticket_id'], $report['title'], $report['category_label'], $report['department'], $report['location'], $report['reporter']])) }}"
+                                data-department="{{ $report['department'] }}"
+                                data-category="{{ $report['category'] }}"
+                                data-status="{{ $report['status_key'] }}"
+                            >
+                                <div class="transparency-mobile-card__top">
+                                    <a href="{{ $report['url'] }}" class="transparency-mobile-ticket">{{ $report['ticket_id'] }}</a>
+                                    <span class="transparency-status transparency-status--{{ $report['status_key'] }}">{{ $report['status_label'] }}</span>
+                                </div>
+                                <a href="{{ $report['url'] }}" class="transparency-mobile-card__title">{{ $report['title'] }}</a>
+                                <span class="transparency-mobile-card__reporter">{{ $report['reporter'] }}</span>
+                                <dl class="transparency-mobile-card__meta">
+                                    <div><dt>Category</dt><dd>{{ $report['category_label'] }}</dd></div>
+                                    <div><dt>Department</dt><dd>{{ $report['department'] }}</dd></div>
+                                    <div><dt>Location</dt><dd>{{ $report['location'] }}</dd></div>
+                                    <div><dt>Reported</dt><dd><time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time></dd></div>
+                                </dl>
+                                <div class="transparency-mobile-card__footer">
+                                    <span class="transparency-table-muted">Public visibility only</span>
+                                    <a href="{{ $report['url'] }}" class="transparency-row-link" aria-label="Open {{ $report['ticket_id'] }}">View details</a>
+                                </div>
+                            </article>
+                        @empty
+                            <div class="transparency-mobile-empty">
+                                <strong>No public complaints to show.</strong>
+                                <p>Public reports will appear here when residents choose to share them.</p>
+                            </div>
+                        @endforelse
+                        <div data-no-results class="transparency-mobile-empty" hidden>
+                            <strong>No matching complaints.</strong>
+                            <p>Try a different search term or reset the filters.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -1181,22 +1232,22 @@
             const status = document.getElementById('complaint-status');
             const reset = document.getElementById('complaint-reset');
             const results = document.getElementById('complaint-results');
-            const noResults = document.getElementById('complaint-no-results');
+            const noResults = Array.from(document.querySelectorAll('[data-no-results]'));
             const rows = Array.from(document.querySelectorAll('[data-report-row]'));
 
-            if (!search || !department || !category || !status || !reset || !results || !noResults || rows.length === 0) {
+            if (!search || !department || !category || !status || !reset || !results || noResults.length === 0 || rows.length === 0) {
                 return;
             }
 
             const normalize = (value) => (value || '').trim().toLocaleLowerCase();
-            const total = rows.length;
+            const total = new Set(rows.map((row) => row.dataset.reportId || row.dataset.search)).size;
 
             const applyFilters = () => {
                 const term = normalize(search.value);
                 const selectedDepartment = normalize(department.value);
                 const selectedCategory = normalize(category.value);
                 const selectedStatus = normalize(status.value);
-                let visible = 0;
+                const reportVisibility = new Map();
 
                 rows.forEach((row) => {
                     const matchesSearch = !term || normalize(row.dataset.search).includes(term);
@@ -1204,13 +1255,17 @@
                     const matchesCategory = !selectedCategory || normalize(row.dataset.category) === selectedCategory;
                     const matchesStatus = !selectedStatus || normalize(row.dataset.status) === selectedStatus;
                     const matches = matchesSearch && matchesDepartment && matchesCategory && matchesStatus;
+                    const reportId = row.dataset.reportId || row.dataset.search;
 
                     row.hidden = !matches;
-                    if (matches) visible += 1;
+                    reportVisibility.set(reportId, matches);
                 });
 
+                const visible = Array.from(reportVisibility.values()).filter(Boolean).length;
                 results.textContent = `Showing ${visible} of ${total} public complaints`;
-                noResults.hidden = visible !== 0;
+                noResults.forEach((emptyState) => {
+                    emptyState.hidden = visible !== 0;
+                });
             };
 
             search.addEventListener('input', applyFilters);
