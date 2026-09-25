@@ -7,8 +7,9 @@ use App\Models\ComplaintLog;
 use App\Models\Department;
 use App\Models\User;
 use App\Services\DepartmentRouter;
+use Database\Seeders\DepartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ComplaintDepartmentRoutingTest extends TestCase
@@ -23,19 +24,16 @@ class ComplaintDepartmentRoutingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('minio');
 
-        // Seed departments
-        Department::create(['code' => 'ENGR', 'name' => 'Engineering Office', 'is_active' => true]);
-        Department::create(['code' => 'GSO', 'name' => 'General Services Office', 'is_active' => true]);
-        Department::create(['code' => 'BPLS', 'name' => 'Business Permits & Licensing', 'is_active' => true]);
-        Department::create(['code' => 'PNP', 'name' => 'Philippine National Police', 'is_active' => true]);
-        Department::create(['code' => 'MAO', 'name' => 'Municipal Agriculture Office', 'is_active' => true]);
+        // Seed official LGU departments
+        $this->seed(DepartmentSeeder::class);
 
         // Create users
         $this->citizen = User::factory()->create(['role' => 'citizen']);
         $this->engineeringStaff = User::factory()->create([
             'role' => 'staff',
-            'department_id' => Department::where('code', 'ENGR')->first()->id,
+            'department_id' => Department::where('code', 'ENG')->first()->id,
         ]);
         $this->gsoStaff = User::factory()->create([
             'role' => 'staff',
@@ -44,32 +42,32 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function road_damage_category_resolves_to_engineering(): void
     {
         $dept = DepartmentRouter::resolve('road_damage');
         $this->assertNotNull($dept);
-        $this->assertEquals('ENGR', $dept->code);
+        $this->assertEquals('ENG', $dept->code);
         $this->assertEquals('Engineering Office', $dept->name);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function flooding_category_resolves_to_engineering(): void
     {
         $dept = DepartmentRouter::resolve('flooding');
         $this->assertNotNull($dept);
-        $this->assertEquals('ENGR', $dept->code);
+        $this->assertEquals('ENG', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function streetlight_category_resolves_to_engineering(): void
     {
         $dept = DepartmentRouter::resolve('streetlight');
         $this->assertNotNull($dept);
-        $this->assertEquals('ENGR', $dept->code);
+        $this->assertEquals('ENG', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function garbage_category_resolves_to_gso(): void
     {
         $dept = DepartmentRouter::resolve('garbage');
@@ -77,7 +75,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->assertEquals('GSO', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function sanitation_category_resolves_to_gso(): void
     {
         $dept = DepartmentRouter::resolve('sanitation');
@@ -85,31 +83,31 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->assertEquals('GSO', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function business_permit_category_resolves_to_bpls(): void
     {
         $dept = DepartmentRouter::resolve('business_permit');
         $this->assertNotNull($dept);
-        $this->assertEquals('BPLS', $dept->code);
+        $this->assertEquals('BPLO', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function noise_complaint_category_resolves_to_pnp(): void
     {
         $dept = DepartmentRouter::resolve('noise_complaint');
         $this->assertNotNull($dept);
-        $this->assertEquals('PNP', $dept->code);
+        $this->assertEquals('OM', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function stray_animals_category_resolves_to_agriculture(): void
     {
         $dept = DepartmentRouter::resolve('stray_animals');
         $this->assertNotNull($dept);
-        $this->assertEquals('MAO', $dept->code);
+        $this->assertEquals('HLTH', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function unknown_category_falls_back_to_gso(): void
     {
         $dept = DepartmentRouter::resolve('unknown_category');
@@ -117,7 +115,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->assertEquals('GSO', $dept->code);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function complaint_is_automatically_routed_on_submission(): void
     {
         $this->actingAs($this->citizen);
@@ -126,6 +124,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
             'category' => 'road_damage',
             'title' => 'Large pothole on main road',
             'description' => 'There is a dangerous pothole that needs immediate attention. It has been there for weeks.',
+            'image' => $this->complaintEvidence(),
             'urgency' => 'High',
             'terms' => '1',
         ]);
@@ -135,13 +134,13 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $complaint = Complaint::latest()->first();
         $this->assertNotNull($complaint->department_id);
         $this->assertEquals(
-            Department::where('code', 'ENGR')->first()->id,
+            Department::where('code', 'ENG')->first()->id,
             $complaint->department_id
         );
-        $this->assertEquals('Submitted', $complaint->status->value);
+        $this->assertEquals('Submitted', $complaint->status);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function complaint_log_is_created_on_submission(): void
     {
         $this->actingAs($this->citizen);
@@ -150,6 +149,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
             'category' => 'garbage',
             'title' => 'Uncollected garbage',
             'description' => 'Garbage has not been collected for 3 days in our barangay.',
+            'image' => $this->complaintEvidence(),
             'urgency' => 'Medium',
             'terms' => '1',
         ]);
@@ -161,10 +161,10 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->assertNull($log->previous_status);
         $this->assertEquals('Submitted', $log->new_status);
         $this->assertStringContainsString('General Services Office', $log->comment);
-        $this->assertEquals($this->citizen->id, $log->changed_by);
+        $this->assertEquals($this->citizen->id, $log->actor_id);
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function staff_from_correct_department_can_view_complaint(): void
     {
         $complaint = Complaint::factory()->create([
@@ -177,7 +177,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
             ->assertOk();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function staff_from_wrong_department_cannot_view_complaint(): void
     {
         $complaint = Complaint::factory()->create([
@@ -187,10 +187,10 @@ class ComplaintDepartmentRoutingTest extends TestCase
 
         $this->actingAs($this->gsoStaff)
             ->get(route('staff.complaints.show', $complaint))
-            ->assertRedirect();
+            ->assertForbidden();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function admin_can_view_any_complaint_regardless_of_department(): void
     {
         $complaint = Complaint::factory()->create([
@@ -203,7 +203,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
             ->assertOk();
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function success_page_shows_routed_department(): void
     {
         $this->actingAs($this->citizen);
@@ -212,6 +212,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
             'category' => 'business_permit',
             'title' => 'Business permit issue',
             'description' => 'Need help with my business permit renewal.',
+            'image' => $this->complaintEvidence(),
             'urgency' => 'Low',
             'terms' => '1',
         ]);
@@ -223,10 +224,10 @@ class ComplaintDepartmentRoutingTest extends TestCase
 
         $response->assertOk()
             ->assertSee($complaint->ticket_id)
-            ->assertSee('Business Permits');
+            ->assertSee('Business Permit and Licensing Office');
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function get_category_options_returns_grouped_structure(): void
     {
         $options = DepartmentRouter::getCategoryOptions();

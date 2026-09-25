@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
 
@@ -62,8 +61,10 @@ class User extends Authenticatable implements MustVerifyEmail
         "password",
         "role",
         "department_id",
+        "created_by",
         "display_alias",
         "prefers_anonymity",
+        "is_active",
     ];
 
     protected $hidden = ["password", "remember_token"];
@@ -74,6 +75,7 @@ class User extends Authenticatable implements MustVerifyEmail
             "email_verified_at" => "datetime",
             "password" => "hashed",
             "prefers_anonymity" => "boolean",
+            "is_active" => "boolean",
         ];
     }
 
@@ -103,6 +105,19 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->full_name;
+    }
+
+    /**
+     * Staff-safe resident label. Staff must never receive a resident's real
+     * identity through complaint views; administrators use full_name instead.
+     */
+    public function getStaffSafeNameAttribute(): string
+    {
+        $alias = trim((string) $this->display_alias);
+
+        return $alias !== ''
+            ? $alias
+            : 'Resident #' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -156,10 +171,31 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Complaint::class);
     }
 
+    /** All complaints assigned to this user (for staff members) */
+    public function assignedComplaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class, 'assigned_staff_id');
+    }
+
     /** All complaint log entries where this user was the actor (staff/admin) */
     public function complaintActions(): HasMany
     {
         return $this->hasMany(ComplaintLog::class, "actor_id");
+    }
+
+    public function createdInvitations(): HasMany
+    {
+        return $this->hasMany(InvitationCode::class, 'created_by');
+    }
+
+    public function redeemedInvitation(): HasMany
+    {
+        return $this->hasMany(InvitationCode::class, 'redeemed_by');
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'actor_id');
     }
 
     // ─────────────────────────────────────────────

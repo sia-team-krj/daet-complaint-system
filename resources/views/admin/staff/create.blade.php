@@ -1,55 +1,67 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
+
 @section('title', 'Create Staff Account — Admin')
-@section('content')
-<style>
-  :root { --navy: #0B1F3A; --navy-mid: #12294d; --gold: #C9A84C; --gold-light: #E2C06A; --border-gold: rgba(201,168,76,0.20); }
-  .admin-form { min-height: calc(100svh - 64px); background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); padding: 32px 40px; }
-  .page-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 24px; }
-  .form-card { max-width: 600px; background: rgba(255,255,255,0.04); border: 1px solid var(--border-gold); border-radius: 6px; padding: 32px; }
-  .form-group { margin-bottom: 20px; }
-  .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
-  .form-input, .form-select { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; padding: 12px; color: #fff; font-size: 14px; }
-  .form-input:focus, .form-select:focus { outline: none; border-color: var(--gold); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .btn-submit { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); border: none; padding: 14px 32px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 14px; }
-  .btn-cancel { color: rgba(255,255,255,0.6); text-decoration: none; margin-left: 16px; }
-</style>
-<div class="admin-form">
-  <h1 class="page-title">Create Staff Account</h1>
-  <form method="POST" action="{{ route('admin.staff.store') }}" class="form-card">
-    @csrf
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">First Name</label>
-        <input type="text" name="first_name" class="form-input" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Last Name</label>
-        <input type="text" name="last_name" class="form-input" required>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input type="email" name="email" class="form-input" required>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Contact Number</label>
-      <input type="text" name="contact_number" class="form-input" placeholder="9171234567">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Department Assignment</label>
-      <select name="department_id" class="form-select" required>
-        <option value="">Select Department</option>
-        @foreach($departments as $d)
-          <option value="{{ $d->id }}">{{ $d->name }}</option>
-        @endforeach
-      </select>
-    </div>
-    <div style="margin-top: 24px;">
-      <button type="submit" class="btn-submit">Create Staff Account</button>
-      <a href="{{ route('admin.staff.index') }}" class="btn-cancel">Cancel</a>
-    </div>
-    <p style="color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 20px;">A welcome email with a temporary password will be sent to the staff member.</p>
-  </form>
+@section('admin-content')
+<div class="admin-page admin-page--narrow">
+    <nav class="admin-breadcrumb" aria-label="Breadcrumb">
+        <a href="{{ route('admin.staff.index') }}">Staff accounts</a>
+        <span aria-hidden="true">/</span>
+        <span>Create account</span>
+    </nav>
+
+    <header class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Create staff account</h1>
+            <p class="admin-page-description">For department onboarding, use an expiring invitation so account creation stays traceable and controlled.</p>
+        </div>
+        <a href="{{ route('admin.invitations.index') }}" class="admin-button admin-button--primary">Use invitation instead</a>
+    </header>
+
+    @include('admin.partials.flash')
+
+    <section class="admin-panel">
+        <div class="admin-panel-heading">
+            <h2 class="admin-panel-title">Direct account creation</h2>
+        </div>
+        <form method="POST" action="{{ route('admin.staff.store') }}" class="admin-panel-body admin-form-stack">
+            @csrf
+            <div class="admin-form-grid">
+                <label class="admin-field">
+                    <span>First name</span>
+                    <input type="text" name="first_name" class="admin-input" value="{{ old('first_name') }}" required maxlength="100">
+                    @error('first_name')<span class="admin-field-error">{{ $message }}</span>@enderror
+                </label>
+                <label class="admin-field">
+                    <span>Last name</span>
+                    <input type="text" name="last_name" class="admin-input" value="{{ old('last_name') }}" required maxlength="100">
+                    @error('last_name')<span class="admin-field-error">{{ $message }}</span>@enderror
+                </label>
+            </div>
+            <label class="admin-field">
+                <span>Email address</span>
+                <input type="email" name="email" class="admin-input" value="{{ old('email') }}" required maxlength="255">
+                @error('email')<span class="admin-field-error">{{ $message }}</span>@enderror
+            </label>
+            <label class="admin-field">
+                <span>Contact number</span>
+                <input type="text" name="contact_number" class="admin-input" value="{{ old('contact_number') }}" inputmode="numeric" placeholder="09171234567">
+                @error('contact_number')<span class="admin-field-error">{{ $message }}</span>@enderror
+            </label>
+            <label class="admin-field">
+                <span>Department</span>
+                <select name="department_id" class="admin-input" required>
+                    <option value="">Select a department</option>
+                    @foreach($departments as $department)
+                        <option value="{{ $department->id }}" @selected((string) old('department_id') === (string) $department->id)>{{ $department->name }}</option>
+                    @endforeach
+                </select>
+                @error('department_id')<span class="admin-field-error">{{ $message }}</span>@enderror
+            </label>
+            <div class="admin-form-actions">
+                <button type="submit" class="admin-button admin-button--primary">Create and email temporary password</button>
+                <a href="{{ route('admin.staff.index') }}" class="admin-button admin-button--secondary">Cancel</a>
+            </div>
+        </form>
+    </section>
 </div>
 @endsection

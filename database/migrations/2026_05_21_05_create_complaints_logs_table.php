@@ -42,6 +42,9 @@ return new class extends Migration {
             $table->string("new_status", 50);
             $table->text("comment")->nullable(); // e.g., "Contractor dispatched to Brgy. Lag-on"
 
+            // Only admin/staff can see this note (not shown to citizens)
+            $table->boolean("is_internal")->default(false)->after("comment");
+
             // Only created_at — logs are immutable, they have no updated_at
             $table->timestamp("created_at")->useCurrent();
         });

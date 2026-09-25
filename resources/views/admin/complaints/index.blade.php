@@ -1,102 +1,177 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
+
 @section('title', 'All Complaints — Admin')
-@section('content')
-<style>
-  :root { --navy: #0B1F3A; --navy-mid: #12294d; --gold: #C9A84C; --border-gold: rgba(201,168,76,0.20); }
-  .admin-root { min-height: calc(100svh - 64px); background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); display: flex; }
-  .admin-sidebar { width: 280px; background: rgba(255,255,255,0.03); border-right: 1px solid var(--border-gold); padding: 24px 0; }
-  .admin-main { flex: 1; padding: 32px 40px; }
-  .page-title { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 24px; }
-  .filter-bar { background: rgba(255,255,255,0.04); border: 1px solid var(--border-gold); border-radius: 6px; padding: 20px; margin-bottom: 24px; display: flex; gap: 16px; flex-wrap: wrap; align-items: end; }
-  .filter-group { display: flex; flex-direction: column; gap: 6px; }
-  .filter-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); }
-  .filter-input, .filter-select { background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; padding: 10px 14px; color: #fff; font-size: 13px; min-width: 160px; }
-  .filter-input::placeholder { color: rgba(255,255,255,0.3); }
-  .btn-filter { background: var(--gold); color: var(--navy); border: none; padding: 10px 20px; border-radius: 4px; font-weight: 700; cursor: pointer; }
-  .btn-export { background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 10px 20px; border-radius: 4px; text-decoration: none; }
-  .table-wrap { background: rgba(255,255,255,0.04); border: 1px solid var(--border-gold); border-radius: 6px; overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { background: rgba(255,255,255,0.03); padding: 14px 16px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.5); border-bottom: 1px solid var(--border-gold); }
-  td { padding: 16px; color: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(201,168,76,0.1); }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-  .ticket-id { color: var(--gold); font-weight: 700; }
-  .btn-manage { padding: 6px 12px; border: 1px solid var(--gold); color: var(--gold); text-decoration: none; border-radius: 4px; font-size: 11px; }
-  .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-  .pagination { padding: 16px; display: flex; justify-content: center; }
-  .checkbox { width: 16px; height: 16px; accent-color: var(--gold); }
-</style>
-<div class="admin-root">
-  @include('admin.partials.sidebar')
-  <main class="admin-main">
-    <h1 class="page-title">All Complaints</h1>
-    <form method="GET" class="filter-bar">
-      <div class="filter-group">
-        <label class="filter-label">Department</label>
-        <select name="department" class="filter-select">
-          <option value="">All</option>
-          <option value="unassigned" {{ request('department') === 'unassigned' ? 'selected' : '' }}>Unassigned</option>
-          @foreach($departments as $d)
-            <option value="{{ $d->id }}" {{ request('department') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">Status</label>
-        <select name="status" class="filter-select">
-          <option value="">All</option>
-          @foreach($statuses as $s)
-            <option value="{{ $s->value }}" {{ request('status') === $s->value ? 'selected' : '' }}>{{ $s->label() }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">From</label>
-        <input type="date" name="date_from" class="filter-input" value="{{ request('date_from') }}">
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">To</label>
-        <input type="date" name="date_to" class="filter-input" value="{{ request('date_to') }}">
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">Search</label>
-        <input type="text" name="search" class="filter-input" placeholder="Ticket ID..." value="{{ request('search') }}">
-      </div>
-      <button type="submit" class="btn-filter">Filter</button>
-      <a href="{{ route('admin.complaints.export', request()->all()) }}" class="btn-export">Export CSV</a>
+@section('admin-content')
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">All complaints</h1>
+            <p class="admin-page-description">Filter the municipal queue, reassign ownership, and review every service request.</p>
+        </div>
+        <a href="{{ route('admin.complaints.export', request()->query()) }}" class="admin-button admin-button--secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>
+            Export CSV
+        </a>
+    </header>
+
+    @include('admin.partials.flash')
+
+    <section class="admin-filter-panel" aria-label="Complaint filters">
+        <form method="GET" action="{{ route('admin.complaints.index') }}" class="admin-filter-grid">
+            <label class="admin-field">
+                <span>Department</span>
+                <select name="department" class="admin-input">
+                    <option value="">All departments</option>
+                    <option value="unassigned" @selected(request('department') === 'unassigned')>Unassigned</option>
+                    @foreach($departments as $department)
+                        <option value="{{ $department->id }}" @selected((string) request('department') === (string) $department->id)>{{ $department->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="admin-field">
+                <span>Status</span>
+                <select name="status" class="admin-input">
+                    <option value="">All statuses</option>
+                    @foreach($statuses as $status)
+                        <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="admin-field">
+                <span>Review status</span>
+                <select name="review" class="admin-input">
+                    <option value="">All review statuses</option>
+                    @foreach($reviewStatusOptions as $reviewOption)
+                        <option value="{{ $reviewOption->value }}" @selected(request('review') === $reviewOption->value)>{{ $reviewOption->label() }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="admin-field">
+                <span>Confirmed priority</span>
+                <select name="priority" class="admin-input">
+                    <option value="">All priorities</option>
+                    @foreach($priorityOptions as $priorityOption)
+                        <option value="{{ $priorityOption->value }}" @selected(request('priority') === $priorityOption->value)>{{ $priorityOption->label() }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="admin-field">
+                <span>Moderation</span>
+                <select name="flagged" class="admin-input">
+                    <option value="">All complaints</option>
+                    <option value="1" @selected(request('flagged') === '1')>Flagged only</option>
+                </select>
+            </label>
+            <label class="admin-field">
+                <span>From</span>
+                <input type="date" name="date_from" class="admin-input" value="{{ request('date_from') }}">
+            </label>
+            <label class="admin-field">
+                <span>To</span>
+                <input type="date" name="date_to" class="admin-input" value="{{ request('date_to') }}">
+            </label>
+            <label class="admin-field admin-field--wide">
+                <span>Ticket ID</span>
+                <input type="search" name="search" class="admin-input" placeholder="Search by ticket ID" value="{{ request('search') }}">
+            </label>
+            <div class="admin-filter-actions">
+                <button type="submit" class="admin-button admin-button--primary">Apply filters</button>
+                @if(request()->hasAny(['department', 'status', 'review', 'priority', 'flagged', 'date_from', 'date_to', 'search']))
+                    <a href="{{ route('admin.complaints.index') }}" class="admin-button admin-button--secondary">Clear</a>
+                @endif
+            </div>
+        </form>
+    </section>
+
+    <form method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" class="admin-bulk-form">
+        @csrf
+        <section class="admin-section admin-section--flush" aria-labelledby="complaint-queue-title">
+            <div class="admin-section-heading">
+                <div>
+                    <h2 id="complaint-queue-title" class="admin-section-title">Complaint queue</h2>
+                    <p class="admin-section-description">{{ $complaints->total() }} {{ Str::plural('complaint', $complaints->total()) }} found.</p>
+                </div>
+                <div class="admin-bulk-controls">
+                    <label class="admin-field admin-field--compact">
+                        <span>Reassign selected to</span>
+                        <select name="department_id" class="admin-input">
+                            <option value="">Unassigned</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}">{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="submit" class="admin-button admin-button--secondary" data-bulk-submit>Reassign selected</button>
+                </div>
+            </div>
+
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th class="admin-table__checkbox"><input type="checkbox" data-select-all="complaint-checkboxes" aria-label="Select all complaints"></th>
+                            <th>Ticket</th><th>Citizen</th><th>Department</th><th>Category</th><th>Status</th><th>Review</th><th>Priority</th><th>Moderation</th><th>Filed</th><th><span class="sr-only">Action</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($complaints as $complaint)
+                            <tr>
+                                <td class="admin-table__checkbox"><input type="checkbox" name="complaint_ids[]" value="{{ $complaint->id }}" data-complaint-checkbox aria-label="Select {{ $complaint->ticket_id }}"></td>
+                                <td><span class="admin-ticket-id">{{ $complaint->ticket_id }}</span></td>
+                                <td>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</td>
+                                <td>{{ $complaint->department?->name ?? 'Unassigned' }}</td>
+                                <td>{{ str($complaint->category)->replace('_', ' ')->title() }}</td>
+                                <td><span class="admin-status admin-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span></td>
+                                <td><span class="admin-status admin-status--{{ str($complaint->review_status)->slug() }}">{{ $complaint->reviewStatusEnum->label() }}</span></td>
+                                <td class="admin-muted-cell">
+                                    <span>Suggested: {{ $complaint->suggestedPriorityEnum->label() }}</span><br>
+                                    <span>Confirmed: {{ $complaint->confirmedPriorityEnum?->label() ?? 'Pending' }}</span>
+                                </td>
+                                <td>
+                                    @if($complaint->isModerationFlagged())
+                                        <span class="admin-status admin-status--warning">{{ $complaint->moderationLabel() }}</span>
+                                    @else
+                                        <span class="admin-muted-cell">Clear</span>
+                                    @endif
+                                </td>
+                                <td class="admin-muted-cell">{{ $complaint->created_at?->format('M j, Y') }}</td>
+                                <td><a href="{{ route('admin.complaints.show', $complaint) }}" class="admin-button admin-button--compact admin-button--secondary">Manage</a></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="11" class="admin-empty-cell">No complaints match the selected filters.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </form>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th><input type="checkbox" class="checkbox" id="selectAll"></th>
-            <th>Ticket</th>
-            <th>Citizen</th>
-            <th>Department</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Filed</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          @forelse($complaints as $c)
-            <tr>
-              <td><input type="checkbox" class="checkbox" name="complaint_ids[]" value="{{ $c->id }}"></td>
-              <td class="ticket-id">{{ $c->ticket_id }}</td>
-              <td>{{ $c->user?->full_name ?? 'N/A' }}</td>
-              <td>{{ $c->department?->name ?? '—' }}</td>
-              <td>{{ $c->category }}</td>
-              <td><span class="badge" style="background: {{ $c->status?->badgeColor() }}20; color: {{ $c->status?->badgeColor() }}">{{ $c->status?->label() ?? $c->status }}</span></td>
-              <td>{{ $c->created_at?->format('M d, Y') }}</td>
-              <td><a href="{{ route('admin.complaints.show', $c) }}" class="btn-manage">Manage</a></td>
-            </tr>
-          @empty
-            <tr><td colspan="8" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.5);">No complaints found.</td></tr>
-          @endforelse
-        </tbody>
-      </table>
-      <div class="pagination">{{ $complaints->links() }}</div>
-    </div>
-  </main>
+
+    @if($complaints->hasPages())
+        <div class="admin-pagination">{{ $complaints->links() }}</div>
+    @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (() => {
+        const selectAll = document.querySelector('[data-select-all="complaint-checkboxes"]');
+        const checkboxes = document.querySelectorAll('[data-complaint-checkbox]');
+        const bulkSubmit = document.querySelector('[data-bulk-submit]');
+
+        if (!selectAll || !checkboxes.length || !bulkSubmit) return;
+
+        const syncBulkButton = () => {
+            bulkSubmit.disabled = ![...checkboxes].some((checkbox) => checkbox.checked);
+        };
+
+        selectAll.addEventListener('change', () => {
+            checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+            syncBulkButton();
+        });
+
+        checkboxes.forEach((checkbox) => checkbox.addEventListener('change', syncBulkButton));
+        syncBulkButton();
+    })();
+</script>
+@endpush

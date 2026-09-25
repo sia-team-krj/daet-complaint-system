@@ -13,9 +13,9 @@ export default defineConfig({
     server: {
         host: "0.0.0.0", // Important for Docker!
         port: 5173,
-        strictPort: true,
+        strictPort: false,
         hmr: {
-            host: "localhost", // HMR host
+            host: process.env.VITE_HMR_HOST || "localhost", // Set to the computer's LAN IP for phone testing
         },
         watch: {
             usePolling: true, // Important for Docker volume mounts!

@@ -1,111 +1,215 @@
-@extends('layouts.app')
+@extends('admin.layouts.app')
+
 @section('title', $complaint->ticket_id . ' — Admin')
-@section('content')
-<style>
-  :root { --navy: #0B1F3A; --navy-mid: #12294d; --gold: #C9A84C; --gold-light: #E2C06A; --border-gold: rgba(201,168,76,0.20); }
-  .admin-detail { min-height: calc(100svh - 64px); background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); padding: 32px 40px; }
-  .breadcrumb { display: flex; gap: 12px; margin-bottom: 24px; font-size: 13px; }
-  .breadcrumb a { color: rgba(255,255,255,0.5); text-decoration: none; }
-  .detail-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border-gold); border-radius: 6px; margin-bottom: 24px; }
-  .card-header { padding: 20px 24px; border-bottom: 1px solid rgba(201,168,76,0.15); display: flex; align-items: center; gap: 12px; }
-  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #fff; }
-  .card-body { padding: 24px; }
-  .form-group { margin-bottom: 20px; }
-  .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.5); margin-bottom: 8px; display: block; }
-  .form-select, .form-textarea, .form-input { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.25); border-radius: 4px; padding: 12px; color: #fff; font-size: 13px; }
-  .form-textarea { min-height: 100px; resize: vertical; }
-  .btn-update { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); border: none; padding: 14px 28px; border-radius: 4px; font-weight: 700; cursor: pointer; }
-  .two-col { display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
-  .timeline { position: relative; padding-left: 20px; }
-  .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--gold); }
-  .timeline-item { position: relative; padding-bottom: 20px; }
-  .timeline-item::before { content: ''; position: absolute; left: -20px; top: 4px; width: 8px; height: 8px; background: var(--gold); border-radius: 50%; }
-  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .info-label { font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
-  .info-value { font-size: 14px; color: #fff; }
-  @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
-</style>
-<div class="admin-detail">
-  <nav class="breadcrumb">
-    <a href="{{ route('admin.dashboard') }}">Dashboard</a>
-    <span style="color: rgba(255,255,255,0.3);">/</span>
-    <a href="{{ route('admin.complaints.index') }}">Complaints</a>
-    <span style="color: rgba(255,255,255,0.3);">/</span>
-    <span style="color: var(--gold);">{{ $complaint->ticket_id }}</span>
-  </nav>
-  <div class="two-col">
-    <div>
-      <div class="detail-card">
-        <div class="card-header"><div class="card-title">{{ $complaint->title }}</div></div>
-        <div class="card-body">
-          <div class="info-grid" style="margin-bottom: 20px;">
-            <div><div class="info-label">Status</div><div class="info-value">{{ $complaint->status?->label() }}</div></div>
-            <div><div class="info-label">Category</div><div class="info-value">{{ $complaint->category }}</div></div>
-            <div><div class="info-label">Urgency</div><div class="info-value">{{ $complaint->urgency }}</div></div>
-            <div><div class="info-label">Filed</div><div class="info-value">{{ $complaint->created_at?->format('M d, Y') }}</div></div>
-          </div>
-          <div class="form-label">Description</div>
-          <p style="color: rgba(255,255,255,0.8); line-height: 1.7;">{{ $complaint->description }}</p>
+@section('admin-content')
+<div class="admin-page">
+    <nav class="admin-breadcrumb" aria-label="Breadcrumb">
+        <a href="{{ route('admin.dashboard') }}">Overview</a>
+        <span aria-hidden="true">/</span>
+        <a href="{{ route('admin.complaints.index') }}">All complaints</a>
+        <span aria-hidden="true">/</span>
+        <span>{{ $complaint->ticket_id }}</span>
+    </nav>
+
+    @include('admin.partials.flash')
+
+    @if($complaint->isModerationFlagged())
+        <section class="admin-moderation-panel" aria-labelledby="moderation-title">
+            <div>
+                <h2 id="moderation-title">Moderation review required</h2>
+                <p>{{ $complaint->moderationLabel() }} · Score {{ $complaint->spam_score }}/100 @if($complaint->duplicate_of_id) · {{ (int) round($complaint->similarity_score * 100) }}% similar @endif</p>
+            </div>
+            @if($complaint->spam_reasons)
+                <ul>
+                    @foreach($complaint->spam_reasons as $reason)<li>{{ $reason }}</li>@endforeach
+                </ul>
+            @endif
+            @if($complaint->duplicate_of_id && $complaint->duplicateOf)
+                <a href="{{ route('admin.complaints.show', $complaint->duplicateOf) }}" class="admin-text-link">Compare with {{ $complaint->duplicateOf->ticket_id }}</a>
+            @endif
+        </section>
+    @endif
+
+    <div class="admin-detail-layout">
+        <div class="admin-detail-main">
+            <section class="admin-panel" aria-labelledby="complaint-summary-title">
+                <div class="admin-panel-heading">
+                    <div>
+                        <span class="admin-ticket-id">{{ $complaint->ticket_id }}</span>
+                        <h1 id="complaint-summary-title" class="admin-panel-title">{{ $complaint->title }}</h1>
+                    </div>
+                    <span class="admin-status admin-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
+                </div>
+                <div class="admin-panel-body">
+                    <dl class="admin-detail-list">
+                        <div><dt>Category</dt><dd>{{ str($complaint->category)->replace('_', ' ')->title() }}</dd></div>
+                        <div><dt>Review status</dt><dd>{{ $complaint->reviewStatusEnum->label() }}</dd></div>
+                        <div><dt>Suggested priority</dt><dd>{{ $complaint->suggestedPriorityEnum->label() }}</dd></div>
+                        <div><dt>Confirmed priority</dt><dd>{{ $complaint->confirmedPriorityEnum?->label() ?? 'Awaiting confirmation' }}</dd></div>
+                        <div><dt>Department</dt><dd>{{ $complaint->department?->name ?? 'Unassigned' }}</dd></div>
+                        <div><dt>Reviewed by</dt><dd>{{ $complaint->reviewedBy?->full_name ?? 'Not reviewed yet' }}</dd></div>
+                        <div><dt>Filed</dt><dd>{{ $complaint->created_at?->format('M j, Y g:i A') }}</dd></div>
+                    </dl>
+                    <div class="admin-prose-block">
+                        <h2>Resident description</h2>
+                        <p>{{ $complaint->description }}</p>
+                    </div>
+                    @if($complaint->address_text)
+                        <div class="admin-prose-block">
+                            <h2>Reported location</h2>
+                            <p>{{ $complaint->address_text }}</p>
+                        </div>
+                    @endif
+                </div>
+            </section>
+
+            <section class="admin-panel" aria-labelledby="resident-details-title">
+                <div class="admin-panel-heading">
+                    <h2 id="resident-details-title" class="admin-panel-title">Resident details</h2>
+                </div>
+                <div class="admin-panel-body">
+                    <dl class="admin-detail-list">
+                        <div><dt>Name</dt><dd>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</dd></div>
+                        <div><dt>Email</dt><dd>{{ $complaint->user?->email ?? 'Not provided' }}</dd></div>
+                        <div><dt>Contact</dt><dd>{{ $complaint->user?->contact_number ?? 'Not provided' }}</dd></div>
+                        <div><dt>Barangay</dt><dd>{{ $complaint->user?->barangay ?? 'Not provided' }}</dd></div>
+                    </dl>
+                </div>
+            </section>
         </div>
-      </div>
-      <div class="detail-card">
-        <div class="card-header"><div class="card-title">Citizen Information</div></div>
-        <div class="card-body">
-          <div class="info-grid">
-            <div><div class="info-label">Name</div><div class="info-value">{{ $complaint->user?->full_name }}</div></div>
-            <div><div class="info-label">Email</div><div class="info-value">{{ $complaint->user?->email }}</div></div>
-            <div><div class="info-label">Contact</div><div class="info-value">{{ $complaint->user?->contact_number ?? 'N/A' }}</div></div>
-            <div><div class="info-label">Barangay</div><div class="info-value">{{ $complaint->user?->barangay ?? 'N/A' }}</div></div>
-          </div>
-        </div>
-      </div>
+
+        <aside class="admin-detail-aside">
+            <section class="admin-panel" aria-labelledby="complaint-update-title">
+                <div class="admin-panel-heading">
+                    <h2 id="complaint-update-title" class="admin-panel-title">Update complaint</h2>
+                </div>
+                <form method="POST" action="{{ route('admin.complaints.update', $complaint) }}" class="admin-panel-body admin-form-stack">
+                    @csrf
+                    @method('PUT')
+
+                    <label class="admin-field">
+                        <span>Status</span>
+                        <select name="status" class="admin-input">
+                            @foreach($statuses as $status)
+                                <option value="{{ $status->value }}" @selected($complaint->status === $status->value)>{{ $status->label() }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Review status</span>
+                        <select name="review_status" class="admin-input">
+                            @foreach($reviewStatusOptions as $reviewOption)
+                                <option value="{{ $reviewOption->value }}" @selected($complaint->review_status === $reviewOption->value)>{{ $reviewOption->label() }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Confirmed priority</span>
+                        <select name="confirmed_priority" class="admin-input">
+                            <option value="">Not confirmed</option>
+                            @foreach($priorityOptions as $priorityOption)
+                                <option value="{{ $priorityOption->value }}" @selected($complaint->confirmed_priority === $priorityOption->value)>{{ $priorityOption->label() }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Public visibility</span>
+                        <span class="admin-checkbox-field">
+                            <input type="hidden" name="is_public" value="0">
+                            <input type="checkbox" name="is_public" value="1" @checked($complaint->is_public)>
+                            <span>Show on the public transparency register after verification</span>
+                        </span>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Review notes</span>
+                        <textarea name="review_notes" class="admin-input admin-textarea" rows="3" placeholder="Optional verification notes.">{{ old('review_notes', $complaint->review_notes) }}</textarea>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Department</span>
+                        <select name="department_id" class="admin-input" data-complaint-department>
+                            <option value="">Unassigned</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}" @selected((string) $complaint->department_id === (string) $department->id)>{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Assigned staff</span>
+                        <select name="assigned_staff_id" class="admin-input" data-assigned-staff>
+                            <option value="">Unassigned</option>
+                            @foreach($staffMembers as $staff)
+                                <option value="{{ $staff->id }}" data-department-id="{{ $staff->department_id }}" @selected((string) $complaint->assigned_staff_id === (string) $staff->id)>
+                                    {{ $staff->full_name }} — {{ $staff->department?->name ?? 'Unassigned' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Internal note</span>
+                        <textarea name="staff_note" class="admin-input admin-textarea" rows="5" placeholder="Record a concise update for the audit trail."></textarea>
+                    </label>
+
+                    <button type="submit" class="admin-button admin-button--primary">Save update</button>
+                </form>
+            </section>
+
+            <section class="admin-panel" aria-labelledby="complaint-history-title">
+                <div class="admin-panel-heading">
+                    <h2 id="complaint-history-title" class="admin-panel-title">Audit history</h2>
+                </div>
+                <div class="admin-panel-body">
+                    <ol class="admin-timeline">
+                        @forelse($complaint->logs->sortByDesc('created_at') as $log)
+                            <li class="admin-timeline-item">
+                                <div class="admin-timeline-marker" aria-hidden="true"></div>
+                                <div>
+                                    <p class="admin-timeline-status">{{ $log->previous_status ?? 'Complaint filed' }} <span aria-hidden="true">→</span> {{ $log->new_status }}</p>
+                                    @if($log->comment)<p class="admin-timeline-comment">{{ $log->comment }}</p>@endif
+                                    <p class="admin-timeline-meta">{{ $log->actor?->full_name ?? 'System' }} · {{ $log->created_at?->format('M j, Y g:i A') }}</p>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="admin-empty-cell">No audit entries yet.</li>
+                        @endforelse
+                    </ol>
+                </div>
+            </section>
+        </aside>
     </div>
-    <div>
-      <form method="POST" action="{{ route('admin.complaints.update', $complaint) }}" class="detail-card">
-        @csrf @method('PUT')
-        <div class="card-header"><div class="card-title">Update Complaint</div></div>
-        <div class="card-body">
-          <div class="form-group">
-            <label class="form-label">Status</label>
-            <select name="status" class="form-select">
-              @foreach($statuses as $s)
-                <option value="{{ $s->value }}" {{ $complaint->status?->value === $s->value ? 'selected' : '' }}>{{ $s->label() }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Department</label>
-            <select name="department_id" class="form-select">
-              <option value="">Unassigned</option>
-              @foreach($departments as $d)
-                <option value="{{ $d->id }}" {{ $complaint->department_id === $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Staff Note</label>
-            <textarea name="staff_note" class="form-textarea" placeholder="Add notes about this update..."></textarea>
-          </div>
-          <button type="submit" class="btn-update">Update Complaint</button>
-        </div>
-      </form>
-      <div class="detail-card">
-        <div class="card-header"><div class="card-title">Status History</div></div>
-        <div class="card-body">
-          <div class="timeline">
-            @forelse($complaint->logs as $log)
-              <div class="timeline-item">
-                <div style="font-size: 12px; color: var(--gold); font-weight: 600;">{{ $log->previous_status ?? '—' }} → {{ $log->new_status }}</div>
-                @if($log->comment)<div style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 8px 0;">{{ $log->comment }}</div>@endif
-                <div style="font-size: 11px; color: rgba(255,255,255,0.4);">{{ $log->actor?->full_name }} • {{ $log->created_at?->format('M d, g:i A') }}</div>
-              </div>
-            @empty
-              <p style="color: rgba(255,255,255,0.5);">No status updates yet.</p>
-            @endforelse
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (() => {
+        const department = document.querySelector('[data-complaint-department]');
+        const assignedStaff = document.querySelector('[data-assigned-staff]');
+        if (!department || !assignedStaff) return;
+
+        const syncStaffOptions = () => {
+            const departmentId = department.value;
+            let selectedIsVisible = false;
+
+            [...assignedStaff.options].forEach((option) => {
+                if (!option.value) return;
+                const isVisible = departmentId !== '' && option.dataset.departmentId === departmentId;
+                option.hidden = !isVisible;
+                option.disabled = !isVisible;
+                if (isVisible && option.selected) selectedIsVisible = true;
+            });
+
+            if (!selectedIsVisible) assignedStaff.value = '';
+        };
+
+        department.addEventListener('change', syncStaffOptions);
+        syncStaffOptions();
+    })();
+</script>
+@endpush

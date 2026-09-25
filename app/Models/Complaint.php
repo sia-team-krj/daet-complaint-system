@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ComplaintPriority;
+use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,12 +29,35 @@ class Complaint extends Model
         "urgency",
         "status",
         "is_public",
+        "assigned_staff_id",
+        "content_fingerprint",
+        "spam_status",
+        "spam_score",
+        "spam_reasons",
+        "similarity_score",
+        "duplicate_of_id",
+        "suggested_priority",
+        "confirmed_priority",
+        "review_status",
+        "suggestion_reasons",
+        "reviewed_by",
+        "reviewed_at",
+        "review_notes",
     ];
 
     protected function casts(): array
     {
         return [
             "is_public" => "boolean",
+            "spam_status" => "string",
+            "spam_score" => "integer",
+            "spam_reasons" => "array",
+            "similarity_score" => "float",
+            "suggestion_reasons" => "array",
+            "reviewed_at" => "datetime",
+            "suggested_priority" => "string",
+            "confirmed_priority" => "string",
+            "review_status" => "string",
             "latitude" => "decimal:8",
             "longitude" => "decimal:8",
         ];
@@ -103,6 +128,29 @@ class Complaint extends Model
     }
 
     /**
+     * The staff member assigned to this complaint.
+     */
+    public function assignedStaff(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_staff_id');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function duplicateOf(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'duplicate_of_id');
+    }
+
+    public function duplicates(): HasMany
+    {
+        return $this->hasMany(self::class, 'duplicate_of_id');
+    }
+
+    /**
      * The most recent log entry — useful for showing "last updated by X".
      */
     public function latestLog(): HasMany
@@ -122,6 +170,53 @@ class Complaint extends Model
     public function getStatusEnumAttribute(): ComplaintStatus
     {
         return ComplaintStatus::from($this->status);
+    }
+
+    public function getReviewStatusEnumAttribute(): ComplaintReviewStatus
+    {
+        return ComplaintReviewStatus::tryFrom((string) $this->review_status)
+            ?? ComplaintReviewStatus::Pending;
+    }
+
+    public function getSuggestedPriorityEnumAttribute(): ComplaintPriority
+    {
+        return ComplaintPriority::tryFrom((string) $this->suggested_priority)
+            ?? ComplaintPriority::Routine;
+    }
+
+    public function getConfirmedPriorityEnumAttribute(): ?ComplaintPriority
+    {
+        return $this->confirmed_priority
+            ? ComplaintPriority::tryFrom((string) $this->confirmed_priority)
+            : null;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->review_status === ComplaintReviewStatus::Verified->value;
+    }
+
+    public function isPubliclyVisible(): bool
+    {
+        return $this->is_public && $this->isVerified();
+    }
+
+    public function isModerationFlagged(): bool
+    {
+        return in_array($this->spam_status, ['review', 'spam'], true) || $this->duplicate_of_id !== null;
+    }
+
+    public function moderationLabel(): string
+    {
+        if ($this->duplicate_of_id) {
+            return 'Possible duplicate';
+        }
+
+        return match ($this->spam_status) {
+            'spam' => 'Likely spam',
+            'review' => 'Needs review',
+            default => 'Clear',
+        };
     }
 
     // ─────────────────────────────────────────────
@@ -144,7 +239,22 @@ class Complaint extends Model
 
     public function scopePublic($query)
     {
-        return $query->where("is_public", true);
+        return $query
+            ->where('is_public', true)
+            ->where('review_status', ComplaintReviewStatus::Verified->value);
+    }
+
+    public function scopePendingReview($query)
+    {
+        return $query->where('review_status', ComplaintReviewStatus::Pending->value);
+    }
+
+    public function scopeFlagged($query)
+    {
+        return $query->where(function ($query) {
+            $query->whereIn('spam_status', ['review', 'spam'])
+                ->orWhereNotNull('duplicate_of_id');
+        });
     }
 
     public function scopeForDepartment($query, int $departmentId)

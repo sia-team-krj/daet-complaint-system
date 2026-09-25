@@ -20,10 +20,10 @@
     ╚══════════════════════════════════════════════════════════════╝
 --}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="w-full max-w-full overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('images/lgulogo.png') }}">
 
@@ -36,10 +36,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="/js/shell.js?v={{ filemtime(public_path('js/shell.js')) }}" defer></script>
     @livewireStyles
+
+    {{-- Global accessibility fixes --}}
+    <style>
+      /* Ensure text is selectable everywhere */
+      body { user-select: auto; }
+      .user-select-none { user-select: none; }
+
+      /* Focus visible for keyboard navigation */
+      :focus-visible {
+        outline: 2px solid #C9A84C;
+        outline-offset: 2px;
+        border-radius: 2px;
+      }
+
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
 
     {{-- Allow individual pages to inject <head> content (meta tags, extra styles, etc.) --}}
     @stack('head')
+    @stack('styles')
 </head>
 
 {{--
@@ -51,7 +76,7 @@
     - Pass $bodyClass from the controller to override, e.g.:
         return view('pages.transparency', ['bodyClass' => 'bg-navy']);
 --}}
-<body class="overflow-x-hidden {{ auth()->check() ? 'bg-[#F5F0E8]' : 'bg-[#0B1F3A]' }} {{ $bodyClass ?? '' }}">
+<body class="w-full max-w-full overflow-x-hidden {{ auth()->check() ? 'bg-[#F5F0E8]' : 'bg-[#0B1F3A]' }} {{ $bodyClass ?? '' }}">
 
     {{--
         NAVBAR SWITCH:
@@ -64,7 +89,7 @@
         @include('layouts.guest-navbar')
     @endauth
 
-    <main>
+    <main class="w-full max-w-full overflow-x-hidden">
         @yield('content')
     </main>
 

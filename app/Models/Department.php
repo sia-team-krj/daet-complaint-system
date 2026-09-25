@@ -36,7 +36,17 @@ class Department extends Model
      */
     public function staff(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class)->where('role', 'staff');
+    }
+
+    public function invitationCodes(): HasMany
+    {
+        return $this->hasMany(InvitationCode::class);
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     // ─────────────────────────────────────────────

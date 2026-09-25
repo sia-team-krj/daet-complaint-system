@@ -6,11 +6,12 @@ use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Models\Department;
 use App\Models\User;
+use App\Services\ActivityLogger;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 class ProfileController extends Controller
 {
@@ -20,9 +21,9 @@ class ProfileController extends Controller
     public function index(): View
     {
         $user = Auth::user()->load('department');
-        
+
         // Role-specific data
-        $stats = match($user->role) {
+        $stats = match ($user->role) {
             'citizen' => $this->getCitizenStats($user),
             'staff' => $this->getStaffStats($user),
             'admin' => $this->getAdminStats(),
@@ -47,20 +48,20 @@ class ProfileController extends Controller
 
     private function getStaffStats(User $user): array
     {
-        $handledCount = ComplaintLog::where('changed_by', $user->id)
+        $handledCount = ComplaintLog::where('actor_id', $user->id)
             ->distinct('complaint_id')
             ->count('complaint_id');
 
-        $resolvedThisMonth = ComplaintLog::where('changed_by', $user->id)
+        $resolvedThisMonth = ComplaintLog::where('actor_id', $user->id)
             ->where('new_status', 'Resolved')
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
 
         // Average days to resolve for complaints this staff worked on
-        $avgDays = ComplaintLog::where('changed_by', $user->id)
+        $avgDays = ComplaintLog::where('actor_id', $user->id)
             ->where('new_status', 'Resolved')
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (created_at - complaint_logs.created_at)) / 86400) as avg_days')
+            ->selectRaw('AVG(EXTRACT(EPOCH FROM (complaints.created_at - complaint_logs.created_at)) / 86400) as avg_days')
             ->join('complaints', 'complaint_logs.complaint_id', '=', 'complaints.id')
             ->value('avg_days');
 
@@ -83,17 +84,24 @@ class ProfileController extends Controller
     /**
      * Update profile information (name and email only).
      */
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
         $user = Auth::user()->fresh();
 
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'email', 'unique:users,email,'.$user->id],
         ]);
 
         $user->update($validated);
+
+        $activityLogger->log(
+            'profile.updated',
+            "{$user->full_name} updated their profile information.",
+            $user,
+            metadata: ['updated_fields' => array_keys($validated)],
+        );
 
         return redirect()->route('profile')
             ->with('status', 'Profile updated successfully.');
@@ -102,7 +110,7 @@ class ProfileController extends Controller
     /**
      * Update user password.
      */
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
         $user = Auth::user()->fresh();
 
@@ -111,7 +119,7 @@ class ProfileController extends Controller
             'new_password' => ['required', 'min:8', 'confirmed'],
         ]);
 
-        if (!Hash::check($validated['current_password'], $user->password)) {
+        if (! Hash::check($validated['current_password'], $user->password)) {
             return redirect()->route('profile')
                 ->with('error', 'Current password is incorrect.');
         }
@@ -119,6 +127,12 @@ class ProfileController extends Controller
         $user->update([
             'password' => Hash::make($validated['new_password']),
         ]);
+
+        $activityLogger->log(
+            'profile.password_changed',
+            "{$user->full_name} changed their account password.",
+            $user,
+        );
 
         return redirect()->route('profile')
             ->with('status', 'Password updated successfully.');

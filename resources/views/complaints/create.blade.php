@@ -1,892 +1,1255 @@
 @extends($mainLayout)
+
 @section('title', 'File a Complaint — Daet Listens')
 
 @push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-@endpush
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        .filing-page {
+            --filing-navy: #0b1f3a;
+            --filing-navy-mid: #12294d;
+            --filing-gold: #c9a84c;
+            --filing-gold-light: #e2c06a;
+            --filing-gold-pale: rgba(201, 168, 76, 0.12);
+            --filing-cream: #f5f0e8;
+            --filing-cream-dark: #ede7d9;
+            --filing-white: #fff;
+            --filing-ink: #172b49;
+            --filing-muted: #64748b;
+            --filing-border: rgba(11, 31, 58, 0.1);
+            min-height: 100vh;
+            overflow: hidden;
+            background: var(--filing-cream);
+            color: var(--filing-ink);
+            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+        }
 
-@push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        .filing-page *,
+        .filing-page *::before,
+        .filing-page *::after {
+            box-sizing: border-box;
+        }
+
+        .filing-page h1,
+        .filing-page h2,
+        .filing-page h3,
+        .filing-page p {
+            margin-top: 0;
+        }
+
+        .filing-header {
+            position: relative;
+            overflow: hidden;
+            padding: 116px 40px 46px;
+            background: var(--filing-navy);
+            color: #fff;
+        }
+
+        .filing-header::before {
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 42px,
+                rgba(201, 168, 76, 0.035) 42px,
+                rgba(201, 168, 76, 0.035) 43px
+            );
+            content: "";
+            pointer-events: none;
+        }
+
+        .filing-header::after {
+            position: absolute;
+            top: -250px;
+            right: -120px;
+            width: 580px;
+            height: 580px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201, 168, 76, 0.11), transparent 68%);
+            content: "";
+            pointer-events: none;
+        }
+
+        .filing-header__inner,
+        .filing-main {
+            position: relative;
+            z-index: 1;
+            width: min(1180px, calc(100% - 80px));
+            margin: 0 auto;
+        }
+
+        .filing-header__inner {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 42px;
+        }
+
+        .filing-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 28px;
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+        }
+
+        .filing-back:hover {
+            color: var(--filing-gold-light);
+        }
+
+        .filing-header h1 {
+            max-width: 720px;
+            margin-bottom: 14px;
+            color: #fff;
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: clamp(46px, 6vw, 74px);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 0.96;
+        }
+
+        .filing-header h1 em {
+            color: var(--filing-gold-light);
+            font-style: italic;
+        }
+
+        .filing-header__lede {
+            max-width: 620px;
+            margin-bottom: 0;
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.75;
+        }
+
+        .filing-header__aside {
+            display: flex;
+            max-width: 280px;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 15px 16px;
+            border: 1px solid rgba(201, 168, 76, 0.32);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.045);
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .filing-header__aside svg {
+            flex: 0 0 auto;
+            margin-top: 2px;
+            color: var(--filing-gold-light);
+        }
+
+        .filing-header__aside strong {
+            display: block;
+            margin-bottom: 3px;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .filing-main {
+            padding: 38px 0 80px;
+        }
+
+        .filing-stepper {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            margin-bottom: 28px;
+            border: 1px solid var(--filing-border);
+            border-radius: 8px;
+            background: var(--filing-white);
+            box-shadow: 0 10px 26px rgba(11, 31, 58, 0.05);
+            overflow: hidden;
+        }
+
+        .filing-step {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 76px;
+            padding: 14px 20px;
+            border-right: 1px solid var(--filing-border);
+        }
+
+        .filing-step:last-child {
+            border-right: 0;
+        }
+
+        .filing-step__number {
+            display: inline-flex;
+            width: 30px;
+            height: 30px;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(201, 168, 76, 0.35);
+            border-radius: 50%;
+            background: var(--filing-gold-pale);
+            color: #8b6719;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .filing-step strong {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--filing-ink);
+            font-size: 12px;
+        }
+
+        .filing-step small {
+            display: block;
+            color: var(--filing-muted);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .filing-step--active {
+            background: linear-gradient(90deg, rgba(201, 168, 76, 0.1), rgba(201, 168, 76, 0.02));
+        }
+
+        .filing-step--active::after {
+            position: absolute;
+            right: 20px;
+            bottom: 0;
+            left: 20px;
+            height: 2px;
+            background: var(--filing-gold);
+            content: "";
+        }
+
+        .filing-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 290px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .filing-form {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .filing-card {
+            border: 1px solid var(--filing-border);
+            border-radius: 8px;
+            background: var(--filing-white);
+            box-shadow: 0 10px 26px rgba(11, 31, 58, 0.045);
+            overflow: hidden;
+        }
+
+        .filing-card__header {
+            display: flex;
+            align-items: flex-start;
+            gap: 13px;
+            padding: 22px 26px 18px;
+            border-bottom: 1px solid var(--filing-border);
+        }
+
+        .filing-card__icon {
+            display: inline-flex;
+            width: 36px;
+            height: 36px;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(201, 168, 76, 0.35);
+            border-radius: 6px;
+            background: var(--filing-gold-pale);
+            color: #8b6719;
+        }
+
+        .filing-card__header h2 {
+            margin-bottom: 4px;
+            color: var(--filing-navy);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 25px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .filing-card__header p {
+            margin-bottom: 0;
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .filing-card__body {
+            padding: 26px;
+        }
+
+        .filing-field {
+            margin-bottom: 22px;
+        }
+
+        .filing-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .filing-field label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--filing-navy);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .filing-field label span {
+            color: #b45309;
+        }
+
+        .filing-field__hint {
+            margin: -2px 0 9px;
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        .filing-input,
+        .filing-select,
+        .filing-textarea {
+            width: 100%;
+            border: 1px solid rgba(11, 31, 58, 0.16);
+            border-radius: 5px;
+            outline: none;
+            background: #fcfbf8;
+            color: var(--filing-ink);
+            font: inherit;
+            font-size: 13px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .filing-input,
+        .filing-select {
+            min-height: 46px;
+            padding: 11px 13px;
+        }
+
+        .filing-textarea {
+            min-height: 150px;
+            padding: 13px;
+            line-height: 1.65;
+            resize: vertical;
+        }
+
+        .filing-input::placeholder,
+        .filing-textarea::placeholder {
+            color: rgba(100, 116, 139, 0.62);
+        }
+
+        .filing-input:focus,
+        .filing-select:focus,
+        .filing-textarea:focus {
+            border-color: var(--filing-gold);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.13);
+        }
+
+        .filing-select {
+            appearance: none;
+            padding-right: 38px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        .filing-error {
+            margin-top: 6px;
+            color: #b91c1c;
+            font-size: 11px;
+        }
+
+        .filing-route {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 13px 14px;
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 5px;
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--filing-ink);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .filing-route[hidden] {
+            display: none;
+        }
+
+        .filing-route svg {
+            flex: 0 0 auto;
+            margin-top: 1px;
+            color: #8b6719;
+        }
+
+        .filing-route strong {
+            color: var(--filing-navy);
+        }
+
+        .filing-review-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            margin: 0 0 24px;
+            padding: 14px 16px;
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 5px;
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--filing-ink);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .filing-review-notice svg {
+            flex: 0 0 auto;
+            margin-top: 2px;
+            color: #8b6719;
+        }
+
+        .filing-review-notice strong {
+            color: var(--filing-navy);
+        }
+
+        .filing-upload {
+            position: relative;
+            padding: 25px 18px;
+            border: 1px dashed rgba(11, 31, 58, 0.25);
+            border-radius: 6px;
+            background: #fcfbf8;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .filing-upload:hover,
+        .filing-upload.is-dragging {
+            border-color: var(--filing-gold);
+            background: rgba(201, 168, 76, 0.08);
+        }
+
+        .filing-upload input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .filing-upload__icon {
+            margin-bottom: 9px;
+            color: #8b6719;
+        }
+
+        .filing-upload strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--filing-navy);
+            font-size: 13px;
+        }
+
+        .filing-upload span {
+            color: var(--filing-muted);
+            font-size: 11px;
+        }
+
+        .filing-upload__preview {
+            display: none;
+            margin-top: 14px;
+        }
+
+        .filing-upload__preview img {
+            display: block;
+            max-height: 170px;
+            margin: 0 auto;
+            border: 1px solid var(--filing-border);
+            border-radius: 4px;
+        }
+
+        .filing-map {
+            height: 330px;
+            margin-top: 15px;
+            overflow: hidden;
+            border: 1px solid var(--filing-border);
+            border-radius: 6px;
+            background: #dce8e7;
+        }
+
+        .filing-map-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            margin: 8px 0 0;
+            color: var(--filing-muted);
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .filing-map-note svg {
+            flex: 0 0 auto;
+            margin-top: 1px;
+            color: #8b6719;
+        }
+
+        .filing-summary {
+            margin: 25px 0 0;
+            padding: 17px 18px;
+            border: 1px solid rgba(201, 168, 76, 0.28);
+            border-radius: 6px;
+            background: #fffdf8;
+        }
+
+        .filing-summary h3 {
+            margin-bottom: 13px;
+            color: var(--filing-navy);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .filing-summary__row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 9px 0;
+            border-top: 1px solid rgba(11, 31, 58, 0.08);
+            font-size: 11px;
+        }
+
+        .filing-summary__row span {
+            color: var(--filing-muted);
+        }
+
+        .filing-summary__row strong {
+            max-width: 65%;
+            color: var(--filing-navy);
+            font-size: 11px;
+            text-align: right;
+        }
+
+        .filing-terms {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 22px;
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .filing-terms input {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+            margin-top: 1px;
+            accent-color: var(--filing-gold);
+        }
+
+        .filing-terms a {
+            color: #8b6719;
+            font-weight: 700;
+        }
+
+        .filing-submit {
+            display: flex;
+            width: 100%;
+            min-height: 50px;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 23px;
+            padding: 13px 22px;
+            border: 0;
+            border-radius: 5px;
+            background: linear-gradient(135deg, var(--filing-gold), var(--filing-gold-light));
+            box-shadow: 0 8px 22px rgba(201, 168, 76, 0.22);
+            color: var(--filing-navy);
+            cursor: pointer;
+            font: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .filing-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(201, 168, 76, 0.3);
+        }
+
+        .filing-submit:disabled {
+            cursor: wait;
+            opacity: 0.65;
+            transform: none;
+        }
+
+        .filing-aside {
+            position: sticky;
+            top: 84px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .filing-aside-card {
+            padding: 21px;
+            border: 1px solid rgba(201, 168, 76, 0.24);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .filing-aside-card h2 {
+            margin-bottom: 14px;
+            color: var(--filing-navy);
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 23px;
+            line-height: 1;
+        }
+
+        .filing-aside-card p,
+        .filing-aside-card li {
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.65;
+        }
+
+        .filing-aside-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .filing-aside-list li {
+            display: grid;
+            grid-template-columns: 22px 1fr;
+            gap: 9px;
+        }
+
+        .filing-aside-list li svg {
+            width: 22px;
+            height: 22px;
+            padding: 4px;
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            border-radius: 50%;
+            color: #8b6719;
+        }
+
+        .filing-next {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .filing-next li {
+            display: grid;
+            grid-template-columns: 25px 1fr;
+            gap: 9px;
+        }
+
+        .filing-next strong {
+            display: block;
+            margin-bottom: 2px;
+            color: var(--filing-navy);
+            font-size: 11px;
+        }
+
+        .filing-next__number {
+            display: inline-flex;
+            width: 24px;
+            height: 24px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--filing-navy);
+            color: var(--filing-gold-light);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .filing-error-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 14px 17px;
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            border-radius: 6px;
+            background: rgba(239, 68, 68, 0.06);
+            color: #991b1b;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .filing-error-banner svg {
+            flex: 0 0 auto;
+            margin-top: 2px;
+        }
+
+        .filing-error-banner ul {
+            margin: 5px 0 0;
+            padding-left: 17px;
+        }
+
+        /* Leaflet marker */
+        .gold-pin-marker {
+            position: relative;
+            width: 30px;
+            height: 42px;
+        }
+
+        .gold-pin-marker .pin-head {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translateX(-50%);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c9a84c, #e2c06a);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .gold-pin-marker .pin-head::after {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: #0b1f3a;
+            content: "";
+        }
+
+        .gold-pin-marker .pin-pulse {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: rgba(201, 168, 76, 0.35);
+            animation: filing-pin-pulse 1.5s ease-out infinite;
+        }
+
+        @keyframes filing-pin-pulse {
+            0% { opacity: 1; transform: translateX(-50%) scale(0.5); }
+            100% { opacity: 0; transform: translateX(-50%) scale(1.5); }
+        }
+
+        .leaflet-marker-icon.gold-pin-marker {
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        @media (max-width: 900px) {
+            .filing-header,
+            .filing-main {
+                width: 100%;
+            }
+
+            .filing-header {
+                padding-right: 24px;
+                padding-left: 24px;
+            }
+
+            .filing-header__inner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .filing-header__aside {
+                max-width: 420px;
+            }
+
+            .filing-main {
+                padding: 28px 24px 64px;
+            }
+
+            .filing-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .filing-aside {
+                position: static;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .filing-header {
+                padding-top: 104px;
+                padding-bottom: 38px;
+            }
+
+            .filing-header h1 {
+                font-size: 48px;
+            }
+
+            .filing-main {
+                padding: 20px 16px 52px;
+            }
+
+            .filing-stepper {
+                grid-template-columns: 1fr;
+            }
+
+            .filing-step {
+                min-height: 62px;
+                border-right: 0;
+                border-bottom: 1px solid var(--filing-border);
+            }
+
+            .filing-step:last-child {
+                border-bottom: 0;
+            }
+
+            .filing-step--active::after {
+                right: 16px;
+                bottom: 0;
+                left: 16px;
+            }
+
+            .filing-card__header,
+            .filing-card__body {
+                padding-right: 18px;
+                padding-left: 18px;
+            }
+
+            .filing-card__header h2 {
+                font-size: 23px;
+            }
+
+            .filing-aside {
+                display: flex;
+            }
+
+            .filing-map {
+                height: 280px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gold-pin-marker .pin-pulse {
+                animation: none;
+            }
+        }
+    </style>
 @endpush
 
 @section('content')
-
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
-  :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
-    --gold:        #C9A84C;
-    --gold-light:  #E2C06A;
-    --gold-pale:   rgba(201,168,76,0.12);
-    --cream:       #F5F0E8;
-    --cream-dark:  #EDE7D9;
-    --white:       #ffffff;
-    --text-body:   #4B5563;
-    --text-muted:  #6B7280;
-    --border-navy: rgba(11,31,58,0.08);
-    --border-gold: rgba(201,168,76,0.20);
-    --red:         #EF4444;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; }
-
-  .create-root {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
-    min-height: calc(100svh - 64px);
-    padding-top: 64px;
-  }
-
-  /* ── Page Header ── */
-  .create-header {
-    background: var(--navy);
-    position: relative; overflow: hidden;
-    padding: 44px 40px 48px;
-  }
-  .create-header::before {
-    content: ''; position: absolute; inset: 0;
-    background-image: repeating-linear-gradient(
-      -45deg, transparent, transparent 40px,
-      rgba(201,168,76,0.025) 40px, rgba(201,168,76,0.025) 41px
-    );
-    pointer-events: none;
-  }
-  .create-header-bar {
-    position: absolute; top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.1));
-  }
-  .create-header-inner {
-    position: relative; z-index: 2;
-    max-width: 1280px; margin: 0 auto;
-  }
-  .create-eyebrow {
-    display: inline-flex; align-items: center; gap: 10px;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
-  }
-  .create-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
-  .create-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(26px, 3.2vw, 40px); font-weight: 700;
-    color: var(--white); line-height: 1.1; letter-spacing: -0.01em;
-    margin-bottom: 8px;
-  }
-  .create-title span { color: var(--gold); font-style: italic; }
-  .create-subtitle {
-    font-size: 13px; color: rgba(255,255,255,0.42); font-weight: 300; line-height: 1.6;
-  }
-
-  /* ── Form Layout ── */
-  .create-body {
-    max-width: 1280px; margin: 0 auto;
-    padding: 40px 40px 80px;
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 32px;
-    align-items: start;
-  }
-
-  /* ── Form Card ── */
-  .form-card {
-    background: var(--white);
-    border: 1px solid var(--border-navy);
-    border-radius: 8px; overflow: hidden;
-  }
-  .form-card-header {
-    padding: 20px 28px 18px;
-    border-bottom: 1px solid var(--border-navy);
-    display: flex; align-items: center; gap: 12px;
-  }
-  .form-card-icon {
-    width: 36px; height: 36px; border-radius: 8px;
-    background: var(--gold-pale); border: 1px solid var(--border-gold);
-    display: flex; align-items: center; justify-content: center;
-    color: var(--gold); flex-shrink: 0;
-  }
-  .form-card-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px; font-weight: 700; color: var(--navy);
-  }
-  .form-card-body { padding: 28px; }
-
-  /* ── Field Styles ── */
-  .field-group { margin-bottom: 22px; }
-  .field-group:last-child { margin-bottom: 0; }
-  .field-label {
-    display: block; font-size: 10.5px; font-weight: 700;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--navy); margin-bottom: 8px; opacity: 0.7;
-  }
-  .field-label .req { color: var(--red); margin-left: 2px; }
-  .field-hint { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 300; }
-
-  .field-input,
-  .field-select,
-  .field-textarea {
-    width: 100%; background: #fafaf8;
-    border: 1px solid var(--border-navy); border-radius: 4px;
-    padding: 11px 14px;
-    font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: var(--navy);
-    outline: none; transition: border-color 0.22s, background 0.22s, box-shadow 0.22s;
-  }
-  .field-input::placeholder,
-  .field-textarea::placeholder { color: rgba(75,85,99,0.35); }
-  .field-input:focus,
-  .field-select:focus,
-  .field-textarea:focus {
-    border-color: rgba(201,168,76,0.55); background: var(--white);
-    box-shadow: 0 0 0 3px rgba(201,168,76,0.07);
-  }
-  .field-select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
-  .field-textarea { resize: vertical; min-height: 130px; line-height: 1.65; }
-  .field-error-msg { font-size: 11.5px; color: var(--red); margin-top: 5px; }
-
-  /* Input with icon */
-  .field-wrap { position: relative; }
-  .field-icon-left { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(107,114,128,0.5); pointer-events: none; }
-  .field-wrap .field-input { padding-left: 38px; }
-  .field-wrap:focus-within .field-icon-left { color: rgba(201,168,76,0.8); }
-
-  /* Two-column row */
-  .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-  /* ── Category Cards ── */
-  .category-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .category-option { position: relative; }
-  .category-option input[type="radio"] {
-    position: absolute; opacity: 0; width: 0; height: 0;
-  }
-  .category-label {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    padding: 14px 8px; border-radius: 6px;
-    border: 1px solid var(--border-navy);
-    background: #fafaf8; cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    text-align: center;
-  }
-  .category-label:hover { border-color: rgba(201,168,76,0.4); background: #fdfaf4; }
-  .category-option input:checked + .category-label {
-    border-color: var(--gold); background: var(--gold-pale);
-  }
-  .category-icon { color: var(--text-muted); transition: color 0.2s; }
-  .category-option input:checked + .category-label .category-icon { color: var(--gold); }
-  .category-name { font-size: 11px; font-weight: 600; color: var(--text-body); letter-spacing: 0.04em; }
-
-  /* ── Urgency selector ── */
-  .urgency-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .urgency-option { position: relative; }
-  .urgency-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
-  .urgency-label {
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 8px 16px; border-radius: 4px;
-    border: 1px solid var(--border-navy); background: #fafaf8;
-    font-size: 12px; font-weight: 600; color: var(--text-muted);
-    cursor: pointer; transition: all 0.18s;
-    text-transform: uppercase; letter-spacing: 0.07em;
-  }
-  .urgency-dot { width: 7px; height: 7px; border-radius: 50%; }
-  .urgency-option:nth-child(1) .urgency-dot { background: #6B7280; }
-  .urgency-option:nth-child(2) .urgency-dot { background: #F59E0B; }
-  .urgency-option:nth-child(3) .urgency-dot { background: #EF4444; }
-  .urgency-option:nth-child(4) .urgency-dot { background: #7C3AED; }
-  .urgency-option input:checked + .urgency-label { border-color: var(--gold); background: var(--gold-pale); color: var(--navy); }
-
-  /* Department hint */
-  .department-hint {
-    margin-top: 12px;
-    padding: 12px 14px;
-    background: rgba(201,168,76,0.08);
-    border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 4px;
-    font-size: 13px;
-    color: rgba(11,31,58,0.8);
-    animation: fadeUp 0.3s ease-out;
-  }
-  .department-hint strong {
-    color: #0B1F3A;
-  }
-
-  /* ── Photo Upload ── */
-  .upload-zone {
-    border: 2px dashed var(--border-navy); border-radius: 6px;
-    padding: 28px 20px; text-align: center; cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    position: relative; background: #fafaf8;
-  }
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: rgba(201,168,76,0.5); background: var(--gold-pale);
-  }
-  .upload-zone input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-  .upload-icon { color: var(--gold); margin: 0 auto 10px; }
-  .upload-title { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
-  .upload-sub { font-size: 11px; color: var(--text-muted); }
-  .upload-preview { margin-top: 12px; display: none; }
-  .upload-preview img { max-height: 160px; border-radius: 4px; border: 1px solid var(--border-navy); }
-
-  /* ── Terms ── */
-  .terms-row { display: flex; align-items: flex-start; gap: 10px; }
-  .terms-row input[type="checkbox"] {
-    appearance: none; width: 15px; height: 15px; flex-shrink: 0;
-    border: 1px solid rgba(11,31,58,0.25); border-radius: 3px;
-    background: #fafaf8; cursor: pointer; margin-top: 1px; position: relative;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .terms-row input:checked { background: var(--gold); border-color: var(--gold); }
-  .terms-row input:checked::after {
-    content: ''; position: absolute; top: 1px; left: 4px;
-    width: 4px; height: 8px;
-    border: 1.5px solid var(--white); border-top: none; border-left: none; transform: rotate(45deg);
-  }
-  .terms-text { font-size: 12px; color: var(--text-muted); line-height: 1.65; }
-  .terms-text a { color: var(--gold); text-decoration: none; font-weight: 500; }
-
-  /* ── Submit Button ── */
-  .btn-submit-complaint {
-    width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    color: var(--navy); font-family: 'DM Sans', sans-serif;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-    padding: 15px 32px; border-radius: 4px; border: none; cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 20px rgba(201,168,76,0.28);
-  }
-  .btn-submit-complaint:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,168,76,0.45); }
-  .btn-submit-complaint:active { transform: none; }
-  .btn-submit-complaint:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-  /* ── Sidebar ── */
-  .sidebar-card {
-    background: var(--white); border: 1px solid var(--border-navy);
-    border-radius: 8px; overflow: hidden; margin-bottom: 20px;
-  }
-  .sidebar-card:last-child { margin-bottom: 0; }
-  .sidebar-card-header {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border-navy);
-    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--text-muted);
-  }
-  .sidebar-card-body { padding: 20px; }
-
-  /* Department routing preview */
-  .dept-route-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 0; border-bottom: 1px solid var(--border-navy);
-    font-size: 12.5px; color: var(--text-body);
-  }
-  .dept-route-item:last-child { border-bottom: none; }
-  .dept-code {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px; font-weight: 700; color: var(--navy);
-    background: var(--gold-pale); border: 1px solid var(--border-gold);
-    padding: 2px 8px; border-radius: 3px; flex-shrink: 0;
-    min-width: 52px; text-align: center;
-  }
-
-  /* Tips list */
-  .tip-item {
-    display: flex; align-items: flex-start; gap: 10px;
-    padding: 8px 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;
-    border-bottom: 1px solid var(--border-navy);
-  }
-  .tip-item:last-child { border-bottom: none; }
-  .tip-num {
-    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
-    background: var(--gold-pale); border: 1px solid var(--border-gold);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 9px; font-weight: 700; color: #92670a;
-  }
-
-  /* Error banner */
-  .error-banner {
-    display: flex; align-items: flex-start; gap: 12px;
-    background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2);
-    border-radius: 6px; padding: 14px 18px; margin-bottom: 24px;
-    font-size: 12.5px; color: #991b1b; line-height: 1.65;
-  }
-  .error-banner svg { flex-shrink: 0; color: var(--red); margin-top: 1px; }
-
-  /* Animations */
-  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
-  .fu { animation: fadeUp 0.6s cubic-bezier(.22,.68,0,1.2) both; }
-  .d1 { animation-delay: 0.04s; } .d2 { animation-delay: 0.14s; }
-  .d3 { animation-delay: 0.24s; } .d4 { animation-delay: 0.34s; }
-
-  /* Responsive */
-  @media (max-width: 1100px) {
-    .create-header { padding: 36px 32px 40px; }
-    .create-body { padding: 32px 32px 64px; grid-template-columns: 1fr 300px; gap: 24px; }
-    .category-grid { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (max-width: 900px) {
-    .create-body { grid-template-columns: 1fr; }
-    .create-sidebar { order: -1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .create-sidebar .sidebar-card { margin-bottom: 0; }
-  }
-  @media (max-width: 768px) {
-    .create-header { padding: 28px 20px 32px; }
-    .create-body { padding: 24px 20px 56px; }
-    .create-sidebar { grid-template-columns: 1fr; }
-    .category-grid { grid-template-columns: repeat(2, 1fr); }
-    .field-row-2 { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 480px) {
-    .urgency-row { flex-direction: column; }
-    .urgency-label { width: 100%; justify-content: flex-start; }
-    .category-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-</style>
-
-<div class="create-root">
-
-  {{-- ── Page Header ── --}}
-  <div class="create-header">
-    <div class="create-header-bar"></div>
-    <div class="create-header-inner">
-      <div class="create-eyebrow fu d1">Citizen Services</div>
-      <h1 class="create-title fu d2">File a <span>Complaint</span></h1>
-      <p class="create-subtitle fu d3">
-        Your complaint is routed directly to the responsible LGU department.
-        Provide as much detail as possible for a faster resolution.
-      </p>
-    </div>
-  </div>
-
-  {{-- ── Body ── --}}
-  <div class="create-body">
-
-    {{-- ── Main Form Column ── --}}
-    <div class="create-main">
-
-      {{-- Validation errors --}}
-      @if ($errors->any())
-        <div class="error-banner fu d1">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <div>
-            <strong>Please fix the following:</strong>
-            <ul style="margin: 6px 0 0; padding-left: 16px;">
-              @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-              @endforeach
-            </ul>
-          </div>
-        </div>
-      @endif
-
-      <form method="POST" action="{{ route('complaints.store') }}" enctype="multipart/form-data" id="complaint-form">
-        @csrf
-
-        {{-- ── Step 1: Category ── --}}
-        <div class="form-card fu d2" style="margin-bottom: 20px;">
-          <div class="form-card-header">
-            <div class="form-card-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
-            <div class="form-card-title">Step 1 — Select Category</div>
-          </div>
-          <div class="form-card-body">
-            <p class="field-hint">The category determines which department handles your complaint automatically.</p>
-            
-            <div class="field-group">
-              <label class="field-label" for="category">Complaint Category <span class="req">*</span></label>
-              <select id="category" name="category" class="field-select" required>
-                <option value="">— Select a category —</option>
-                <optgroup label="Engineering Office">
-                  <option value="road_damage" {{ old('category') === 'road_damage' ? 'selected' : '' }}>Road Damage</option>
-                  <option value="flooding" {{ old('category') === 'flooding' ? 'selected' : '' }}>Flooding / Drainage</option>
-                  <option value="streetlight" {{ old('category') === 'streetlight' ? 'selected' : '' }}>Streetlight Issues</option>
-                </optgroup>
-                <optgroup label="General Services Office (GSO)">
-                  <option value="garbage" {{ old('category') === 'garbage' ? 'selected' : '' }}>Garbage Collection</option>
-                  <option value="sanitation" {{ old('category') === 'sanitation' ? 'selected' : '' }}>Sanitation</option>
-                  <option value="park_maintenance" {{ old('category') === 'park_maintenance' ? 'selected' : '' }}>Park / Public Area Maintenance</option>
-                  <option value="others" {{ old('category') === 'others' ? 'selected' : '' }}>Other Concerns</option>
-                </optgroup>
-                <optgroup label="Business Permits & Licensing">
-                  <option value="business_permit" {{ old('category') === 'business_permit' ? 'selected' : '' }}>Business Permit Issues</option>
-                </optgroup>
-                <optgroup label="Peace & Order (PNP)">
-                  <option value="noise_complaint" {{ old('category') === 'noise_complaint' ? 'selected' : '' }}>Noise Complaint</option>
-                </optgroup>
-                <optgroup label="Agriculture & Veterinary">
-                  <option value="stray_animals" {{ old('category') === 'stray_animals' ? 'selected' : '' }}>Stray Animals</option>
-                </optgroup>
-              </select>
-              
-              <div id="department-hint" class="department-hint" style="display: none;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                <span>This will be routed to: <strong id="department-name"></strong></span>
-              </div>
-              
-              @error('category') <div class="field-error-msg">{{ $message }}</div> @enderror
-            </div>
-          </div>
-        </div>
-
-        {{-- ── Step 2: Details ── --}}
-        <div class="form-card fu d3" style="margin-bottom: 20px;">
-          <div class="form-card-header">
-            <div class="form-card-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </div>
-            <div class="form-card-title">Step 2 — Complaint Details</div>
-          </div>
-          <div class="form-card-body">
-
-            <div class="field-group">
-              <label class="field-label" for="title">
-                Title <span class="req">*</span>
-              </label>
-              <p class="field-hint">A short, clear summary of the issue (max 255 characters).</p>
-              <input type="text" id="title" name="title" class="field-input"
-                placeholder="e.g. Pothole on Quezon Ave near Barangay Bagasbas"
-                value="{{ old('title') }}" maxlength="255" required>
-              @error('title') <div class="field-error-msg">{{ $message }}</div> @enderror
-            </div>
-
-            <div class="field-group">
-              <label class="field-label" for="description">
-                Description <span class="req">*</span>
-              </label>
-              <p class="field-hint">Describe the issue in detail. Include location, duration, and any related incidents (minimum 20 characters).</p>
-              <textarea id="description" name="description" class="field-textarea"
-                placeholder="Describe the issue clearly. Include when you first noticed it, how it affects residents, and any other relevant details..."
-                required minlength="20">{{ old('description') }}</textarea>
-              @error('description') <div class="field-error-msg">{{ $message }}</div> @enderror
-            </div>
-
-            <div class="field-row-2">
-              <div class="field-group">
-                <label class="field-label" for="urgency">
-                  Urgency Level <span class="req">*</span>
-                </label>
-                <p class="field-hint">How urgently does this need attention?</p>
-                <div class="urgency-row">
-                  @foreach(['Low', 'Medium', 'High', 'Urgent'] as $level)
-                    <div class="urgency-option">
-                      <input type="radio" name="urgency" id="urg-{{ strtolower($level) }}"
-                        value="{{ $level }}"
-                        {{ old('urgency', 'Medium') === $level ? 'checked' : '' }}>
-                      <label class="urgency-label" for="urg-{{ strtolower($level) }}">
-                        <span class="urgency-dot"></span>
-                        {{ $level }}
-                      </label>
-                    </div>
-                  @endforeach
+    <div class="filing-page">
+        <header class="filing-header">
+            <div class="filing-header__inner">
+                <div>
+                    <a href="{{ route('complaints.index') }}" class="filing-back">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+                        Back to my complaints
+                    </a>
+                    <h1>Tell us what needs <em>attention.</em></h1>
+                    <p class="filing-header__lede">
+                        Share the facts once. We will route your report to the right department, verify it, and keep you updated.
+                    </p>
                 </div>
-                @error('urgency') <div class="field-error-msg">{{ $message }}</div> @enderror
-              </div>
+                <div class="filing-header__aside">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
+                    <span><strong>Reviewed before action</strong>The department checks each report and confirms its priority.</span>
+                </div>
             </div>
+        </header>
 
-          </div>
-        </div>
+        <main class="filing-main">
+            <nav class="filing-stepper" aria-label="Complaint filing steps">
+                <div class="filing-step filing-step--active">
+                    <span class="filing-step__number">01</span>
+                    <span><strong>Category</strong><small>Choose the concern</small></span>
+                </div>
+                <div class="filing-step">
+                    <span class="filing-step__number">02</span>
+                    <span><strong>Details</strong><small>Explain what happened</small></span>
+                </div>
+                <div class="filing-step">
+                    <span class="filing-step__number">03</span>
+                    <span><strong>Location & review</strong><small>Confirm and submit</small></span>
+                </div>
+            </nav>
 
-        {{-- ── Step 3: Photo ── --}}
-        <div class="form-card fu d4" style="margin-bottom: 20px;">
-          <div class="form-card-header">
-            <div class="form-card-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <div class="filing-layout">
+                <form method="POST" action="{{ route('complaints.store') }}" enctype="multipart/form-data" id="complaint-form" class="filing-form">
+                    @csrf
+
+                    @if($errors->any())
+                        <div class="filing-error-banner" role="alert">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                            <div>
+                                <strong>Check the highlighted fields.</strong>
+                                <ul>
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    @endif
+
+                    <section class="filing-card" id="filing-category">
+                        <div class="filing-card__header">
+                            <span class="filing-card__icon" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
+                            </span>
+                            <div>
+                                <h2>What are you reporting?</h2>
+                                <p>Choose the closest category so we can route it correctly.</p>
+                            </div>
+                        </div>
+                        <div class="filing-card__body">
+                            <div class="filing-field">
+                                <label for="category">Complaint category <span>*</span></label>
+                                <p class="filing-field__hint">Pick the main issue. You can add more context in the description.</p>
+                                <select id="category" name="category" class="filing-select" required>
+                                    <option value="">— Select a category —</option>
+                                    @foreach($categoryOptions as $department => $options)
+                                        <optgroup label="{{ $department }}">
+                                            @foreach($options as $option)
+                                                <option value="{{ $option['value'] }}" @selected(old('category') === $option['value'])>{{ $option['label'] }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endforeach
+                                </select>
+                                @error('category') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+                            <div id="department-hint" class="filing-route" role="status" aria-live="polite" hidden>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                                <span>This report will be routed to <strong id="department-name">the responsible department</strong>.</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="filing-card" id="filing-details">
+                        <div class="filing-card__header">
+                            <span class="filing-card__icon" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
+                            </span>
+                            <div>
+                                <h2>Give us the useful details.</h2>
+                                <p>Clear facts help the department verify and act faster.</p>
+                            </div>
+                        </div>
+                        <div class="filing-card__body">
+                            <div class="filing-field">
+                                <label for="title">Short title <span>*</span></label>
+                                <p class="filing-field__hint">Summarize the problem in one sentence.</p>
+                                <input id="title" name="title" class="filing-input" type="text" maxlength="255" placeholder="e.g. Fallen tree blocking the road" value="{{ old('title') }}" required>
+                                @error('title') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="filing-field">
+                                <label for="description">What happened? <span>*</span></label>
+                                <p class="filing-field__hint">Include when it started, who is affected, and any immediate risk. Minimum 20 characters.</p>
+                                <textarea id="description" name="description" class="filing-textarea" minlength="20" placeholder="Describe what you observed and how it affects the community..." required>{{ old('description') }}</textarea>
+                                @error('description') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="filing-review-notice">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
+                                <span><strong>No urgency selection is needed.</strong> The system will suggest a priority from your category and description. The responsible department verifies the report and confirms the final priority.</span>
+                            </div>
+                            <div class="filing-field">
+                                <label for="image">Photo evidence <span>*</span></label>
+                                <p class="filing-field__hint">Required. Use a clear photo taken at the issue location. If location services were enabled, its GPS coordinates will be used to place the report. JPG, PNG, or WEBP, up to 5 MB.</p>
+                                <div class="filing-upload" id="upload-zone">
+                                    <input type="file" name="image" id="image-input" accept="image/jpeg,image/png,image/webp" required>
+                                    <div class="filing-upload__icon">
+                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
+                                    </div>
+                                    <strong>Click to add a photo</strong>
+                                    <span>or drag and drop it here</span>
+                                    <div class="filing-upload__preview" id="upload-preview"><img id="preview-img" src="" alt="Selected complaint evidence preview"></div>
+                                </div>
+                                @error('image') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="filing-card" id="filing-location">
+                        <div class="filing-card__header">
+                            <span class="filing-card__icon" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+                            </span>
+                            <div>
+                                <h2>Where is the issue?</h2>
+                                <p>Photo GPS is used when available. Add a landmark or map point as a fallback.</p>
+                            </div>
+                        </div>
+                        <div class="filing-card__body">
+                            <div class="filing-field">
+                                <label for="address_text">Address or nearest landmark <span>(optional)</span></label>
+                                <p class="filing-field__hint">Example: in front of Daet Public Market, Barangay VI.</p>
+                                <input id="address_text" name="address_text" class="filing-input" type="text" maxlength="500" placeholder="Describe the location..." value="{{ old('address_text') }}">
+                                @error('address_text') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+                            <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
+                            <div id="complaint-map" class="filing-map" aria-label="Map for selecting the complaint location"></div>
+                            <p class="filing-map-note">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
+                                Click the map to place a marker, or enter a nearby landmark above.
+                            </p>
+                            @error('latitude') <div class="filing-error">{{ $message }}</div> @enderror
+                            @error('longitude') <div class="filing-error">{{ $message }}</div> @enderror
+
+                            <div class="filing-summary" aria-live="polite">
+                                <h3>Ready to submit?</h3>
+                                <div class="filing-summary__row"><span>Category</span><strong id="review-category">Not selected</strong></div>
+                                <div class="filing-summary__row"><span>Department</span><strong id="review-department">Not routed yet</strong></div>
+                                <div class="filing-summary__row"><span>Location</span><strong id="review-location">No location added</strong></div>
+                            </div>
+
+                            <div class="filing-terms">
+                                <input type="checkbox" name="terms" id="terms" value="1" @checked(old('terms')) required>
+                                <label for="terms">I confirm that the information provided is accurate. I understand that the department will verify this report before deciding its priority and next action. <a href="#" target="_blank" rel="noopener">Read the complaint policy.</a></label>
+                            </div>
+                            @error('terms') <div class="filing-error">{{ $message }}</div> @enderror
+
+                            <button type="submit" class="filing-submit" id="submit-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                                Submit for department review
+                            </button>
+                        </div>
+                    </section>
+                </form>
+
+                <aside class="filing-aside" aria-label="Filing guidance">
+                    <div class="filing-aside-card">
+                        <h2>Before you submit</h2>
+                        <ul class="filing-aside-list">
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="8" cy="9" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
+                                <span>Take the required photo at the issue location; keep location services enabled when possible.</span>
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                                <span>Describe what you observed, not what you assume caused it.</span>
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+                                <span>Add a nearby landmark or map pin when possible.</span>
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"></path><path d="M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                                <span>For immediate danger, contact local emergency services first.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="filing-aside-card">
+                        <h2>What happens next</h2>
+                        <ol class="filing-next">
+                            <li><span class="filing-next__number">1</span><span><strong>Department review</strong><span>Your report is checked for legitimacy and scope.</span></span></li>
+                            <li><span class="filing-next__number">2</span><span><strong>Priority confirmed</strong><span>The assigned office confirms the suggested priority.</span></span></li>
+                            <li><span class="filing-next__number">3</span><span><strong>Status updates</strong><span>You can follow progress from My Complaints.</span></span></li>
+                        </ol>
+                    </div>
+                </aside>
             </div>
-            <div class="form-card-title">Step 3 — Attach Photo <span style="font-weight:300; font-size:14px; color:var(--text-muted);">(Optional)</span></div>
-          </div>
-          <div class="form-card-body">
-            <p class="field-hint">A photo helps the department understand the issue faster. Max 5MB. JPG, PNG, or WEBP.</p>
-            <div class="upload-zone" id="upload-zone">
-              <input type="file" name="image" id="image-input" accept="image/jpeg,image/png,image/webp">
-              <div class="upload-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              </div>
-              <div class="upload-title">Click or drag to upload a photo</div>
-              <div class="upload-sub">JPG, PNG, WEBP — max 5MB</div>
-              <div class="upload-preview" id="upload-preview">
-                <img id="preview-img" src="" alt="Preview">
-              </div>
-            </div>
-            @error('image') <div class="field-error-msg" style="margin-top:8px;">{{ $message }}</div> @enderror
-          </div>
-        </div>
-
-        {{-- ── Step 4: Location (Leaflet Map) ── --}}
-        <div class="form-card fu d4" style="margin-bottom: 20px;">
-          <div class="form-card-header">
-            <div class="form-card-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-            <div class="form-card-title">Step 4 — Location <span style="font-weight:300; font-size:14px; color:var(--text-muted);">(Optional)</span></div>
-          </div>
-          <div class="form-card-body">
-            <p class="field-hint">Click on the map to mark the exact location of the issue. This helps departments find it faster.</p>
-            
-            {{-- Hidden inputs for map coordinates --}}
-            <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
-            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
-            
-            <div class="field-group">
-              <label class="field-label" for="address_text">Address / Landmark</label>
-              <p class="field-hint">Describe the location or nearest landmark (e.g., "In front of Daet Public Market").</p>
-              <input type="text" id="address_text" name="address_text" class="field-input"
-                placeholder="Enter address or describe the location..."
-                value="{{ old('address_text') }}" maxlength="500">
-            </div>
-            
-            {{-- Leaflet Map Container --}}
-            <div id="complaint-map" style="height: 320px; border-radius: 6px; border: 1px solid var(--border-navy); margin-top: 16px;"></div>
-            <p class="field-hint" style="margin-top: 8px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              Click anywhere on the map to place a marker. Drag the marker to adjust position.
-            </p>
-            
-            @error('latitude') <div class="field-error-msg">{{ $message }}</div> @enderror
-            @error('longitude') <div class="field-error-msg">{{ $message }}</div> @enderror
-          </div>
-        </div>
-
-        {{-- ── Terms + Submit ── --}}
-        <div class="form-card fu d4">
-          <div class="form-card-body">
-            <div class="field-group">
-              <div class="terms-row">
-                <input type="checkbox" name="terms" id="terms" {{ old('terms') ? 'checked' : '' }} required>
-                <label for="terms" class="terms-text">
-                  I confirm that the information provided is accurate and truthful.
-                  I understand that filing a false complaint is a violation of
-                  <a href="#" target="_blank">LGU Daet's Complaint Policy</a> and may result in account suspension.
-                </label>
-              </div>
-              @error('terms') <div class="field-error-msg">{{ $message }}</div> @enderror
-            </div>
-
-            <button type="submit" class="btn-submit-complaint" id="submit-btn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Submit Complaint
-            </button>
-          </div>
-        </div>
-
-      </form>
+        </main>
     </div>
 
-    {{-- ── Sidebar ── --}}
-    <aside class="create-sidebar">
-
-      {{-- Department Routing Guide --}}
-      <div class="sidebar-card fu d2">
-        <div class="sidebar-card-header">Department Routing</div>
-        <div class="sidebar-card-body" style="padding: 8px 20px;">
-          <div class="dept-route-item">
-            <span class="dept-code">ENGR</span>
-            <span>Roads, Drainage, Streetlights</span>
-          </div>
-          <div class="dept-route-item">
-            <span class="dept-code">GSO</span>
-            <span>Garbage, Sanitation, Parks, Other</span>
-          </div>
-          <div class="dept-route-item">
-            <span class="dept-code">BPLS</span>
-            <span>Business Permits</span>
-          </div>
-          <div class="dept-route-item">
-            <span class="dept-code">PNP</span>
-            <span>Noise Complaints, Peace & Order</span>
-          </div>
-          <div class="dept-route-item">
-            <span class="dept-code">MAO</span>
-            <span>Stray Animals, Agriculture</span>
-          </div>
-        </div>
-      </div>
-
-      {{-- Tips ── --}}
-      <div class="sidebar-card fu d3">
-        <div class="sidebar-card-header">Tips for a Strong Complaint</div>
-        <div class="sidebar-card-body" style="padding: 8px 20px;">
-          <div class="tip-item">
-            <div class="tip-num">1</div>
-            <div>Be specific about the exact location — include barangay and nearest landmark.</div>
-          </div>
-          <div class="tip-item">
-            <div class="tip-num">2</div>
-            <div>Attach a clear photo — it speeds up the department's on-site verification.</div>
-          </div>
-          <div class="tip-item">
-            <div class="tip-num">3</div>
-            <div>Describe how long the issue has existed and if it has caused harm.</div>
-          </div>
-          <div class="tip-item">
-            <div class="tip-num">4</div>
-            <div>Select the urgency that matches the actual risk — avoid inflating it unnecessarily.</div>
-          </div>
-        </div>
-      </div>
-
-    </aside>
-
-  </div>
-</div>
-
-<script>
-  // ── Image upload preview ──
-  const input   = document.getElementById('image-input');
-  const preview = document.getElementById('upload-preview');
-  const img     = document.getElementById('preview-img');
-  const zone    = document.getElementById('upload-zone');
-
-  if (input) {
-    input.addEventListener('change', function () {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          img.src = e.target.result;
-          preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-  }
-
-  // Drag-over visual feedback
-  if (zone) {
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', () => zone.classList.remove('drag-over'));
-  }
-
-  // ── Leaflet Map Initialization ──
-  let map = null;
-  let marker = null;
-
-  function initComplaintMap() {
-    try {
-      console.log('Leaflet init starting...', { hasL: typeof L !== 'undefined', hasContainer: !!document.getElementById('complaint-map') });
-      
-      // Clean up existing map instance
-      if (map) {
-        map.remove();
-        map = null;
-        marker = null;
-      }
-
-      const el = document.getElementById('complaint-map');
-      if (!el) {
-        console.warn('Map container #complaint-map not found - skipping init');
-        return;
-      }
-      
-      if (typeof L === 'undefined') {
-        console.error('Leaflet (L) is not loaded. Check if CDN scripts are loading.');
-        el.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">Map failed to load. Please refresh the page.</div>';
-        return;
-      }
-
-      // Get input elements fresh each time (for Livewire navigation)
-      const latInput = document.getElementById('latitude');
-      const lngInput = document.getElementById('longitude');
-      const addressInput = document.getElementById('address_text');
-
-      // Default center: Daet, Camarines Norte (as specified)
-      const defaultCenter = [14.1153, 122.9553];
-      const defaultZoom = 14;
-
-      map = L.map('complaint-map').setView(defaultCenter, defaultZoom);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: 'OpenStreetMap contributors'
-      }).addTo(map);
-
-      console.log('Leaflet map initialized successfully');
-
-      // Custom gold pulsing pin icon
-      const goldPinIcon = L.divIcon({
-        className: 'gold-pin-marker',
-        html: '<div class="pin-head"></div><div class="pin-pulse"></div>',
-        iconSize: [30, 42],
-        iconAnchor: [15, 42],
-        popupAnchor: [0, -42]
-      });
-
-      // Check if we have old values to restore marker
-      const oldLat = parseFloat(latInput?.value);
-      const oldLng = parseFloat(lngInput?.value);
-      if (oldLat && oldLng && !isNaN(oldLat) && !isNaN(oldLng)) {
-        marker = L.marker([oldLat, oldLng], { icon: goldPinIcon, draggable: true }).addTo(map);
-        map.setView([oldLat, oldLng], 16);
-        setupMarkerEvents(marker, latInput, lngInput, addressInput);
-        console.log('Restored marker from saved values:', oldLat, oldLng);
-      }
-
-      // Click on map to place/move marker
-      map.on('click', function(e) {
-        const { lat, lng } = e.latlng;
-        
-        if (marker) {
-          marker.setLatLng([lat, lng]);
-        } else {
-          marker = L.marker([lat, lng], { icon: goldPinIcon, draggable: true }).addTo(map);
-          setupMarkerEvents(marker, latInput, lngInput, addressInput);
-        }
-        
-        updateCoordinates(lat, lng, latInput, lngInput, addressInput);
-        console.log('Map clicked, marker placed at:', lat, lng);
-      });
-
-    } catch (err) {
-      console.error('Error initializing map:', err);
-    }
-  }
-
-  function setupMarkerEvents(m, latInput, lngInput, addressInput) {
-    m.on('dragend', function() {
-      const pos = m.getLatLng();
-      updateCoordinates(pos.lat, pos.lng, latInput, lngInput, addressInput);
-      console.log('Marker dragged to:', pos.lat, pos.lng);
-    });
-  }
-
-  function updateCoordinates(lat, lng, latInput, lngInput, addressInput) {
-    if (latInput) latInput.value = lat.toFixed(8);
-    if (lngInput) lngInput.value = lng.toFixed(8);
-    
-    // Auto-fill address_text if empty
-    if (addressInput && !addressInput.value) {
-      addressInput.value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    }
-    
-    console.log('Coordinates updated:', lat.toFixed(8), lng.toFixed(8));
-  }
-
-  // Initialize on page load (use livewire:navigated for both initial load and navigation)
-  document.addEventListener('livewire:navigated', function() {
-    console.log('Livewire navigated, reinitializing map...');
-    initComplaintMap();
-  });
-
-  // Also try immediate init for non-Livewire page loads
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      // Small delay to ensure Livewire has rendered
-      setTimeout(initComplaintMap, 100);
-    });
-  } else {
-    // DOM already loaded - delay for Livewire
-    setTimeout(initComplaintMap, 100);
-  }
-
-  // ── Department Routing Hint ──
-  const categorySelect = document.getElementById('category');
-  const departmentHint = document.getElementById('department-hint');
-  const departmentName = document.getElementById('department-name');
-
-  // Category → Department mapping (matches PHP DepartmentRouter)
-  const categoryToDept = {
-    'road_damage': 'Engineering Office',
-    'flooding': 'Engineering Office',
-    'streetlight': 'Engineering Office',
-    'garbage': 'General Services Office (GSO)',
-    'sanitation': 'General Services Office (GSO)',
-    'park_maintenance': 'General Services Office (GSO)',
-    'others': 'General Services Office (GSO)',
-    'business_permit': 'Business Permits & Licensing',
-    'noise_complaint': 'Peace & Order (PNP)',
-    'stray_animals': 'Agriculture & Veterinary',
-  };
-
-  if (categorySelect && departmentHint && departmentName) {
-    categorySelect.addEventListener('change', function() {
-      const category = this.value;
-      if (category && categoryToDept[category]) {
-        departmentName.textContent = categoryToDept[category];
-        departmentHint.style.display = 'block';
-      } else {
-        departmentHint.style.display = 'none';
-      }
-    });
-
-    // Trigger on page load if category is pre-selected
-    if (categorySelect.value && categoryToDept[categorySelect.value]) {
-      departmentName.textContent = categoryToDept[categorySelect.value];
-      departmentHint.style.display = 'block';
-    }
-  }
-
-  // ── Submit loading state ──
-  const form      = document.getElementById('complaint-form');
-  const submitBtn = document.getElementById('submit-btn');
-
-  if (form && submitBtn) {
-    form.addEventListener('submit', function () {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
-        Submitting...
-      `;
-    });
-  }
-</script>
-
-<style>
-  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  
-  /* Gold pulsing location pin marker */
-  .gold-pin-marker {
-    position: relative;
-    width: 30px;
-    height: 42px;
-  }
-  .gold-pin-marker .pin-head {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #C9A84C, #E2C06A);
-    border: 3px solid #fff;
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    z-index: 2;
-  }
-  .gold-pin-marker .pin-head::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 6px;
-    height: 6px;
-    background: #0B1F3A;
-    border-radius: 50%;
-  }
-  .gold-pin-marker .pin-pulse {
-    position: absolute;
-    bottom: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 40px;
-    background: rgba(201, 168, 76, 0.4);
-    border-radius: 50%;
-    animation: pinPulse 1.5s ease-out infinite;
-    z-index: 1;
-  }
-  @keyframes pinPulse {
-    0% { transform: translateX(-50%) scale(0.5); opacity: 1; }
-    100% { transform: translateX(-50%) scale(1.5); opacity: 0; }
-  }
-  
-  /* Leaflet marker override to remove default icon */
-  .leaflet-marker-icon.gold-pin-marker {
-    background: transparent !important;
-    border: none !important;
-  }
-</style>
-
+    <script id="category-department-data" type="application/json">{!! json_encode(
+        collect($categoryOptions)
+            ->mapWithKeys(fn ($options, $department) => collect($options)->mapWithKeys(fn ($option) => [$option['value'] => $department]))
+            ->all(),
+        JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT,
+    ) !!}</script>
 @endsection
+
+@push('scripts')
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (() => {
+            const initializeFilingPage = () => {
+                const form = document.getElementById('complaint-form');
+                if (!form || form.dataset.filingInitialized === 'true') return;
+                form.dataset.filingInitialized = 'true';
+
+                const imageInput = document.getElementById('image-input');
+                const preview = document.getElementById('upload-preview');
+                const previewImage = document.getElementById('preview-img');
+                const uploadZone = document.getElementById('upload-zone');
+                const categorySelect = document.getElementById('category');
+                const departmentHint = document.getElementById('department-hint');
+                const departmentName = document.getElementById('department-name');
+                const addressInput = document.getElementById('address_text');
+                const reviewCategory = document.getElementById('review-category');
+                const reviewDepartment = document.getElementById('review-department');
+                const reviewLocation = document.getElementById('review-location');
+                const submitButton = document.getElementById('submit-btn');
+                const categoryDataElement = document.getElementById('category-department-data');
+                let categoryToDepartment = {};
+
+                try {
+                    categoryToDepartment = JSON.parse(categoryDataElement?.textContent || '{}');
+                } catch (error) {
+                    categoryToDepartment = {};
+                }
+
+                const updateSummary = () => {
+                    const categoryLabel = categorySelect?.selectedOptions?.[0]?.textContent?.trim();
+                    const department = categoryToDepartment[categorySelect?.value || ''];
+                    reviewCategory.textContent = categoryLabel && categoryLabel !== '— Select a category —' ? categoryLabel : 'Not selected';
+                    reviewDepartment.textContent = department || 'Not routed yet';
+                    reviewLocation.textContent = addressInput?.value?.trim() || 'No location added';
+                };
+
+                if (categorySelect) {
+                    categorySelect.addEventListener('change', () => {
+                        const department = categoryToDepartment[categorySelect.value];
+                        if (department) {
+                            departmentName.textContent = department;
+                            departmentHint.hidden = false;
+                        } else {
+                            departmentHint.hidden = true;
+                        }
+                        updateSummary();
+                    });
+                    updateSummary();
+                }
+
+                addressInput?.addEventListener('input', updateSummary);
+
+                if (imageInput && preview && previewImage) {
+                    imageInput.addEventListener('change', () => {
+                        const file = imageInput.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            previewImage.src = event.target.result;
+                            preview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+
+                if (uploadZone) {
+                    uploadZone.addEventListener('dragover', (event) => {
+                        event.preventDefault();
+                        uploadZone.classList.add('is-dragging');
+                    });
+                    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('is-dragging'));
+                    uploadZone.addEventListener('drop', (event) => {
+                        event.preventDefault();
+                        uploadZone.classList.remove('is-dragging');
+                        if (event.dataTransfer?.files?.length && imageInput) {
+                            imageInput.files = event.dataTransfer.files;
+                            imageInput.dispatchEvent(new Event('change'));
+                        }
+                    });
+                }
+
+                let map = null;
+                let marker = null;
+                const latitudeInput = document.getElementById('latitude');
+                const longitudeInput = document.getElementById('longitude');
+                const mapElement = document.getElementById('complaint-map');
+
+                const updateCoordinates = (latitude, longitude) => {
+                    if (latitudeInput) latitudeInput.value = latitude.toFixed(8);
+                    if (longitudeInput) longitudeInput.value = longitude.toFixed(8);
+                    if (addressInput && !addressInput.value) {
+                        addressInput.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+                    }
+                    updateSummary();
+                };
+
+                const initializeMap = () => {
+                    if (!mapElement) return;
+                    if (typeof window.L === 'undefined') {
+                        mapElement.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:12px">Map unavailable. You can still submit using the address or landmark field.</div>';
+                        return;
+                    }
+
+                    if (map) {
+                        map.remove();
+                        map = null;
+                        marker = null;
+                    }
+
+                    map = window.L.map(mapElement).setView([14.1153, 122.9553], 14);
+                    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 18,
+                    }).addTo(map);
+
+                    const pinIcon = window.L.divIcon({
+                        className: 'gold-pin-marker',
+                        html: '<div class="pin-head"></div><div class="pin-pulse"></div>',
+                        iconSize: [30, 42],
+                        iconAnchor: [15, 42],
+                    });
+
+                    const placeMarker = (latitude, longitude, recenter = false) => {
+                        if (marker) {
+                            marker.setLatLng([latitude, longitude]);
+                        } else {
+                            marker = window.L.marker([latitude, longitude], { icon: pinIcon, draggable: true }).addTo(map);
+                            marker.on('dragend', () => {
+                                const position = marker.getLatLng();
+                                updateCoordinates(position.lat, position.lng);
+                            });
+                        }
+                        if (recenter) map.setView([latitude, longitude], 16);
+                        updateCoordinates(latitude, longitude);
+                    };
+
+                    const savedLatitude = Number.parseFloat(latitudeInput?.value);
+                    const savedLongitude = Number.parseFloat(longitudeInput?.value);
+                    if (Number.isFinite(savedLatitude) && Number.isFinite(savedLongitude)) {
+                        placeMarker(savedLatitude, savedLongitude, true);
+                    }
+
+                    map.on('click', (event) => placeMarker(event.latlng.lat, event.latlng.lng));
+                };
+
+                initializeMap();
+
+                form.addEventListener('submit', () => {
+                    if (!submitButton) return;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path></svg> Sending for review...';
+                });
+            };
+
+            const scheduleInitialize = () => window.setTimeout(initializeFilingPage, 80);
+            document.addEventListener('livewire:navigated', scheduleInitialize);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', scheduleInitialize);
+            } else {
+                scheduleInitialize();
+            }
+        })();
+    </script>
+@endpush

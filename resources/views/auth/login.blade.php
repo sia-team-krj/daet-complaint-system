@@ -375,7 +375,7 @@
     width: 4px; height: 7px;
     border: 1.5px solid var(--navy); border-top: none; border-left: none; transform: rotate(45deg);
   }
-  .field-check-label { font-size: 11.5px; color: rgba(255,255,255,0.4); user-select: none; }
+  .field-check-label { font-size: 11.5px; color: rgba(255,255,255,0.4); }
   .forgot-link {
     font-size: 11.5px; color: rgba(201,168,76,0.6);
     text-decoration: none; font-weight: 500; transition: color 0.2s; white-space: nowrap;

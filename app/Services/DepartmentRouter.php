@@ -10,25 +10,25 @@ class DepartmentRouter
      * Category to department code mapping.
      */
     private const CATEGORY_MAP = [
-        // Engineering
-        'road_damage'       => 'ENGR',
-        'flooding'          => 'ENGR',
-        'streetlight'       => 'ENGR',
-        
+        // Engineering Office
+        'road_damage'       => 'ENG',
+        'flooding'          => 'ENG',
+        'streetlight'       => 'ENG',
+
         // General Services Office
         'garbage'           => 'GSO',
         'sanitation'        => 'GSO',
         'park_maintenance'  => 'GSO',
         'others'            => 'GSO', // fallback
-        
-        // Business Permits & Licensing
-        'business_permit'   => 'BPLS',
-        
-        // Peace & Order (PNP)
-        'noise_complaint'   => 'PNP',
-        
-        // Agriculture & Veterinary
-        'stray_animals'     => 'AGRI',
+
+        // Business Permit and Licensing Office
+        'business_permit'   => 'BPLO',
+
+        // Office of the Mayor (peace & order concerns)
+        'noise_complaint'   => 'OM',
+
+        // Health Office (animal welfare)
+        'stray_animals'     => 'HLTH',
     ];
 
     /**

@@ -2,7 +2,7 @@
 @section('content')
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+  /* Fonts already loaded via layouts/app.blade.php */
 
   :root {
     --navy:        #0B1F3A;
@@ -21,8 +21,15 @@
     --border-navy: rgba(11,31,58,0.08);
   }
 
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
   .home-root { font-family: 'DM Sans', sans-serif; width: 100%; overflow-x: hidden; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);} }
+  .fu{animation:fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both;}
+  .d1{animation-delay:0.04s;}.d2{animation-delay:0.16s;}.d3{animation-delay:0.28s;}.d4{animation-delay:0.40s;}.d5{animation-delay:0.52s;}
+  @media (prefers-reduced-motion: reduce) {
+    .fu{animation-duration:0.01ms!important;animation-iteration-count:1!important;}
+  }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      HERO
@@ -574,13 +581,11 @@
 
         <div class="hero-ctas fu d4">
           @auth
-          {{-- route('complaints.create')  --}}
-            <a href="" class="btn-primary">
+            <a href="{{ route('complaints.create') }}" wire:navigate class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               File a Complaint
             </a>
-            {{-- route('complaints.track') --}}
-            <a href="" class="btn-secondary">
+            <a href="{{ route('complaints.track') }}" wire:navigate class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               Track My Complaint
             </a>

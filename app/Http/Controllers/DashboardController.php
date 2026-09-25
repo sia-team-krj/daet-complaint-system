@@ -12,6 +12,15 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        // Redirect admins and staff to their respective dashboards
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($user->isStaff()) {
+            return redirect()->route('staff.dashboard');
+        }
+
         // Paginated list of this citizen's complaints — latest first
         $complaints = Complaint::where('user_id', $user->id)
                                ->with('department')

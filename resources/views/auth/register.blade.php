@@ -174,7 +174,7 @@
   .field-terms input[type="checkbox"] { appearance: none; width: 14px; height: 14px; flex-shrink: 0; border: 1px solid rgba(201,168,76,0.35); border-radius: 2px; background: transparent; cursor: pointer; margin-top: 1px; transition: background 0.18s, border-color 0.18s; position: relative; }
   .field-terms input[type="checkbox"]:checked { background: var(--gold); border-color: var(--gold); }
   .field-terms input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 1px; left: 3.5px; width: 4px; height: 7px; border: 1.5px solid var(--navy); border-top: none; border-left: none; transform: rotate(45deg); }
-  .field-terms-label { font-size: 11.5px; color: rgba(255,255,255,0.35); line-height: 1.65; user-select: none; }
+  .field-terms-label { font-size: 11.5px; color: rgba(255,255,255,0.35); line-height: 1.65; }
   .field-terms-label a { color: var(--gold); text-decoration: none; font-weight: 500; }
   .field-terms-label a:hover { color: var(--gold-light); }
 
@@ -349,6 +349,7 @@
               <div class="ps-bars"><div class="ps-bar" id="pb1"></div><div class="ps-bar" id="pb2"></div><div class="ps-bar" id="pb3"></div><div class="ps-bar" id="pb4"></div></div>
               <span class="ps-label" id="ps-label">Weak</span>
             </div>
+            @include('auth.partials.password-requirements', ['passwordTarget' => 'password'])
           </div>
 
           <div class="field-group fu d4">

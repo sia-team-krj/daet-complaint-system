@@ -13,10 +13,7 @@ class AppServiceProvider extends ServiceProvider
             $layout = "layouts.guest"; // Default
 
             if (auth()->check()) {
-                // If you have an admin role check:
-                $layout = auth()->user()->is_admin
-                    ? "layouts.admin"
-                    : "layouts.app";
+                $layout = "layouts.app";
             }
 
             $view->with("mainLayout", $layout);

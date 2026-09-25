@@ -77,8 +77,8 @@
   }
   .dash-title span { color: var(--gold); font-style: italic; }
   .dash-subtitle {
-    font-size: 13px; color: rgba(255,255,255,0.45);
-    font-weight: 300; line-height: 1.6;
+    font-size: 13px; color: rgba(255,255,255,0.72);
+    font-weight: 400; line-height: 1.6;
   }
   .btn-file-complaint {
     display: inline-flex; align-items: center; gap: 10px;
@@ -120,8 +120,24 @@
   }
   .dash-stat-lbl {
     font-size: 9.5px; font-weight: 600; letter-spacing: 0.13em;
-    text-transform: uppercase; color: rgba(255,255,255,0.35);
+    text-transform: uppercase; color: rgba(255,255,255,0.64);
   }
+
+  .dash-scope-note {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 13px 40px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border-bottom: 1px solid var(--border-gold);
+    background: #fffdf8;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .dash-scope-note svg { flex: 0 0 auto; color: var(--gold); }
+  .dash-scope-note strong { color: var(--navy); font-weight: 700; }
 
   /* ── Main Content ── */
   .dash-body {
@@ -204,13 +220,10 @@
     border: 1px solid rgba(201,168,76,0.25);
   }
 
-  /* Urgency dot */
-  .urgency-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-  .urgency-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .urgency-low      .urgency-dot { background: #6B7280; }
-  .urgency-medium   .urgency-dot { background: #F59E0B; }
-  .urgency-high     .urgency-dot { background: #EF4444; }
-  .urgency-urgent   .urgency-dot { background: #7C3AED; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+  /* Review and priority */
+  .review-priority { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+  .review-priority strong { color: var(--navy); font-size: 11px; }
+  .review-priority span { color: var(--text-muted); }
 
   /* Status badges */
   .status-badge {
@@ -227,6 +240,12 @@
   .badge-resolved   { background: rgba(63,203,111,0.1);  color: #065f46; border: 1px solid rgba(63,203,111,0.25); }
   .badge-rejected   { background: rgba(239,68,68,0.08);  color: #991b1b; border: 1px solid rgba(239,68,68,0.2); }
   .badge-closed     { background: rgba(107,114,128,0.08);color: #374151; border: 1px solid rgba(107,114,128,0.2); }
+  .review-pending,
+  .review-needs-information { background: rgba(245,158,11,0.08); color: #92400e; border: 1px solid rgba(245,158,11,0.2); }
+  .review-verified { background: rgba(63,203,111,0.1); color: #065f46; border: 1px solid rgba(63,203,111,0.25); }
+  .review-duplicate { background: rgba(139,92,246,0.08); color: #4c1d95; border: 1px solid rgba(139,92,246,0.2); }
+  .review-rejected,
+  .review-escalated { background: rgba(239,68,68,0.08); color: #991b1b; border: 1px solid rgba(239,68,68,0.2); }
 
   /* Date */
   .date-cell { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
@@ -278,6 +297,7 @@
   @media (max-width: 1100px) {
     .dash-header { padding: 40px 32px 44px; }
     .dash-stats  { padding: 0 32px; }
+    .dash-scope-note { padding-right: 32px; padding-left: 32px; }
     .dash-body   { padding: 32px 32px 56px; }
     .dash-stats  { grid-template-columns: repeat(2, 1fr); border-radius: 0 0 6px 6px; }
   }
@@ -285,17 +305,28 @@
     .dash-root { padding-top: 64px; }
     .dash-header { padding: 32px 20px 36px; }
     .dash-stats  { padding: 0 20px; grid-template-columns: repeat(2, 1fr); }
+    .dash-scope-note { padding-right: 20px; padding-left: 20px; }
     .dash-body   { padding: 24px 20px 48px; }
     .dash-header-inner { flex-direction: column; align-items: flex-start; }
     .btn-file-complaint { width: 100%; justify-content: center; }
     /* Scroll table on small screens */
-    .complaints-card { overflow-x: auto; }
-    .complaints-table { min-width: 640px; }
+    .complaints-card {
+      max-width: 100%;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .complaints-table { min-width: 700px; }
   }
   @media (max-width: 540px) {
     .dash-stats { grid-template-columns: 1fr 1fr; }
     .dash-stat { padding: 16px 16px; }
     .dash-stat-num { font-size: 24px; }
+  }
+  @media (max-width: 380px) {
+    .dash-stats { grid-template-columns: 1fr; }
+    .dash-body { padding-right: 14px; padding-left: 14px; }
+    .dash-scope-note { padding-right: 14px; padding-left: 14px; }
   }
 </style>
 
@@ -307,7 +338,7 @@
     <div class="dash-header-glow"></div>
     <div class="dash-header-inner">
       <div>
-        <div class="dash-eyebrow fu d1">Citizen Portal</div>
+        <div class="dash-eyebrow fu d1">Your complaint center</div>
         <h1 class="dash-title fu d2">
           @php
             $hour = now()->hour;
@@ -316,7 +347,7 @@
           {{ $greeting }}, <span>{{ auth()->user()->first_name }}.</span>
         </h1>
         <p class="dash-subtitle fu d3">
-          Track your complaints and stay updated on their resolution status.
+          A private view of the reports you filed and their current progress.
         </p>
       </div>
       <a href="{{ route('complaints.create') }}" wire:navigate class="btn-file-complaint fu d4">
@@ -330,11 +361,11 @@
   <div class="dash-stats">
     <div class="dash-stat">
       <div class="dash-stat-num">{{ $stats['total'] }}</div>
-      <div class="dash-stat-lbl">Total Filed</div>
+      <div class="dash-stat-lbl">My reports</div>
     </div>
     <div class="dash-stat">
       <div class="dash-stat-num">{{ $stats['pending'] }}</div>
-      <div class="dash-stat-lbl">In Progress</div>
+      <div class="dash-stat-lbl">Needs attention</div>
     </div>
     <div class="dash-stat">
       <div class="dash-stat-num">{{ $stats['resolved'] }}</div>
@@ -342,8 +373,13 @@
     </div>
     <div class="dash-stat">
       <div class="dash-stat-num">{{ $stats['avgDays'] ?? '—' }}</div>
-      <div class="dash-stat-lbl">Avg. Days</div>
+      <div class="dash-stat-lbl">Avg. resolution</div>
     </div>
+  </div>
+
+  <div class="dash-scope-note">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+    <span><strong>Private view:</strong> these totals and reports belong only to your account.</span>
   </div>
 
   {{-- ── Main Body ── --}}
@@ -356,16 +392,16 @@
         <div>
           Complaint submitted successfully.
           <span class="flash-ticket">{{ session('new_ticket') }}</span>
-          Keep this ticket number for tracking.
+          Keep this ticket number for your records.
         </div>
       </div>
     @endif
 
     {{-- ── Complaints Section ── --}}
     <div class="section-hd fu d2">
-      <div class="section-hd-title">My Complaints</div>
+      <div class="section-hd-title">Your complaints</div>
       @if($complaints->count())
-        <span class="section-hd-count">{{ $complaints->total() }} total</span>
+        <span class="section-hd-count">{{ $complaints->total() }} {{ Str::plural('report', $complaints->total()) }}</span>
       @endif
     </div>
 
@@ -375,10 +411,6 @@
 
         {{-- Empty State --}}
         <div class="empty-state">
-          <a href="{{ route('complaints.index') }}" class="dropdown-item" wire:navigate>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            My Complaints
-          </a>
           <div class="empty-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
@@ -401,7 +433,8 @@
               <th>Ticket</th>
               <th>Category</th>
               <th>Title</th>
-              <th>Urgency</th>
+              <th>Review</th>
+              <th>Priority</th>
               <th>Status</th>
               <th>Department</th>
               <th>Filed</th>
@@ -412,7 +445,6 @@
             @foreach($complaints as $complaint)
               @php
                 $statusEnum = \App\Enums\ComplaintStatus::from($complaint->status instanceof \App\Enums\ComplaintStatus ? $complaint->status->value : $complaint->status);
-                $urgencyClass = 'urgency-' . strtolower($complaint->urgency);
               @endphp
               <tr>
                 <td><span class="ticket-id">{{ $complaint->ticket_id }}</span></td>
@@ -421,9 +453,12 @@
                   {{ $complaint->title }}
                 </td>
                 <td>
-                  <div class="urgency-wrap {{ $urgencyClass }}">
-                    <span class="urgency-dot"></span>
-                    {{ $complaint->urgency }}
+                  <span class="status-badge {{ $complaint->reviewStatusEnum->badgeClass() }}">{{ $complaint->reviewStatusEnum->label() }}</span>
+                </td>
+                <td>
+                  <div class="review-priority">
+                    <strong>{{ $complaint->confirmedPriorityEnum?->label() ?? 'Awaiting review' }}</strong>
+                    <span>System suggested: {{ $complaint->suggestedPriorityEnum->label() }}</span>
                   </div>
                 </td>
                 <td>
@@ -431,7 +466,7 @@
                     {{ $statusEnum->label() }}
                   </span>
                 </td>
-                <td class="dept-cell">{{ $complaint->department->code ?? '—' }}</td>
+                <td class="dept-cell">{{ $complaint->department->name ?? 'Pending routing' }}</td>
                 <td class="date-cell">{{ $complaint->created_at->format('M d, Y') }}</td>
                 <td>
                   <a href="{{ route('complaints.show', $complaint) }}" class="row-action" wire:navigate>View →</a>

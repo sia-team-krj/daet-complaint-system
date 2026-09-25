@@ -358,8 +358,16 @@
                 <span class="detail-pill">{{ $complaint->category }}</span>
               </div>
               <div class="detail-field">
-                <div class="detail-label">Urgency</div>
-                <span class="detail-value" style="text-transform: capitalize;">{{ $complaint->urgency }}</span>
+                <div class="detail-label">Review status</div>
+                <span class="detail-value">{{ $complaint->reviewStatusEnum->label() }}</span>
+              </div>
+              <div class="detail-field">
+                <div class="detail-label">Suggested priority</div>
+                <span class="detail-value">{{ $complaint->suggestedPriorityEnum->label() }}</span>
+              </div>
+              <div class="detail-field">
+                <div class="detail-label">Confirmed priority</div>
+                <span class="detail-value">{{ $complaint->confirmedPriorityEnum?->label() ?? 'Awaiting department review' }}</span>
               </div>
               <div class="detail-field">
                 <div class="detail-label">Department</div>

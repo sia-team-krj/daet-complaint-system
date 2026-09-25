@@ -192,8 +192,16 @@
     <div class="department-name">{{ $complaint->department?->name ?? 'General Services Office' }}</div>
     
     <div class="handling-note">
-      Your complaint has been received and assigned to the appropriate department. 
-      You will receive updates via email as your complaint progresses through our system. 
+      Your complaint has been received and assigned to the appropriate department for verification.
+      The department will review the report and confirm its priority before work begins.
+      @if(session('complaint_location_source') === 'photo_gps')
+        The location embedded in your photo was used to place the report.
+      @elseif(in_array(session('complaint_location_source'), ['address', 'map'], true))
+        Your address or map point was used as the location fallback.
+      @else
+        No embedded photo location was found; the department may request more details during review.
+      @endif
+      You will receive updates as your complaint progresses through our system.
       Please save your ticket number for future reference.
     </div>
     

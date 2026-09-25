@@ -190,6 +190,13 @@
     font-size: 12px; color: var(--text-muted);
     padding-top: 16px; border-top: 1px solid rgba(201,168,76,0.15);
   }
+  .card-review-label {
+    color: #92670a;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
   .card-dept {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 10px; font-weight: 600;
@@ -357,6 +364,7 @@
             <h3 class="card-title">{{ $complaint->title }}</h3>
             <p class="card-desc">{{ Str::limit($complaint->description, 150) }}</p>
             <div class="card-meta">
+              <span class="card-review-label">{{ $complaint->reviewStatusEnum->label() }}</span>
               <span class="card-dept">{{ $complaint->department->name ?? 'Unassigned' }}</span>
               <span>{{ $complaint->created_at->format('M d, Y') }}</span>
               <a href="{{ route('complaints.show', $complaint) }}" class="card-action" wire:navigate>View →</a>

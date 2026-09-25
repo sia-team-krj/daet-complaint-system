@@ -65,6 +65,9 @@ return new class extends Migration {
             // Staff or admin sets this after reviewing the complaint.
             $table->boolean("is_public")->default(false);
 
+            // Assigned staff member (nullable until auto-routing assigns it)
+            $table->foreignId("assigned_staff_id")->nullable()->after("department_id")->constrained("users")->nullOnDelete();
+
             $table->timestamps();
 
             // Soft deletes — complaints are government records.

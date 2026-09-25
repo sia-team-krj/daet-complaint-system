@@ -18,6 +18,8 @@ class InvitationCode extends Model
         "max_uses",
         "used_count",
         "redeemed_by",
+        "redeemed_at",
+        "is_active",
     ];
 
     protected function casts(): array
@@ -28,6 +30,7 @@ class InvitationCode extends Model
             "redeemed_at" => "datetime",
             "max_uses"    => "integer",
             "used_count"  => "integer",
+            "is_active"   => "boolean",
         ];
     }
 
@@ -50,16 +53,29 @@ class InvitationCode extends Model
     // ── Helpers ───────────────────────────────────────
     public function isExpired(): bool
     {
-        return $this->expires_at->isPast();
+        return $this->expires_at === null || $this->expires_at->isPast();
     }
 
     public function isUsed(): bool
     {
-        return $this->used_count >= $this->max_uses;
+        return (int) $this->used_count >= (int) $this->max_uses;
     }
 
     public function isActive(): bool
     {
-        return !$this->isExpired() && !$this->isUsed() && $this->is_active;
+        return (bool) $this->is_active && ! $this->isExpired() && ! $this->isUsed();
+    }
+
+    public function statusLabel(): string
+    {
+        if ($this->isUsed()) {
+            return 'Redeemed';
+        }
+
+        if ($this->isExpired()) {
+            return 'Expired';
+        }
+
+        return $this->is_active ? 'Active' : 'Revoked';
     }
 }

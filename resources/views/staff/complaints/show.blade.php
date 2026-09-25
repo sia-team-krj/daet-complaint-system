@@ -1,7 +1,7 @@
-@extends('layouts.app')
+@extends('staff.layouts.app')
 @section('title', $complaint->ticket_id . ' — Staff View')
 
-@section('content')
+@section('staff-content')
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
   :root {
@@ -255,6 +255,66 @@
     color: var(--text-dim);
     margin: 0;
   }
+
+  .review-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .review-summary > div {
+    padding: 11px 12px;
+    border: 1px solid rgba(201,168,76,0.16);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+  }
+  .review-summary__label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-dim);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .review-summary strong {
+    color: var(--white);
+    font-size: 12px;
+  }
+  .review-badge {
+    display: inline-flex;
+    padding: 4px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+  .review-pending { color: #fcd34d; background: rgba(245,158,11,0.12); }
+  .review-verified { color: #86efac; background: rgba(63,203,111,0.12); }
+  .review-needs-information { color: #fcd34d; background: rgba(245,158,11,0.12); }
+  .review-duplicate { color: #c4b5fd; background: rgba(139,92,246,0.12); }
+  .review-rejected { color: #fca5a5; background: rgba(239,68,68,0.12); }
+  .review-escalated { color: #fca5a5; background: rgba(239,68,68,0.12); }
+  .review-reasons {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-left: 2px solid var(--gold);
+    background: rgba(255,255,255,0.03);
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  .review-reasons strong { color: var(--white); }
+  .review-reasons ul { margin: 7px 0 0 17px; }
+  .review-form { padding-top: 4px; border-top: 1px solid rgba(201,168,76,0.14); }
+  .review-public-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 2px 0 18px;
+    color: var(--text-dim);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .review-public-toggle input { accent-color: var(--gold); margin-top: 2px; }
 
   .description-text {
     font-size: 14px;
@@ -600,6 +660,7 @@
     .ticket-display { font-size: 32px; }
     .map-container, .map-placeholder { height: 220px; }
     .breadcrumb { flex-wrap: wrap; }
+    .review-summary { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -641,7 +702,7 @@
 
     {{-- Page Header --}}
     @php
-      $statusClass = match($complaint->status->value) {
+      $statusClass = match($complaint->statusEnum->value) {
         'Submitted' => 'status-submitted',
         'In Progress' => 'status-in-progress',
         'Resolved' => 'status-resolved',
@@ -654,7 +715,7 @@
     <header class="page-header fu d2">
       <div class="ticket-display">{{ $complaint->ticket_id }}</div>
       <h1 class="complaint-title-display">{{ $complaint->title }}</h1>
-      <span class="status-badge-lg {{ $statusClass }}">{{ $complaint->status->label() }}</span>
+      <span class="status-badge-lg {{ $statusClass }}">{{ $complaint->statusEnum->label() }}</span>
       <div class="meta-row">
         <span class="meta-item">Filed on <span class="meta-value">{{ $complaint->created_at->format('F d, Y') }}</span></span>
         <span class="meta-dot">·</span>
@@ -676,16 +737,92 @@
             <div class="card-header-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-            <div class="card-header-title">Citizen Information</div>
+            <div class="card-header-title">Resident information</div>
           </div>
           <div class="card-body">
             <div class="citizen-row">
-              <div class="citizen-avatar">{{ substr($complaint->user->full_name, 0, 1) }}</div>
+              @php
+                $residentAlias = $complaint->user?->staff_safe_name ?? 'Resident unavailable';
+              @endphp
+              <div class="citizen-avatar">{{ strtoupper(substr($residentAlias, 0, 1)) }}</div>
               <div class="citizen-info">
-                <h4>{{ $complaint->user->full_name }}</h4>
-                <p>{{ $complaint->user->email }}</p>
+                <h4>{{ $residentAlias }}</h4>
+                <p>Identity hidden from staff · admin-only access</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {{-- Review & Priority Card --}}
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"></path><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3Z"></path></svg>
+            </div>
+            <div class="card-header-title">Review and priority</div>
+          </div>
+          <div class="card-body">
+            <div class="review-summary">
+              <div>
+                <span class="review-summary__label">Review status</span>
+                <strong class="review-badge {{ $complaint->reviewStatusEnum->badgeClass() }}">{{ $complaint->reviewStatusEnum->label() }}</strong>
+              </div>
+              <div>
+                <span class="review-summary__label">Suggested priority</span>
+                <strong>{{ $complaint->suggestedPriorityEnum->label() }}</strong>
+              </div>
+              <div>
+                <span class="review-summary__label">Confirmed priority</span>
+                <strong>{{ $complaint->confirmedPriorityEnum?->label() ?? 'Not confirmed' }}</strong>
+              </div>
+            </div>
+
+            @if($complaint->suggestion_reasons)
+              <div class="review-reasons">
+                <strong>Why the system suggested this:</strong>
+                <ul>
+                  @foreach($complaint->suggestion_reasons as $reason)
+                    <li>{{ $reason }}</li>
+                  @endforeach
+                </ul>
+              </div>
+            @endif
+
+            <form method="POST" action="{{ route('staff.complaints.review', $complaint) }}" class="review-form">
+              @csrf
+              @method('PUT')
+              <div class="form-group">
+                <label class="form-label" for="review_status">Review decision</label>
+                <select name="review_status" id="review_status" class="form-select" required>
+                  @foreach($reviewStatusOptions as $reviewOption)
+                    <option value="{{ $reviewOption->value }}" @selected($complaint->review_status === $reviewOption->value)>{{ $reviewOption->label() }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="confirmed_priority">Confirmed priority</label>
+                <select name="confirmed_priority" id="confirmed_priority" class="form-select">
+                  <option value="">Not confirmed</option>
+                  @foreach($priorityOptions as $priorityOption)
+                    <option value="{{ $priorityOption->value }}" @selected($complaint->confirmed_priority === $priorityOption->value)>{{ $priorityOption->label() }}</option>
+                  @endforeach
+                </select>
+                <div class="form-hint">Required when the review decision is Verified.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="review_notes">Review notes</label>
+                <textarea name="review_notes" id="review_notes" class="form-textarea" rows="3" placeholder="Record what was checked and why.">{{ old('review_notes', $complaint->review_notes) }}</textarea>
+              </div>
+              <label class="review-public-toggle">
+                <input type="hidden" name="is_public" value="0">
+                <input type="checkbox" name="is_public" value="1" @checked($complaint->is_public)>
+                <span>Allow this verified report on the public transparency register</span>
+              </label>
+              <button type="submit" class="btn-submit">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                Save review decision
+              </button>
+            </form>
           </div>
         </div>
 
@@ -742,6 +879,7 @@
       {{-- Right Column (Sticky) --}}
       <div class="right-col fu d4">
         {{-- Response Form Card --}}
+        @if($complaint->isVerified() && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Rejected && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Closed)
         <div class="card">
           <div class="card-header">
             <div class="card-header-icon">
@@ -758,7 +896,7 @@
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select" required>
                   @foreach($statuses as $statusOption)
-                    <option value="{{ $statusOption->value }}" {{ $complaint->status->value === $statusOption->value ? 'selected' : '' }}>
+                    <option value="{{ $statusOption->value }}" {{ $complaint->statusEnum->value === $statusOption->value ? 'selected' : '' }}>
                       {{ $statusOption->label() }}
                     </option>
                   @endforeach
@@ -796,6 +934,7 @@
             </form>
           </div>
         </div>
+        @endif
 
         {{-- Activity Timeline Card --}}
         <div class="card">

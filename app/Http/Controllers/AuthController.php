@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -115,7 +116,7 @@ class AuthController extends Controller
         return view("auth.login");
     }
 
-    public function login(Request $request): RedirectResponse
+    public function login(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
         $request->validate([
             "email" => ["required", "string", "email"],
@@ -149,8 +150,27 @@ class AuthController extends Controller
             ]);
         }
 
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => 'This account has been deactivated. Contact your administrator.',
+            ]);
+        }
+
         RateLimiter::clear($key);
         $request->session()->regenerate();
+
+        $user = Auth::user();
+        if (in_array($user->role, ['staff', 'admin'], true)) {
+            $activityLogger->log(
+                'auth.login',
+                "{$user->full_name} signed in.",
+                $user,
+            );
+        }
 
         return redirect()->intended(route("dashboard"));
     }
@@ -159,8 +179,18 @@ class AuthController extends Controller
     //  LOGOUT
     // ══════════════════════════════════════════════════════════════════════════
 
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
+        $user = Auth::user();
+
+        if ($user && in_array($user->role, ['staff', 'admin'], true)) {
+            $activityLogger->log(
+                'auth.logout',
+                "{$user->full_name} signed out.",
+                $user,
+            );
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();
@@ -170,8 +200,24 @@ class AuthController extends Controller
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  PASSWORD RESET (STUB — wire to Laravel's Password facade for production)
+    //  PASSWORD RESET
     // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Show the forgot-password form.
+     */
+    public function showResetPassword(): View
+    {
+        return view("auth.forgot-password");
+    }
+
+    /**
+     * Show the reset-password form.
+     */
+    public function showResetPasswordForm(Request $request): View
+    {
+        return view("auth.reset-password", ["token" => $request->route("token")]);
+    }
 
     /**
      * Send password reset link to user's email using Laravel's Password facade.
@@ -194,7 +240,7 @@ class AuthController extends Controller
     /**
      * Reset user's password using token via Laravel's Password facade.
      */
-    public function resetPassword(Request $request): RedirectResponse
+    public function resetPassword(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
         $request->validate([
             'token' => ['required'],
@@ -204,10 +250,18 @@ class AuthController extends Controller
 
         $status = PasswordFacade::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function (User $user, string $password) {
+            function (User $user, string $password) use ($activityLogger) {
                 $user->forceFill([
                     'password' => Hash::make($password),
                 ])->save();
+
+                if (in_array($user->role, ['staff', 'admin'], true)) {
+                    $activityLogger->log(
+                        'auth.password_reset',
+                        "{$user->full_name} reset their account password.",
+                        $user,
+                    );
+                }
             }
         );
 

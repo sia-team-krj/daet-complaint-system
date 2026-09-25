@@ -27,6 +27,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('Admin@1234'),
                 'role' => 'admin',
                 'department_id' => null,
+                'is_active' => true,
             ]
         );
         $users[] = ['Admin', $admin->full_name, $admin->email, '—'];
@@ -34,11 +35,11 @@ class UserSeeder extends Seeder
         // ── STAFF ACCOUNTS ──
         // Staff mapping: slug => [name, dept_code]
         $staffMapping = [
-            'engineering' => ['Juan dela Cruz', 'ENGR'],
+            'engineering' => ['Juan dela Cruz', 'ENG'],
             'gso' => ['Maria Santos', 'GSO'],
-            'permits' => ['Roberto Reyes', 'BPLS'],
-            'peaceorder' => ['Ana Garcia', 'PNP'],
-            'agriculture' => ['Carlos Mendoza', 'MAO'],
+            'permits' => ['Roberto Reyes', 'BPLO'],
+            'peaceorder' => ['Ana Garcia', 'SWDO'],
+            'agriculture' => ['Carlos Mendoza', 'WST'],
         ];
 
         foreach ($staffMapping as $slug => [$name, $deptCode]) {
@@ -55,6 +56,7 @@ class UserSeeder extends Seeder
                     'password' => Hash::make('Staff@1234'),
                     'role' => 'staff',
                     'department_id' => $department?->id,
+                    'is_active' => true,
                 ]
             );
             
@@ -77,6 +79,7 @@ class UserSeeder extends Seeder
                     'password' => Hash::make('Test@1234'),
                     'role' => 'citizen',
                     'department_id' => null,
+                    'is_active' => true,
                 ]
             );
             

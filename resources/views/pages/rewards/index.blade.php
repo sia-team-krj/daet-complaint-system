@@ -87,7 +87,7 @@
 </div>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+  /* Fonts already loaded via layouts/app.blade.php */
 
   :root {
     --navy:        #0B1F3A;
@@ -106,8 +106,15 @@
     --border-navy: rgba(11,31,58,0.08);
   }
 
-  * { box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
   .home-root { font-family: 'DM Sans', sans-serif; width: 100%; overflow-x: hidden; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);} }
+  .fu{animation:fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both;}
+  .d1{animation-delay:0.04s;}.d2{animation-delay:0.16s;}.d3{animation-delay:0.28s;}.d4{animation-delay:0.40s;}.d5{animation-delay:0.52s;}
+  @media (prefers-reduced-motion: reduce) {
+    .fu{animation-duration:0.01ms!important;animation-iteration-count:1!important;}
+  }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      HERO
