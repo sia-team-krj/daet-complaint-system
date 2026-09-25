@@ -43,9 +43,10 @@ services:
         healthcheck:
             test:
                 - CMD
-                - curl
-                - "-f"
-                - "http://localhost:8025"
+                - wget
+                - "--spider"
+                - "-q"
+                - "http://127.0.0.1:8025"
             retries: 3
             timeout: 5s
 
