@@ -25,7 +25,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" href="{{ asset('images/lgulogo.png') }}">
+    <link rel="icon" href="{{ asset('images/lgulogo.webp') }}">
 
     {{-- Page title: views set this via @section('title', '...') --}}
     <title>@yield('title', 'Daet Listens — LGU Daet')</title>

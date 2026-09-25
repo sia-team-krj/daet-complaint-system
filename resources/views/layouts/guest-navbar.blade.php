@@ -3,7 +3,7 @@
     <div class="navbar-flex w-full max-w-full min-w-0">
       <a href="{{ url('/') }}" class="navbar-logo group" aria-label="Daet Listens home">
         <div class="logo-icon group-hover:scale-105 transition-transform duration-200">
-          <img src="/images/lgulogo.png" alt="Daet LGU" class="logo-image" width="28" height="28">
+          <img src="/images/lgulogo.webp" alt="Daet LGU" class="logo-image" width="28" height="28">
         </div>
         <div class="logo-text">
           <span class="logo-name">Daet Listens</span>

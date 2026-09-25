@@ -10,7 +10,7 @@
       @endphp
       <a href="{{ $logoRoute }}" class="navbar-logo group" aria-label="Daet Listens dashboard">
         <div class="logo-icon group-hover:scale-105 transition-transform duration-200">
-          <img src="/images/lgulogo.png" alt="Daet LGU" class="logo-image" width="28" height="28">
+          <img src="/images/lgulogo.webp" alt="Daet LGU" class="logo-image" width="28" height="28">
         </div>
         <div class="logo-text">
           <span class="logo-name">Daet Listens</span>

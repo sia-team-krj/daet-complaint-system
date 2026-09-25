@@ -142,7 +142,7 @@
                 <div class="email-wrapper">
                     {{-- Header with Logo --}}
                     <div class="email-header">
-                        <img src="{{ asset('images/lgulogo.png') }}" alt="LGU Daet" class="logo">
+                        <img src="{{ asset('images/lgulogo.webp') }}" alt="LGU Daet" class="logo">
                         <h1 class="brand-title">Daet Listens</h1>
                         <p class="brand-subtitle">Official Transparency Portal</p>
                     </div>
