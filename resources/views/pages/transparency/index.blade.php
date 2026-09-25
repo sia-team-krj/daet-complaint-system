@@ -476,6 +476,7 @@
         }
 
         .transparency-table td {
+            min-width: 0;
             padding: 15px 14px;
             border-bottom: 1px solid rgba(11, 31, 58, 0.07);
             color: var(--tp-ink);
@@ -493,12 +494,16 @@
         }
 
         .transparency-ticket {
+            max-width: 100%;
+            overflow: hidden;
             color: #8b6719;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.04em;
             text-decoration: none;
+            text-overflow: ellipsis;
             white-space: nowrap;
+            word-break: normal;
         }
 
         .transparency-ticket:hover,
@@ -510,9 +515,19 @@
         .transparency-complaint-title {
             display: block;
             max-width: 270px;
+            overflow-wrap: break-word;
             color: var(--tp-navy);
             font-weight: 700;
             text-decoration: none;
+            word-break: normal;
+        }
+
+        .transparency-cell-department,
+        .transparency-cell-category,
+        .transparency-cell-location {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+            word-break: normal;
         }
 
         .transparency-row-link {
