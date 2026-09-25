@@ -24,6 +24,14 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/transparency', [TransparencyController::class, 'index'])->name(
     'transparency',
 );
+Route::get('/transparency/complaints/{complaint}', [TransparencyController::class, 'show'])
+    ->name('transparency.complaints.show');
+Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'publicEvidence'])
+    ->whereNumber('index')
+    ->name('transparency.complaints.evidence');
+Route::get('/transparency/complaints/{complaint}/updates/{log}/evidence/{index}', [ComplaintController::class, 'publicUpdateEvidence'])
+    ->whereNumber('index')
+    ->name('transparency.complaints.updates.evidence');
 Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards');
 
 /*

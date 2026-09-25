@@ -121,6 +121,49 @@ class ComplaintController extends Controller
     }
 
     /**
+     * Stream public complaint evidence without exposing MinIO directly.
+     */
+    public function publicEvidence(Complaint $complaint, int $index): StreamedResponse
+    {
+        $this->ensurePublicTransparencyComplaint($complaint);
+
+        $paths = $complaint->evidence_images;
+
+        if (! array_key_exists($index, $paths)) {
+            abort(404);
+        }
+
+        return $this->streamPrivateImage($paths[$index], 'public-complaint-evidence', $index);
+    }
+
+    /**
+     * Stream documentation from a public status update.
+     */
+    public function publicUpdateEvidence(Complaint $complaint, ComplaintLog $log, int $index): StreamedResponse
+    {
+        if ((int) $log->complaint_id !== (int) $complaint->id || $log->is_internal) {
+            abort(404);
+        }
+
+        $this->ensurePublicTransparencyComplaint($complaint);
+
+        $paths = $log->documentation_images;
+
+        if (! array_key_exists($index, $paths)) {
+            abort(404);
+        }
+
+        return $this->streamPrivateImage($paths[$index], 'public-update-evidence', $index);
+    }
+
+    private function ensurePublicTransparencyComplaint(Complaint $complaint): void
+    {
+        if (! $complaint->isPubliclyVisible() || $complaint->spam_status === 'spam') {
+            abort(404);
+        }
+    }
+
+    /**
      * Stream an authorized image from private MinIO storage.
      */
     private function streamPrivateImage(string $path, string $prefix, int $index): StreamedResponse

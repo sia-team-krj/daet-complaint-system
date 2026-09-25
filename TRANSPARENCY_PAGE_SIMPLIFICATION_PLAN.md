@@ -26,6 +26,8 @@ Private complaints will not be searchable on the public page. Authenticated resi
 - Show a broad location label such as `Barangay VI, Daet` in the table.
 - Keep names, email addresses, and phone numbers out of public data.
 - Exclude private complaints and likely spam from all public queries.
+- Public detail pages expose only broad location labels, aliases, public logs, and media attached to public complaints; internal notes and private identity data remain hidden.
+- Administrator navigation does not link to the public transparency register.
 
 ## Heatmap fix
 
@@ -40,10 +42,14 @@ Private complaints will not be searchable on the public page. Authenticated resi
 - Add client-side search across ticket, title, category, department, location, and reporter alias.
 - Add department, category, and status filters.
 - Show ticket, complaint, category, department, broad location, status, and date.
-- Keep the table responsive with horizontal scrolling on small screens.
+- Link each ticket to a privacy-safe public detail page with status dates, progress, resident evidence, and public documentation.
+- Keep the table responsive with a mobile-first card layout and a desktop table layout.
 - Link authenticated residents to `/complaints`; do not add a duplicate public tracker.
 
 ## Verification
 
 - Add tests for public/private filtering, spam exclusion, approximate coordinates, table rendering, filters, and authenticated layout assets.
-- Run the full test suite, Blade cache, production build, and diff checks.
+- Add public detail coverage for progress dates, resident evidence, public documentation, privacy redaction, and administrator navigation.
+- `php artisan test`: 83 tests / 397 assertions passing.
+- `npm run build` and `php artisan view:cache` complete successfully.
+- Impeccable detection completed with no findings on the changed transparency surfaces.

@@ -22,7 +22,9 @@
         @if(auth()->user()->role === 'citizen')
           <li><a href="{{ route('dashboard') }}" wire:navigate class="nav-link">Dashboard</a></li>
         @endif
-        <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">Transparency</a></li>
+        @if(auth()->user()->role !== 'admin')
+          <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">Transparency</a></li>
+        @endif
         <li><a href="{{ url('/rewards') }}" wire:navigate class="nav-link">Rewards</a></li>
       </ul>
 
@@ -93,7 +95,9 @@
       @if(auth()->user()->role === 'citizen')
         <a href="{{ route('dashboard') }}" wire:navigate class="mobile-nav-link">Dashboard</a>
       @endif
-      <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">Transparency</a>
+      @if(auth()->user()->role !== 'admin')
+        <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">Transparency</a>
+      @endif
       <a href="{{ url('/rewards') }}" wire:navigate class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
 

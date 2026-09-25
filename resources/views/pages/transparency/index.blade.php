@@ -497,7 +497,14 @@
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.04em;
+            text-decoration: none;
             white-space: nowrap;
+        }
+
+        .transparency-ticket:hover,
+        .transparency-complaint-title:hover,
+        .transparency-row-link:hover {
+            color: #6e4c91;
         }
 
         .transparency-complaint-title {
@@ -505,6 +512,17 @@
             max-width: 270px;
             color: var(--tp-navy);
             font-weight: 700;
+            text-decoration: none;
+        }
+
+        .transparency-row-link {
+            display: inline-block;
+            margin-top: 6px;
+            color: #8b6719;
+            font-size: 10px;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
         }
 
         .transparency-reporter {
@@ -703,6 +721,113 @@
                 padding: 11px 15px;
             }
 
+            .transparency-table-scroll {
+                overflow: visible;
+            }
+
+            .transparency-table {
+                display: block;
+                min-width: 0;
+            }
+
+            .transparency-table thead {
+                display: none;
+            }
+
+            .transparency-table tbody {
+                display: grid;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .transparency-table tbody tr {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                gap: 8px 12px;
+                padding: 12px;
+                border: 1px solid rgba(201, 168, 76, 0.25);
+                border-radius: 6px;
+                background: #fff;
+            }
+
+            .transparency-table tbody tr[hidden] {
+                display: none;
+            }
+
+            .transparency-table td {
+                display: block;
+                min-width: 0;
+                padding: 0;
+                border: 0;
+                font-size: 10px;
+            }
+
+            .transparency-table td::before {
+                display: block;
+                margin-bottom: 3px;
+                color: var(--tp-muted);
+                content: attr(data-label);
+                font-size: 8px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+
+            .transparency-cell-ticket {
+                grid-column: 1;
+                grid-row: 1;
+            }
+
+            .transparency-cell-status {
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: end;
+                text-align: right;
+            }
+
+            .transparency-cell-status::before {
+                text-align: right;
+            }
+
+            .transparency-cell-complaint {
+                grid-column: 1 / -1;
+                grid-row: 2;
+            }
+
+            .transparency-cell-category {
+                grid-column: 1;
+                grid-row: 3;
+            }
+
+            .transparency-cell-department {
+                grid-column: 2;
+                grid-row: 3;
+                text-align: right;
+            }
+
+            .transparency-cell-department::before {
+                text-align: right;
+            }
+
+            .transparency-cell-location {
+                grid-column: 1 / -1;
+                grid-row: 4;
+            }
+
+            .transparency-cell-date {
+                grid-column: 1 / -1;
+                grid-row: 5;
+            }
+
+            .transparency-complaint-title {
+                max-width: none;
+                font-size: 13px;
+            }
+
+            .transparency-row-link {
+                margin-top: 5px;
+            }
+
             .transparency-footer {
                 align-items: flex-start;
                 flex-direction: column;
@@ -882,16 +1007,19 @@
                                         data-category="{{ $report['category'] }}"
                                         data-status="{{ $report['status_key'] }}"
                                     >
-                                        <td><span class="transparency-ticket">{{ $report['ticket_id'] }}</span></td>
-                                        <td>
-                                            <span class="transparency-complaint-title">{{ $report['title'] }}</span>
-                                            <span class="transparency-reporter">{{ $report['reporter'] }}</span>
+                                        <td class="transparency-cell-ticket" data-label="Ticket">
+                                            <a href="{{ $report['url'] }}" class="transparency-ticket">{{ $report['ticket_id'] }}</a>
                                         </td>
-                                        <td class="transparency-table-muted">{{ $report['category_label'] }}</td>
-                                        <td class="transparency-table-muted">{{ $report['department'] }}</td>
-                                        <td class="transparency-table-muted">{{ $report['location'] }}</td>
-                                        <td><span class="transparency-status transparency-status--{{ $report['status_key'] }}">{{ $report['status_label'] }}</span></td>
-                                        <td class="transparency-table-muted"><time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time></td>
+                                        <td class="transparency-cell-complaint" data-label="Complaint">
+                                            <a href="{{ $report['url'] }}" class="transparency-complaint-title">{{ $report['title'] }}</a>
+                                            <span class="transparency-reporter">{{ $report['reporter'] }}</span>
+                                            <a href="{{ $report['url'] }}" class="transparency-row-link" aria-label="Open {{ $report['ticket_id'] }}">View details</a>
+                                        </td>
+                                        <td class="transparency-cell-category transparency-table-muted" data-label="Category">{{ $report['category_label'] }}</td>
+                                        <td class="transparency-cell-department transparency-table-muted" data-label="Department">{{ $report['department'] }}</td>
+                                        <td class="transparency-cell-location transparency-table-muted" data-label="Location">{{ $report['location'] }}</td>
+                                        <td class="transparency-cell-status" data-label="Status"><span class="transparency-status transparency-status--{{ $report['status_key'] }}">{{ $report['status_label'] }}</span></td>
+                                        <td class="transparency-cell-date transparency-table-muted" data-label="Reported"><time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time></td>
                                     </tr>
                                 @empty
                                     <tr id="complaint-empty-row" class="transparency-empty-row">

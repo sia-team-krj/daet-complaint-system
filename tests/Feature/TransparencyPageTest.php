@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
+use App\Models\ComplaintLog;
 use App\Models\Department;
 use App\Models\User;
 use Database\Seeders\DepartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TransparencyPageTest extends TestCase
@@ -17,6 +19,7 @@ class TransparencyPageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Storage::fake('minio');
         $this->seed(DepartmentSeeder::class);
     }
 
@@ -87,6 +90,7 @@ class TransparencyPageTest extends TestCase
             ->assertSee('Community reports,')
             ->assertSee($publicOne->title)
             ->assertSee($publicTwo->title)
+            ->assertSee(route('transparency.complaints.show', $publicOne), false)
             ->assertSee('All public complaints.')
             ->assertSee('Barangay VI, Daet')
             ->assertSee('Community neighbor')
@@ -115,6 +119,79 @@ class TransparencyPageTest extends TestCase
         });
 
         $this->assertSame(2, substr_count($response->getContent(), '<section class="transparency-section'));
+    }
+
+    public function test_public_complaint_detail_exposes_safe_updates_documentation_and_dates(): void
+    {
+        $department = Department::where('code', 'ENG')->firstOrFail();
+        $resident = User::factory()->create([
+            'role' => 'citizen',
+            'display_alias' => 'Public neighbor',
+        ]);
+        $complaint = Complaint::factory()->create([
+            'user_id' => $resident->id,
+            'department_id' => $department->id,
+            'title' => 'Public drainage detail',
+            'description' => 'A public description with visible resolution details at 123 Main Street, Barangay VI, Daet.',
+            'address_text' => '123 Main Street, Barangay VI, Daet',
+            'is_public' => true,
+            'review_status' => 'verified',
+            'image_path' => 'complaints/public-proof.png',
+            'image_paths' => ['complaints/public-proof.png'],
+            'created_at' => now()->subDays(3),
+        ]);
+        $log = ComplaintLog::create([
+            'complaint_id' => $complaint->id,
+            'actor_id' => $resident->id,
+            'previous_status' => ComplaintStatus::InProgress->value,
+            'new_status' => ComplaintStatus::Resolved->value,
+            'comment' => 'The public repair update is documented.',
+            'documentation_paths' => ['complaint-updates/'.$complaint->id.'/public-proof.png'],
+            'is_internal' => false,
+        ]);
+        Storage::disk('minio')->put('complaints/public-proof.png', 'public-evidence');
+        Storage::disk('minio')->put('complaint-updates/'.$complaint->id.'/public-proof.png', 'public-documentation');
+
+        $this->get(route('transparency.complaints.show', $complaint))
+            ->assertOk()
+            ->assertSee('Public drainage detail')
+            ->assertSee('Resolution progress')
+            ->assertSee('Resident evidence')
+            ->assertSee('Public updates')
+            ->assertSee('The public repair update is documented.')
+            ->assertSee('Exact location withheld')
+            ->assertDontSee('123 Main Street')
+            ->assertSee('1 photo', false)
+            ->assertSee('Public neighbor')
+            ->assertSee('Barangay VI, Daet');
+
+        $this->get(route('transparency.complaints.evidence', [$complaint, 0]))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
+
+        $this->get(route('transparency.complaints.updates.evidence', [$complaint, $log, 0]))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png');
+
+        $private = Complaint::factory()->create([
+            'user_id' => $resident->id,
+            'department_id' => $department->id,
+            'title' => 'Private detail that must stay hidden',
+            'is_public' => false,
+        ]);
+
+        $this->get(route('transparency.complaints.show', $private))->assertNotFound();
+        $this->get(route('transparency.complaints.evidence', [$private, 0]))->assertNotFound();
+    }
+
+    public function test_admin_navigation_does_not_show_public_transparency_link(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertDontSee(route('transparency'), false);
     }
 
     public function test_transparency_page_explains_an_empty_public_register(): void
