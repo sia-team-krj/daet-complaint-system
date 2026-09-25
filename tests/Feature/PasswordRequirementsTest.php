@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\InvitationCode;
 use App\Models\User;
 use Database\Seeders\DepartmentSeeder;
+use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -23,6 +24,28 @@ class PasswordRequirementsTest extends TestCase
             ->assertSee('Uppercase and lowercase letters')
             ->assertSee('At least one number')
             ->assertSee('data-password-target="password"', false);
+    }
+
+    public function test_registration_does_not_reject_a_password_based_on_breach_lookup(): void
+    {
+        $this->app->instance(UncompromisedVerifier::class, new class implements UncompromisedVerifier
+        {
+            public function verify($data): bool
+            {
+                return false;
+            }
+        });
+
+        $this->post(route('register'), [
+            'first_name' => 'Password',
+            'last_name' => 'Tester',
+            'email' => 'password.tester@daetlistens.gov.ph',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'terms' => '1',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
     }
 
     public function test_invitation_form_shows_live_password_requirements(): void

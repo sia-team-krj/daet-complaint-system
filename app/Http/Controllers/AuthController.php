@@ -65,7 +65,7 @@ class AuthController extends Controller
                 "password" => [
                     "required",
                     "confirmed",
-                    Password::min(8)->mixedCase()->numbers()->uncompromised(),
+                    Password::min(8)->mixedCase()->numbers(),
                 ],
 
                 "terms" => ["accepted"],
@@ -80,8 +80,6 @@ class AuthController extends Controller
                     "Enter a valid 11-digit PH mobile number starting with 09 (e.g. 09171234567).",
                 "barangay.in" => "The selected barangay is not valid.",
                 "password.confirmed" => "Password confirmation does not match.",
-                "password.uncompromised" =>
-                    "This password has appeared in a data breach. Please choose a different one.",
                 "terms.accepted" =>
                     "You must agree to the Terms of Service and Privacy Policy.",
             ],
