@@ -1,19 +1,20 @@
 # Password Checklist Interaction Fix
 
 **Date:** September 25, 2026
-**Issue:** The invitation password checklist remained static while typing.
+**Issue:** The password checklist could remain static when a form was opened through Livewire navigation.
 **Status:** Fixed and verified on September 25, 2026
 
 ## Root Cause
 
-The shared checklist initializes by finding `document.getElementById('password')`. The invitation form's password input did not have that ID, so no input listener was attached. The standard registration input already had the correct ID.
+The shared checklist initialized only when the Vite bundle first loaded. Links to Registration use `wire:navigate`, so Livewire can replace the form after the original initialization has already finished. The new input then has no event listener.
 
 ## Fix
 
-Add `id="password"` to the invitation redemption password input and verify both forms initialize the checklist.
+Re-run the idempotent checklist initializer after `livewire:navigated` and browser page restoration, and listen for both input changes and browser-generated changes. Remove the redundant strength meter so the live requirements checklist is the only password feedback.
 
 ## Acceptance Criteria
 
-- Typing in the invitation password field updates all three requirement rows.
-- Standard registration behavior remains intact.
-- Tests and build pass.
+- Registration and invitation checklists update after direct loads and Livewire navigation.
+- All four displayed checklist items are also enforced by server-side validation.
+- The separate Weak/Strong meter and labels are absent.
+- Tests and frontend build pass.

@@ -27,6 +27,7 @@
     --border-navy: rgba(11, 31, 58, 0.08);
     --color-red: #EF4444;
     --color-green: #3FCB6F;
+    --navbar-height: 64px;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -52,6 +53,10 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    /* `clip` contains horizontal overflow without becoming a scroll container,
+       which would otherwise disable `position: sticky` on descendants. */
+    overflow-x: clip;
+    overflow-y: visible;
     user-select: auto;
 }
 
@@ -60,6 +65,13 @@ main {
     max-width: 100%;
     min-width: 0;
     overflow-x: hidden;
+    /* Must be `clip`, not `hidden`. This rule is unlayered, so it outranks the
+       `overflow-x-clip` utility on the <main> element and was quietly turning
+       main into a scroll container. That broke `position: sticky` for
+       descendants AND stopped the register page scrolling on phones, where the
+       form falls back to document scrolling instead of its own panel. */
+    overflow-x: clip;
+    overflow-y: visible;
 }
 
 /* Text selection styling */
@@ -161,10 +173,10 @@ main {
 
 .navbar-inner {
     width: 100%;
-    max-width: min(1536px, 100%);
+    max-width: min(1280px, 100%);
     min-width: 0;
     margin: 0 auto;
-    padding: 0 clamp(20px, 3vw, 48px);
+    padding: 0 clamp(16px, 2.5vw, 32px);
 }
 
 .navbar-flex {
@@ -174,8 +186,15 @@ main {
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    height: 64px;
-    gap: 24px;
+    height: var(--navbar-height);
+    gap: clamp(16px, 2vw, 28px);
+}
+
+/* Let the navbar breathe on very wide displays instead of pinching it to a small island. */
+@media (min-width: 1800px) {
+    .navbar-inner {
+        max-width: min(1440px, 100%);
+    }
 }
 
 /* Logo */
@@ -190,15 +209,15 @@ main {
 }
 
 .logo-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
+    width: clamp(40px, 3.2vw, 48px);
+    height: clamp(40px, 3.2vw, 48px);
+    border-radius: 10px;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(201, 168, 76, 0.3);
+    box-shadow: none;
     flex-shrink: 0;
     transition: transform 0.2s;
 }
@@ -206,8 +225,8 @@ main {
 /* The source seal is a large raster image; always constrain it in the mark. */
 .logo-image {
     display: block;
-    width: 28px;
-    height: 28px;
+    width: clamp(32px, 2.6vw, 40px);
+    height: clamp(32px, 2.6vw, 40px);
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
@@ -226,7 +245,7 @@ main {
 .logo-name {
     font-family: var(--font-display);
     color: var(--color-white);
-    font-size: 15px;
+    font-size: clamp(18px, 1.5vw, 22px);
     font-weight: 700;
     letter-spacing: 0.01em;
     white-space: nowrap;
@@ -235,7 +254,7 @@ main {
 .logo-sub {
     color: var(--color-gold);
     font-family: var(--font-sans);
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     font-weight: 500;
@@ -246,7 +265,7 @@ main {
 .nav-links {
     display: flex;
     align-items: center;
-    gap: clamp(20px, 2.5vw, 36px);
+    gap: clamp(18px, 1.9vw, 28px);
     list-style: none;
     margin: 0;
     padding: 0;
@@ -259,7 +278,7 @@ main {
     flex-direction: row;
     align-items: center;
     flex-wrap: nowrap;
-    gap: clamp(14px, 1.5vw, 20px);
+    gap: clamp(10px, 1.2vw, 16px);
     list-style: none;
     margin: 0;
     padding: 0;
@@ -274,7 +293,7 @@ main {
 
 .nav-link {
     font-family: var(--font-sans);
-    font-size: clamp(10px, 0.75vw, 12px);
+    font-size: clamp(12px, 0.85vw, 14px);
     font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -311,12 +330,12 @@ main {
     background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
     color: var(--color-navy);
     font-family: var(--font-sans);
-    font-size: clamp(10px, 0.75vw, 12px);
+    font-size: clamp(12px, 0.85vw, 14px);
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
     text-decoration: none;
-    padding: 8px clamp(14px, 1.2vw, 22px);
+    padding: 8px clamp(12px, 1.1vw, 18px);
     border-radius: 6px;
     white-space: nowrap;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -329,7 +348,7 @@ main {
 }
 
 .nav-cta-sm {
-    font-size: 11px;
+    font-size: 12px;
     padding: 7px 14px;
 }
 
@@ -341,7 +360,7 @@ main {
     background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
     color: var(--color-navy);
     font-family: var(--font-sans);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -352,6 +371,665 @@ main {
 /* User dropdown */
 .nav-dropdown-wrap {
     position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESIDENT VISIBILITY CONTROL
+   The complaint owner decides whether their report is public. This block styles
+   both halves of that promise: the control they use, and the notice that tells
+   them when staff have withheld something from the public view without
+   touching their own copy.
+   ═══════════════════════════════════════════════════════════ */
+.visibility-panel {
+    margin-top: 22px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(201, 168, 76, 0.18);
+    border-radius: 10px;
+}
+
+.visibility-panel__title {
+    margin: 0;
+    color: var(--color-white);
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.visibility-panel__lede {
+    margin: 6px 0 0;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.visibility-panel__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.visibility-panel__button {
+    padding: 10px 16px;
+    color: var(--color-navy);
+    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
+    border: 0;
+    border-radius: 5px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.18s ease;
+}
+
+.visibility-panel__button:hover {
+    transform: translateY(-1px);
+}
+
+.visibility-panel__state {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 11.5px;
+}
+
+/* Stated plainly rather than left for the resident to infer. The copy they see
+   above this notice is their own, unedited. */
+.visibility-moderation {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin-top: 16px;
+    padding: 13px 15px;
+    color: #fcd9a0;
+    background: rgba(201, 168, 76, 0.08);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    border-radius: 8px;
+    font-size: 11.5px;
+    line-height: 1.6;
+}
+
+.visibility-moderation svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--color-gold);
+}
+
+.visibility-moderation strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--color-gold-light);
+    font-size: 12px;
+}
+
+.visibility-moderation p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.visibility-moderation em {
+    color: rgba(255, 255, 255, 0.8);
+    font-style: normal;
+}
+
+/* Operational coordinates. Tabular figures so a dispatcher reading a column
+   of them can align the digits; not a display flourish. */
+.admin-coords {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+}
+
+/* ── Staff / admin moderation panel ──
+   Replaces the old "mark as public" checkbox. An official can withhold or
+   redact, and must give a reason; they cannot publish. */
+.moderation-panel {
+    margin-top: 20px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+}
+
+.moderation-panel__title {
+    margin: 0;
+    color: var(--color-white);
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.moderation-panel__lede {
+    margin: 6px 0 0;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+
+.moderation-panel__consent {
+    margin-top: 12px;
+    padding: 11px 13px;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 7px;
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+
+.moderation-panel__consent strong {
+    color: var(--color-white);
+}
+
+.moderation-field {
+    margin-top: 14px;
+}
+
+.moderation-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.moderation-field textarea,
+.moderation-field input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    color: var(--color-white);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+}
+
+.moderation-field textarea:focus,
+.moderation-field input[type="text"]:focus {
+    border-color: rgba(201, 168, 76, 0.55);
+    outline: none;
+}
+
+.moderation-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.moderation-check input {
+    margin-top: 2px;
+    accent-color: var(--color-gold);
+    flex-shrink: 0;
+}
+
+.moderation-check__text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.moderation-photos {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.moderation-photo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.moderation-panel__submit {
+    margin-top: 16px;
+    padding: 11px 18px;
+    color: var(--color-white);
+    background: rgba(201, 168, 76, 0.16);
+    border: 1px solid rgba(201, 168, 76, 0.5);
+    border-radius: 5px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s ease;
+}
+
+.moderation-panel__submit:hover {
+    background: rgba(201, 168, 76, 0.26);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NOTIFICATION BELL
+   Deliberately reuses the account dropdown's visual language — same navy panel,
+   gold hairline, radius and shadow — so the top bar reads as one control family.
+   ═══════════════════════════════════════════════════════════ */
+/* Direct child of the bar. Must never be hidden by the compact-menu
+   breakpoints that hide .nav-links and .nav-actions. */
+.nav-notification {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.nav-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-bell:hover {
+    color: var(--color-white);
+    background: rgba(201, 168, 76, 0.1);
+    border-color: rgba(201, 168, 76, 0.45);
+}
+
+.nav-bell[aria-expanded="true"] {
+    color: var(--color-gold-light);
+    background: rgba(201, 168, 76, 0.14);
+    border-color: var(--color-gold);
+}
+
+.nav-bell:focus-visible {
+    outline: 2px solid var(--color-gold-light);
+    outline-offset: 2px;
+}
+
+.nav-bell__badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-navy);
+    background: var(--color-gold-light);
+    border: 1px solid var(--color-navy);
+    border-radius: 9px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Scoped as `.nav-dropdown.nav-notification__dropdown` on purpose.
+
+   The panel carries both classes, so the base `.nav-dropdown { width: 220px }`
+   competes with whatever width is set here. Both selectors are a single class,
+   so they have equal specificity and the one declared LATER in the stylesheet
+   wins — and the base rule is declared further down the file. Written as a bare
+   `.nav-notification__dropdown` this width was silently discarded and the panel
+   rendered at 220px. Qualifying with the base class raises specificity to
+   0,2,0 so the width no longer depends on source order. */
+.nav-dropdown.nav-notification__dropdown {
+    /* Wide enough to carry a readable sentence per row without wrapping, but
+       never wider than the viewport on a phone. */
+    width: 460px;
+    max-width: calc(100vw - 24px);
+    padding: 0;
+    overflow: hidden;
+}
+
+.notification-feed__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--border-gold);
+}
+
+.notification-feed__title {
+    color: var(--color-white);
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.notification-feed__mark-all {
+    padding: 0;
+    color: var(--color-gold-light);
+    background: none;
+    border: 0;
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.notification-feed__mark-all:hover {
+    color: var(--color-white);
+    text-decoration: underline;
+}
+
+.notification-feed__list {
+    /* Taller than the eight rows it holds on a large screen, so the list only
+       starts scrolling once there is genuinely more to see. Capped against the
+       viewport so the footer stays reachable on a short window or a phone in
+       landscape. Kept in proportion to the panel width so a wider box does not
+       come out squat. */
+    max-height: min(580px, calc(100vh - 200px));
+    max-height: min(580px, calc(100dvh - 200px));
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+}
+
+.notification-feed__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.1);
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.notification-feed__item:last-child {
+    border-bottom: 0;
+}
+
+.notification-feed__item:hover {
+    background: rgba(201, 168, 76, 0.09);
+}
+
+/* The circular icon anchor is what lets a row be scanned without reading it.
+   Unread gets the gold ring, read gets a flat muted circle — no thick coloured
+   side stripe, which is the pattern this project bans. */
+.notification-feed__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid transparent;
+}
+
+/* The shared icon partial ships a fixed 16px square for the full page, which
+   looks undersized inside the 40px circle. Scale it here so the partial stays
+   shared and the two views can still differ. */
+.notification-feed__icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.notification-feed__icon.is-unread {
+    color: var(--color-gold-light);
+    background: rgba(201, 168, 76, 0.14);
+    border-color: rgba(201, 168, 76, 0.45);
+}
+
+.notification-feed__icon.is-read {
+    color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.notification-feed__item.is-read {
+    opacity: 0.72;
+}
+
+.notification-feed__body {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+/* The subject of the sentence carries the weight; the rest stays plain. */
+.notification-feed__headline {
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.notification-feed__headline strong {
+    color: var(--color-white);
+    font-weight: 700;
+}
+
+.notification-feed__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.notification-feed__label {
+    color: rgba(201, 168, 76, 0.75);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.notification-feed__time {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.notification-feed__time::before {
+    content: '·';
+    margin-right: 8px;
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.notification-feed__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 44px 24px;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+}
+
+.notification-feed__empty svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+}
+
+.notification-feed__empty span {
+    color: var(--color-white);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.notification-feed__empty small {
+    max-width: 280px;
+    color: rgba(255, 255, 255, 0.38);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.notification-feed__footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-gold);
+    text-align: center;
+}
+
+.notification-feed__all {
+    color: var(--color-gold-light);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.notification-feed__all:hover {
+    color: var(--color-white);
+    text-decoration: underline;
+}
+
+/* ── Full page ── */
+.notifications-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: calc(var(--navbar-height) + 28px) 20px 64px;
+}
+
+.notifications-page__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.notifications-page__title {
+    margin: 0;
+    color: var(--navy);
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.notifications-page__subtitle {
+    margin: 6px 0 0;
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
+.notifications-page__list {
+    background: #fff;
+    border: 1px solid var(--border-gold);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.notification-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.notification-row:last-child {
+    border-bottom: 0;
+}
+
+.notification-row:hover {
+    background: rgba(201, 168, 76, 0.06);
+}
+
+.notification-row.is-read {
+    opacity: 0.62;
+}
+
+.notification-row__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid transparent;
+}
+
+.notification-row__icon.is-unread {
+    color: #8A6D1F;
+    background: rgba(201, 168, 76, 0.2);
+    border-color: rgba(201, 168, 76, 0.5);
+}
+
+.notification-row__icon.is-read {
+    color: var(--color-text-muted);
+    background: rgba(11, 31, 58, 0.05);
+}
+
+.notification-row__body {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.notification-row__headline {
+    color: var(--navy);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.notification-row__headline strong {
+    font-weight: 700;
+}
+
+.notification-row__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.notification-row__label {
+    color: #8A6D1F;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.notification-row__time {
+    color: var(--color-text-muted);
+    font-size: 11.5px;
+}
+
+.notifications-page__empty {
+    display: grid;
+    gap: 6px;
+    padding: 44px 24px;
+    text-align: center;
+}
+
+.notifications-page__empty strong {
+    color: var(--navy);
+    font-size: 15px;
+}
+
+.notifications-page__empty span {
+    color: var(--color-text-muted);
+    font-size: 13px;
 }
 
 .nav-user-btn {
@@ -366,6 +1044,8 @@ main {
     transition: background 0.2s, border-color 0.2s;
     color: rgba(255, 255, 255, 0.75);
     font-family: var(--font-sans);
+    font-size: clamp(12px, 0.85vw, 14px);
+    font-weight: 500;
 }
 
 .nav-user-btn:hover {
@@ -471,34 +1151,58 @@ main {
     color: #f87171;
 }
 
+@keyframes mobile-menu-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 /* Mobile menu */
 .mobile-menu {
     position: absolute;
-    top: 64px;
+    top: var(--navbar-height);
     right: 0;
-    left: 0;
-    width: 100%;
-    max-height: calc(100dvh - 64px);
+    left: auto;
+    display: none;
+    width: 70vw;
+    min-width: 60vw;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100vh;
+    max-height: 100dvh;
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--color-navy-mid);
     border-top: 1px solid rgba(201, 168, 76, 0.32);
-    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
+    border-left: 1px solid rgba(201, 168, 76, 0.22);
+    box-shadow: -18px 18px 36px rgba(0, 0, 0, 0.32);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(100%);
+    transform-origin: right center;
+    transition: transform 320ms cubic-bezier(0.22, 0.68, 0, 1), opacity 180ms ease, visibility 0s linear 320ms;
+    will-change: transform;
     z-index: 60;
+    -webkit-overflow-scrolling: touch;
 }
 
-.mobile-menu.hidden,
-.mobile-menu[hidden] {
-    display: none;
+.mobile-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+    transition-delay: 0s;
 }
 
 .mobile-menu-inner {
-    padding: 16px clamp(16px, 4vw, 32px) 20px;
+    padding: 16px clamp(16px, 4vw, 24px) 20px;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 1536px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
 }
 
 .mobile-divider {
@@ -595,10 +1299,68 @@ main {
     flex-shrink: 0;
 }
 
+.nav-mobile-account {
+    position: relative;
+    display: flex;
+    min-width: 0;
+}
+
+.nav-user-btn--mobile {
+    min-height: 40px;
+    max-width: min(180px, 42vw);
+    padding: 4px 8px 4px 5px;
+}
+
+.nav-user-btn--mobile .user-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav-dropdown--mobile {
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(280px, calc(100vw - 32px));
+    max-height: 38vh;
+    max-height: 38dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 10px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+    -webkit-overflow-scrolling: touch;
+}
+
 @media (max-width: 768px) {
     #navbar .navbar-inner {
         padding-right: max(16px, env(safe-area-inset-right));
         padding-left: max(16px, env(safe-area-inset-left));
+    }
+
+    /* The compact menu takes over the action list, so the bell carries the
+       notification affordance on its own down here. */
+    #navbar .nav-notification {
+        margin-left: auto;
+        margin-right: 8px;
+
+        /* Released from positioning so the panel below stops using this 34px
+           wrapper as its containing block. See the panel rule for why. */
+        position: static;
+    }
+
+    /* The panel is 460px wide, but on a phone the compact cluster parks the
+       bell hard against the right edge. Anchored to the bell, `right: 0` put
+       the panel's right edge 150px in from the screen and its left edge at a
+       negative x — the header and the empty state were cut off. Dropping
+       `position: relative` from the wrapper promotes #navbar (position:
+       fixed, full width) to the containing block, so the panel can be laid
+       out against the screen edge with a gutter instead. The width is
+       untouched, so the desktop size is what still shows on desktop and the
+       panel is capped at 100vw - 24px so it fits from 320px up. */
+    #navbar .nav-dropdown.nav-notification__dropdown {
+        left: auto;
+        right: 12px;
+        width: 460px;
+        max-width: calc(100vw - 24px);
     }
 
     #navbar .navbar-flex {
@@ -628,6 +1390,26 @@ main {
         gap: 8px;
     }
 
+    #navbar .mobile-menu {
+        display: block;
+    }
+
+    body.mobile-menu-open::before {
+        content: '';
+        position: fixed;
+        inset: var(--navbar-height) 0 0;
+        z-index: 49;
+        background: rgba(4, 14, 29, 0.38);
+        animation: mobile-menu-fade-in 180ms ease both;
+        pointer-events: auto;
+    }
+
+    html.mobile-menu-open,
+    body.mobile-menu-open {
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
     #navbar .nav-cta-sm {
         min-height: 40px;
         padding: 8px 11px;
@@ -647,21 +1429,30 @@ main {
 
 @media (max-width: 480px) {
     #navbar .navbar-logo {
-        gap: 0;
+        gap: 12px;
     }
 
     #navbar .logo-text {
-        display: none;
+        display: flex;
+    }
+
+    #navbar .logo-name {
+        font-size: 17px;
+    }
+
+    #navbar .logo-sub {
+        font-size: 10px;
+        letter-spacing: 0.14em;
     }
 
     #navbar .logo-icon {
-        width: 32px;
-        height: 32px;
+        width: 42px;
+        height: 42px;
     }
 
     #navbar .logo-image {
-        width: 24px;
-        height: 24px;
+        width: 34px;
+        height: 34px;
     }
 }
 
@@ -735,7 +1526,7 @@ main {
     position: relative;
     background: var(--color-navy);
     min-height: 100svh;
-    padding-top: 64px;
+    padding-top: var(--navbar-height);
     display: flex;
     align-items: center;
     overflow: hidden;
@@ -777,15 +1568,6 @@ main {
     max-height: 500px;
     background: radial-gradient(ellipse, rgba(26, 53, 96, 0.5) 0%, transparent 70%);
     pointer-events: none;
-}
-
-.hero-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: linear-gradient(180deg, var(--color-gold), rgba(201, 168, 76, 0.1));
 }
 
 .hero-wm {
@@ -834,19 +1616,6 @@ main {
     background: rgba(201, 168, 76, 0.06);
 }
 
-.badge-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--color-gold);
-    flex-shrink: 0;
-    animation: dot-pulse 2.4s infinite;
-}
-
-@keyframes dot-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.3; transform: scale(0.6); }
-}
 
 /* Hero title */
 .hero-title {
@@ -863,13 +1632,6 @@ main {
     color: var(--color-gold);
     font-style: italic;
     display: block;
-}
-
-.hero-divider {
-    width: 48px;
-    height: 2px;
-    background: linear-gradient(90deg, var(--color-gold), transparent);
-    margin-bottom: 24px;
 }
 
 .hero-desc {
@@ -938,111 +1700,7 @@ main {
     align-items: center;
 }
 
-/* Stats panel */
-.stats-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    border: 1px solid var(--border-gold);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--border-gold);
-}
 
-.stats-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-}
-
-.stat-cell {
-    background: rgba(9, 25, 48, 0.94);
-    padding: 26px 22px;
-    transition: background 0.2s;
-    position: relative;
-}
-
-.stat-cell::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 2px;
-    height: 0;
-    background: var(--color-gold);
-    transition: height 0.35s ease;
-}
-
-.stat-cell:hover {
-    background: rgba(18, 41, 77, 0.96);
-}
-
-.stat-cell:hover::before {
-    height: 100%;
-}
-
-.stat-num {
-    font-family: var(--font-display);
-    font-size: clamp(30px, 3.5vw, 46px);
-    font-weight: 700;
-    color: var(--color-gold);
-    line-height: 1;
-    margin-bottom: 5px;
-    letter-spacing: -0.01em;
-}
-
-.stat-lbl {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.13em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.38);
-}
-
-.stats-footer {
-    background: rgba(6, 17, 35, 0.97);
-    padding: 14px 22px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.stats-footer-text {
-    font-size: 10.5px;
-    letter-spacing: 0.07em;
-    color: rgba(255, 255, 255, 0.28);
-    text-transform: uppercase;
-}
-
-.stats-footer-text strong {
-    color: rgba(201, 168, 76, 0.5);
-}
-
-.live-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.25);
-}
-
-.live-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--color-green);
-    box-shadow: 0 0 0 0 rgba(63, 203, 111, 0.5);
-    animation: live-pulse 2s infinite;
-}
-
-@keyframes live-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(63, 203, 111, 0.5); }
-    70% { box-shadow: 0 0 0 6px rgba(63, 203, 111, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(63, 203, 111, 0); }
-}
 
 /* Section commons */
 .section-wrap {
@@ -1135,24 +1793,8 @@ main {
     border-radius: 50%;
     background: var(--color-navy);
     border: 1.5px solid var(--color-gold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 24px;
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--color-gold);
-    letter-spacing: -0.01em;
-    transition: transform 0.28s, box-shadow 0.28s, background 0.28s;
 }
 
-.step:hover .step-num {
-    transform: scale(1.1);
-    background: var(--color-gold);
-    color: var(--color-navy);
-    box-shadow: 0 0 0 10px rgba(201, 168, 76, 0.08), 0 8px 24px rgba(201, 168, 76, 0.2);
-}
 
 .step-icon {
     width: 36px;
@@ -1198,77 +1840,7 @@ main {
     background: rgba(201, 168, 76, 0.18);
 }
 
-.features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: rgba(201, 168, 76, 0.12);
-    border: 1px solid rgba(201, 168, 76, 0.12);
-    border-radius: 8px;
-    overflow: hidden;
-}
 
-.feature-card {
-    background: var(--color-white);
-    padding: 36px 30px;
-    transition: background 0.22s;
-    position: relative;
-}
-
-.feature-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 30px;
-    right: 30px;
-    height: 2px;
-    background: linear-gradient(90deg, var(--color-gold), transparent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.35s ease;
-}
-
-.feature-card:hover {
-    background: #fdfaf4;
-}
-
-.feature-card:hover::after {
-    transform: scaleX(1);
-}
-
-.feature-icon-wrap {
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--border-gold);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-    color: var(--color-gold);
-    background: var(--color-gold-pale);
-    transition: background 0.2s, border-color 0.2s;
-}
-
-.feature-card:hover .feature-icon-wrap {
-    background: rgba(201, 168, 76, 0.18);
-    border-color: rgba(201, 168, 76, 0.4);
-}
-
-.feature-title {
-    font-family: var(--font-display);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--color-navy);
-    margin-bottom: 8px;
-}
-
-.feature-desc {
-    font-size: 13px;
-    color: var(--color-text-muted);
-    line-height: 1.7;
-    font-weight: 300;
-}
 
 /* CTA banner */
 .cta-banner {
@@ -1385,11 +1957,10 @@ main {
 @media (max-width: 1100px) {
     .hero-inner { grid-template-columns: 1fr; gap: 48px; padding: 48px 32px 64px; }
     .hero-desc { max-width: 100%; }
-    .stats-panel { max-width: 520px; }
-    .process, .features { padding: 80px 32px; }
+    .process { padding: 80px 32px; }
     .steps { grid-template-columns: 1fr 1fr; gap: 48px; }
     .steps::after { display: none; }
-    .features-grid { grid-template-columns: 1fr 1fr; }
+
     .cta-banner { padding: 64px 32px; }
 }
 
@@ -1399,7 +1970,7 @@ main {
     .hero-ctas { flex-direction: column; }
     .btn-primary, .btn-secondary { justify-content: center; width: 100%; }
     .process, .features { padding: 64px 20px; }
-    .features-grid { grid-template-columns: 1fr; border-radius: 6px; }
+
     .cta-banner { padding: 56px 20px; }
     .cta-inner { flex-direction: column; }
     .cta-inner .btn-primary { width: 100%; max-width: 360px; justify-content: center; }
@@ -1410,9 +1981,6 @@ main {
 @media (max-width: 540px) {
     .steps { grid-template-columns: 1fr; gap: 36px; }
     .hero-title { font-size: 36px; }
-    .stats-row { grid-template-columns: 1fr 1fr; }
-    .stat-cell { padding: 20px 16px; }
-    .stat-num { font-size: 28px; }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1420,10 +1988,10 @@ main {
     ═══════════════════════════════════════════════════════════ */
 
 .admin-root {
-    min-height: calc(100svh - 64px);
+    min-height: calc(100svh - var(--navbar-height));
     background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-mid) 100%);
     display: flex; position: relative;
-    padding-top: 64px;
+    padding-top: var(--navbar-height);
 }
 
 .admin-bg {
@@ -1540,74 +2108,6 @@ main {
     margin-bottom: 28px;
 }
 
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px; margin-bottom: 32px;
-}
-
-.stat-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border-gold);
-    border-radius: 6px; padding: 20px;
-    position: relative; transition: background 0.2s;
-    cursor: pointer;
-}
-
-.stat-card::before {
-    content: ''; position: absolute; top: 0; left: 0;
-    width: 100%; height: 2px;
-    background: linear-gradient(90deg, var(--color-gold), transparent);
-    transition: width 0.35s ease;
-}
-
-.stat-card:hover { background: rgba(255,255,255,0.06); }
-.stat-card:hover::before { width: 100%; }
-.stat-card:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
-
-.stat-value {
-    font-family: var(--font-display);
-    font-size: 28px; font-weight: 700;
-    color: var(--color-gold); margin-bottom: 4px;
-}
-
-.stat-label {
-    font-size: 11px; font-weight: 500;
-    color: rgba(255,255,255,0.5);
-    text-transform: uppercase; letter-spacing: 0.08em;
-}
-
-.dept-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px; margin-bottom: 32px;
-}
-
-.dept-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border-gold);
-    border-radius: 6px; padding: 20px;
-    text-decoration: none; color: inherit;
-    display: block; transition: background 0.2s;
-    cursor: pointer;
-}
-
-.dept-card:hover { background: rgba(255,255,255,0.06); }
-.dept-card:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
-
-.dept-code {
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--color-gold);
-}
-
-.dept-name {
-    font-family: var(--font-display);
-    font-size: 18px; font-weight: 700;
-    color: var(--color-white); margin: 4px 0 12px;
-}
-
-.dept-stats { display: flex; gap: 16px; font-size: 12px; color: rgba(255,255,255,0.6); }
 
 .section-title {
     font-family: var(--font-display);
@@ -1674,17 +2174,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     padding: 40px; text-align: center;
 }
 
-@media (max-width: 1200px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 768px) {
     .admin-sidebar { display: none; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
     .admin-main { padding: 24px 20px; }
     .page-title { font-size: 24px; }
 }
 @media (max-width: 540px) {
-    .stats-row { grid-template-columns: 1fr; }
-    .stat-value { font-size: 24px; }
-    .dept-grid { grid-template-columns: 1fr; }
+
     table { font-size: 12px; }
     th, td { padding: 10px 12px; }
 }
@@ -1696,7 +2192,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
    ═══════════════════════════════════════════════════════════ */
 .admin-shell {
     min-height: 100dvh;
-    padding-top: 64px;
+    padding-top: var(--navbar-height);
     display: flex;
     align-items: flex-start;
     background:
@@ -1706,13 +2202,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 .admin-sidebar {
     position: sticky;
-    top: 64px;
+    top: var(--navbar-height);
     align-self: flex-start;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
     width: 272px;
-    height: calc(100dvh - 64px);
+    height: calc(100dvh - var(--navbar-height));
     padding: 20px 14px;
     overflow: hidden;
     background: rgba(4, 18, 39, 0.34);
@@ -1961,6 +2457,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .admin-page {
     display: grid;
     gap: 28px;
+    /* A grid item defaults to `min-width: auto`, which refuses to shrink below
+       its content. The queue's table is deliberately wider than a phone, so
+       without this the section stretched to the table's full width and the
+       `overflow-x: auto` wrapper inside it never had anything to scroll — the
+       columns were simply cut off at the screen edge. */
+    min-width: 0;
 }
 
 .admin-page--narrow {
@@ -2014,6 +2516,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .admin-section {
     display: grid;
     gap: 18px;
+    /* Same reason as .admin-page: this is the grid item that holds the scroll
+       container, so its automatic minimum width is what has to be released. */
+    min-width: 0;
 }
 
 .admin-section--flush {
@@ -2062,6 +2567,21 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 
 .admin-metric-label,
+/* Field hints are supporting text, not a second label. A hint is also a
+   <span> directly inside .admin-field, so it inherits the uppercase bold label
+   styling above unless this rule out-specifies it. The two-class selector is
+   required: `.admin-field > span` is (0,1,1) and would otherwise win. */
+.admin-field > .admin-field-hint,
+.admin-field-hint {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    text-transform: none;
+}
+
 .admin-field > span,
 .admin-inline-stats dt,
 .admin-detail-list dt {
@@ -2247,6 +2767,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .admin-status--warning { color: #fcd34d; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.24); }
 .admin-status--closed,
 .admin-status--revoked { color: #d1d5db; background: rgba(156, 163, 175, 0.12); border-color: rgba(156, 163, 175, 0.22); }
+.admin-status--ready { color: #86efac; background: rgba(63, 203, 111, 0.12); border-color: rgba(63, 203, 111, 0.24); }
+.admin-status--skipped { color: #d1d5db; background: rgba(156, 163, 175, 0.12); border-color: rgba(156, 163, 175, 0.22); }
+.admin-status--invalid { color: #fca5a5; background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.24); }
 .admin-status--pending,
 .admin-status--needs-information { color: #fcd34d; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.24); }
 .admin-status--verified { color: #86efac; background: rgba(63, 203, 111, 0.12); border-color: rgba(63, 203, 111, 0.24); }
@@ -2424,6 +2947,111 @@ select.admin-input option {
     color: #fca5a5;
     font-size: 11px;
     line-height: 1.4;
+}
+
+/* Staff invitation form. The department, name and email fields are the three
+   controls an admin uses to issue an invite, so their boundary is held at a
+   visible weight at rest and steps up again on hover and focus. The old
+   0.25 gold composited to roughly 1.4:1 on the dark fill, which read as no
+   border at all. */
+.admin-invitation-form .admin-input {
+    border-color: rgba(201, 168, 76, 0.6);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-invitation-form .admin-input:hover {
+    border-color: rgba(201, 168, 76, 0.8);
+}
+
+.admin-invitation-form .admin-input:focus {
+    border-color: var(--color-gold-light);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.22);
+}
+
+.admin-invitation-form .admin-input::placeholder {
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.admin-invitation-textarea {
+    min-height: 168px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    resize: vertical;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+}
+
+.admin-invitation-bulk {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-gold);
+}
+
+.admin-invitation-bulk-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr);
+    align-items: start;
+    gap: 16px;
+}
+
+.admin-invitation-review {
+    margin-top: 20px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--color-gold);
+    border-radius: 6px;
+}
+
+.admin-invitation-review-title {
+    margin: 0 0 14px;
+    color: var(--color-white);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.admin-invitation-tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.admin-invitation-tally strong {
+    color: var(--color-gold-light);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.admin-invitation-review-table td {
+    vertical-align: top;
+}
+
+@media (max-width: 900px) {
+    .admin-invitation-bulk-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-invitation-review-table .admin-status,
+.admin-invitation-review-table .admin-muted-cell {
+    display: block;
+}
+
+.admin-invitation-confirm {
+    margin-top: 16px;
+}
+
+.admin-invitation-confirm .admin-button {
+    width: 100%;
 }
 
 .admin-filter-actions,
@@ -2692,6 +3320,655 @@ select.admin-input option {
     border-top: 1px solid rgba(201, 168, 76, 0.13);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   DEPARTMENT MANAGEMENT
+   Create, edit, and archive live on one screen because they are
+   three views of the same list. Editing opens in place rather than
+   in a dialog: comparing a form against the row it edits is the
+   whole task, and a modal hides the values you are comparing.
+   ═══════════════════════════════════════════════════════════ */
+
+/* An archived office is still a record with history behind it, so it is
+   recessed rather than struck through. Dimming alone would read as disabled;
+   the badge and the row treatment both say "retired, still readable". */
+.admin-department-list-item.is-archived {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(201, 168, 76, 0.12);
+}
+
+.admin-department-list-item.is-archived .admin-department-list-heading h3 {
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.admin-department-list-item.is-archived .admin-department-code {
+    opacity: 0.6;
+}
+
+/* ── The collapsed directory row ───────────────────────────
+   One line per office until you ask for more. The full card —
+   description, three stats, four actions — came to roughly 330px per row, so
+   eight offices needed about 3,000px: four phone screens to read a list of
+   eight names. Collapsed, a row is a single line and the whole directory fits
+   on one screen.
+
+   The row carries only what you scan for: the code, the name, and the open
+   count when there is one. A "0 open" pill on every office is noise that
+   teaches the eye to skip the single office that actually has work. */
+.admin-dept {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-gold);
+    border-radius: 6px;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.admin-dept:hover {
+    border-color: rgba(201, 168, 76, 0.34);
+}
+
+.admin-dept[open] {
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(201, 168, 76, 0.42);
+}
+
+.admin-dept > summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    cursor: pointer;
+    list-style: none;
+    min-height: 52px;
+}
+
+.admin-dept > summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-dept > summary:focus-visible {
+    outline: 2px solid var(--color-gold-light);
+    outline-offset: -2px;
+    border-radius: 5px;
+}
+
+.admin-dept > summary .admin-department-code {
+    flex: 0 0 auto;
+    min-width: 46px;
+    padding-top: 3px;
+}
+
+.admin-dept__name {
+    /* The one element allowed to shrink. Without this a long office name
+       forces the row wider than the viewport instead of wrapping or
+       truncating. */
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--color-white);
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.admin-dept__open {
+    flex: 0 0 auto;
+    padding: 2px 9px;
+    color: #fcd34d;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.32);
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.admin-dept__chevron {
+    flex: 0 0 auto;
+    color: rgba(255, 255, 255, 0.34);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.admin-dept[open] > summary .admin-dept__chevron {
+    color: var(--color-gold-light);
+    transform: rotate(180deg);
+}
+
+.admin-dept__body {
+    padding: 0 16px 16px;
+    border-top: 1px solid rgba(201, 168, 76, 0.11);
+}
+
+.admin-dept__description {
+    margin: 14px 0 0;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+.admin-dept.is-archived {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(201, 168, 76, 0.12);
+}
+
+.admin-dept.is-archived .admin-dept__name {
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.admin-dept.is-archived .admin-department-code {
+    opacity: 0.6;
+}
+
+/* Creation lives on its own page now, so the directory is a single column.
+   Capped so a directory row stays a readable measure instead of stretching the
+   full width of a wide workspace. */
+.admin-page--directory {
+    max-width: 940px;
+    margin: 0 auto;
+}
+
+/* The status filter. A running count matters more than usual here: an admin
+   who archived three offices and cannot see them has no way to know the
+   directory is hiding something. */
+.admin-department-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 20px;
+}
+
+.admin-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    color: rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    border-radius: 5px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-filter-chip:hover {
+    color: var(--color-white);
+    border-color: rgba(201, 168, 76, 0.45);
+}
+
+.admin-filter-chip.is-active {
+    color: var(--color-navy);
+    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
+    border-color: var(--color-gold);
+}
+
+.admin-filter-chip__count {
+    /* Tabular so a count that changes width between 9 and 10 does not shove the
+       label sideways every time an office is added. */
+    min-width: 20px;
+    padding: 1px 6px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 9px;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    letter-spacing: 0;
+}
+
+.admin-filter-chip.is-active .admin-filter-chip__count {
+    color: var(--color-navy);
+    background: rgba(11, 31, 58, 0.16);
+}
+
+/* Native <details> so keyboard and assistive tech get the disclosure semantics
+   for free and the page needs no JavaScript to open an editor. */
+.admin-department-editor > summary,
+.admin-archive > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.admin-department-editor > summary::-webkit-details-marker,
+.admin-archive > summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-department-editor[open] > summary,
+.admin-archive[open] > summary {
+    /* The control that opened stays lit, so the row never looks like two
+       unrelated controls after the panel expands. */
+    color: var(--color-gold-light);
+    border-color: var(--color-gold);
+}
+
+/* The editor sits in the flex action row so its trigger reads as one of this
+   office's commands, but the form has to break out and span the row when open —
+   otherwise three fields are laid out in a 200px column. */
+.admin-department-editor[open] {
+    flex: 1 0 100%;
+}
+
+/* Open, the trigger spans the row and becomes the form's heading rather than a
+   button stranded on a line of its own. */
+.admin-department-editor[open] > summary {
+    justify-content: flex-start;
+    width: 100%;
+    margin-top: 6px;
+    border-radius: 5px 5px 0 0;
+}
+
+.admin-department-editor > form {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(201, 168, 76, 0.13);
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+}
+
+.admin-archive__confirm {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: rgba(239, 68, 68, 0.07);
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    border-radius: 6px;
+}
+
+.admin-archive__confirm p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.admin-archive__confirm strong {
+    color: var(--color-white);
+}
+
+.admin-archive__confirm .admin-form-actions {
+    margin-top: 12px;
+}
+
+/* A locked code is a stated decision, not a broken control, so it is disabled
+   but still legible — an input at default disabled opacity reads as a bug. */
+.admin-department-editor .admin-input:disabled {
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.02);
+    border-style: dashed;
+    cursor: not-allowed;
+    opacity: 1;
+}
+
+/* Stated where an admin reads the code list, not hidden in the code. */
+.admin-department-routing-note {
+    margin-top: 20px;
+}
+
+.admin-department-routing-note p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.admin-department-routing-note strong {
+    color: var(--color-white);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN QUEUE — the triage table
+   Ordered around the triage decision rather than the data model.
+   See resources/views/admin/complaints/index.blade.php for the
+   reasoning behind the column set.
+   ═══════════════════════════════════════════════════════════ */
+
+.admin-queue th {
+    white-space: nowrap;
+}
+
+.admin-queue td {
+    vertical-align: top;
+}
+
+/* Column widths, declared once on the <colgroup> rather than on the cells.
+
+   With `table-layout: fixed` the browser sizes columns from the first row or from
+   <col>, and ignores widths declared on body `td`s — setting them there collapsed
+   every column until the cells overlapped. These apply at every width so a tablet
+   gets the same column order as a phone and a desktop. */
+.admin-queue {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.admin-queue__col-check { width: 36px; }
+.admin-queue__col-complaint { width: 210px; }
+.admin-queue__col-department { width: 120px; }
+.admin-queue__col-state { width: 112px; }
+.admin-queue__col-priority { width: 84px; }
+.admin-queue__col-age { width: 74px; }
+
+/* No min-width here, and that is deliberate.
+
+   The column is sized by the <colgroup> above. A `min-width` on this wrapper
+   was the direct cause of the overlap: the cell is 210px wide, the wrapper
+   demanded 300px, and with `table-layout: fixed` the cell does not grow — so the
+   extra 90px spilled out and printed on top of the Department column. Width
+   belongs to the colgroup; this box only has to live inside whatever it is
+   given. */
+.admin-queue__complaint {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* `.admin-queue__complaint` and friends are wrappers, not the cells themselves.
+   Below 980px the card mode turns every `td` into a two-column grid — the
+   data-label, then the value — so a cell with more than one child element
+   auto-placed the extras into the label column and the title ended up printed
+   beside its own metadata. One wrapper per cell keeps that honest. */
+.admin-queue__priority,
+.admin-queue__age {
+    white-space: nowrap;
+}
+
+.admin-queue__id {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-queue__title {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.45;
+    text-decoration: none;
+}
+
+.admin-queue__title:hover {
+    color: var(--color-white);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Provenance under the subject: what kind of problem, and who raised it. This
+   is what used to occupy two whole columns of its own. */
+.admin-queue__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 3px 0 0;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 11px;
+}
+
+.admin-queue__department {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* An office-less case is actionable and must not read as plain muted text. */
+.admin-queue__unassigned {
+    color: #fcd34d;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.admin-queue__state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.admin-queue__priority-value {
+    display: block;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 12px;
+}
+
+.admin-queue__priority-note {
+    display: block;
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.38);
+    font-size: 10.5px;
+}
+
+/* "3d ago" is what a triage pass reads; the calendar date is the backup for
+   when it matters. The date is muted rather than hidden because filing date
+   disputes are exactly when it is needed. */
+.admin-queue__age {
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+}
+
+.admin-queue__age-date {
+    display: block;
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.34);
+    font-size: 10.5px;
+}
+
+.admin-queue__reset {
+    color: var(--color-gold-light);
+}
+
+/* ── Filter state, stated ─────────────────────────────────
+   The old panel gave no indication of what was narrowing the list, so a
+   filtered queue was indistinguishable from an unfiltered one. */
+.admin-filter-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(201, 168, 76, 0.16);
+}
+
+.admin-filter-summary__label {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.admin-filter-summary__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 9px 4px 11px;
+    color: var(--color-navy);
+    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.18s ease;
+}
+
+.admin-filter-summary__chip:hover {
+    background: var(--color-gold-light);
+}
+
+.admin-filter-summary__chip span[aria-hidden] {
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.6;
+}
+
+.admin-filter-summary__chip:hover span[aria-hidden] {
+    opacity: 1;
+}
+
+.admin-filter-summary__clear {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.admin-filter-summary__clear:hover {
+    color: var(--color-white);
+}
+
+/* The secondary filters. Still present and still applied — the active summary
+   proves that, so nothing is lost by not showing them first. */
+.admin-filter-secondary {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-filter-more {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.admin-filter-more > summary {
+    list-style: none;
+    width: fit-content;
+}
+
+.admin-filter-more > summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-filter-more[open] > summary {
+    color: var(--color-navy);
+    background: var(--color-gold-light);
+    border-color: var(--color-gold-light);
+}
+
+/* A filter set behind the disclosure that is currently applied must announce
+   itself, or the disclosure reads as empty when it is not. */
+.admin-filter-more__dot {
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+}
+
+.admin-filter-more__body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(201, 168, 76, 0.14);
+    border-radius: 6px;
+}
+
+/* ── Bulk reassignment bar ────────────────────────────────
+   Appears only on selection. Reassignment mutates every selected case at once,
+   so it no longer sits in a heading next to a read-only count. */
+.admin-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: rgba(201, 168, 76, 0.08);
+    border: 1px solid rgba(201, 168, 76, 0.34);
+    border-radius: 6px;
+}
+
+.admin-bulk-bar[hidden] {
+    display: none;
+}
+
+.admin-bulk-bar__count {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+}
+
+.admin-bulk-bar__number {
+    color: var(--color-gold-light);
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.admin-bulk-bar__note {
+    flex: 1 0 100%;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+
+@media (max-width: 700px) {
+    .admin-queue__complaint {
+        min-width: 0;
+    }
+
+    .admin-queue__priority,
+    .admin-queue__age {
+        white-space: normal;
+    }
+
+    /* The card mode labels this cell "Select", which in a narrow auto column
+       renders one letter per line. The checkbox carries its own aria-label and
+       is self-evident, so the visible word buys nothing. */
+    .admin-queue td.admin-table__checkbox::before {
+        display: none;
+    }
+
+    .admin-queue__state {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    /* The card mode gives the last cell a divider above it, because in a table
+       with a trailing action column that column is a control and reads better
+       separated. Here the last column is "Waiting", a value like any other, so
+       the rule would draw a line through the middle of one card. */
+    .admin-queue td:last-child {
+        padding-top: 9px !important;
+        border-top: 0 !important;
+    }
+
+    .admin-filter-more__body {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-filter-secondary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-bulk-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-bulk-bar .admin-button {
+        width: 100%;
+        min-height: 44px;
+    }
+}
+
 .admin-staff-actions {
     justify-content: flex-start;
     gap: 8px;
@@ -2710,6 +3987,88 @@ select.admin-input option {
 .admin-bulk-controls {
     justify-content: flex-end;
     gap: 8px;
+}
+
+/* Verification actions that only render for a can_verify holder. Inherits the
+   panel language of the review card it sits inside. */
+.verification-extra {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-gold);
+}
+
+.verification-extra__title {
+    margin: 0 0 12px;
+    color: var(--color-white);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.verification-extra__form + .verification-extra__form {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(201, 168, 76, 0.16);
+}
+
+.verification-request {
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-gold);
+    border-radius: 6px;
+}
+
+.verification-request--open {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.verification-request--answered {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.verification-request__status {
+    margin: 0 0 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.verification-request__question {
+    margin: 0;
+    color: var(--color-white);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.verification-request__response {
+    margin: 10px 0 0;
+    padding-top: 10px;
+    color: rgba(255, 255, 255, 0.78);
+    border-top: 1px solid rgba(201, 168, 76, 0.2);
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+.btn-submit--ghost {
+    color: var(--color-gold-light);
+    background: transparent;
+    border: 1px solid var(--color-gold);
+}
+
+.btn-submit--ghost:hover {
+    color: var(--color-navy);
+    background: var(--color-gold-light);
+}
+
+.form-error {
+    margin-top: 5px;
+    color: #fca5a5;
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 .admin-pagination {
@@ -2745,6 +4104,83 @@ select.admin-input option {
     color: var(--color-navy);
     background: var(--color-gold-light);
     border-color: var(--color-gold-light);
+}
+
+/* Scoped pager used by the admin invitation queue (pagination::admin). One
+   control set, dark surface, explicit Previous/Next with disabled states. */
+.admin-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.admin-pager-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-pager-step,
+.admin-pager-page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 6px 11px;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-gold);
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-pager-page {
+    min-width: 32px;
+    padding: 6px 9px;
+}
+
+.admin-pager-step:hover,
+.admin-pager-page:hover {
+    color: var(--color-white);
+    background: rgba(201, 168, 76, 0.14);
+    border-color: rgba(201, 168, 76, 0.5);
+}
+
+.admin-pager-step.is-disabled {
+    color: rgba(255, 255, 255, 0.28);
+    border-color: rgba(201, 168, 76, 0.14);
+    cursor: not-allowed;
+}
+
+.admin-pager-page.is-current {
+    color: var(--color-navy);
+    background: linear-gradient(135deg, var(--color-gold), var(--color-gold-light));
+    border-color: var(--color-gold-light);
+    font-weight: 700;
+}
+
+.admin-pager-gap {
+    padding: 0 2px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 11px;
+    user-select: none;
+}
+
+.admin-pager-step:focus-visible,
+.admin-pager-page:focus-visible {
+    outline: 2px solid var(--color-gold-light);
+    outline-offset: 2px;
 }
 
 .admin-copy-code {
@@ -2836,6 +4272,72 @@ select.admin-input option {
     border: 0;
 }
 
+/* Searchable barangay field */
+.barangay-suggestions[hidden],
+.barangay-suggestion[hidden] {
+    display: none;
+}
+
+.barangay-suggestions {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 40;
+    max-height: 220px;
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+    background: var(--color-navy-mid);
+    border: 1px solid var(--border-gold);
+    border-radius: 4px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.barangay-suggestion {
+    padding: 9px 10px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+    line-height: 1.35;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s, color 0.15s;
+    /* A long-press on a phone must not start a text selection over the
+       option, and the grey tap flash fights the gold hover state. */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.barangay-suggestion:hover,
+.barangay-suggestion.is-active,
+.barangay-suggestion[aria-selected="true"] {
+    color: var(--color-navy);
+    background: var(--color-gold);
+}
+
+.barangay-search-status {
+    display: block;
+    min-height: 1.3em;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+@media (max-width: 480px) {
+    .barangay-suggestions {
+        max-height: 180px;
+    }
+
+    /* Fingers need bigger targets than cursors: grow the options to a
+       comfortable touch size on phones. */
+    .barangay-suggestion {
+        padding: 12px;
+        font-size: 13px;
+    }
+}
+
 /* Password requirements checklist */
 .password-requirements {
     margin-top: 10px;
@@ -2909,7 +4411,7 @@ select.admin-input option {
    ═══════════════════════════════════════════════════════════ */
 .staff-shell {
     min-height: 100dvh;
-    padding-top: 64px;
+    padding-top: var(--navbar-height);
     display: flex;
     align-items: flex-start;
     background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-mid) 100%);
@@ -2918,13 +4420,13 @@ select.admin-input option {
 
 .staff-sidebar {
     position: sticky;
-    top: 64px;
+    top: var(--navbar-height);
     align-self: flex-start;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
     width: 272px;
-    height: calc(100dvh - 64px);
+    height: calc(100dvh - var(--navbar-height));
     padding: 20px 14px;
     overflow: hidden;
     background: rgba(4, 18, 39, 0.34);
@@ -3624,6 +5126,13 @@ select.staff-input option {
     white-space: nowrap;
 }
 
+/* An unanswered request past the stale window. Tracking age is only worth
+   anything if an unclosed ask is actually visible in the queue. */
+.staff-queue-subtext--stale {
+    color: #fcd34d;
+    font-weight: 700;
+}
+
 .staff-queue-table .staff-ticket-id,
 .staff-queue-table .staff-age-pill {
     font-variant-numeric: tabular-nums;
@@ -3926,22 +5435,32 @@ select.staff-input option {
 @media (max-width: 980px) {
     .staff-sidebar {
         position: fixed;
-        top: 64px;
-        bottom: 0;
+        top: var(--navbar-height);
+        bottom: auto;
         left: 0;
-        height: auto;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
         transform: translateX(-100%);
         box-shadow: 18px 0 42px rgba(0, 0, 0, 0.28);
-        transition: transform 0.2s ease;
+        transition: transform 320ms cubic-bezier(0.22, 0.68, 0, 1);
+        will-change: transform;
     }
 
     .staff-sidebar.is-open { transform: translateX(0); }
+
+    .staff-sidebar-nav {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .staff-sidebar-header { display: flex; }
     .staff-sidebar-close { display: inline-flex; }
 
     .staff-sidebar-overlay {
         position: fixed;
-        inset: 64px 0 0;
+        inset: var(--navbar-height) 0 0;
         display: block;
         visibility: hidden;
         padding: 0;
@@ -3957,11 +5476,15 @@ select.staff-input option {
         opacity: 1;
     }
 
-    body.staff-sidebar-open { overflow: hidden; }
+    html.staff-sidebar-open,
+    body.staff-sidebar-open {
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
 
     .staff-mobile-toolbar {
         position: sticky;
-        top: 64px;
+        top: var(--navbar-height);
         z-index: 30;
         display: flex;
         align-items: center;
@@ -4076,7 +5599,7 @@ select.staff-input option {
 
 /* Staff invitation redemption */
 .invitation-page {
-    min-height: calc(100dvh - 64px);
+    min-height: calc(100dvh - var(--navbar-height));
     padding: 48px 20px 64px;
     background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-mid) 100%);
 }
@@ -4111,15 +5634,6 @@ select.staff-input option {
     border-radius: 50%;
 }
 
-.invitation-overline {
-    margin: 0 0 6px;
-    color: var(--color-gold);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
 .invitation-panel-heading h1 {
     margin: 0;
     color: var(--color-white);
@@ -4129,10 +5643,13 @@ select.staff-input option {
     line-height: 1.1;
 }
 
-.invitation-panel-heading p:last-child {
-    margin: 8px 0 0;
-    color: rgba(255, 255, 255, 0.55);
-    font-size: 13px;
+/* Targets the lead paragraph explicitly. A `p:last-child` selector was used
+   here before the expiry note was added, which made the note steal these
+   styles and left this paragraph unstyled whenever the note rendered. */
+.invitation-panel-lead {
+    margin: 10px 0 0;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 13.5px;
     line-height: 1.6;
 }
 
@@ -4179,15 +5696,15 @@ select.staff-input option {
 }
 
 .invitation-field > span {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 10px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
 }
 
 .invitation-field small {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 400;
     letter-spacing: 0;
     text-transform: none;
@@ -4199,20 +5716,53 @@ select.staff-input option {
     padding: 10px 12px;
     color: var(--color-white);
     background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(201, 168, 76, 0.24);
+    /* Was 0.24, which composited to roughly 1.4:1 on this fill and read as no
+       border at all. A field boundary needs ~3:1. */
+    border: 1px solid rgba(201, 168, 76, 0.6);
     border-radius: 4px;
     font: inherit;
     font-size: 13px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .invitation-field input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.invitation-field input:hover {
+    border-color: rgba(201, 168, 76, 0.8);
 }
 
 .invitation-field input:focus {
-    border-color: var(--color-gold);
+    border-color: var(--color-gold-light);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.1);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.22);
+}
+
+/* A reserved invitation address is shown, not edited. */
+.invitation-field input[readonly].invitation-input-locked {
+    color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(201, 168, 76, 0.6);
+    border-style: dashed;
+    cursor: not-allowed;
+}
+
+.invitation-field input[readonly].invitation-input-locked:hover {
+    border-color: rgba(201, 168, 76, 0.6);
+}
+
+.invitation-field-note {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.invitation-expiry-note {
+    margin: 8px 0 0;
+    color: rgba(201, 168, 76, 0.92);
+    font-size: 11.5px;
+    line-height: 1.5;
 }
 
 .invitation-terms {
@@ -4249,6 +5799,16 @@ select.staff-input option {
     background: var(--color-gold-light);
 }
 
+.invitation-submit:focus-visible {
+    outline: 2px solid var(--color-gold-light);
+    outline-offset: 2px;
+}
+
+.invitation-submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 @media (max-width: 1180px) {
     .admin-metric-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4266,17 +5826,26 @@ select.staff-input option {
 @media (max-width: 980px) {
     .admin-sidebar {
         position: fixed;
-        top: 64px;
-        bottom: 0;
+        top: var(--navbar-height);
+        bottom: auto;
         left: 0;
-        height: auto;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
         transform: translateX(-100%);
         box-shadow: 18px 0 42px rgba(0, 0, 0, 0.28);
-        transition: transform 0.2s ease;
+        transition: transform 320ms cubic-bezier(0.22, 0.68, 0, 1);
+        will-change: transform;
     }
 
     .admin-sidebar.is-open {
         transform: translateX(0);
+    }
+
+    .admin-sidebar-nav {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
     }
 
     .admin-sidebar-header {
@@ -4289,7 +5858,7 @@ select.staff-input option {
 
     .admin-sidebar-overlay {
         position: fixed;
-        inset: 64px 0 0;
+        inset: var(--navbar-height) 0 0;
         display: block;
         visibility: hidden;
         padding: 0;
@@ -4305,13 +5874,15 @@ select.staff-input option {
         opacity: 1;
     }
 
+    html.admin-sidebar-open,
     body.admin-sidebar-open {
         overflow: hidden;
+        overscroll-behavior: none;
     }
 
     .admin-mobile-toolbar {
         position: sticky;
-        top: 64px;
+        top: var(--navbar-height);
         z-index: 30;
         display: flex;
         align-items: center;
@@ -4422,6 +5993,33 @@ select.staff-input option {
     .admin-header-actions .admin-button {
         width: 100%;
     }
+
+    /* The directory row is now the primary tap target, and its action buttons
+       sit inside it. Both were built for a pointer; on a thumb they were under
+       the 44px guidance minimum, which is where mis-taps come from. */
+    .admin-dept > summary {
+        min-height: 60px;
+        padding: 14px;
+    }
+
+    .admin-dept__name {
+        font-size: 16px;
+    }
+
+    .admin-dept__body {
+        padding: 0 14px 14px;
+    }
+
+    .admin-department-list-actions .admin-button {
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 11px;
+    }
+
+    /* Deliberately NOT flex-wrap:wrap on the directory row. Wrapping pushes the
+       status badge and the chevron onto a second line, which costs a whole row
+       per office and undoes the saving. A long office name wraps inside its own
+       column and the right-hand metadata stays on the row where it belongs. */
 
     .admin-header-actions,
     .admin-form-actions,
@@ -4787,6 +6385,13 @@ select.staff-input option {
         display: none;
     }
 
+    /* …except on the queue, which is still a scrolling table and needs the
+       hint. Without it there is nothing on screen telling a phone user that the
+       remaining columns are a swipe away. */
+    .admin-table-wrap:has(.admin-queue)::after {
+        display: block;
+    }
+
     .admin-table,
     .complaints-table,
     .transparency-table {
@@ -4916,6 +6521,148 @@ select.staff-input option {
 
     .transparency-table-meta {
         min-width: 0;
+    }
+}
+/* ── The queue stays a table on a phone ───────────────────
+   The shared card mode stacks every `td` into a labelled two-column box below
+   700px. That is right for a staff list of two or three fields, and wrong here:
+   a queue is a grid of comparable records, and a column of boxes destroys the
+   only thing that makes a table readable — being able to compare down a column.
+
+   So the queue opts out and keeps its header and rows, scrolling sideways inside
+   .admin-table-wrap. The ticket column is sticky, because the identifier is the
+   one field you must never lose while scrolling to read the rest. */
+@media (max-width: 700px) {
+    .admin-queue,
+    .admin-queue thead,
+    .admin-queue tbody,
+    .admin-queue thead tr,
+    .admin-queue tbody tr,
+    .admin-queue thead th,
+    .admin-queue tbody td {
+        display: revert !important;
+    }
+
+    /* `thead { display: none !important }` and `overflow: visible !important`
+       above exist for the card mode, where a header row is meaningless. Both are
+       listed here at higher specificity because they are the two rules that
+       actually broke the scrolling table: the header vanished, and the wrapper
+       stopped being a scroll container so the columns were simply clipped. */
+    .admin-queue thead {
+        display: table-header-group !important;
+    }
+
+    .admin-table-wrap:has(.admin-queue),
+    .admin-queue-wrap {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        border: 1px solid var(--border-gold) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        box-shadow: none !important;
+    }
+
+    .admin-queue {
+        width: auto;
+        min-width: 720px;
+        table-layout: fixed;
+    }
+
+    .admin-queue thead th {
+        display: table-cell !important;
+        padding: 10px 12px !important;
+        white-space: nowrap;
+    }
+
+    .admin-queue tbody td {
+        display: table-cell !important;
+        padding: 11px 12px !important;
+        vertical-align: top;
+        border-bottom: 1px solid rgba(201, 168, 76, 0.11);
+        border-top: 0 !important;
+    }
+
+    .admin-queue tbody td::before,
+    .admin-queue tbody td.admin-table__checkbox::before {
+        /* No card labels: the header row is right there and stays put. */
+        content: none !important;
+        display: none !important;
+    }
+
+    .admin-queue tbody tr {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+    }
+
+    .admin-queue tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    /* `min-width` is the phone budget: six columns cannot fit 393px, so the table
+       scrolls and the widths come from the global <colgroup> rules. */
+    .admin-queue {
+        min-width: 636px;
+    }
+
+    .admin-queue__complaint {
+        min-width: 0;
+    }
+
+    .admin-queue__state {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Sticky identifier. `position: sticky` inside a scrolling table needs the
+       cell to carry its own background, or the columns scroll visibly through it. */
+    .admin-queue .admin-table__checkbox {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #12294d;
+    }
+
+    .admin-queue__complaint-cell {
+        position: sticky;
+        left: 36px;
+        z-index: 2;
+        background: #12294d;
+        /* A seam, so the pinned column reads as pinned rather than as text
+           running under the column beside it. */
+        box-shadow: 1px 0 0 rgba(201, 168, 76, 0.16);
+    }
+
+    .admin-queue thead .admin-queue__complaint-cell,
+    .admin-queue thead .admin-table__checkbox {
+        z-index: 3;
+        background: #0e1e38;
+    }
+
+    .admin-queue .admin-ticket-id {
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+
+    .admin-queue__title {
+        /* Truncated, not wrapped. A wrapping title changes the row height from
+           row to row, which is the thing being fixed. */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-queue__meta {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Touch: a 44px minimum row height so a triage tap lands. */
+    .admin-queue tbody td {
+        min-height: 44px;
     }
 }
 
@@ -5410,5 +7157,87 @@ select.staff-input option {
 @media (max-width: 540px) {
     .admin-evidence-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .admin-complaints-filter-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .admin-complaints-filter-grid .admin-field {
+        min-width: 0;
+    }
+
+    .admin-complaints-filter-grid .admin-field--wide {
+        grid-column: auto;
+    }
+
+    .admin-complaints-filter-grid .admin-filter-actions {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        width: 100%;
+    }
+
+    .admin-complaints-filter-grid .admin-filter-actions .admin-button {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-complaints-filter-grid .admin-field {
+        gap: 5px;
+    }
+
+    .admin-complaints-filter-grid .admin-field > span {
+        font-size: 8px;
+        letter-spacing: 0.06em;
+    }
+
+    .admin-complaints-filter-grid .admin-input {
+        min-height: 36px;
+        padding: 7px;
+        font-size: 10px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   OPERATOR RAIL — desktop / large screens
+   Floating card that stays centred in the space below the navbar while the
+   workspace scrolls. `fixed` is deliberate: a sticky box cannot centre itself
+   in the scrollport without a transform that also displaces its resting
+   position. The workspace reserves the gutter so content never sits underneath.
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 981px) {
+    .admin-sidebar,
+    .staff-sidebar {
+        position: fixed;
+        top: calc(50dvh + (var(--navbar-height) / 2));
+        right: auto;
+        bottom: auto;
+        left: 20px;
+        z-index: 40;
+        width: 272px;
+        height: auto;
+        max-height: calc(100dvh - var(--navbar-height) - 40px);
+        margin: 0;
+        padding: 18px 14px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        transform: translateY(-50%);
+        background: rgba(4, 18, 39, 0.62);
+        border: 1px solid var(--border-gold);
+        border-radius: 14px;
+        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.32);
+    }
+
+    .admin-workspace,
+    .staff-workspace {
+        margin-left: 292px;
     }
 }

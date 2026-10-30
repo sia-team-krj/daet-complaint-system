@@ -8,16 +8,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    {{-- Must come before @vite: the module is deferred, this is not. --}}
+    @include('partials.leaflet-bootstrap')
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="/js/shell.js?v={{ filemtime(public_path('js/shell.js')) }}" defer></script>
     @livewireStyles
     @stack('styles')
 </head>
-<body class="w-full max-w-full bg-[#0B1F3A] overflow-x-hidden">
+<body class="w-full max-w-full bg-[#0B1F3A] overflow-x-clip">
     @include('layouts.guest-navbar')
-    <main class="w-full max-w-full overflow-x-hidden">
+    <main class="w-full max-w-full overflow-x-clip">
         @yield('content')
     </main>
+
+    {{-- See layouts/app.blade.php: the footer carries the legal documents, and a
+         page that renders its own declares `@section('site-footer')`. --}}
+    @hasSection('site-footer')
+        @yield('site-footer')
+    @else
+        @include('layouts.partials.site-footer')
+    @endif
+
     @livewireScripts
     @stack('scripts')
 </body>

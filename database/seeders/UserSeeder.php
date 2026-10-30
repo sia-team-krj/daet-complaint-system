@@ -28,6 +28,7 @@ class UserSeeder extends Seeder
                 'role' => 'admin',
                 'department_id' => null,
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]
         );
         $users[] = ['Admin', $admin->full_name, $admin->email, '—'];
@@ -45,9 +46,9 @@ class UserSeeder extends Seeder
         foreach ($staffMapping as $slug => [$name, $deptCode]) {
             [$firstName, $lastName] = explode(' ', $name, 2);
             $email = $slug . '@daetlistens.gov.ph';
-            
+
             $department = Department::where('code', $deptCode)->first();
-            
+
             $staff = User::firstOrCreate(
                 ['email' => $email],
                 [
@@ -57,31 +58,49 @@ class UserSeeder extends Seeder
                     'role' => 'staff',
                     'department_id' => $department?->id,
                     'is_active' => true,
+                    'email_verified_at' => now(),
+                    // One verifier per department so the review queue is never
+                    // stranded. Verification is a capability, so this person is
+                    // still an ordinary staff member who can also be assigned work.
+                    'can_verify' => true,
                 ]
             );
-            
+
             $users[] = ['Staff', $staff->full_name, $staff->email, $department?->name ?? 'Unknown'];
         }
 
         // ── CITIZEN ACCOUNTS ──
+        // Each carries a barangay because the complaint form prefills itself
+        // from it, and an account with a blank one opens the form looking
+        // broken — the field is required, and the resident is shown an empty
+        // box for something they have already told us.
         $citizens = [
-            ['Pedro', 'Penduko', 'pedro@gmail.com'],
-            ['Nena', 'Cruz', 'nena@gmail.com'],
-            ['Jose', 'Batungbakal', 'jose@gmail.com'],
+            ['Pedro', 'Penduko', 'pedro@gmail.com', 'Barangay VI (Centro)'],
+            ['Nena', 'Cruz', 'nena@gmail.com', 'Barangay I (Hilahod)'],
+            ['Jose', 'Batungbakal', 'jose@gmail.com', 'Bagasbas'],
         ];
 
-        foreach ($citizens as [$firstName, $lastName, $email]) {
+        foreach ($citizens as [$firstName, $lastName, $email, $barangay]) {
             $citizen = User::firstOrCreate(
                 ['email' => $email],
                 [
                     'first_name' => $firstName,
                     'last_name' => $lastName,
+                    'barangay' => $barangay,
                     'password' => Hash::make('Test@1234'),
                     'role' => 'citizen',
                     'department_id' => null,
                     'is_active' => true,
+                    'email_verified_at' => now(),
                 ]
             );
+
+            // firstOrCreate leaves an existing row untouched, so an account
+            // seeded before barangays were recorded keeps whatever it had,
+            // including nothing at all.
+            if (blank($citizen->barangay)) {
+                $citizen->forceFill(['barangay' => $barangay])->save();
+            }
             
             $users[] = ['Citizen', $citizen->full_name, $citizen->email, '—'];
         }

@@ -5,10 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
+use App\Enums\VerificationMethod;
 use App\Mail\ComplaintUpdatedMail;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
+use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\ComplaintModerationService;
+use App\Services\ComplaintVerificationService;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -17,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -179,7 +185,14 @@ class StaffController extends Controller
             ComplaintPriority::cases(),
         );
 
-        $query = Complaint::where('department_id', $departmentId)->with(['user']);
+        // Outstanding asks are eager-loaded, otherwise the queue would issue one
+        // extra query per row just to show how long a resident has been waiting.
+        $query = Complaint::where('department_id', $departmentId)->with([
+            'user',
+            'informationRequests' => fn ($relation) => $relation
+                ->outstanding()
+                ->latest('id'),
+        ]);
 
         if ($status && in_array($status, $validStatuses, true)) {
             $query->where('status', $status);
@@ -249,18 +262,31 @@ class StaffController extends Controller
             abort(403, 'This complaint is not assigned to your department.');
         }
 
-        $complaint->load(['user', 'department', 'logs.actor', 'reviewedBy']);
+        $complaint->load(['user', 'department', 'logs.actor', 'reviewedBy', 'verifyingStaff', 'informationRequests.requester']);
 
         // Status options for dropdown (excluding current status to force change)
         $statuses = array_filter(ComplaintStatus::cases(), fn ($s) => $s->value !== $complaint->statusEnum->value);
         $reviewStatusOptions = ComplaintReviewStatus::cases();
         $priorityOptions = ComplaintPriority::cases();
 
+        // Only offered when the viewer can actually verify, so the page does not
+        // advertise a control that would be refused.
+        $departmentVerifiers = $user->canVerifyComplaints()
+            ? User::query()
+                ->where('role', 'staff')
+                ->where('department_id', $complaint->department_id)
+                ->where('can_verify', true)
+                ->where('is_active', true)
+                ->orderBy('first_name')
+                ->get()
+            : collect();
+
         return view('staff.complaints.show', compact(
             'complaint',
             'statuses',
             'reviewStatusOptions',
             'priorityOptions',
+            'departmentVerifiers',
             'user'
         ));
     }
@@ -268,7 +294,7 @@ class StaffController extends Controller
     /**
      * Review complaint legitimacy and confirm the operational priority.
      */
-    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger): RedirectResponse
+    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification): RedirectResponse
     {
         $user = Auth::user();
 
@@ -279,48 +305,43 @@ class StaffController extends Controller
         $validated = $request->validate([
             'review_status' => ['required', Rule::enum(ComplaintReviewStatus::class)],
             'confirmed_priority' => ['nullable', Rule::enum(ComplaintPriority::class)],
+            'verification_method' => ['nullable', Rule::enum(VerificationMethod::class)],
             'review_notes' => ['nullable', 'string', 'max:2000'],
-            'is_public' => ['nullable', 'boolean'],
+            // is_public is deliberately absent. Whether a complaint is public is
+            // the resident's decision; staff moderate content through the
+            // separate moderation action instead.
         ]);
 
         $reviewStatus = ComplaintReviewStatus::from($validated['review_status']);
         $confirmedPriority = isset($validated['confirmed_priority'])
             ? ComplaintPriority::from($validated['confirmed_priority'])
             : null;
+        $method = isset($validated['verification_method'])
+            ? VerificationMethod::from($validated['verification_method'])
+            : null;
 
-        if ($reviewStatus === ComplaintReviewStatus::Verified && ! $confirmedPriority) {
-            return back()->with('error', 'A confirmed priority is required before verifying a complaint.');
-        }
+        // Verification used to be open to any staff member in the department.
+        // It is now a capability, and the assigned worker can never sign off
+        // on their own assignment.
+        try {
+            $verification->authorize($user, $complaint);
+            $verification->authorizeNoSelfConflict($complaint, $user->id);
 
-        $isPublic = array_key_exists('is_public', $validated)
-            ? (bool) $validated['is_public']
-            : $complaint->is_public;
-
-        if ($reviewStatus !== ComplaintReviewStatus::Verified) {
-            $confirmedPriority = null;
-            $isPublic = false;
+            $updates = $verification->reviewUpdates(
+                $complaint,
+                $user,
+                $reviewStatus,
+                $confirmedPriority,
+                $method,
+                $validated['review_notes'] ?? $complaint->review_notes,
+            );
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
         }
 
         $oldReviewStatus = $complaint->reviewStatusEnum;
         $oldPriority = $complaint->confirmedPriorityEnum;
         $oldStatus = $complaint->statusEnum;
-        $updates = [
-            'review_status' => $reviewStatus->value,
-            'confirmed_priority' => $confirmedPriority?->value,
-            'reviewed_by' => $user->id,
-            'reviewed_at' => now(),
-            'review_notes' => $validated['review_notes'] ?? $complaint->review_notes,
-            'is_public' => $isPublic,
-        ];
-
-        if ($reviewStatus === ComplaintReviewStatus::Verified && $oldStatus === ComplaintStatus::Submitted) {
-            $updates['status'] = ComplaintStatus::UnderReview->value;
-        }
-
-        if ($reviewStatus === ComplaintReviewStatus::Rejected
-            && in_array($oldStatus, [ComplaintStatus::Submitted, ComplaintStatus::UnderReview], true)) {
-            $updates['status'] = ComplaintStatus::Rejected->value;
-        }
 
         DB::transaction(function () use ($complaint, $updates, $oldStatus, $reviewStatus, $confirmedPriority, $oldReviewStatus, $oldPriority, $activityLogger): void {
             $complaint->update($updates);
@@ -349,7 +370,6 @@ class StaffController extends Controller
                     'review_status' => $reviewStatus->value,
                     'previous_confirmed_priority' => $oldPriority?->value,
                     'confirmed_priority' => $confirmedPriority?->value,
-                    'is_public' => $updates['is_public'],
                 ],
             );
         });
@@ -360,10 +380,73 @@ class StaffController extends Controller
     }
 
     /**
+     * Withhold or redact a complaint's public presentation.
+     *
+     * Separate from the review decision on purpose. A reviewer decides whether a
+     * report is accurate; neither they nor an admin decides whether a resident's
+     * complaint appears publicly. That is the resident's call. What staff can do
+     * here is stop genuinely inappropriate content being broadcast — and every
+     * use of that power is reason-bearing and logged.
+     */
+    public function moderate(
+        Request $request,
+        Complaint $complaint,
+        ComplaintModerationService $moderation,
+        ActivityLogger $activityLogger,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+            return back()->with('error', 'You cannot moderate complaints outside your department.');
+        }
+
+        $validated = $request->validate([
+            'hidden_from_public' => ['nullable', 'boolean'],
+            'redacted_title' => ['nullable', 'string', 'max:255'],
+            'redacted_description' => ['nullable', 'string', 'max:5000'],
+            'withheld_image_paths' => ['nullable', 'array'],
+            'withheld_image_paths.*' => ['string'],
+            'restore_image_paths' => ['nullable', 'array'],
+            'restore_image_paths.*' => ['string'],
+            'moderation_reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $updates = $moderation->apply($complaint, $user, $validated);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
+        }
+
+        if ($updates === []) {
+            return back()->with('error', 'Nothing was selected to moderate.');
+        }
+
+        $complaint->refresh();
+
+        $activityLogger->log(
+            'complaint.moderated',
+            "Complaint {$complaint->ticket_id}: ".$moderation->summary($complaint, $updates).'. Reason: '.$updates['moderation_reason'],
+            $complaint,
+            metadata: [
+                'hidden_from_public' => $updates['hidden_from_public'],
+                'redacted_title' => $updates['redacted_title'] !== null,
+                'redacted_description' => $updates['redacted_description'] !== null,
+                'withheld_photo_count' => count($updates['withheld_image_paths']),
+                // Recorded so the audit trail shows the consent was left alone.
+                'resident_visibility_untouched' => true,
+            ],
+        );
+
+        return redirect()
+            ->route('staff.complaints.show', $complaint)
+            ->with('status', 'Moderation saved. The resident still sees their complaint exactly as they filed it.');
+    }
+
+    /**
      * Update complaint status and add a public response with optional internal note.
      * Processing and resolution updates require documentation photos as proof.
      */
-    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger): RedirectResponse
+    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications): RedirectResponse
     {
         $user = Auth::user();
 
@@ -496,6 +579,16 @@ class StaffController extends Controller
         Mail::to($complaint->user->email)->send(
             new ComplaintUpdatedMail($complaint, $newStatus->value, $validated['note'])
         );
+
+        // And the in-app notification, so the resident learns of the change
+        // without having to remember to open the page. Reported rather than
+        // thrown: a failed notification must not undo a status change the
+        // department has already committed to, with its proof photos attached.
+        try {
+            $notifications->statusChanged($complaint, $newStatus->label(), $user);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return redirect()
             ->route('staff.complaints.show', $complaint)

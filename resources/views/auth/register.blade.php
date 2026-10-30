@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Create Account — Daet Listens')
+@section('title', 'Create Account - Daet Listens')
 @section('content')
 
 <style>
@@ -20,15 +20,25 @@
   .auth-root, .auth-root * { box-sizing: border-box; }
 
   /*
-   * Register has more form fields so the right panel CAN overflow vertically
-   * on short screens. We allow auth-root itself to scroll.
+   * Register scrolls the same way the home page does: a static, auto-height
+   * wrapper and normal document scrolling. It used to be a `position: fixed`
+   * panel with its own scrollbar on desktop that switched to document
+   * scrolling on mobile, and that split is what made the form unreachable on a
+   * phone. One strategy at every width cannot get trapped.
+   *
+   * The navbar is position:fixed at every width, hence the top padding.
    */
   .auth-root {
+    width: 100%;
+    max-width: 100%;
     font-family: 'DM Sans', sans-serif;
-    position: fixed;
-    top: 64px; left: 0; right: 0; bottom: 0;
+    position: static;
     background: var(--navy);
-    overflow-y: auto;
+    overflow: visible;
+    padding-top: calc(var(--navbar-height) + 8px);
+    /* Stops the viewport jumping when the barangay suggestion list is inserted
+       above the field. Still needed now that the document scrolls. */
+    overflow-anchor: none;
   }
 
   .auth-bg {
@@ -62,10 +72,11 @@
     pointer-events: none; user-select: none; letter-spacing: -0.02em;
   }
 
-  /* Two-column grid — min-height grows with content */
+  /* Two-column grid - fills the first screen, then grows with the form */
   .auth-layout {
     position: relative; z-index: 2;
-    width: 100%; min-height: 100%;
+    width: 100%;
+    min-height: calc(100svh - var(--navbar-height) - 8px);
     display: grid; grid-template-columns: 1fr 1fr;
   }
 
@@ -74,9 +85,9 @@
     display: flex; flex-direction: column; justify-content: center; align-items:center;
     padding: clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px) clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px);
     position: relative;
-    /* Sticky so brand panel scrolls with the page but stays in view */
-    position: sticky; top: 0; align-self: start;
-    min-height: calc(100vh - 64px);
+    /* Sticks below the fixed navbar while the form scrolls past it. */
+    position: sticky; top: calc(var(--navbar-height) + 8px); align-self: start;
+    min-height: calc(100svh - var(--navbar-height) - 8px);
   }
 
   .auth-brand::after {
@@ -92,11 +103,6 @@
     font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
     color: rgba(201,168,76,0.8); background: rgba(201,168,76,0.06); width: fit-content;
   }
-  .badge-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: var(--gold); flex-shrink: 0; animation: dot-pulse 2.4s infinite;
-  }
-  @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.6);} }
 
   .auth-brand-title {
     text-align:center;
@@ -126,7 +132,7 @@
   /* ─── Form panel (RIGHT) ─── */
   .auth-form-panel {
     display: flex; flex-direction: column;
-    justify-content: center; align-items: center;
+    justify-content: flex-start; align-items: center;
     padding: clamp(40px, 5vh, 72px) clamp(40px, 5vw, 80px) clamp(48px, 6vh, 80px) clamp(32px, 4vw, 64px);
   }
 
@@ -152,22 +158,8 @@
   .field-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.18); border-radius: 4px; padding: 12px 14px 12px 42px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--white); outline: none; transition: border-color 0.22s, background 0.22s, box-shadow 0.22s; }
   .field-input::placeholder { color: rgba(255,255,255,0.2); }
   .field-input:focus { border-color: rgba(201,168,76,0.55); background: rgba(255,255,255,0.06); box-shadow: 0 0 0 3px rgba(201,168,76,0.06); }
-  .field-underline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); transition: width 0.35s ease; border-radius: 0 0 4px 4px; }
-  .field-input:focus ~ .field-underline { width: 100%; }
-
-  .field-select { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.18); border-radius: 4px; padding: 12px 14px 12px 42px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: rgba(255,255,255,0.7); outline: none; transition: border-color 0.22s, background 0.22s, box-shadow 0.22s; appearance: none; cursor: pointer; }
-  .field-select option { background: #12294d; color: #fff; }
-  .field-select:focus { border-color: rgba(201,168,76,0.55); background: rgba(255,255,255,0.06); box-shadow: 0 0 0 3px rgba(201,168,76,0.06); color: #fff; }
-  .field-select-arrow { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: rgba(201,168,76,0.5); pointer-events: none; }
-
-  /* Password strength */
-  .ps-wrap { margin-top: 7px; }
-  .ps-bars { display: flex; gap: 4px; margin-bottom: 4px; }
-  .ps-bar { flex: 1; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.08); transition: background 0.3s; }
-  .ps-bar.weak   { background: #ef4444; }
-  .ps-bar.fair   { background: #f59e0b; }
-  .ps-bar.strong { background: #3FCB6F; }
-  .ps-label { font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 0.08em; }
+  .field-underline { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; border-radius: 0 0 4px 4px; }
+  .field-input:focus ~ .field-underline { transform: scaleX(1); }
 
   /* Terms */
   .field-terms { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; cursor: pointer; }
@@ -192,16 +184,33 @@
   .auth-alert { border-radius: 4px; padding: 12px 16px; font-size: 12.5px; line-height: 1.6; margin-bottom: 18px; }
   .alert-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
 
-  .auth-footer { position: fixed; bottom: 0; left: 0; right: 0; background: #060f1e; border-top: 1px solid rgba(201,168,76,0.1); padding: 10px clamp(20px, 3vw, 48px); display: flex; align-items: center; justify-content: space-between; z-index: 100; }
-  .auth-footer p { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.06em; }
-  .auth-footer strong { color: rgba(201,168,76,0.4); }
-  .footer-seal { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.12); }
+  /* Static, not fixed: a fixed footer would sit over the bottom of the form
+     and read as "there is more below but you cannot reach it". */
 
   @keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
-  .fu{animation:fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both;}
+  .fu{animation:fadeUp 0.7s cubic-bezier(.22,.68,0,1) both;}
   .d1{animation-delay:0.04s;}.d2{animation-delay:0.16s;}
   .d3{animation-delay:0.28s;}.d4{animation-delay:0.40s;}
   .d5{animation-delay:0.52s;}
+
+  /*
+   * The barangay suggestion list is an absolutely-positioned popup that
+   * overflows its field-group. Every .fu group keeps its fadeUp transform
+   * (fill-mode: both), and a retained transform - even translateY(0) - makes
+   * each group its own stacking context. Stacking contexts at the same level
+   * paint in DOM order, so the password group painted OVER this group's
+   * entire popup: only the top sliver of the first suggestion (the part
+   * overlapping this group's status line) received clicks and taps, while
+   * every other suggestion sat behind the password field's box. Elevating
+   * this one group above its siblings restores pointer access to the whole
+   * list. The list drops downward, and the whole form lives inside
+   * .auth-layout's z-index: 2 context under the fixed navbar's z-index: 50,
+   * so this cannot cover the navbar.
+   */
+  .field-group.has-suggestions {
+    position: relative;
+    z-index: 30;
+  }
 
   /* Tablet */
   @media (max-width: 1100px) and (min-width: 769px) {
@@ -211,12 +220,14 @@
 
   /* Mobile */
   @media (max-width: 768px) {
-    .auth-root { position: static; min-height: calc(100svh - 64px); overflow: visible; }
-    .auth-layout { grid-template-columns: 1fr; }
+    /* Only the layout changes here. Scrolling is not re-specified at any
+       breakpoint: .auth-root scrolls the document at every width, exactly like
+       .home-root on the landing page. A width-dependent scroll strategy is what
+       broke this form on phones in the first place. */
+    .auth-layout { grid-template-columns: 1fr; min-height: 0; }
     .auth-brand { display: none; }
     .auth-form-panel { padding: 48px 24px 90px; justify-content: flex-start; }
     .auth-wm { display: none; }
-    .auth-footer { position: static; }
   }
 
   @media (max-width: 480px) {
@@ -237,7 +248,6 @@
     {{-- LEFT: Brand --}}
     <div class="auth-brand">
       <div class="auth-badge fu d1">
-        <span class="badge-dot"></span>
         Official Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
       </div>
       <h2 class="auth-brand-title fu d2">
@@ -282,8 +292,7 @@
           </div>
         @endif
 
-        {{-- <form method="POST" action="{{ route('register') }}"> --}}
-        <form method="POST" action="">
+        <form method="POST" action="{{ route('register') }}">
           @csrf
 
           <div class="field-row-2 fu d3">
@@ -323,31 +332,49 @@
             </div>
           </div>
 
-          <div class="field-group fu d4">
+          <div class="field-group has-suggestions fu d4">
             <label class="field-label" for="barangay">Barangay</label>
-            <div class="field-wrap">
+            <div class="field-wrap" data-barangay-search data-suggestions="barangay-suggestions" data-status="barangay-status">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-              <select id="barangay" name="barangay" class="field-select" >
-                  @foreach(App\Models\User::BARANGAYS as $barangay)
-                      <option value="{{ $barangay }}" {{ old('barangay') === $barangay ? 'selected' : '' }}>
-                          {{ $barangay }}
-                      </option>
-                  @endforeach
-              </select>
-              <span class="field-select-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              <input
+                id="barangay"
+                name="barangay"
+                type="search"
+                class="field-input"
+                placeholder="Type a barangay"
+                value="{{ old('barangay') }}"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="barangay-suggestions"
+                aria-describedby="barangay-status"
+                autocomplete="off"
+                spellcheck="false"
+                data-barangay-input
+              >
+              <div class="field-underline"></div>
+              <ul id="barangay-suggestions" class="barangay-suggestions" role="listbox" aria-label="Barangay suggestions" hidden>
+                @foreach (App\Models\User::BARANGAYS as $barangay)
+                  <li
+                    id="barangay-option-{{ $loop->index }}"
+                    class="barangay-suggestion"
+                    role="option"
+                    aria-selected="false"
+                    data-search-value="{{ $barangay }}"
+                  >{{ $barangay }}</li>
+                @endforeach
+              </ul>
             </div>
+            <span id="barangay-status" class="barangay-search-status" aria-live="polite">Type a barangay to see suggestions.</span>
           </div>
 
           <div class="field-group fu d4">
             <label class="field-label" for="password">Password</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-              <input id="password" name="password" type="password" class="field-input" placeholder="Minimum 8 characters" required oninput="checkStrength(this.value)">
+              <input id="password" name="password" type="password" class="field-input" placeholder="Minimum 8 characters" required autocomplete="new-password">
               <div class="field-underline"></div>
-            </div>
-            <div class="ps-wrap" id="ps-wrap" style="display:none">
-              <div class="ps-bars"><div class="ps-bar" id="pb1"></div><div class="ps-bar" id="pb2"></div><div class="ps-bar" id="pb3"></div><div class="ps-bar" id="pb4"></div></div>
-              <span class="ps-label" id="ps-label">Weak</span>
             </div>
             @include('auth.partials.password-requirements', ['passwordTarget' => 'password'])
           </div>
@@ -356,14 +383,19 @@
             <label class="field-label" for="password_confirmation">Confirm Password</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-              <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="Re-enter password" required>
+              <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="Re-enter password" required autocomplete="new-password">
               <div class="field-underline"></div>
             </div>
           </div>
 
           <label class="field-terms fu d4">
+            {{--
+                target="_blank" so reading the policy does not discard the form the
+                resident has already filled in. rel="noopener" because the target is
+                a new browsing context.
+            --}}
             <input type="checkbox" name="terms" required>
-            <span class="field-terms-label">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a> of the Municipality of Daet Transparency Complaint Portal.</span>
+            <span class="field-terms-label">I agree to the <a href="{{ route('terms') }}" target="_blank" rel="noopener">Terms and Conditions</a> and <a href="{{ route('privacy') }}" target="_blank" rel="noopener">Privacy Policy</a> of the Municipality of Daet Transparency Complaint Portal.</span>
           </label>
 
           <button type="submit" class="btn-submit fu d5">
@@ -385,30 +417,18 @@
 
   </div>
 
-  <div class="auth-footer">
-    <p><strong>Municipality of Daet</strong> &nbsp;&middot;&nbsp; Camarines Norte &nbsp;&middot;&nbsp; Official Transparency Portal</p>
-    <span class="footer-seal">Republic Act 6713 &nbsp;&middot;&nbsp; FOI Compliant</span>
-  </div>
+  {{-- Shared footer: carries the Terms and Conditions and the Privacy Policy. --}}
+  @include('layouts.partials.site-footer')
 </div>
 
-<script>
-function checkStrength(val) {
-  const wrap = document.getElementById('ps-wrap');
-  const label = document.getElementById('ps-label');
-  const bars = [1,2,3,4].map(i => document.getElementById('pb'+i));
-  if (!val) { wrap.style.display = 'none'; return; }
-  wrap.style.display = 'block';
-  let s = 0;
-  if (val.length >= 8) s++;
-  if (/[A-Z]/.test(val)) s++;
-  if (/[0-9]/.test(val)) s++;
-  if (/[^A-Za-z0-9]/.test(val)) s++;
-  const cls = s <= 1 ? 'weak' : s <= 2 ? 'fair' : 'strong';
-  const lbl = s <= 1 ? 'Weak' : s <= 2 ? 'Fair' : s === 3 ? 'Good' : 'Strong';
-  bars.forEach((b,i) => { b.className = 'ps-bar'; if(i < s) b.classList.add(cls); });
-  label.textContent = lbl;
-  label.style.color = s <= 1 ? '#ef4444' : s <= 2 ? '#f59e0b' : '#3FCB6F';
-}
-</script>
+@endsection
 
+{{-- This page renders the shared footer inside its own full-height wrapper, so
+     the layout must not add a second one. See layouts/app.blade.php. --}}
+@section('site-footer')
+    {{-- Ownership marker only. The footer is rendered above, inside this page's
+         own layout wrapper. This section exists purely to tell the shell layout
+         not to add a second one, and it must contain something: `@hasSection`
+         compiles to a non-empty content check, so an empty section is ignored. --}}
+    <span hidden aria-hidden="true"></span>
 @endsection

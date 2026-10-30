@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Audit Trail — Admin')
+@section('title', 'Audit Trail - Admin')
 @section('admin-content')
 <div class="admin-page">
     <header class="admin-page-header">

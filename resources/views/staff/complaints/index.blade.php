@@ -1,6 +1,6 @@
 @extends('staff.layouts.app')
 
-@section('title', 'Complaint Queue — Staff — Daet Listens')
+@section('title', 'Complaint Queue - Staff - Daet Listens')
 @section('staff-content')
 <div class="staff-page">
     <header class="staff-page-header">
@@ -16,7 +16,7 @@
         <article class="staff-metric"><span>Pending review</span><strong>{{ $stats['new'] ?? 0 }}</strong></article>
         <article class="staff-metric"><span>In progress</span><strong>{{ $stats['inProgress'] ?? 0 }}</strong></article>
         <article class="staff-metric"><span>Resolved this month</span><strong>{{ $stats['resolvedThisMonth'] ?? 0 }}</strong></article>
-        <article class="staff-metric"><span>Average days open</span><strong>{{ $stats['avgDays'] ?? '—' }}</strong></article>
+        <article class="staff-metric"><span>Average days open</span><strong>{{ $stats['avgDays'] ?? '-' }}</strong></article>
     </section>
 
     <section class="staff-filter-panel" aria-label="Queue filters">
@@ -129,6 +129,22 @@
                             </td>
                             <td data-label="Review">
                                 <span class="staff-status staff-status--{{ str($complaint->review_status)->slug() }}">{{ $complaint->reviewStatusEnum->label() }}</span>
+                                @php
+                                    $waitingOn = $complaint->informationRequests->first();
+                                    // Same compact units as the Age column, so one
+                                    // table never mixes "5d ago" with "5 days".
+                                    $waitingDays = $waitingOn
+                                        ? max(0, (int) floor($waitingOn->created_at->diffInSeconds($ageNow) / 86400))
+                                        : 0;
+                                    $waitingLabel = $waitingOn
+                                        ? 'Waiting '.$waitingDays.' '.Str::plural('day', $waitingDays)
+                                        : null;
+                                @endphp
+                                @if($waitingOn)
+                                    <span class="staff-queue-subtext {{ $waitingOn->isStale() ? 'staff-queue-subtext--stale' : '' }}">
+                                        {{ $waitingLabel }}@if($waitingOn->isStale()) · overdue @endif
+                                    </span>
+                                @endif
                             </td>
                             <td data-label="Priority">
                                 <span class="staff-queue-priority staff-queue-priority--{{ str($priorityValue)->slug() }}">{{ $priority }}</span>
@@ -157,7 +173,7 @@
         </div>
 
         @if($complaints->hasPages())
-            <div class="staff-pagination">{{ $complaints->links() }}</div>
+            <div class="staff-pagination">{{ $complaints->links('pagination::workspace', ['ariaLabel' => 'Complaint queue pages']) }}</div>
         @endif
     </section>
 </div>

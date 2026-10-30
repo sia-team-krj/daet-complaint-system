@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', $user->full_name . ' — User Management')
+@section('title', $user->full_name . ' - User Management')
 @section('admin-content')
 @php
     $isCurrentUser = auth()->id() === $user->id;

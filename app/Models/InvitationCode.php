@@ -12,9 +12,12 @@ class InvitationCode extends Model
 
     protected $fillable = [
         "code",
+        "invitee_name",
+        "invitee_email",
         "department_id",
         "created_by",
         "expires_at",
+        "emailed_at",
         "max_uses",
         "used_count",
         "redeemed_by",
@@ -26,6 +29,7 @@ class InvitationCode extends Model
     {
         return [
             "expires_at"  => "datetime",
+            "emailed_at"  => "datetime",
             "created_at"  => "datetime",
             "redeemed_at" => "datetime",
             "max_uses"    => "integer",
@@ -77,5 +81,25 @@ class InvitationCode extends Model
         }
 
         return $this->is_active ? 'Active' : 'Revoked';
+    }
+
+    // ── Invitee helpers ───────────────────────────────
+    public function inviteeLabel(): string
+    {
+        if ($this->invitee_name && $this->invitee_email) {
+            return "{$this->invitee_name} · {$this->invitee_email}";
+        }
+
+        return $this->invitee_name ?: ($this->invitee_email ?: 'Unaddressed invitation');
+    }
+
+    public function wasEmailed(): bool
+    {
+        return $this->emailed_at !== null;
+    }
+
+    public function isReservedToEmail(): bool
+    {
+        return filled($this->invitee_email);
     }
 }

@@ -1,5 +1,5 @@
 @extends($mainLayout)
-@section('title', 'Track Complaint — Daet Listens')
+@section('title', 'Track Complaint - Daet Listens')
 @section('content')
 
 <style>
@@ -22,7 +22,7 @@
   .track-root {
     font-family: 'DM Sans', sans-serif;
     background: var(--cream);
-    min-height: calc(100svh - 64px);
+    min-height: calc(100svh - var(--navbar-height));
     display: flex;
     align-items: center;
     justify-content: center;

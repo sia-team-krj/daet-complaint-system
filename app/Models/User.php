@@ -18,11 +18,11 @@ class User extends Authenticatable
     // ─────────────────────────────────────────────
     // Single source of truth for all 25 official barangays.
     // Used in:
-    //   - Register dropdown (register.blade.php)
+    //   - Register search suggestions (register.blade.php)
     //   - RegisteredUserController validation: Rule::in(User::BARANGAYS)
     //   - Profile edit form
     //
-    // Order matches the official register.blade.php dropdown exactly.
+    // Keep this list as the single source of truth for registration and profile options.
     // ─────────────────────────────────────────────
     const BARANGAYS = [
         "Alawihao",
@@ -56,6 +56,7 @@ class User extends Authenticatable
         "first_name",
         "last_name",
         "email",
+        "email_verified_at",
         "contact_number",
         "barangay",
         "password",
@@ -65,6 +66,7 @@ class User extends Authenticatable
         "display_alias",
         "prefers_anonymity",
         "is_active",
+        "can_verify",
     ];
 
     protected $hidden = ["password", "remember_token"];
@@ -76,7 +78,30 @@ class User extends Authenticatable
             "password" => "hashed",
             "prefers_anonymity" => "boolean",
             "is_active" => "boolean",
+            "can_verify" => "boolean",
         ];
+    }
+
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    /**
+     * May this account settle whether a complaint is genuine?
+     *
+     * A capability, not a role: the holder stays a department staff member in
+     * the same queue as everyone else. Admin is always allowed, which is the
+     * fallback that stops a department freezing when its one verifier is away.
+     */
+    public function canVerifyComplaints(): bool
+    {
+        return $this->role === 'admin' || (bool) $this->can_verify;
+    }
+
+    public function markEmailAsVerified(): void
+    {
+        $this->forceFill(['email_verified_at' => now()])->save();
     }
 
     // ─────────────────────────────────────────────
@@ -196,6 +221,11 @@ class User extends Authenticatable
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class, 'actor_id');
+    }
+
+    public function emailVerificationCodes(): HasMany
+    {
+        return $this->hasMany(EmailVerificationCode::class);
     }
 
     // ─────────────────────────────────────────────

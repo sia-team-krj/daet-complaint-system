@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Admin Dashboard — Daet Listens')
+@section('title', 'Admin Dashboard - Daet Listens')
 @section('admin-content')
 <div class="admin-page">
     <header class="admin-page-header">
@@ -38,7 +38,7 @@
         </article>
         <article class="admin-metric">
             <span class="admin-metric-label">Average resolution</span>
-            <strong class="admin-metric-value">{{ $stats['avgDays'] ?? '—' }}<small>{{ $stats['avgDays'] !== null ? ' days' : '' }}</small></strong>
+            <strong class="admin-metric-value">{{ $stats['avgDays'] ?? '-' }}<small>{{ $stats['avgDays'] !== null ? ' days' : '' }}</small></strong>
         </article>
     </section>
 

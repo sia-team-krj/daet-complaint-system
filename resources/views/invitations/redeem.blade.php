@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Accept Staff Invitation — Daet Listens')
+@section('title', 'Accept Staff Invitation - Daet Listens')
 @section('content')
 <div class="invitation-page">
     <section class="invitation-panel" aria-labelledby="invitation-heading">
@@ -9,9 +9,11 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
             </span>
             <div>
-                <p class="invitation-overline">Official staff onboarding</p>
                 <h1 id="invitation-heading">Create your staff account</h1>
-                <p>Your invitation is assigned to <strong>{{ $invitation->department->name }}</strong>. Set a password to activate access.</p>
+                <p class="invitation-panel-lead">Your invitation is assigned to <strong>{{ $invitation->department->name }}</strong>. Set a password to activate access.</p>
+                @if($invitation->isReservedToEmail() && $invitation->wasEmailed())
+                    <p class="invitation-expiry-note">This link expires {{ $invitation->expires_at->format('M j, Y g:i A') }} and can be used once.</p>
+                @endif
             </div>
         </div>
 
@@ -26,12 +28,12 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('invitations.redeem', $invitation->code) }}" class="invitation-form">
+        <form method="POST" action="{{ route('invitations.redeem', $invitation->code) }}" class="invitation-form" data-disable-on-submit>
             @csrf
             <div class="invitation-form-grid">
                 <label class="invitation-field">
                     <span>First name</span>
-                    <input type="text" name="first_name" value="{{ old('first_name') }}" required autocomplete="given-name" maxlength="100">
+                    <input type="text" name="first_name" value="{{ old('first_name') }}" required autocomplete="given-name" maxlength="100" autofocus>
                 </label>
                 <label class="invitation-field">
                     <span>Last name</span>
@@ -40,7 +42,22 @@
             </div>
             <label class="invitation-field">
                 <span>Email address</span>
-                <input type="email" name="email" value="{{ old('email') }}" required autocomplete="email" maxlength="255">
+                <input
+                    type="email"
+                    name="email"
+                    value="{{ old('email', $invitation->invitee_email) }}"
+                    required
+                    autocomplete="email"
+                    maxlength="255"
+                    @if($invitation->isReservedToEmail())
+                        readonly
+                        aria-describedby="invitation-email-note"
+                        class="invitation-input-locked"
+                    @endif
+                >
+                @if($invitation->isReservedToEmail())
+                    <small id="invitation-email-note" class="invitation-field-note">This invitation is reserved for {{ $invitation->invitee_email }}.</small>
+                @endif
             </label>
             <label class="invitation-field">
                 <span>Contact number <small>Optional</small></span>

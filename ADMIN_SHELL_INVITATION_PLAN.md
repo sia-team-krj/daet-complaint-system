@@ -48,7 +48,7 @@ Refactor all current admin views to extend `admin.layouts.app` and render only p
 Update `resources/views/layouts/navbar.blade.php`:
 
 - Do not show the general `Dashboard` link to administrators because it redirects to the admin dashboard.
-- Retain `Transparency`, `Rewards`, the appropriate staff/admin destination, complaint filing, profile, and logout.
+- Retain `Transparency`, the appropriate staff/admin destination, complaint filing, profile, and logout.
 - Keep the sidebar as the primary admin navigation.
 
 ### 3. Department administration

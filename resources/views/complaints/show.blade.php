@@ -1,10 +1,7 @@
 @extends($mainLayout)
-@section('title', "Complaint {$complaint->ticket_id} — Daet Listens")
+@section('title', "Complaint {$complaint->ticket_id} - Daet Listens")
 @section('content')
 
-@push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-@endpush
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
@@ -30,8 +27,8 @@
   .show-root {
     font-family: 'DM Sans', sans-serif;
     background: var(--cream);
-    min-height: calc(100svh - 64px);
-    padding-top: 64px;
+    min-height: calc(100svh - var(--navbar-height));
+    padding-top: var(--navbar-height);
   }
 
   /* ── Breadcrumb ── */
@@ -129,6 +126,98 @@
   }
 
   /* ── Cards ── */
+  /* Light surface: this page reads as cream/white, unlike the navy operator
+     workspaces, so this block follows the page's own card language. */
+  .info-request {
+    max-width: 1280px;
+    margin: 0 auto 24px;
+    padding: 24px;
+    background: #FEF8ED;
+    border: 1px solid rgba(180,83,9,0.35);
+    border-radius: 8px;
+  }
+  .info-request__title {
+    margin: 0 0 14px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 700;
+    color: var(--navy);
+  }
+  .info-request__question {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    background: #FDF6E7;
+    border: 1px solid rgba(201,168,76,0.28);
+    border-radius: 6px;
+  }
+  .info-request__asked-by {
+    margin: 0 0 6px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    color: #8A6D1F;
+  }
+  .info-request__question p:last-child {
+    margin: 0;
+    font-size: 14px; line-height: 1.65;
+    color: var(--navy);
+  }
+  .info-request__thanks {
+    margin: 0;
+    font-size: 13.5px; line-height: 1.6;
+    color: #3F6212;
+  }
+  .info-request__form {
+    display: grid; gap: 16px;
+  }
+  .info-request__field { display: grid; gap: 7px; }
+  .info-request__label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    color: #6B6B6B;
+  }
+  .info-request__label small {
+    font-size: 9px; font-weight: 400; letter-spacing: 0; text-transform: none;
+  }
+  .info-request__field textarea,
+  .info-request__field input[type="file"] {
+    width: 100%;
+    padding: 11px 13px;
+    font-family: inherit; font-size: 13.5px;
+    color: var(--navy);
+    background: #fff;
+    border: 1px solid rgba(201,168,76,0.45);
+    border-radius: 6px;
+  }
+  .info-request__field textarea { resize: vertical; min-height: 92px; }
+  .info-request__field textarea:focus,
+  .info-request__field input[type="file"]:focus {
+    outline: none;
+    border-color: #B45309;
+    box-shadow: 0 0 0 3px rgba(180,83,9,0.12);
+  }
+  .info-request__hint {
+    margin: 0;
+    font-size: 11.5px; line-height: 1.5;
+    color: #7A7A7A;
+  }
+  .info-request__error {
+    margin: 0;
+    font-size: 11.5px; line-height: 1.45;
+    color: #B91C1C;
+  }
+  .info-request__submit {
+    justify-self: start;
+    min-height: 42px;
+    padding: 12px 22px;
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--navy);
+    background: linear-gradient(135deg, #C9A84C, #E2C06A);
+    border: 0; border-radius: 6px;
+    cursor: pointer;
+  }
+  .info-request__submit:hover { background: #E2C06A; }
+  .info-request__submit:disabled { cursor: not-allowed; opacity: 0.55; }
+
   .detail-card {
     background: var(--white);
     border: 1px solid var(--border-gold);
@@ -298,7 +387,7 @@
 
   /* Animations */
   @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
-  .fu  { animation: fadeUp 0.6s cubic-bezier(.22,.68,0,1.2) both; }
+  .fu  { animation: fadeUp 0.6s cubic-bezier(.22,.68,0,1) both; }
   .d1  { animation-delay: 0.04s; } .d2 { animation-delay: 0.14s; }
   .d3  { animation-delay: 0.24s; } .d4 { animation-delay: 0.34s; }
 
@@ -342,8 +431,8 @@
       <div class="show-title-wrap">
         <h1 class="show-title fu d3">{{ $complaint->title }}</h1>
         @php
-          $statusEnum = $complaint->status instanceof \App\Enums\ComplaintStatus 
-            ? $complaint->status 
+          $statusEnum = $complaint->status instanceof \App\Enums\ComplaintStatus
+            ? $complaint->status
             : \App\Enums\ComplaintStatus::from($complaint->status);
         @endphp
         <span class="show-status-large {{ $statusEnum->badgeColor() }} fu d4">
@@ -360,6 +449,98 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
       Back to all complaints
     </a>
+
+    @php $openRequest = $complaint->informationRequests()->whereIn('status', ['open', 'answered'])->latest('id')->first(); @endphp
+
+    @if($openRequest)
+      <section class="info-request fu d2" aria-labelledby="info-request-heading">
+        <h2 id="info-request-heading" class="info-request__title">
+          {{ $openRequest->isAnswered() ? 'We received your reply' : 'The department needs more information' }}
+        </h2>
+
+        <blockquote class="info-request__question">
+          <p class="info-request__asked-by">
+            Asked by {{ $openRequest->requester?->full_name ?? 'the department' }} · {{ $openRequest->created_at->format('M j, Y g:i A') }}
+          </p>
+          <p>{{ $openRequest->question }}</p>
+        </blockquote>
+
+        @if($openRequest->isAnswered())
+          <p class="info-request__thanks">
+            Thank you. The department has your reply and will continue the review.
+          </p>
+        @else
+          <form method="POST" action="{{ route('complaints.information.store', $complaint) }}" enctype="multipart/form-data" class="info-request__form" data-disable-on-submit>
+            @csrf
+            <div class="info-request__field">
+              <label for="response" class="info-request__label">Your reply</label>
+              <textarea name="response" id="response" rows="4" required minlength="10" maxlength="2000" placeholder="Describe what you can see, or add anything that would help the department check this.">{{ old('response') }}</textarea>
+              @error('response')<p class="info-request__error">{{ $message }}</p>@enderror
+            </div>
+
+            <div class="info-request__field">
+              <label for="images" class="info-request__label">Add photos <small>Optional, up to 5</small></label>
+              <input type="file" name="images[]" id="images" accept="image/jpeg,image/png,image/webp" multiple>
+              <p class="info-request__hint">Photos taken on your phone may share their location, which helps us confirm the spot.</p>
+              @error('images')<p class="info-request__error">{{ $message }}</p>@enderror
+              @error('images.*')<p class="info-request__error">{{ $message }}</p>@enderror
+            </div>
+
+            <button type="submit" class="info-request__submit">Send to the department</button>
+          </form>
+        @endif
+
+
+</section>
+    @endif
+
+{{--
+    The resident's own control over publication, and an honest note when staff
+    have moderated what the public sees.
+
+    Two promises are kept here. First, the resident can change this at any time
+    and no one else can. Second, nothing staff do to the public presentation
+    rewrites what the resident filed: the copy below is their own, unedited,
+    with a plain statement of what was withheld instead of a silent alteration.
+--}}
+<div class="visibility-panel">
+  <div class="visibility-panel__head">
+    <h3 class="visibility-panel__title">Who can see this</h3>
+    <p class="visibility-panel__lede">You decide whether this appears on the public transparency page. No member of staff can change it.</p>
+  </div>
+
+  <form method="POST" action="{{ route('complaints.visibility.update', $complaint) }}" class="visibility-panel__actions">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="visibility" value="{{ $complaint->is_public ? 'private' : 'public' }}">
+    <button type="submit" class="visibility-panel__button">
+      {{ $complaint->is_public ? 'Make this private' : 'Publish on the transparency page' }}
+    </button>
+    <span class="visibility-panel__state">
+      {{ $complaint->is_public
+          ? 'Currently published under your display alias.'
+          : 'Currently private. Only you and the staff handling it can see this.' }}
+    </span>
+  </form>
+
+  @if ($complaint->isHiddenFromPublic() || $complaint->isRedacted())
+    <div class="visibility-moderation" role="status">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+      <div>
+        <strong>This report is not currently shown as you filed it.</strong>
+        <p>
+          What you see above is your original submission, unchanged.
+          @if ($complaint->moderation_reason)
+            Staff recorded the reason: <em>{{ $complaint->moderation_reason }}</em>.
+          @else
+            A staff member has withheld part of it from the public page.
+          @endif
+          Your choice of public or private is unaffected, and you can still change it using the button above.
+        </p>
+      </div>
+    </div>
+  @endif
+</div>
 
     <div class="show-layout">
 
@@ -392,6 +573,10 @@
               <div class="detail-field">
                 <div class="detail-label">Review status</div>
                 <span class="detail-value">{{ $complaint->reviewStatusEnum->label() }}</span>
+              </div>
+              <div class="detail-field">
+                <div class="detail-label">Who can see this</div>
+                <span class="detail-value">{{ $complaint->is_public ? 'Published on the transparency page' : 'Private' }}</span>
               </div>
               <div class="detail-field">
                 <div class="detail-label">Suggested priority</div>
@@ -456,7 +641,7 @@
             <span class="detail-card-title">Location</span>
           </div>
           <div class="detail-card-body">
-            @if($complaint->latitude && $complaint->longitude)
+            @if($complaint->latitude !== null && $complaint->longitude !== null)
               <div id="complaint-map" class="map-container"></div>
               @if($complaint->address_text)
                 <div style="margin-top: 12px; font-size: 13px; color: var(--text-muted);">
@@ -535,13 +720,48 @@
 </div>
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const mapEl = document.getElementById('complaint-map');
-    if (!mapEl || typeof L === 'undefined') return;
 
-    @if($complaint->latitude && $complaint->longitude)
+    /*
+     * Keep the map honest about its own size.
+     *
+     * Leaflet measures the container once, when the map is built, and caches
+     * that measurement. It is never wrong on a desktop, because a desktop
+     * viewport has settled by the time the map is built. A phone has not: the
+     * URL bar collapses, scrollbars come and go, a late webfont reflows the card
+     * around the map, the keyboard opens. Any of those after the measurement
+     * leaves the tiles laid out for a size the container no longer is, which
+     * shows as a blank band or as map content clipped to a strip.
+     *
+     * invalidateSize() re-reads the container. Called on the next frame and once
+     * more after a short delay to catch late layout, then on every resize and
+     * rotation. `animate: false` because a re-measure is not a user gesture and
+     * should not zoom the map at them.
+     */
+    const keepMapSized = (target) => {
+      if (!target) return;
+
+      const refresh = () => target.invalidateSize({ animate: false });
+
+      window.requestAnimationFrame(refresh);
+      window.setTimeout(refresh, 300);
+      window.addEventListener('resize', refresh);
+      window.addEventListener('orientationchange', () => {
+        window.setTimeout(refresh, 150);
+      });
+    };
+
+    const mapEl = document.getElementById('complaint-map');
+    if (!mapEl) return;
+
+    // Leaflet is bundled rather than fetched from a CDN, but a bundled module is
+    // deferred and this inline script is not, so the map is built from a callback
+    // the bundle calls instead of by reaching for window.L and finding it
+    // undefined on a page that is otherwise fine.
+    window.whenLeafletReady(() => {
+
+    @if($complaint->latitude !== null && $complaint->longitude !== null)
       const lat = {{ $complaint->latitude }};
       const lng = {{ $complaint->longitude }};
 
@@ -552,7 +772,17 @@
       }).addTo(map);
 
       L.marker([lat, lng]).addTo(map);
+
+      keepMapSized(map);
     @endif
+    }, {
+        // The coordinates are printed underneath the map regardless, so the
+        // work can still be done. Saying so is what stops a blank box being
+        // read as "my location was not saved".
+        onUnavailable: () => {
+          if (mapEl) mapEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Map unavailable. Your coordinates are still listed below.</div>';
+        },
+    });
   });
 </script>
 @endpush

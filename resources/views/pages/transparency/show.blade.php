@@ -1,6 +1,6 @@
 @extends($mainLayout)
 
-@section('title', $complaint->ticket_id.' — Public Transparency — Daet Listens')
+@section('title', $complaint->ticket_id.' - Public Transparency - Daet Listens')
 
 @push('styles')
     <style>
@@ -135,6 +135,37 @@
             line-height: 1.2;
             text-transform: uppercase;
             white-space: nowrap;
+        }
+
+        /* How the department settled the report, stated rather than implied.
+           "Report reviewed" and "Site attended" are different claims. */
+        .public-verification {
+            display: inline-flex;
+            align-items: center;
+            min-height: 23px;
+            padding: 4px 8px;
+            border: 1px solid rgba(201, 168, 76, 0.32);
+            border-radius: 4px;
+            background: rgba(201, 168, 76, 0.1);
+            color: #e2c06a;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .public-verification--site_visit {
+            border-color: rgba(63, 203, 111, 0.34);
+            background: rgba(63, 203, 111, 0.12);
+            color: #86efac;
+        }
+
+        .public-verification--duplicate_match {
+            border-color: rgba(167, 139, 250, 0.32);
+            background: rgba(167, 139, 250, 0.12);
+            color: #c4b5fd;
         }
 
         .public-ticket-status--submitted {
@@ -741,8 +772,14 @@
                     <div class="public-ticket-id-row">
                         <span class="public-ticket-id">{{ $complaint->ticket_id }}</span>
                         <span class="public-ticket-status public-ticket-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
+                        @php $verificationMethod = $complaint->verificationMethodEnum(); @endphp
+                        @if($verificationMethod)
+                            <span class="public-verification public-verification--{{ str($verificationMethod->value)->slug() }}">
+                                {{ $verificationMethod->label() }}
+                            </span>
+                        @endif
                     </div>
-                    <h1>{{ $complaint->title }}</h1>
+                    <h1>{{ $complaint->publicTitle() }}</h1>
                     <div class="public-ticket-heading__meta">
                         <span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V4.5"></path><path d="M4 19.5h16"></path><path d="m7 15 3-4 3 2 4-6"></path></svg>
@@ -806,12 +843,12 @@
                                 <h2 id="public-evidence-heading">Resident evidence</h2>
                                 <p>Photos submitted with the original report.</p>
                             </div>
-                            <span class="public-ticket-id">{{ $complaint->evidence_image_count }} {{ Str::plural('photo', $complaint->evidence_image_count) }}</span>
+                            <span class="public-ticket-id">{{ count($complaint->publicImagePaths()) }} {{ Str::plural('photo', count($complaint->publicImagePaths())) }}</span>
                         </div>
                         <div class="public-ticket-panel__body">
-                            @if($complaint->evidence_images)
+                            @if($complaint->publicImagePaths())
                                 <div class="public-evidence-grid">
-                                    @foreach($complaint->evidence_images as $imageIndex => $imagePath)
+                                    @foreach($complaint->publicImagePaths() as $imageIndex => $imagePath)
                                         <a href="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" target="_blank" rel="noopener" class="public-evidence-link" aria-label="Open resident evidence photo {{ $imageIndex + 1 }}">
                                             <img src="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" alt="Resident evidence photo {{ $imageIndex + 1 }}" loading="lazy">
                                         </a>

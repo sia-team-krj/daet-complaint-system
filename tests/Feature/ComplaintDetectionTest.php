@@ -102,6 +102,26 @@ class ComplaintDetectionTest extends TestCase
         $this->assertSame(2, Complaint::count());
     }
 
+    public function test_gibberish_and_keyboard_mashing_are_flagged(): void
+    {
+        $resident = User::factory()->create(['role' => 'citizen']);
+        $complaint = Complaint::create([
+            'user_id' => $resident->id,
+            'department_id' => Department::where('code', 'ENG')->firstOrFail()->id,
+            'category' => 'others',
+            'title' => 'adadasdqweqweqwe ajksdjkajngijogffssfijowdjidjio',
+            'description' => 'asdfghjklkjhgfdsa qweqweqweqwe ffssfkjdfkjdfkjd',
+            'urgency' => 'Low',
+            'status' => ComplaintStatus::Submitted->value,
+            'is_public' => false,
+        ]);
+
+        $result = $this->detector->evaluate($complaint);
+
+        $this->assertContains('Contains keyboard mashing or random gibberish text', $result['reasons']);
+        $this->assertGreaterThanOrEqual(40, $result['spam_score']);
+    }
+
     public function test_demo_seeder_creates_public_private_spam_and_similar_examples(): void
     {
         $this->seed(DatabaseSeeder::class);

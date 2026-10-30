@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             UserSeeder::class,
             DemoComplaintSeeder::class,
+            // Runs last: it attaches notifications to complaints and staff that
+            // the earlier seeders create.
+            DemoNotificationSeeder::class,
         ]);
     }
 }

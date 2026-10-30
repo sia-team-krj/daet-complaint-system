@@ -10,11 +10,15 @@
         const menu = document.getElementById(button.getAttribute('aria-controls'));
         if (!menu) return;
 
-        menu.classList.toggle('hidden', !isOpen);
-        menu.hidden = !isOpen;
+        menu.classList.toggle('is-open', isOpen);
         menu.setAttribute('aria-hidden', String(!isOpen));
+        menu.toggleAttribute('inert', !isOpen);
         button.setAttribute('aria-expanded', String(isOpen));
         button.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+
+        const hasOpenMobileMenu = [...document.querySelectorAll('[data-mobile-menu].is-open')].length > 0;
+        document.documentElement.classList.toggle('mobile-menu-open', hasOpenMobileMenu);
+        document.body.classList.toggle('mobile-menu-open', hasOpenMobileMenu);
     };
 
     const setUserMenu = (button, isOpen) => {
@@ -24,6 +28,29 @@
         dropdown.classList.toggle('open', isOpen);
         dropdown.setAttribute('aria-hidden', String(!isOpen));
         button.setAttribute('aria-expanded', String(isOpen));
+        button.setAttribute('aria-label', isOpen ? 'Close account menu' : 'Open account menu');
+    };
+
+    // The bell reuses the account dropdown's open/close contract so the two
+    // popovers behave identically and can never both be open at once.
+    const setNotificationMenu = (button, isOpen) => {
+        const dropdown = document.getElementById(button.getAttribute('aria-controls'));
+        if (!dropdown) return;
+
+        dropdown.classList.toggle('open', isOpen);
+        dropdown.setAttribute('aria-hidden', String(!isOpen));
+        button.setAttribute('aria-expanded', String(isOpen));
+    };
+
+    const closeNotificationMenus = (target = null) => {
+        document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
+            navbar.querySelectorAll('[data-notification-toggle]').forEach((bell) => {
+                const dropdown = document.getElementById(bell.getAttribute('aria-controls'));
+                if (dropdown?.classList.contains('open') && !dropdown.contains(target)) {
+                    setNotificationMenu(bell, false);
+                }
+            });
+        });
     };
 
     const setSidebar = (sidebar, isOpen) => {
@@ -37,23 +64,33 @@
         document.querySelectorAll(`[${toggleAttribute}]`).forEach((toggle) => {
             toggle.setAttribute('aria-expanded', String(isOpen));
         });
+        document.documentElement.classList.toggle(bodyClass, isOpen);
         document.body.classList.toggle(bodyClass, isOpen);
+    };
+
+    const closeUserMenus = (target = null) => {
+        document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
+            navbar.querySelectorAll('[data-user-menu-toggle]').forEach((userButton) => {
+                const dropdown = document.getElementById(userButton.getAttribute('aria-controls'));
+                if (dropdown?.classList.contains('open') && !dropdown.contains(target)) {
+                    setUserMenu(userButton, false);
+                }
+            });
+        });
     };
 
     const closeGlobalMenus = (target = null) => {
         document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
             const mobileButton = navbar.querySelector('[data-mobile-menu-toggle]');
             const menu = navbar.querySelector('[data-mobile-menu]');
-            const userButton = navbar.querySelector('[data-user-menu-toggle]');
-            const dropdown = navbar.querySelector('[data-user-dropdown]');
 
-            if (mobileButton && menu && !menu.classList.contains('hidden') && !menu.contains(target)) {
+            if (mobileButton && menu && menu.classList.contains('is-open') && !menu.contains(target)) {
                 setMobileMenu(mobileButton, false);
             }
-            if (userButton && dropdown && dropdown.classList.contains('open') && !dropdown.contains(target)) {
-                setUserMenu(userButton, false);
-            }
         });
+
+        closeUserMenus(target);
+        closeNotificationMenus(target);
     };
 
     const closeSidebar = (sidebar) => setSidebar(sidebar, false);
@@ -77,15 +114,20 @@
         document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
             const mobileButton = navbar.querySelector('[data-mobile-menu-toggle]');
             const menu = navbar.querySelector('[data-mobile-menu]');
-            const userButton = navbar.querySelector('[data-user-menu-toggle]');
-            const dropdown = navbar.querySelector('[data-user-dropdown]');
 
             if (mobileButton && menu) setMobileMenu(mobileButton, false);
-            if (userButton && dropdown) setUserMenu(userButton, false);
+            navbar.querySelectorAll('[data-user-menu-toggle]').forEach((userButton) => {
+                setUserMenu(userButton, false);
+            });
+            navbar.querySelectorAll('[data-notification-toggle]').forEach((bell) => {
+                setNotificationMenu(bell, false);
+            });
         });
 
         closeSidebar(document.getElementById('staff-sidebar'));
         closeSidebar(document.getElementById('admin-sidebar'));
+        document.documentElement.classList.remove('staff-sidebar-open', 'admin-sidebar-open');
+        document.body.classList.remove('staff-sidebar-open', 'admin-sidebar-open');
         labelTableCells();
     };
 
@@ -98,10 +140,12 @@
             event.preventDefault();
             event.stopPropagation();
             const menu = document.getElementById(mobileButton.getAttribute('aria-controls'));
-            const navbar = mobileButton.closest('[data-site-navbar]');
-            const userButton = navbar?.querySelector('[data-user-menu-toggle]');
-            if (userButton) setUserMenu(userButton, false);
-            if (menu) setMobileMenu(mobileButton, menu.classList.contains('hidden'));
+            closeUserMenus();
+            // The bell branch below already does this for the menu; without the
+            // mirror here the drawer opened on top of a live notification panel
+            // and left both showing at once. One surface open, both directions.
+            closeNotificationMenus();
+            if (menu) setMobileMenu(mobileButton, !menu.classList.contains('is-open'));
             return;
         }
 
@@ -112,14 +156,34 @@
             const dropdown = document.getElementById(userButton.getAttribute('aria-controls'));
             const navbar = userButton.closest('[data-site-navbar]');
             const mobileButton = navbar?.querySelector('[data-mobile-menu-toggle]');
+            closeNotificationMenus();
+            closeSidebar(document.getElementById('staff-sidebar'));
+            closeSidebar(document.getElementById('admin-sidebar'));
             if (mobileButton) setMobileMenu(mobileButton, false);
             if (dropdown) setUserMenu(userButton, !dropdown.classList.contains('open'));
+            return;
+        }
+
+        const notificationButton = target.closest('[data-notification-toggle]');
+        if (notificationButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            const dropdown = document.getElementById(notificationButton.getAttribute('aria-controls'));
+            const navbar = notificationButton.closest('[data-site-navbar]');
+            const mobileButton = navbar?.querySelector('[data-mobile-menu-toggle]');
+            closeUserMenus();
+            closeSidebar(document.getElementById('staff-sidebar'));
+            closeSidebar(document.getElementById('admin-sidebar'));
+            if (mobileButton) setMobileMenu(mobileButton, false);
+            if (dropdown) setNotificationMenu(notificationButton, !dropdown.classList.contains('open'));
             return;
         }
 
         const staffToggle = target.closest('[data-staff-sidebar-toggle]');
         if (staffToggle) {
             event.preventDefault();
+            closeUserMenus();
+            closeNotificationMenus();
             const sidebar = document.getElementById('staff-sidebar');
             if (sidebar) setSidebar(sidebar, !sidebar.classList.contains('is-open'));
             return;
@@ -128,6 +192,8 @@
         const adminToggle = target.closest('[data-admin-sidebar-toggle]');
         if (adminToggle) {
             event.preventDefault();
+            closeUserMenus();
+            closeNotificationMenus();
             const sidebar = document.getElementById('admin-sidebar');
             if (sidebar) setSidebar(sidebar, !sidebar.classList.contains('is-open'));
             return;
@@ -154,9 +220,23 @@
     };
 
     const handleResize = () => {
-        if (window.innerWidth <= 980) return;
-        closeSidebar(document.getElementById('staff-sidebar'));
-        closeSidebar(document.getElementById('admin-sidebar'));
+        closeUserMenus();
+        closeNotificationMenus();
+
+        if (window.innerWidth > 768) {
+            document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
+                const mobileButton = navbar.querySelector('[data-mobile-menu-toggle]');
+                const menu = navbar.querySelector('[data-mobile-menu]');
+                if (mobileButton && menu && menu.classList.contains('is-open')) {
+                    setMobileMenu(mobileButton, false);
+                }
+            });
+        }
+
+        if (window.innerWidth > 980) {
+            closeSidebar(document.getElementById('staff-sidebar'));
+            closeSidebar(document.getElementById('admin-sidebar'));
+        }
     };
 
     window.__daetShellInitialize = resetShell;

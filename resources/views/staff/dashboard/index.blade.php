@@ -1,6 +1,6 @@
 @extends('staff.layouts.app')
 
-@section('title', 'Staff Dashboard — Daet Listens')
+@section('title', 'Staff Dashboard - Daet Listens')
 @section('staff-content')
 <div class="staff-page">
     <header class="staff-page-header">
@@ -16,7 +16,7 @@
         <article class="staff-metric"><span>Pending review</span><strong>{{ $stats['new'] ?? 0 }}</strong></article>
         <article class="staff-metric"><span>In progress</span><strong>{{ $stats['inProgress'] ?? 0 }}</strong></article>
         <article class="staff-metric"><span>Resolved this month</span><strong>{{ $stats['resolvedThisMonth'] ?? 0 }}</strong></article>
-        <article class="staff-metric"><span>Average days open</span><strong>{{ $stats['avgDays'] ?? '—' }}</strong></article>
+        <article class="staff-metric"><span>Average days open</span><strong>{{ $stats['avgDays'] ?? '-' }}</strong></article>
     </section>
 
     <div class="staff-overview-grid">

@@ -204,6 +204,7 @@ class ComplaintReviewWorkflowTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,
+            'can_verify' => true,
         ]);
         $complaint = Complaint::factory()->create([
             'department_id' => $department->id,
@@ -223,12 +224,13 @@ class ComplaintReviewWorkflowTest extends TestCase
         $this->assertNull($complaint->fresh()->confirmed_priority);
     }
 
-    public function test_staff_can_verify_confirm_priority_and_opt_in_to_public_visibility(): void
+    public function test_staff_review_cannot_change_public_visibility(): void
     {
         $department = Department::where('code', 'ENG')->firstOrFail();
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,
+            'can_verify' => true,
         ]);
         $complaint = Complaint::factory()->create([
             'department_id' => $department->id,
@@ -237,6 +239,10 @@ class ComplaintReviewWorkflowTest extends TestCase
             'is_public' => false,
         ]);
 
+        // The review form used to carry an "allow public visibility" checkbox.
+        // Submitting it must now be inert: the field is neither validated nor
+        // written, so a reviewer who sends it cannot publish a private
+        // complaint even by accident or from a stale bookmarked form.
         $this->actingAs($staff)
             ->put(route('staff.complaints.review', $complaint), [
                 'review_status' => ComplaintReviewStatus::Verified->value,
@@ -245,23 +251,63 @@ class ComplaintReviewWorkflowTest extends TestCase
                 'is_public' => '1',
             ])
             ->assertRedirect(route('staff.complaints.show', $complaint))
-            ->assertSessionHas('status');
+            ->assertSessionHas('status')
+            ->assertSessionMissing('errors');
 
         $complaint->refresh();
 
+        // The review itself lands.
         $this->assertSame(ComplaintReviewStatus::Verified->value, $complaint->review_status);
         $this->assertSame(ComplaintPriority::Urgent->value, $complaint->confirmed_priority);
-        $this->assertTrue($complaint->is_public);
         $this->assertSame(ComplaintStatus::UnderReview->value, $complaint->status);
-        $this->assertDatabaseHas('complaint_logs', [
-            'complaint_id' => $complaint->id,
-            'actor_id' => $staff->id,
+
+        // The consent does not.
+        $this->assertFalse(
+            $complaint->is_public,
+            'A reviewer must not be able to publish a complaint the resident kept private.',
+        );
+    }
+
+    public function test_rejecting_a_complaint_leaves_the_residents_visibility_choice_alone(): void
+    {
+        $department = Department::where('code', 'ENG')->firstOrFail();
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'department_id' => $department->id,
+            'can_verify' => true,
         ]);
-        $this->assertDatabaseHas('activity_logs', [
-            'action' => 'complaint.reviewed',
-            'subject_id' => $complaint->id,
+
+        $public = Complaint::factory()->create([
+            'department_id' => $department->id,
+            'review_status' => ComplaintReviewStatus::Pending->value,
+            'confirmed_priority' => null,
+            'is_public' => true,
         ]);
-        $this->assertTrue(Complaint::public()->whereKey($complaint->id)->exists());
+        $private = Complaint::factory()->create([
+            'department_id' => $department->id,
+            'review_status' => ComplaintReviewStatus::Pending->value,
+            'confirmed_priority' => null,
+            'is_public' => false,
+        ]);
+
+        foreach ([$public, $private] as $complaint) {
+            $this->actingAs($staff)
+                ->put(route('staff.complaints.review', $complaint), [
+                    'review_status' => ComplaintReviewStatus::Rejected->value,
+                    'review_notes' => 'Could not be located.',
+                ])
+                ->assertRedirect(route('staff.complaints.show', $complaint));
+        }
+
+        // Rejection withdraws the confirmed priority, which is a review fact.
+        $this->assertNull($public->fresh()->confirmed_priority);
+        $this->assertNull($private->fresh()->confirmed_priority);
+
+        // It must not withdraw consent, in either direction. Rejecting used to
+        // force is_public to false, which let an office un-publish a resident
+        // simply by deciding against their complaint.
+        $this->assertTrue($public->fresh()->is_public);
+        $this->assertFalse($private->fresh()->is_public);
     }
 
     public function test_pending_complaint_cannot_advance_before_review(): void
@@ -289,19 +335,34 @@ class ComplaintReviewWorkflowTest extends TestCase
         $this->assertSame(ComplaintStatus::Submitted->value, $complaint->fresh()->status);
     }
 
-    public function test_unverified_public_records_are_excluded_from_public_scope(): void
+    public function test_a_residents_consent_is_enough_to_publish_before_verification(): void
     {
+        // Verification answers "is this report accurate", not "did this resident
+        // agree to be public". The two are now independent, so a complaint the
+        // resident published is listed even while it is still awaiting review.
         $complaint = Complaint::factory()->create([
             'is_public' => true,
             'review_status' => ComplaintReviewStatus::Pending->value,
             'confirmed_priority' => null,
         ]);
 
-        $this->assertFalse(Complaint::public()->whereKey($complaint->id)->exists());
-        $this->assertTrue($complaint->fresh()->is_public);
+        $this->assertTrue(Complaint::public()->whereKey($complaint->id)->exists());
+        $this->assertTrue($complaint->fresh()->isPubliclyVisible());
     }
 
-    public function test_admin_cannot_publish_a_pending_complaint(): void
+    public function test_a_private_complaint_is_never_public_regardless_of_review(): void
+    {
+        $verified = Complaint::factory()->create([
+            'is_public' => false,
+            'review_status' => ComplaintReviewStatus::Verified->value,
+            'confirmed_priority' => 'routine',
+        ]);
+
+        $this->assertFalse(Complaint::public()->whereKey($verified->id)->exists());
+        $this->assertFalse($verified->fresh()->isPubliclyVisible());
+    }
+
+    public function test_an_admin_cannot_publish_a_complaint_the_resident_kept_private(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $complaint = Complaint::factory()->create([
@@ -311,14 +372,21 @@ class ComplaintReviewWorkflowTest extends TestCase
             'is_public' => false,
         ]);
 
+        // is_public is absent from the admin update payload entirely, so the
+        // request is neither rejected nor honoured — it is simply ignored. An
+        // admin has moderation powers over content but no authority to consent
+        // on a resident's behalf.
         $this->actingAs($admin)
             ->put(route('admin.complaints.update', $complaint), [
                 'status' => ComplaintStatus::Submitted->value,
                 'review_status' => ComplaintReviewStatus::Pending->value,
                 'is_public' => '1',
             ])
-            ->assertSessionHas('error');
+            ->assertSessionMissing('errors');
 
-        $this->assertFalse($complaint->fresh()->is_public);
+        $this->assertFalse(
+            $complaint->fresh()->is_public,
+            'An admin must not be able to publish a private complaint.',
+        );
     }
 }

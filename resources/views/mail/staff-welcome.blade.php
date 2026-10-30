@@ -31,7 +31,7 @@
         </div>
         <div class="footer">
             Municipality of Daet · Camarines Norte<br>
-            Daet Listens — Official Transparency Portal
+            Daet Listens - Official Transparency Portal
         </div>
     </div>
 </body>

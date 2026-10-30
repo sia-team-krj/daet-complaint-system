@@ -1,9 +1,8 @@
 @extends($mainLayout)
 
-@section('title', 'Public Transparency — Daet Listens')
+@section('title', 'Public Transparency - Daet Listens')
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         .transparency-root {
             --tp-navy: #0b1f3a;
@@ -591,6 +590,42 @@
             color: #5b687c;
         }
 
+        /* How the department settled the report. Published deliberately: a
+           single vague "verified" would claim more than a desk check can. */
+        .transparency-verification {
+            display: inline-block;
+            margin-top: 5px;
+            padding: 2px 7px;
+            border: 1px solid rgba(31, 41, 55, 0.14);
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.6);
+            color: #5b687c;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .transparency-verification--site_visit {
+            border-color: rgba(39, 122, 83, 0.3);
+            background: rgba(47, 158, 104, 0.1);
+            color: #277a53;
+        }
+
+        .transparency-verification--duplicate_match {
+            border-color: rgba(110, 76, 145, 0.28);
+            background: rgba(139, 104, 176, 0.1);
+            color: #6e4c91;
+        }
+
+        .transparency-verification--unrecorded {
+            border-color: rgba(146, 138, 122, 0.3);
+            color: #7c7466;
+            font-style: italic;
+            text-transform: none;
+        }
+
         .transparency-empty-row td {
             padding: 42px 20px !important;
             color: var(--tp-muted) !important;
@@ -634,21 +669,7 @@
             text-underline-offset: 2px;
         }
 
-        .transparency-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 20px 40px;
-            border-top: 1px solid rgba(201, 168, 76, 0.12);
-            background: #060f1e;
-            color: rgba(255, 255, 255, 0.34);
-            font-size: 10px;
-        }
-
-        .transparency-footer strong {
-            color: rgba(201, 168, 76, 0.68);
-        }
+        /* The footer comes from layouts/partials/site-footer.blade.php now. */
 
         @media (max-width: 900px) {
             .transparency-header__inner {
@@ -864,11 +885,7 @@
                 line-height: 1.5;
             }
 
-            .transparency-footer {
-                align-items: flex-start;
-                flex-direction: column;
-                padding: 18px 20px;
-            }
+            
         }
 
         @media (max-width: 420px) {
@@ -899,388 +916,26 @@
 @endpush
 
 @section('content')
-    <div class="transparency-root">
-        <header class="transparency-header">
-            <div class="transparency-container transparency-header__inner">
-                <div class="transparency-header__copy">
-                    <span class="transparency-kicker">Public transparency</span>
-                    <h1>Community reports, <em>clearly mapped.</em></h1>
-                    <p class="transparency-header__lede">
-                        See where public concerns are concentrated and search every complaint residents have chosen to share.
-                        Exact addresses and private reports are never shown here.
-                    </p>
-                    <div class="transparency-header__meta">
-                        <span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V4.5"></path><path d="M4 19.5h16"></path><path d="m7 15 3-4 3 2 4-6"></path></svg>
-                            {{ $reports->count() }} public {{ Str::plural('report', $reports->count()) }}
-                        </span>
-                        <span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
-                            Updated {{ $lastUpdated }}
-                        </span>
-                    </div>
-                </div>
-                <div class="transparency-header__actions">
-                    @auth
-                        <a href="{{ route('complaints.index') }}" class="transparency-button transparency-button--gold">My complaints</a>
-                        <a href="{{ route('complaints.create') }}" class="transparency-button transparency-button--quiet">File a complaint</a>
-                    @else
-                        <a href="{{ route('login') }}" class="transparency-button transparency-button--gold">Log in</a>
-                        <a href="{{ route('register') }}" class="transparency-button transparency-button--quiet">Create account</a>
-                    @endauth
-                </div>
-            </div>
-        </header>
+    {{-- The register is a component so it can re-read the database on a timer.
+         See app/Livewire/TransparencyRegister.php for why it used to need a
+         manual reload, and TransparencyFeed for the query behind it. --}}
+    <livewire:transparency-register />
 
-        <section class="transparency-section transparency-section--map" id="heatmap" aria-labelledby="heatmap-heading">
-            <div class="transparency-container">
-                <div class="transparency-section__head">
-                    <div>
-                        <span class="transparency-kicker">Location signal</span>
-                        <h2 id="heatmap-heading">Where public reports are concentrated.</h2>
-                        <p>The heatmap uses approximate areas, not exact addresses or individual location pins.</p>
-                    </div>
-                </div>
+    {{-- The register states its own privacy behaviour, and the footer carries the
+         documents that explain it. Outside the component: it is static, and a
+         timer has no reason to re-render it. --}}
+    @include('layouts.partials.site-footer')
+@endsection
 
-                <div class="transparency-map-card">
-                    <div class="transparency-map-card__head">
-                        <h3>
-                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
-                            Public report heatmap
-                        </h3>
-                        <div class="transparency-map-legend" aria-label="Heatmap intensity legend">
-                            <span>Low</span>
-                            <span class="transparency-map-legend__scale" aria-hidden="true"></span>
-                            <span>High</span>
-                        </div>
-                    </div>
-                    <div class="transparency-map-frame">
-                        <div id="transparency-map" role="region" aria-label="Approximate heatmap of public complaint areas in Daet"></div>
-                        <div class="transparency-map-status" id="transparency-map-status" aria-live="polite">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
-                            <span>Loading approximate public areas…</span>
-                        </div>
-                    </div>
-                    <div class="transparency-map-card__foot">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
-                        <span>Coordinates are clustered to a coarse area before display. Private reports and likely spam are excluded.</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="transparency-section transparency-section--table" id="complaints" aria-labelledby="complaints-heading">
-            <div class="transparency-container">
-                <div class="transparency-section__head">
-                    <div>
-                        <span class="transparency-kicker">Complaint register</span>
-                        <h2 id="complaints-heading">All public complaints.</h2>
-                        <p>Search by ticket, title, category, department, or broad location. Use the filters to narrow the register.</p>
-                    </div>
-                    <span class="transparency-count" aria-label="{{ $reports->count() }} public complaints">{{ $reports->count() }}</span>
-                </div>
-
-                <div class="transparency-table-card">
-                    <div class="transparency-table-toolbar">
-                        <div class="transparency-field">
-                            <label for="complaint-search">Search public complaints</label>
-                            <input id="complaint-search" type="search" placeholder="Ticket, title, department…" autocomplete="off">
-                        </div>
-                        <div class="transparency-field">
-                            <label for="complaint-department">Department</label>
-                            <select id="complaint-department">
-                                <option value="">All departments</option>
-                                @foreach($departmentOptions as $department)
-                                    <option value="{{ $department }}">{{ $department }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="transparency-field">
-                            <label for="complaint-category">Category</label>
-                            <select id="complaint-category">
-                                <option value="">All categories</option>
-                                @foreach($categoryOptions as $category)
-                                    <option value="{{ $category['key'] }}">{{ $category['label'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="transparency-field">
-                            <label for="complaint-status">Status</label>
-                            <select id="complaint-status">
-                                <option value="">All statuses</option>
-                                @foreach($statusOptions as $status)
-                                    <option value="{{ $status['key'] }}">{{ $status['label'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <button id="complaint-reset" class="transparency-reset" type="button">Reset</button>
-                    </div>
-
-                    <div class="transparency-table-meta">
-                        <span id="complaint-results">Showing {{ $reports->count() }} of {{ $reports->count() }} public complaints</span>
-                        <span>Public visibility only</span>
-                    </div>
-
-                    <div class="transparency-table-scroll transparency-desktop-table">
-                        <table class="transparency-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Ticket</th>
-                                    <th scope="col">Complaint</th>
-                                    <th scope="col">Category</th>
-                                    <th scope="col">Department</th>
-                                    <th scope="col">Location</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Reported</th>
-                                </tr>
-                            </thead>
-                            <tbody id="complaint-table-body">
-                                @forelse($reports as $report)
-                                    <tr
-                                        data-report-row
-                                        data-report-id="{{ $report['ticket_id'] }}"
-                                        data-search="{{ strtolower(implode(' ', [$report['ticket_id'], $report['title'], $report['category_label'], $report['department'], $report['location'], $report['reporter']])) }}"
-                                        data-department="{{ $report['department'] }}"
-                                        data-category="{{ $report['category'] }}"
-                                        data-status="{{ $report['status_key'] }}"
-                                    >
-                                        <td class="transparency-cell-ticket" data-label="Ticket">
-                                            <a href="{{ $report['url'] }}" class="transparency-ticket">{{ $report['ticket_id'] }}</a>
-                                        </td>
-                                        <td class="transparency-cell-complaint" data-label="Complaint">
-                                            <a href="{{ $report['url'] }}" class="transparency-complaint-title">{{ $report['title'] }}</a>
-                                            <span class="transparency-reporter">{{ $report['reporter'] }}</span>
-                                            <a href="{{ $report['url'] }}" class="transparency-row-link" aria-label="Open {{ $report['ticket_id'] }}">View details</a>
-                                        </td>
-                                        <td class="transparency-cell-category transparency-table-muted" data-label="Category">{{ $report['category_label'] }}</td>
-                                        <td class="transparency-cell-department transparency-table-muted" data-label="Department">{{ $report['department'] }}</td>
-                                        <td class="transparency-cell-location transparency-table-muted" data-label="Location">{{ $report['location'] }}</td>
-                                        <td class="transparency-cell-status" data-label="Status"><span class="transparency-status transparency-status--{{ $report['status_key'] }}">{{ $report['status_label'] }}</span></td>
-                                        <td class="transparency-cell-date transparency-table-muted" data-label="Reported"><time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time></td>
-                                    </tr>
-                                @empty
-                                    <tr id="complaint-empty-row" class="transparency-empty-row">
-                                        <td colspan="7">
-                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5V4.5"></path><path d="M4 19.5h16"></path><path d="m7 15 3-4 3 2 4-6"></path></svg>
-                                            <strong>No public complaints to show.</strong>
-                                            Public reports will appear here when residents choose to share them.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                                <tr id="complaint-no-results" data-no-results class="transparency-empty-row" hidden>
-                                    <td colspan="7">
-                                        <strong>No matching complaints.</strong>
-                                        Try a different search term or reset the filters.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="transparency-mobile-list" aria-label="Public complaint list">
-                        @forelse($reports as $report)
-                            <article
-                                class="transparency-mobile-card"
-                                data-report-row
-                                data-report-id="{{ $report['ticket_id'] }}"
-                                data-search="{{ strtolower(implode(' ', [$report['ticket_id'], $report['title'], $report['category_label'], $report['department'], $report['location'], $report['reporter']])) }}"
-                                data-department="{{ $report['department'] }}"
-                                data-category="{{ $report['category'] }}"
-                                data-status="{{ $report['status_key'] }}"
-                            >
-                                <div class="transparency-mobile-card__top">
-                                    <a href="{{ $report['url'] }}" class="transparency-mobile-ticket">{{ $report['ticket_id'] }}</a>
-                                    <span class="transparency-status transparency-status--{{ $report['status_key'] }}">{{ $report['status_label'] }}</span>
-                                </div>
-                                <a href="{{ $report['url'] }}" class="transparency-mobile-card__title">{{ $report['title'] }}</a>
-                                <span class="transparency-mobile-card__reporter">{{ $report['reporter'] }}</span>
-                                <dl class="transparency-mobile-card__meta">
-                                    <div><dt>Category</dt><dd>{{ $report['category_label'] }}</dd></div>
-                                    <div><dt>Department</dt><dd>{{ $report['department'] }}</dd></div>
-                                    <div><dt>Location</dt><dd>{{ $report['location'] }}</dd></div>
-                                    <div><dt>Reported</dt><dd><time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time></dd></div>
-                                </dl>
-                                <div class="transparency-mobile-card__footer">
-                                    <span class="transparency-table-muted">Public visibility only</span>
-                                    <a href="{{ $report['url'] }}" class="transparency-row-link" aria-label="Open {{ $report['ticket_id'] }}">View details</a>
-                                </div>
-                            </article>
-                        @empty
-                            <div class="transparency-mobile-empty">
-                                <strong>No public complaints to show.</strong>
-                                <p>Public reports will appear here when residents choose to share them.</p>
-                            </div>
-                        @endforelse
-                        <div data-no-results class="transparency-mobile-empty" hidden>
-                            <strong>No matching complaints.</strong>
-                            <p>Try a different search term or reset the filters.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <p class="transparency-table-note">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
-                    <span>
-                        Private complaints are not listed publicly. @auth <a href="{{ route('complaints.index') }}">Open My Complaints</a> to see the reports you filed and follow their progress. @else <a href="{{ route('login') }}">Log in</a> to view your own reports. @endauth
-                    </span>
-                </p>
-            </div>
-        </section>
-
-        <footer class="transparency-footer">
-            <span>© 2026 <strong>LGU Daet</strong> · Public Service Management System</span>
-            <span>Approximate public locations · Privacy-safe reporting</span>
-        </footer>
-    </div>
-
-    <script id="transparency-map-data" type="application/json">{!! json_encode([
-        'center' => $mapCenter,
-        'points' => $mapPoints,
-    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+{{-- This page renders the shared footer itself; see layouts/app.blade.php. --}}
+@section('site-footer')
+    {{-- Ownership marker only. The footer is rendered above, inside this page's
+         own layout wrapper. This section exists purely to tell the shell layout
+         not to add a second one, and it must contain something: `@hasSection`
+         compiles to a non-empty content check, so an empty section is ignored. --}}
+    <span hidden aria-hidden="true"></span>
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-    <script>
-        (() => {
-            const dataElement = document.getElementById('transparency-map-data');
-            const mapElement = document.getElementById('transparency-map');
-            const statusElement = document.getElementById('transparency-map-status');
-
-            if (!dataElement || !mapElement || !statusElement) return;
-
-            const setStatus = (message) => {
-                const text = statusElement.querySelector('span');
-                if (text) text.textContent = message;
-            };
-
-            let payload;
-            try {
-                payload = JSON.parse(dataElement.textContent || '{}');
-            } catch (error) {
-                setStatus('Approximate public areas could not be loaded. Use the complaint register below.');
-                return;
-            }
-
-            const points = Array.isArray(payload.points) ? payload.points : [];
-            const center = Array.isArray(payload.center) ? payload.center : [14.1122, 122.9553];
-
-            if (typeof window.L === 'undefined') {
-                setStatus('Interactive map unavailable. Use the complaint register below.');
-                return;
-            }
-
-            const map = window.L.map(mapElement, {
-                scrollWheelZoom: false,
-                zoomControl: true,
-            }).setView(center, 13);
-
-            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                maxZoom: 18,
-            }).addTo(map);
-
-            const heatLayerAvailable = typeof window.L.heatLayer === 'function';
-
-            if (points.length > 0 && heatLayerAvailable) {
-                window.L.heatLayer(
-                    points.map((point) => [
-                        Number(point.lat),
-                        Number(point.lng),
-                        Number(point.intensity || 0.6),
-                    ]),
-                    {
-                        radius: 38,
-                        blur: 26,
-                        minOpacity: 0.38,
-                        maxZoom: 16,
-                        gradient: {
-                            0.2: '#6abf8a',
-                            0.45: '#e2c06a',
-                            0.7: '#d98a4a',
-                            1: '#c65b5b',
-                        },
-                    },
-                ).addTo(map);
-            }
-
-            if (points.length > 0) {
-                const bounds = window.L.latLngBounds(
-                    points.map((point) => [Number(point.lat), Number(point.lng)]),
-                );
-
-                if (bounds.isValid()) {
-                    map.fitBounds(bounds.pad(0.15), { maxZoom: 15 });
-                }
-            }
-
-            if (points.length === 0) {
-                setStatus('No approximate public areas are available yet.');
-            } else if (!heatLayerAvailable) {
-                setStatus('Heat layer unavailable. Use the complaint register below.');
-            } else {
-                const reportTotal = points.reduce((total, point) => total + (Number(point.count) || 0), 0);
-                setStatus(`${reportTotal} public ${reportTotal === 1 ? 'report' : 'reports'} shown as approximate areas`);
-            }
-        })();
-
-        (() => {
-            const search = document.getElementById('complaint-search');
-            const department = document.getElementById('complaint-department');
-            const category = document.getElementById('complaint-category');
-            const status = document.getElementById('complaint-status');
-            const reset = document.getElementById('complaint-reset');
-            const results = document.getElementById('complaint-results');
-            const noResults = Array.from(document.querySelectorAll('[data-no-results]'));
-            const rows = Array.from(document.querySelectorAll('[data-report-row]'));
-
-            if (!search || !department || !category || !status || !reset || !results || noResults.length === 0 || rows.length === 0) {
-                return;
-            }
-
-            const normalize = (value) => (value || '').trim().toLocaleLowerCase();
-            const total = new Set(rows.map((row) => row.dataset.reportId || row.dataset.search)).size;
-
-            const applyFilters = () => {
-                const term = normalize(search.value);
-                const selectedDepartment = normalize(department.value);
-                const selectedCategory = normalize(category.value);
-                const selectedStatus = normalize(status.value);
-                const reportVisibility = new Map();
-
-                rows.forEach((row) => {
-                    const matchesSearch = !term || normalize(row.dataset.search).includes(term);
-                    const matchesDepartment = !selectedDepartment || normalize(row.dataset.department) === selectedDepartment;
-                    const matchesCategory = !selectedCategory || normalize(row.dataset.category) === selectedCategory;
-                    const matchesStatus = !selectedStatus || normalize(row.dataset.status) === selectedStatus;
-                    const matches = matchesSearch && matchesDepartment && matchesCategory && matchesStatus;
-                    const reportId = row.dataset.reportId || row.dataset.search;
-
-                    row.hidden = !matches;
-                    reportVisibility.set(reportId, matches);
-                });
-
-                const visible = Array.from(reportVisibility.values()).filter(Boolean).length;
-                results.textContent = `Showing ${visible} of ${total} public complaints`;
-                noResults.forEach((emptyState) => {
-                    emptyState.hidden = visible !== 0;
-                });
-            };
-
-            search.addEventListener('input', applyFilters);
-            [department, category, status].forEach((control) => {
-                control.addEventListener('change', applyFilters);
-            });
-
-            reset.addEventListener('click', () => {
-                search.value = '';
-                department.value = '';
-                category.value = '';
-                status.value = '';
-                applyFilters();
-                search.focus();
-            });
-        })();
-    </script>
+@include('pages.transparency.partials.register-script')
 @endpush

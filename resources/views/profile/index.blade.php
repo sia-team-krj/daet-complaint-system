@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Profile — Daet Listens')
+@section('title', 'Profile - Daet Listens')
 
 @section('content')
 <style>
@@ -387,7 +387,7 @@
               <div class="stat-label">This Month</div>
             </div>
             <div class="stat-item">
-              <div class="stat-value">{{ $stats['avg_days'] ?? '—' }}</div>
+              <div class="stat-value">{{ $stats['avg_days'] ?? '-' }}</div>
               <div class="stat-label">Avg. Days</div>
             </div>
           </div>

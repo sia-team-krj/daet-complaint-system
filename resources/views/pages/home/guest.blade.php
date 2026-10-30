@@ -2,7 +2,7 @@
 @section('content')
 
 <style>
-  /* Fonts already loaded via layouts/app.blade.php */
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
 
   :root {
     --navy:        #0B1F3A;
@@ -21,15 +21,8 @@
     --border-navy: rgba(11,31,58,0.08);
   }
 
-  *, *::before, *::after { box-sizing: border-box; }
+  * { box-sizing: border-box; }
   .home-root { font-family: 'DM Sans', sans-serif; width: 100%; overflow-x: hidden; }
-
-  @keyframes fadeUp { from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);} }
-  .fu{animation:fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both;}
-  .d1{animation-delay:0.04s;}.d2{animation-delay:0.16s;}.d3{animation-delay:0.28s;}.d4{animation-delay:0.40s;}.d5{animation-delay:0.52s;}
-  @media (prefers-reduced-motion: reduce) {
-    .fu{animation-duration:0.01ms!important;animation-iteration-count:1!important;}
-  }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      HERO
@@ -75,12 +68,7 @@
     pointer-events: none;
   }
 
-  /* Left gold accent bar */
-  .hero-bar {
-    position: absolute; top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: linear-gradient(180deg, var(--gold) 0%, rgba(201,168,76,0.1) 100%);
-  }
+
 
   /* Watermark */
   .hero-wm {
@@ -146,7 +134,7 @@
   /* Divider */
   .hero-divider {
     width: 48px; height: 2px;
-    background: linear-gradient(90deg, var(--gold), transparent);
+    background: transparent;
     margin-bottom: 24px;
   }
 
@@ -475,27 +463,7 @@
     max-width: 460px; line-height: 1.7; font-weight: 300;
   }
 
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     FOOTER STRIP
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  .home-footer {
-    background: #060f1e;
-    border-top: 1px solid rgba(201,168,76,0.12);
-    padding: 22px 40px;
-    display: flex; align-items: center;
-    justify-content: space-between; flex-wrap: wrap;
-    gap: 10px;
-  }
-  .home-footer p {
-    font-size: 11px; color: rgba(255,255,255,0.22);
-    letter-spacing: 0.06em;
-  }
-  .home-footer strong { color: rgba(201,168,76,0.45); }
-  .footer-seal {
-    font-size: 10px; letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.15);
-  }
+
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      ANIMATIONS
@@ -536,7 +504,6 @@
     .cta-inner { flex-direction: column; }
     .cta-inner .btn-primary { width: 100%; max-width: 360px; justify-content: center; }
     .cta-text p { max-width: 100%; }
-    .home-footer { flex-direction: column; text-align: center; padding: 20px; }
   }
 
   @media (max-width: 540px) {
@@ -554,17 +521,14 @@
   <section class="hero">
     <div class="hero-glow"></div>
     <div class="hero-glow-left"></div>
-    <div class="hero-bar"></div>
+    
     <div class="hero-wm">DAET</div>
 
     <div class="hero-inner">
 
       {{-- Left --}}
       <div>
-        <div class="hero-badge fu d1">
-          <span class="badge-dot"></span>
-          Official Complaint Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
-        </div>
+        
 
         <h1 class="hero-title fu d2">
           Your Voice.<br>
@@ -581,11 +545,13 @@
 
         <div class="hero-ctas fu d4">
           @auth
-            <a href="{{ route('complaints.create') }}" wire:navigate class="btn-primary">
+          {{-- route('complaints.create')  --}}
+            <a href="" class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               File a Complaint
             </a>
-            <a href="{{ route('complaints.track') }}" wire:navigate class="btn-secondary">
+            {{-- route('complaints.track') --}}
+            <a href="" class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               Track My Complaint
             </a>
@@ -621,16 +587,13 @@
               <div class="stat-lbl">In Progress</div>
             </div>
             <div class="stat-cell">
-              <div class="stat-num">{{ $avgDays ?? '—' }}</div>
+              <div class="stat-num">{{ $avgDays ?? '-' }}</div>
               <div class="stat-lbl">Avg. Days</div>
             </div>
           </div>
           <div class="stats-footer">
             <span class="stats-footer-text">FY <strong>{{ date('Y') }}</strong></span>
-            <div class="live-indicator">
-              <span class="live-dot"></span>
-              Live data
-            </div>
+            
           </div>
         </div>
       </div>
@@ -704,7 +667,7 @@
       <div class="section-eyebrow">Why This System</div>
       <h2 class="section-heading">Built for Every Resident of Daet</h2>
       <p class="section-sub">
-        Accessible, secure, and built to the highest standards of public accountability —
+        Accessible, secure, and built to the highest standards of public accountability -
         regardless of your age or technical experience.
       </p>
 
@@ -728,7 +691,7 @@
             </svg>
           </div>
           <div class="feature-title">Real-Time Tracking</div>
-          <p class="feature-desc">Know exactly where your complaint stands — from submission to investigation to final resolution — updated live.</p>
+          <p class="feature-desc">Know exactly where your complaint stands - from submission to investigation to final resolution - updated live.</p>
         </div>
 
         <div class="feature-card">
@@ -762,7 +725,7 @@
             </svg>
           </div>
           <div class="feature-title">Any Device, Anywhere</div>
-          <p class="feature-desc">File and track complaints from your phone, tablet, or desktop — no app installation required.</p>
+          <p class="feature-desc">File and track complaints from your phone, tablet, or desktop - no app installation required.</p>
         </div>
 
         <div class="feature-card">
@@ -789,7 +752,7 @@
         <h3>Ready to file a complaint?</h3>
         <p>
           Join the growing community of Daet residents holding their local
-          government to a higher standard — one verified report at a time.
+          government to a higher standard - one verified report at a time.
         </p>
       </div>
       @auth
@@ -806,11 +769,7 @@
     </div>
   </div>
 
-  {{-- FOOTER --}}
-  <div class="home-footer">
-    <p><strong>Municipality of Daet</strong> &nbsp;·&nbsp; Camarines Norte &nbsp;·&nbsp; Official Transparency Complaint Portal</p>
-    <span class="footer-seal">Republic Act 6713 &nbsp;·&nbsp; FOI Compliant</span>
-  </div>
+
 
 </div>
 

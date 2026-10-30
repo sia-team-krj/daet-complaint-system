@@ -4,13 +4,16 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInvitationController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationRedemptionController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\ComplaintVerificationController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TransparencyController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +24,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// ── STANDING LEGAL DOCUMENTS ───────────────────────
+// Public and guest-accessible on purpose: a privacy policy a resident cannot
+// reach before registering is not notice. The registration consent checkbox
+// links here, and so do both navbars and the home page footer.
+Route::get('/privacy', [LegalController::class, 'privacyPolicy'])->name('privacy');
+Route::get('/terms', [LegalController::class, 'termsAndConditions'])->name('terms');
+
 Route::get('/transparency', [TransparencyController::class, 'index'])->name(
     'transparency',
 );
@@ -32,7 +43,6 @@ Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintCo
 Route::get('/transparency/complaints/{complaint}/updates/{log}/evidence/{index}', [ComplaintController::class, 'publicUpdateEvidence'])
     ->whereNumber('index')
     ->name('transparency.complaints.updates.evidence');
-Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards');
 
 /*
 |--------------------------------------------------------------------------
@@ -61,6 +71,12 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('email.verify');
+    Route::post('/email/verify', [EmailVerificationController::class, 'verify'])->name('email.verify.submit');
+    Route::post('/email/resend', [EmailVerificationController::class, 'resend'])->name('email.verify.resend');
+});
+
 // ── PASSWORD RESET ───────────────────────
 Route::middleware('guest')->group(function () {
     Route::get('/forgot-password', [AuthController::class, 'showResetPassword'])->name('password.request');
@@ -82,7 +98,7 @@ Route::middleware('guest')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'email.verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name(
         'dashboard',
     );
@@ -96,6 +112,15 @@ Route::middleware(['auth'])->group(function () {
         'profile.password',
     );
 
+    // ── NOTIFICATIONS ──
+    // The in-app bell. Read state lives in the database, so the badge, the
+    // dropdown and any later email digest can never disagree.
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::get('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
     // ── COMPLAINTS ──────────────────────────
     Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
     Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
@@ -107,6 +132,15 @@ Route::middleware(['auth'])->group(function () {
         ->whereNumber('index')
         ->name('complaints.updates.evidence');
     Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show');
+    // The resident's half of the verification loop: answering a verifier's
+    // request for better evidence. Every other complaint route is read-only.
+    Route::post('/complaints/{complaint}/information', [ComplaintController::class, 'provideInformation'])
+        ->name('complaints.information.store');
+    // Whether a complaint appears on the transparency page is the resident's
+    // own decision, so it gets its own route rather than riding along on any
+    // staff or admin action. Nothing else in the system writes is_public.
+    Route::put('/complaints/{complaint}/visibility', [ComplaintController::class, 'updateVisibility'])
+        ->name('complaints.visibility.update');
     Route::get('/complaints/{complaint}/success', [ComplaintController::class, 'success'])->name('complaints.success');
     Route::get('/track', [ComplaintController::class, 'track'])->name('complaints.track');
 });
@@ -117,7 +151,7 @@ Route::middleware(['auth'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:staff,admin'])
+Route::middleware(['auth', 'email.verified', 'role:staff,admin'])
     ->prefix('staff')
     ->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
@@ -126,6 +160,18 @@ Route::middleware(['auth', 'role:staff,admin'])
         Route::get('/complaints/{complaint}', [StaffController::class, 'show'])->name('staff.complaints.show');
         Route::put('/complaints/{complaint}/review', [StaffController::class, 'review'])->name('staff.complaints.review');
         Route::put('/complaints/{complaint}', [StaffController::class, 'update'])->name('staff.complaints.update');
+        // Moderation is a content decision, separate from the resident's
+        // visibility choice and from the review decision. It is the only staff
+        // or admin action that can act on a public listing.
+        Route::post('/complaints/{complaint}/moderation', [StaffController::class, 'moderate'])
+            ->name('staff.complaints.moderate');
+
+        // Department-led verification. Verify/reject stays on the established
+        // staff.complaints.review endpoint; these two actions are new.
+        Route::post('/complaints/{complaint}/verification/request-information', [ComplaintVerificationController::class, 'requestInformation'])
+            ->name('staff.complaints.verification.request-information');
+        Route::post('/complaints/{complaint}/verification/delegate', [ComplaintVerificationController::class, 'delegate'])
+            ->name('staff.complaints.verification.delegate');
     });
 
 /*
@@ -134,7 +180,7 @@ Route::middleware(['auth', 'role:staff,admin'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:admin'])
+Route::middleware(['auth', 'email.verified', 'role:admin'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', [
@@ -146,8 +192,24 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/complaints/bulk-reassign', [AdminController::class, 'bulkReassign'])->name('admin.complaints.bulk-reassign');
         Route::get('/complaints/{complaint}', [AdminController::class, 'complaintShow'])->name('admin.complaints.show');
         Route::put('/complaints/{complaint}', [AdminController::class, 'complaintUpdate'])->name('admin.complaints.update');
+        Route::post('/complaints/{complaint}/moderation', [AdminController::class, 'moderateComplaint'])
+            ->name('admin.complaints.moderate');
         Route::get('/departments', [AdminController::class, 'departmentsIndex'])->name('admin.departments.index');
+        // Creation has its own page rather than a panel beside the list. The
+        // directory is for scanning offices; a form wedged under it meant the
+        // only way to add one was to scroll past every office, and on a phone
+        // that was several screens of nothing.
+        Route::get('/departments/create', [AdminController::class, 'departmentCreate'])->name('admin.departments.create');
         Route::post('/departments', [AdminController::class, 'departmentStore'])->name('admin.departments.store');
+
+        // Archive and restore rather than delete. Every complaint, staff
+        // account, invitation, and audit record points at a department, so
+        // deleting one would null those references and erase the routing
+        // history behind every case that office ever handled. Archiving stops
+        // new work, keeps the history readable, and can be undone.
+        Route::put('/departments/{department}', [AdminController::class, 'departmentUpdate'])->name('admin.departments.update');
+        Route::post('/departments/{department}/archive', [AdminController::class, 'departmentArchive'])->name('admin.departments.archive');
+        Route::post('/departments/{department}/restore', [AdminController::class, 'departmentRestore'])->name('admin.departments.restore');
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('admin.users.show');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
@@ -157,7 +219,10 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/staff', [AdminController::class, 'staffStore'])->name('admin.staff.store');
         Route::put('/staff/{user}/department', [AdminController::class, 'staffUpdateDepartment'])->name('admin.staff.update-department');
         Route::post('/staff/{user}/toggle', [AdminController::class, 'staffToggleStatus'])->name('admin.staff.toggle');
+        Route::post('/staff/{user}/toggle-verification', [AdminController::class, 'staffToggleVerification'])->name('admin.staff.toggle-verification');
         Route::get('/invitations', [AdminInvitationController::class, 'index'])->name('admin.invitations.index');
+        Route::post('/invitations/preview', [AdminInvitationController::class, 'preview'])->name('admin.invitations.preview');
+        Route::post('/invitations/send', [AdminInvitationController::class, 'send'])->name('admin.invitations.send');
         Route::post('/invitations', [AdminInvitationController::class, 'store'])->name('admin.invitations.store');
         Route::patch('/invitations/{invitation}/revoke', [AdminInvitationController::class, 'revoke'])->name('admin.invitations.revoke');
         Route::get('/audit-trail', [AdminController::class, 'auditIndex'])->name('admin.audit.index');

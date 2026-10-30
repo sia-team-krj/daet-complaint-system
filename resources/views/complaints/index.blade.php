@@ -1,5 +1,5 @@
 @extends($mainLayout)
-@section('title', 'My Complaints — Daet Listens')
+@section('title', 'My Complaints - Daet Listens')
 @section('content')
 
 <style>
@@ -26,8 +26,8 @@
   .list-root {
     font-family: 'DM Sans', sans-serif;
     background: var(--cream);
-    min-height: calc(100svh - 64px);
-    padding-top: 64px;
+    min-height: calc(100svh - var(--navbar-height));
+    padding-top: var(--navbar-height);
   }
 
   /* ── Page Header ── */
@@ -264,7 +264,7 @@
     .list-body { padding: 32px 32px 56px; }
   }
   @media (max-width: 768px) {
-    .list-root { padding-top: 64px; }
+    .list-root { padding-top: var(--navbar-height); }
     .list-header { padding: 32px 20px 36px; }
     .filter-bar { padding: 20px 20px 0; }
     .list-body { padding: 24px 20px 48px; }

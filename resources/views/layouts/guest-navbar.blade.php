@@ -16,7 +16,10 @@
         <li><a href="/#process" class="nav-link">Process</a></li>
         <li><a href="/#features" class="nav-link">Features</a></li>
         <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">Transparency</a></li>
-        <li><a href="{{ url('/rewards') }}" wire:navigate class="nav-link">Rewards</a></li>
+        {{-- No Terms or Privacy here on purpose. They live in the site footer.
+             The bar is the wayfinding surface; two more items crowded the links
+             residents use and pushed the account controls into the compact menu
+             sooner. They are still reachable from the footer on every page. --}}
       </ul>
 
       <ul class="nav-actions">
@@ -35,13 +38,12 @@
     </div>
   </div>
 
-  <div id="mobile-menu" data-mobile-menu aria-hidden="true" class="mobile-menu hidden">
+  <div id="mobile-menu" data-mobile-menu aria-hidden="true" class="mobile-menu" inert>
     <div class="mobile-menu-inner">
       <a href="{{ url('/') }}" wire:navigate class="mobile-nav-link">Home</a>
       <a href="{{ url('/') }}#process" class="mobile-nav-link">Process</a>
       <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">Transparency</a>
       <a href="{{ url('/') }}#features" class="mobile-nav-link">Features</a>
-      <a href="{{ url('/rewards') }}" wire:navigate class="mobile-nav-link">Rewards</a>
       <div class="mobile-divider"></div>
       <a href="{{ route('login') }}" wire:navigate class="mobile-nav-link">Login</a>
       <a href="{{ route('register') }}" wire:navigate class="mobile-nav-link mobile-nav-link--accent">Get Started</a>

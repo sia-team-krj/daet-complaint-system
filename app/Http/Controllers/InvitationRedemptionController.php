@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InvitationCode;
 use App\Models\User;
 use App\Services\ActivityLogger;
-use Illuminate\Auth\Events\Registered;
+use App\Services\EmailVerificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class InvitationRedemptionController extends Controller
 {
@@ -31,8 +32,34 @@ class InvitationRedemptionController extends Controller
         return view('invitations.redeem', compact('invitation'));
     }
 
-    public function redeem(Request $request, string $code, ActivityLogger $activityLogger): RedirectResponse
+    /**
+     * Invitations issued to a specific address may only create an account for
+     * that address. The locked field is a convenience; this check is the guard.
+     */
+    private function ensureEmailMatchesInvitee(Request $request, InvitationCode $invitation): void
     {
+        if (! $invitation->isReservedToEmail()) {
+            return;
+        }
+
+        if (strtolower(trim((string) $request->input('email'))) !== $invitation->invitee_email) {
+            throw ValidationException::withMessages([
+                'email' => 'This invitation was issued to a different email address.',
+            ]);
+        }
+    }
+
+    public function redeem(
+        Request $request,
+        string $code,
+        ActivityLogger $activityLogger,
+        EmailVerificationService $verificationService,
+    ): RedirectResponse
+    {
+        $request->merge([
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.]+$/u'],
             'last_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.]+$/u'],
@@ -46,6 +73,11 @@ class InvitationRedemptionController extends Controller
             'contact_number.regex' => 'Enter a valid 11-digit PH mobile number starting with 09.',
             'terms.accepted' => 'You must accept the terms to create your staff account.',
         ]);
+
+        // Re-read the invitation before validation so a reserved address is
+        // enforced, then re-check under a row lock inside the transaction.
+        $reservedInvitation = InvitationCode::where('code', $code)->first();
+        $this->ensureEmailMatchesInvitee($request, $reservedInvitation ?? new InvitationCode);
 
         $user = DB::transaction(function () use ($code, $validated, $activityLogger): User {
             $invitation = InvitationCode::where('code', $code)->lockForUpdate()->first();
@@ -88,12 +120,33 @@ class InvitationRedemptionController extends Controller
             return $user;
         });
 
-        event(new Registered($user));
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put(
+            'email_verification_purpose',
+            EmailVerificationService::PURPOSE_REGISTRATION,
+        );
+
+        $verificationSent = false;
+
+        try {
+            $verificationService->issue(
+                $user,
+                $user->email,
+                EmailVerificationService::PURPOSE_REGISTRATION,
+            );
+            $verificationSent = true;
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return redirect()
-            ->route('staff.dashboard')
-            ->with('success', 'Your staff account is ready. Welcome to Daet Listens.');
+            ->route('email.verify')
+            ->with(
+                $verificationSent ? 'status' : 'error',
+                $verificationSent
+                    ? 'Your staff account was created. Enter the verification code we sent to your email.'
+                    : 'Your staff account was created, but we could not send the verification email. Use the resend option to try again.',
+            );
     }
 }

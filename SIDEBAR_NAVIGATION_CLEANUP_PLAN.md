@@ -12,7 +12,7 @@
 - Keep department context in the staff sidebar because it is operational information, not a duplicate account control.
 - Hide the generic global `Dashboard` link for admins and staff because `/dashboard` redirects to their role dashboard.
 - Keep one role-specific global destination: `Admin Dashboard` or `Staff Dashboard`.
-- Keep `Transparency`, `Rewards`, complaint filing, profile, and logout in the global navbar.
+- Keep `Transparency`, complaint filing, profile, and logout in the global navbar.
 
 ## Verification
 

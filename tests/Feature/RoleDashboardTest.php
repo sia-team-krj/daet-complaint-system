@@ -91,13 +91,16 @@ class RoleDashboardTest extends TestCase
         $response = $this->actingAs($resident)->get(route('dashboard'));
 
         $response->assertOk()
-            ->assertSee('Your complaint center')
+            ->assertSee('Your reports')
+            ->assertSee('File a new complaint')
+            ->assertSee('Track a report')
             ->assertSee('Private view:')
-            ->assertSee('My reports')
             ->assertSee($ownComplaint->title)
             ->assertSee($ownComplaint->ticket_id)
             ->assertDontSee($otherComplaint->title)
             ->assertDontSee($otherComplaint->ticket_id)
+            ->assertDontSee('Needs attention')
+            ->assertDontSee('Avg. resolution')
             ->assertDontSee('Total Filed');
     }
 }

@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Create Staff Account — Admin')
+@section('title', 'Create Staff Account - Admin')
 @section('admin-content')
 <div class="admin-page admin-page--narrow">
     <nav class="admin-breadcrumb" aria-label="Breadcrumb">

@@ -1,6 +1,6 @@
 @extends('staff.layouts.app')
 
-@section('title', 'My Activity — Staff — Daet Listens')
+@section('title', 'My Activity - Staff - Daet Listens')
 @section('staff-content')
 <div class="staff-page">
     <header class="staff-page-header">
@@ -15,7 +15,7 @@
     <section class="staff-metric-grid staff-metric-grid--three" aria-label="Personal activity metrics">
         <article class="staff-metric"><span>Total responded</span><strong>{{ $stats['totalResponded'] ?? 0 }}</strong></article>
         <article class="staff-metric"><span>Resolved by me</span><strong>{{ $stats['resolvedByMe'] ?? 0 }}</strong></article>
-        <article class="staff-metric"><span>Last activity</span><strong class="staff-metric-text">{{ $stats['lastActivity']?->diffForHumans() ?? '—' }}</strong></article>
+        <article class="staff-metric"><span>Last activity</span><strong class="staff-metric-text">{{ $stats['lastActivity']?->diffForHumans() ?? '-' }}</strong></article>
     </section>
 
     <section class="staff-list-section" aria-labelledby="activity-list-title">

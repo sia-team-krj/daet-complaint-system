@@ -1,9 +1,8 @@
 @extends($mainLayout)
 
-@section('title', 'File a Complaint — Daet Listens')
+@section('title', 'File a Complaint - Daet Listens')
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         .filing-page {
             --filing-navy: #0b1f3a;
@@ -374,7 +373,90 @@
             font-size: 11px;
         }
 
-        .filing-route {
+        /* ─── Visibility choice ───
+     A fieldset of radios rather than a switch: the two outcomes carry equal
+     weight, so both have to be readable before one is chosen. A switch only
+     ever shows you the option you are not currently on.
+
+     Type is taken from the form around it, not chosen: the same stack the form
+     root sets, the same 11px/1.55 secondary step as .filing-field__hint, and the
+     same ink and muted tokens as .filing-field label. The card heading above is
+     Cormorant Garamond because .filing-card__header h2 already sets that, so
+     this block inherits the established hierarchy instead of inventing one.
+
+     Colours are the light filing-form palette. This card is --filing-white, so
+     the dark-shell palette used elsewhere in the app is unreadable here. */
+  .visibility-choice {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .visibility-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fcfbf8;
+    border: 1px solid rgba(11, 31, 58, 0.16);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease;
+  }
+
+  .visibility-option:hover {
+    border-color: var(--filing-gold);
+    background: var(--filing-gold-pale);
+  }
+
+  .visibility-option input {
+    margin: 2px 0 0;
+    accent-color: var(--filing-gold);
+    flex-shrink: 0;
+  }
+
+  /* The selected row reads as chosen without relying on the radio alone, so
+     the state survives a high-contrast mode that hides the control. */
+  .visibility-option:has(input:checked) {
+    background: var(--filing-gold-pale);
+    border-color: var(--filing-gold);
+  }
+
+  .visibility-option:has(input:focus-visible) {
+    outline: 2px solid var(--filing-gold);
+    outline-offset: 2px;
+  }
+
+  .visibility-option__body {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .visibility-option__title {
+    color: var(--filing-navy);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .visibility-option__note {
+    color: var(--filing-muted);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .visibility-footnote {
+    margin: 14px 0 0;
+    color: var(--filing-muted);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .filing-route {
             display: flex;
             align-items: flex-start;
             gap: 10px;
@@ -584,6 +666,137 @@
             border: 1px solid var(--filing-border);
             border-radius: 6px;
             background: #dce8e7;
+        }
+
+        /* Locate-me control. A real labelled button rather than a target icon
+           in the corner: it does something the map does not, and a resident
+           should be able to tell what it is before tapping it. */
+        .filing-locate {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 9px 14px;
+            color: var(--filing-navy);
+            background: #fcfbf8;
+            border: 1px solid rgba(11, 31, 58, 0.16);
+            border-radius: 5px;
+            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+        }
+
+        .filing-locate:hover:not(:disabled) {
+            border-color: var(--filing-gold);
+            background: var(--filing-gold-pale);
+        }
+
+        .filing-locate:disabled {
+            color: var(--filing-muted);
+            cursor: progress;
+            opacity: 0.7;
+        }
+
+        .filing-locate svg {
+            flex: 0 0 auto;
+            color: #8b6719;
+        }
+
+        .filing-locate-status {
+            margin: 7px 0 0;
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .filing-locate-status[hidden] {
+            display: none;
+        }
+
+        /* ─── Location choice ───
+           Shown only when a photo's own GPS disagrees with the pin. Both
+           candidates are stated with their distance apart, because "somewhere
+           else" without a number is not enough to choose on. */
+        .location-choice {
+            margin-top: 15px;
+            padding: 16px;
+            background: #fdf6e4;
+            border: 1px solid rgba(201, 168, 76, 0.5);
+            border-radius: 6px;
+        }
+
+        .location-choice__title {
+            margin: 0 0 4px;
+            color: var(--filing-navy);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .location-choice__note {
+            margin: 0 0 13px;
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        .location-choice__options {
+            display: grid;
+            gap: 9px;
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        .location-choice__option {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 12px 14px;
+            background: #fcfbf8;
+            border: 1px solid rgba(11, 31, 58, 0.14);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .location-choice__option:hover {
+            border-color: var(--filing-gold);
+        }
+
+        .location-choice__option:has(input:checked) {
+            background: var(--filing-gold-pale);
+            border-color: var(--filing-gold);
+        }
+
+        .location-choice__option input {
+            margin: 2px 0 0;
+            accent-color: var(--filing-gold);
+            flex: 0 0 auto;
+        }
+
+        .location-choice__label {
+            display: block;
+            color: var(--filing-navy);
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        .location-choice__coords {
+            display: block;
+            margin-top: 2px;
+            color: var(--filing-muted);
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .location-choice__error {
+            margin: 11px 0 0;
+            color: #b91c1c;
+            font-size: 11px;
+            line-height: 1.5;
         }
 
         .filing-map-note {
@@ -1029,7 +1242,7 @@
                                 <label for="category">Complaint category <span>*</span></label>
                                 <p class="filing-field__hint">Pick the main issue. You can add more context in the description.</p>
                                 <select id="category" name="category" class="filing-select" required>
-                                    <option value="">— Select a category —</option>
+                                    <option value="">- Select a category -</option>
                                     @foreach($categoryOptions as $department => $options)
                                         <optgroup label="{{ $department }}">
                                             @foreach($options as $option)
@@ -1044,6 +1257,59 @@
                                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
                                 <span>This report will be routed to <strong id="department-name">the responsible department</strong>.</span>
                             </div>
+                        </div>
+                    </section>
+
+                    {{--
+                        Public visibility is the resident's decision, and private
+                        is the default. Real radio inputs rather than a switch,
+                        because the choice is between two equally weighted
+                        outcomes and both need to be readable before one is
+                        picked - a switch hides the option it is not on.
+
+                        Nothing in the staff or admin interface can change this
+                        afterwards. It is the one thing about a complaint the
+                        handling office does not get a say in.
+                    --}}
+                    <section class="filing-card" id="filing-visibility">
+                        <div class="filing-card__header">
+                            <span class="filing-card__icon" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path><path d="M4 4l16 16"></path></svg>
+                            </span>
+                            <div>
+                                <h2>Who can see this</h2>
+                                <p>You decide this. No member of staff can change it later.</p>
+                            </div>
+                        </div>
+
+                        <div class="filing-card__body">
+                            <fieldset class="visibility-choice" @disabled(old('visibility', 'private') === 'public')>
+                                <legend class="sr-only">Who can see this complaint</legend>
+
+                                <label class="visibility-option">
+                                    <input type="radio" name="visibility" value="private" @checked(old('visibility', 'private') === 'private')>
+                                    <span class="visibility-option__body">
+                                        <span class="visibility-option__title">Just me</span>
+                                        <span class="visibility-option__note">Only you and the staff handling your report can see it. It will not appear on the public page.</span>
+                                    </span>
+                                </label>
+
+                                <label class="visibility-option">
+                                    <input type="radio" name="visibility" value="public" @checked(old('visibility') === 'public')>
+                                    <span class="visibility-option__body">
+                                        <span class="visibility-option__title">Publish on the transparency page</span>
+                                        <span class="visibility-option__note">Anyone can read it there under your display alias, never your real name. You can make it private again at any time.</span>
+                                    </span>
+                                </label>
+                            </fieldset>
+
+                            @error('visibility') <div class="filing-error">{{ $message }}</div> @enderror
+
+                            <p class="visibility-footnote">
+                                Reports that turn out to be spam or unrelated to municipal services are held back automatically. Staff may also
+                                remove sensitive details from the public page, but they cannot change this choice - and you will always see your
+                                own report exactly as you filed it.
+                            </p>
                         </div>
                     </section>
 
@@ -1112,6 +1378,33 @@
                         </div>
                         <div class="filing-card__body">
                             <div class="filing-field">
+                                <label for="barangay">Which barangay <span>(required)</span></label>
+                                <p class="filing-field__hint">Prefilled from your account. Change it if the problem is somewhere else.</p>
+                                <input
+                                    id="barangay"
+                                    name="barangay"
+                                    class="filing-input"
+                                    type="search"
+                                    list="complaint-barangay-options"
+                                    autocomplete="off"
+                                    value="{{ old('barangay', auth()->user()?->barangay ?? '') }}"
+                                    required
+                                >
+                                {{--
+                                    A native list alongside the field, so the form
+                                    still completes without JavaScript and a phone
+                                    gets its own picker rather than a combobox that
+                                    has to be driven by hand.
+                                --}}
+                                <datalist id="complaint-barangay-options">
+                                    @foreach (\App\Models\User::BARANGAYS as $barangayOption)
+                                        <option value="{{ $barangayOption }}"></option>
+                                    @endforeach
+                                </datalist>
+                                @error('barangay') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div class="filing-field">
                                 <label for="address_text">Address or nearest landmark <span>(optional)</span></label>
                                 <p class="filing-field__hint">Example: in front of Daet Public Market, Barangay VI.</p>
                                 <input id="address_text" name="address_text" class="filing-input" type="text" maxlength="500" placeholder="Describe the location..." value="{{ old('address_text') }}">
@@ -1124,6 +1417,58 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
                                 Click the map to place a marker, or enter a nearby landmark above.
                             </p>
+
+                            <button type="button" class="filing-locate" id="locate-me" data-locate-button>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path></svg>
+                                Use my current location
+                            </button>
+                            <p class="filing-locate-status" id="locate-status" role="status" aria-live="polite" hidden></p>
+
+                            {{--
+                                Only present when a photo's own GPS and the pin the
+                                resident placed disagree by more than the rounding
+                                threshold. Both candidates are shown with their
+                                coordinates and the distance between them, because
+                                "somewhere else" is not enough to choose on, and
+                                silently picking for them is the behaviour this
+                                replaces.
+                            --}}
+                            @if ($locationConflict)
+                                <div class="location-choice">
+                                    <h3 class="location-choice__title">Where is the problem?</h3>
+                                    <p class="location-choice__note">One of your photos was taken in a different area from the point you marked on the map. Pick the place the problem is actually at.</p>
+
+                                    <fieldset class="location-choice__options">
+                                        <legend class="sr-only">Which location is the problem at?</legend>
+
+                                        <label class="location-choice__option">
+                                            <input type="radio" name="location_choice" value="map"
+                                                   @checked(old('location_choice', \App\Http\Controllers\ComplaintController::LOCATION_CHOICE_MAP) === 'map')>
+                                            <span>
+                                                <span class="location-choice__label">The point I marked on the map</span>
+                                                <span class="location-choice__coords">
+                                                    {{ $locationConflict['map']['barangay'] ?? 'Location not recognised' }}
+                                                </span>
+                                            </span>
+                                        </label>
+
+                                        <label class="location-choice__option">
+                                            <input type="radio" name="location_choice" value="photo"
+                                                   @checked(old('location_choice', \App\Http\Controllers\ComplaintController::LOCATION_CHOICE_PHOTO) === 'photo')>
+                                            <span>
+                                                <span class="location-choice__label">Where the photo was taken</span>
+                                                <span class="location-choice__coords">
+                                                    {{ $locationConflict['photo']['barangay'] ?? 'Location not recognised' }}
+                                                </span>
+                                            </span>
+                                        </label>
+                                    </fieldset>
+
+                                    @error('location_choice')
+                                        <p class="location-choice__error">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            @endif
                             @error('latitude') <div class="filing-error">{{ $message }}</div> @enderror
                             @error('longitude') <div class="filing-error">{{ $message }}</div> @enderror
 
@@ -1192,7 +1537,6 @@
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         (() => {
             const initializeFilingPage = () => {
@@ -1215,6 +1559,20 @@
                 const reviewLocation = document.getElementById('review-location');
                 const submitButton = document.getElementById('submit-btn');
                 const categoryDataElement = document.getElementById('category-department-data');
+
+                // Declared here, with the other element lookups, rather than down
+                // by the map code. updateSummary() is called a hundred lines
+                // earlier, and optional chaining does not rescue a `const` that is
+                // still in its temporal dead zone - `latitudeInput?.value` throws
+                // a ReferenceError exactly like `latitudeInput.value` does. That
+                // exception aborted initializeFilingPage before it ever reached
+                // initializeMap, so the form showed no map at all and said
+                // nothing about why.
+                const latitudeInput = document.getElementById('latitude');
+                const longitudeInput = document.getElementById('longitude');
+                const mapElement = document.getElementById('complaint-map');
+                const barangayInput = document.getElementById('barangay');
+
                 let categoryToDepartment = {};
 
                 try {
@@ -1226,9 +1584,34 @@
                 const updateSummary = () => {
                     const categoryLabel = categorySelect?.selectedOptions?.[0]?.textContent?.trim();
                     const department = categoryToDepartment[categorySelect?.value || ''];
-                    reviewCategory.textContent = categoryLabel && categoryLabel !== '— Select a category —' ? categoryLabel : 'Not selected';
+                    reviewCategory.textContent = categoryLabel && categoryLabel !== '- Select a category -' ? categoryLabel : 'Not selected';
                     reviewDepartment.textContent = department || 'Not routed yet';
-                    reviewLocation.textContent = addressInput?.value?.trim() || 'No location added';
+
+                    // The summary confirms what is being submitted, and a
+                    // resident cannot confirm a pair of decimal degrees. It shows
+                    // the barangay they named and the landmark they described, in
+                    // their own words.
+                    //
+                    // It used to derive the barangay from the pin, using one
+                    // reference point per barangay. That is wrong wherever a point
+                    // sits further from its own barangay's reference point than
+                    // from a neighbour's, which is most of a large barangay, and
+                    // Daet is only about 10 km across - residents were shown the
+                    // wrong area for their own home. OpenStreetMap carries a
+                    // single label point per barangay for Daet and no boundary
+                    // polygons at all, so there is no better offline source than
+                    // asking them, and they already said at registration.
+                    //
+                    // What is submitted is unchanged: the exact coordinates go
+                    // into the hidden fields and are what the department is
+                    // given. This row is the resident reading their own report
+                    // back to themselves before sending it.
+                    const description = addressInput?.value?.trim();
+                    const barangay = barangayInput?.value?.trim();
+
+                    reviewLocation.textContent = [barangay, description]
+                        .filter(Boolean)
+                        .join(' · ') || 'No location added';
                 };
 
                 if (categorySelect) {
@@ -1246,6 +1629,7 @@
                 }
 
                 addressInput?.addEventListener('input', updateSummary);
+                barangayInput?.addEventListener('input', updateSummary);
 
                 const maxPhotos = 5;
                 const maxPhotoBytes = 5 * 1024 * 1024;
@@ -1386,25 +1770,29 @@
 
                 let map = null;
                 let marker = null;
-                const latitudeInput = document.getElementById('latitude');
-                const longitudeInput = document.getElementById('longitude');
-                const mapElement = document.getElementById('complaint-map');
 
                 const updateCoordinates = (latitude, longitude) => {
                     if (latitudeInput) latitudeInput.value = latitude.toFixed(8);
                     if (longitudeInput) longitudeInput.value = longitude.toFixed(8);
-                    if (addressInput && !addressInput.value) {
-                        addressInput.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-                    }
+                    // The address field is deliberately NOT auto-filled with the
+                    // coordinate. It used to be, which was wrong three times
+                    // over: a resident who typed a landmark watched their own
+                    // words get replaced by a pair of numbers, the department
+                    // received "14.11220, 122.95530" where an address should be,
+                    // and the server-side privacy scrub - which works by
+                    // removing address_text from the public copy - had nothing to
+                    // remove. The coordinates are already captured in the hidden
+                    // inputs above; this field is for prose only.
                     updateSummary();
+                };
+
+                const showMapUnavailable = () => {
+                    if (!mapElement) return;
+                    mapElement.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:12px">Map unavailable. You can still submit using the address or landmark field.</div>';
                 };
 
                 const initializeMap = () => {
                     if (!mapElement) return;
-                    if (typeof window.L === 'undefined') {
-                        mapElement.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:12px">Map unavailable. You can still submit using the address or landmark field.</div>';
-                        return;
-                    }
 
                     if (map) {
                         map.remove();
@@ -1412,7 +1800,41 @@
                         marker = null;
                     }
 
+
+                    /*
+                     * Keep the map honest about its own size.
+                     *
+                     * Leaflet measures the container once, when the map is built,
+                     * and caches that measurement. It is never wrong on a desktop
+                     * because a desktop viewport has settled by then. A phone
+                     * has not: the URL bar collapses, scrollbars appear and
+                     * disappear, a late webfont reflows the card around the map,
+                     * and the keyboard opens. Any of those after the measurement
+                     * leaves the tiles laid out for a size the container no
+                     * longer is - which shows up as a blank band, or as map
+                     * content clipped to a strip across the middle.
+                     *
+                     * invalidateSize() re-reads the container. Called on the next
+                     * frame and once more after a short delay to catch late
+                     * layout, then on every resize and rotation. `animate: false`
+                     * because a re-measure is not a user gesture and should not
+                     * zoom the map at them.
+                     */
+                    const keepMapSized = (target) => {
+                        if (!target) return;
+
+                        const refresh = () => target.invalidateSize({ animate: false });
+
+                        window.requestAnimationFrame(refresh);
+                        window.setTimeout(refresh, 300);
+                        window.addEventListener('resize', refresh);
+                        window.addEventListener('orientationchange', () => {
+                            window.setTimeout(refresh, 150);
+                        });
+                    };
                     map = window.L.map(mapElement).setView([14.1153, 122.9553], 14);
+                    // 1 keeps the map from bouncing back at all; 0 would let it
+                    // follow the drag anywhere. Full stop, no rubber-banding.
                     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; OpenStreetMap contributors',
                         maxZoom: 18,
@@ -1446,9 +1868,103 @@
                     }
 
                     map.on('click', (event) => placeMarker(event.latlng.lat, event.latlng.lng));
+
+                    keepMapSized(map);
+
+                    /*
+                     * "Use my current location".
+                     *
+                     * This is the dependable location source. The photo's EXIF is
+                     * not: WebKit bug 207088 records that since iOS 13 Safari
+                     * strips EXIF from uploaded images, and there is still no
+                     * standard way for a site to ask a browser to keep it. The
+                     * Geolocation API is explicit, consent-based, and present in
+                     * every browser that matters.
+                     *
+                     * The map is only created once, so the button is wired from
+                     * here rather than earlier, where it would run before
+                     * placeMarker exists.
+                     */
+                    const locateButton = document.getElementById('locate-me');
+                    const locateStatus = document.getElementById('locate-status');
+
+                    const sayLocating = (message) => {
+                        if (!locateStatus) return;
+                        locateStatus.textContent = message;
+                        locateStatus.hidden = false;
+                    };
+
+                    const locateFailures = {
+                        1: 'Location permission was declined. You can still place the pin on the map.',
+                        2: 'Your location is unavailable right now. Please place the pin on the map.',
+                        3: 'Finding your location took too long. Please place the pin on the map.',
+                    };
+
+                    if (locateButton) {
+                        locateButton.addEventListener('click', () => {
+                            if (!navigator.geolocation) {
+                                sayLocating('This browser cannot share your location. Please place the pin on the map.');
+
+                                return;
+                            }
+
+                            locateButton.disabled = true;
+                            sayLocating('Finding your location...');
+
+                            navigator.geolocation.getCurrentPosition(
+                                (position) => {
+                                    locateButton.disabled = false;
+
+                                    const { latitude, longitude, accuracy } = position.coords;
+                                    placeMarker(latitude, longitude, true);
+
+                                    const within = Number.isFinite(accuracy)
+                                        ? ` It is accurate to about ${Math.round(accuracy)} m.`
+                                        : '';
+
+                                    sayLocating(
+                                        `Pin moved to where you are.${within} `
+                                        + 'Drag the pin if the problem is a little way from you.',
+                                    );
+                                },
+                                (error) => {
+                                    locateButton.disabled = false;
+
+                                    // Chrome only reports a secure context for the
+                                    // Geolocation API, and this portal is often
+                                    // opened on a plain-http LAN address in
+                                    // testing, where the failure is confusing
+                                    // unless it is named.
+                                    if (error.code === 1 && !window.isSecureContext) {
+                                        sayLocating(
+                                            'Your browser only shares a location over a secure (https) connection. '
+                                            + 'Please place the pin on the map.',
+                                        );
+
+                                        return;
+                                    }
+
+                                    sayLocating(
+                                        locateFailures[error.code]
+                                        ?? 'Your location could not be read. Please place the pin on the map.',
+                                    );
+                                },
+                                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+                            );
+                        });
+                    }
                 };
 
-                initializeMap();
+                // Leaflet is bundled rather than fetched from a CDN, but a
+                // bundled module is deferred and this inline script is not, so
+                // the map is built from a callback the bundle calls instead of
+                // by reaching for window.L and finding it undefined on a page
+                // that is otherwise fine. `onUnavailable` is the part that
+                // matters: a map that silently never appears is
+                // indistinguishable from one that captured the location, and a
+                // resident who cannot tell the difference has no reason to
+                // trust that their report has a location at all.
+                window.whenLeafletReady(initializeMap, { onUnavailable: showMapUnavailable });
 
                 form.addEventListener('submit', (event) => {
                     if (selectedPhotos.length === 0) {

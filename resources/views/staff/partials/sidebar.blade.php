@@ -34,6 +34,27 @@
             </li>
         </ul>
 
+        {{-- Gated on a capability, not a role: the first link in the workspace
+             that only some staff members see. It leads to the same queue with
+             the pending review filter pre-applied - no separate dashboard. --}}
+        @if(auth()->user()->canVerifyComplaints())
+            <p class="staff-sidebar-section-label">Verification</p>
+            <ul>
+                <li>
+                    <a href="{{ route('staff.complaints.index', ['review' => 'pending']) }}" class="{{ request()->query('review') === 'pending' ? 'is-active' : '' }}" @if(request()->query('review') === 'pending') aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12l2 2 4-4"></path><path d="M12 3l7 4v5c0 4.4-3 8.3-7 9-4-.7-7-4.6-7-9V7z"></path></svg>
+                        <span>Needs verification</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('staff.complaints.index', ['review' => 'needs_information']) }}" class="{{ request()->query('review') === 'needs_information' ? 'is-active' : '' }}" @if(request()->query('review') === 'needs_information') aria-current="page" @endif>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg>
+                        <span>Waiting on resident</span>
+                    </a>
+                </li>
+            </ul>
+        @endif
+
         <p class="staff-sidebar-section-label">Account</p>
         <ul>
             <li>

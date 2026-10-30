@@ -7,6 +7,14 @@ use App\Models\Department;
 class DepartmentRouter
 {
     /**
+     * Codes this router resolves, i.e. the codes that are routing keys rather
+     * than free labels. An admin changing one of these silently strands every
+     * category mapped to it, so AdminController refuses the rename instead of
+     * accepting a change whose effect the operator cannot see.
+     */
+    public const ROUTABLE_CODES = ['ENG', 'GSO', 'BPLO', 'OM', 'HLTH'];
+
+    /**
      * Category to department code mapping.
      */
     private const CATEGORY_MAP = [
@@ -33,13 +41,27 @@ class DepartmentRouter
 
     /**
      * Resolve category to Department model.
-     * Falls back to GSO if no match found.
+     *
+     * Archived offices are skipped. Archiving is the admin's stated signal that
+     * an office should stop receiving new work, so resolving to one would make
+     * the whole archive feature decorative — complaints would keep arriving at a
+     * department that no longer appears in any assignment list.
+     *
+     * Falls back to GSO if no match found, then to any active office, so a
+     * misconfigured map can never silently drop a complaint into the unassigned
+     * pile with no department at all.
      */
     public static function resolve(string $category): ?Department
     {
         $code = self::CATEGORY_MAP[$category] ?? 'GSO';
-        
-        return Department::where('code', $code)->first();
+
+        $department = Department::where('code', $code)->where('is_active', true)->first();
+
+        if ($department !== null) {
+            return $department;
+        }
+
+        return Department::where('is_active', true)->first();
     }
 
     /**

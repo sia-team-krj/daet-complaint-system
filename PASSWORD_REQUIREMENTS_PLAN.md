@@ -17,11 +17,13 @@ Make password requirements visible while a user types instead of relying only on
 
 - Show a compact requirements checklist below the password field.
 - Update each item live as the password changes.
+- Show uppercase and lowercase checks separately.
 - Mark requirements as met or unmet without relying only on color.
 - Keep the checklist accessible with `aria-live` and semantic list markup.
 - Preserve the existing server-side validation rules:
   - At least 8 characters
-  - Uppercase and lowercase letters
+  - At least one uppercase letter
+  - At least one lowercase letter
   - At least one number
 - Apply the same behavior to password confirmation fields without duplicating the requirements list.
 - Do not display or log the password value.
@@ -36,6 +38,6 @@ Make password requirements visible while a user types instead of relying only on
 ## Acceptance Criteria
 
 - Both forms show the password requirements before submission.
-- Requirements update live while typing.
+- Requirements update live while typing, including after Livewire navigation.
 - Existing validation remains unchanged.
 - Tests and frontend build pass.

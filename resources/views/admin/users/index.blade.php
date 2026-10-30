@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'User Management — Admin')
+@section('title', 'User Management - Admin')
 @section('admin-content')
 <div class="admin-page admin-user-management">
     <header class="admin-page-header">

@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Login — Daet Listens')
+@section('title', 'Login - Daet Listens')
 @section('content')
 
 {{-- When user is logged in, and tried to logged in new/existing account thru new tab after clicking submit button
@@ -21,7 +21,6 @@
     {{-- LEFT: Brand --}}
     <div class="auth-brand">
       <div class="auth-badge fu d1">
-        <span class="badge-dot"></span>
         Official Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
       </div>
 
@@ -37,20 +36,6 @@
         transparency and accountability.
       </p>
 
-      <div class="auth-stats fu d4">
-        <div class="auth-stat">
-          <div class="auth-stat-num">{{ $totalComplaints ?? '0' }}</div>
-          <div class="auth-stat-lbl">Filed</div>
-        </div>
-        <div class="auth-stat">
-          <div class="auth-stat-num">{{ $resolvedComplaints ?? '0' }}</div>
-          <div class="auth-stat-lbl">Resolved</div>
-        </div>
-        <div class="auth-stat">
-          <div class="auth-stat-num">{{ $avgDays ?? '—' }}</div>
-          <div class="auth-stat-lbl">Avg. Days</div>
-        </div>
-      </div>
     </div>
 
     {{-- RIGHT: Form --}}
@@ -127,10 +112,8 @@
 
   </div><!-- /.auth-layout -->
 
-  <div class="auth-footer">
-    <p><strong>Municipality of Daet</strong> &nbsp;&middot;&nbsp; Camarines Norte &nbsp;&middot;&nbsp; Official Transparency Portal</p>
-    <span class="footer-seal">Republic Act 6713 &nbsp;&middot;&nbsp; FOI Compliant</span>
-  </div>
+  {{-- Shared footer: carries the Terms and Conditions and the Privacy Policy. --}}
+  @include('layouts.partials.site-footer')
 </div>
 
 <style>
@@ -156,7 +139,7 @@
    */
   .auth-root {
       font-family: 'DM Sans', sans-serif;
-      padding-top: 64px;
+      padding-top: var(--navbar-height);
       min-height: 100svh;
       background: var(--navy);
       position: relative;
@@ -240,12 +223,6 @@
     font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
     color: rgba(201,168,76,0.8); background: rgba(201,168,76,0.06); width: fit-content;
   }
-  .badge-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: var(--gold); flex-shrink: 0;
-    animation: dot-pulse 2.4s infinite;
-  }
-  @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.3;transform:scale(0.6);} }
 
   .auth-brand-title {
     font-family: 'Cormorant Garamond', serif;
@@ -267,33 +244,6 @@
     max-width: 400px; margin-bottom: clamp(24px, 4vh, 48px);
   }
 
-  /* Mini stats */
-  .auth-stats {
-    display: flex;
-    border: 1px solid var(--border-gold); border-radius: 6px;
-    overflow: hidden; background: var(--border-gold); width: fit-content;
-  }
-  .auth-stat {
-    background: rgba(9,25,48,0.94);
-    padding: clamp(12px, 1.5vh, 18px) clamp(18px, 2vw, 28px);
-    transition: background 0.2s; position: relative;
-  }
-  .auth-stat::before {
-    content: ''; position: absolute; top: 0; left: 0;
-    width: 2px; height: 0; background: var(--gold); transition: height 0.35s ease;
-  }
-  .auth-stat:hover { background: rgba(18,41,77,0.96); }
-  .auth-stat:hover::before { height: 100%; }
-  .auth-stat + .auth-stat { border-left: 1px solid var(--border-gold); }
-  .auth-stat-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(20px, 2.2vw, 32px); font-weight: 700; color: var(--gold);
-    line-height: 1; margin-bottom: 4px; letter-spacing: -0.01em;
-  }
-  .auth-stat-lbl {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.13em;
-    text-transform: uppercase; color: rgba(255,255,255,0.35);
-  }
 
   /* ─── Form panel (RIGHT) ─── */
   .auth-form-panel {
@@ -410,15 +360,6 @@
   .alert-success { background: rgba(63,203,111,0.08); border: 1px solid rgba(63,203,111,0.2); color: #6ee7a0; }
 
   /* Footer */
-  .auth-footer {
-    position: relative; z-index: 2;
-    background: #060f1e; border-top: 1px solid rgba(201,168,76,0.1);
-    padding: 10px clamp(20px, 3vw, 48px);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .auth-footer p { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.06em; }
-  .auth-footer strong { color: rgba(201,168,76,0.4); }
-  .footer-seal { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.12); }
 
   /* Animations */
   @keyframes fadeUp { from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);} }
@@ -436,12 +377,11 @@
 
   /* ── Mobile ── */
   @media (max-width: 768px) {
-    .auth-root { min-height: calc(100svh - 64px); }
-    .auth-layout { grid-template-columns: 1fr; min-height: calc(100svh - 64px); }
+    .auth-root { min-height: calc(100svh - var(--navbar-height)); }
+    .auth-layout { grid-template-columns: 1fr; min-height: calc(100svh - var(--navbar-height)); }
     .auth-brand { display: none; }
     .auth-form-panel { padding: 48px 24px 80px; justify-content: flex-start; }
     .auth-decorations .auth-wm { display: none; }
-    .auth-footer { position: static; }
   }
 
   @media (max-width: 480px) {
@@ -450,4 +390,14 @@
   }
 </style>
 
+@endsection
+
+{{-- This page renders the shared footer inside its own full-height wrapper, so
+     the layout must not add a second one. See layouts/app.blade.php. --}}
+@section('site-footer')
+    {{-- Ownership marker only. The footer is rendered above, inside this page's
+         own layout wrapper. This section exists purely to tell the shell layout
+         not to add a second one, and it must contain something: `@hasSection`
+         compiles to a non-empty content check, so an empty section is ignored. --}}
+    <span hidden aria-hidden="true"></span>
 @endsection

@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Forgot Password — Daet Listens')
+@section('title', 'Forgot Password - Daet Listens')
 @section('content')
 
 <div class="auth-root">
@@ -60,10 +60,8 @@
     </div>
   </div>
 
-  <div class="auth-footer">
-    <p><strong>Municipality of Daet</strong> &nbsp;&middot;&nbsp; Camarines Norte &nbsp;&middot;&nbsp; Official Transparency Portal</p>
-    <span class="footer-seal">Republic Act 6713 &nbsp;&middot;&nbsp; FOI Compliant</span>
-  </div>
+  {{-- Shared footer: carries the Terms and Conditions and the Privacy Policy. --}}
+  @include('layouts.partials.site-footer')
 </div>
 
 <style>
@@ -84,7 +82,7 @@
 
   .auth-root {
     font-family: 'DM Sans', sans-serif;
-    padding-top: 64px;
+    padding-top: var(--navbar-height);
     min-height: 100svh;
     background: var(--navy);
     position: relative;
@@ -217,15 +215,6 @@
   .alert-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
   .alert-success { background: rgba(63,203,111,0.08); border: 1px solid rgba(63,203,111,0.2); color: #6ee7a0; }
 
-  .auth-footer {
-    position: relative; z-index: 2;
-    background: #060f1e; border-top: 1px solid rgba(201,168,76,0.1);
-    padding: 10px clamp(20px, 3vw, 48px);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .auth-footer p { font-size: 10px; color: rgba(255,255,255,0.2); letter-spacing: 0.06em; }
-  .auth-footer strong { color: rgba(201,168,76,0.4); }
-  .footer-seal { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.12); }
 
   @keyframes fadeUp { from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);} }
   .fu  { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both; }
@@ -234,10 +223,9 @@
   .d5  { animation-delay: 0.52s; }
 
   @media (max-width: 768px) {
-    .auth-root { min-height: calc(100svh - 64px); }
+    .auth-root { min-height: calc(100svh - var(--navbar-height)); }
     .auth-layout-centered { padding: 48px 24px 80px; }
     .auth-wm { display: none; }
-    .auth-footer { position: static; flex-direction: column; gap: 8px; text-align: center; }
   }
 
   @media (max-width: 480px) {
@@ -246,4 +234,14 @@
   }
 </style>
 
+@endsection
+
+{{-- This page renders the shared footer inside its own full-height wrapper, so
+     the layout must not add a second one. See layouts/app.blade.php. --}}
+@section('site-footer')
+    {{-- Ownership marker only. The footer is rendered above, inside this page's
+         own layout wrapper. This section exists purely to tell the shell layout
+         not to add a second one, and it must contain something: `@hasSection`
+         compiles to a non-empty content check, so an empty section is ignored. --}}
+    <span hidden aria-hidden="true"></span>
 @endsection

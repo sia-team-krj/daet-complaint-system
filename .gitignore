@@ -26,4 +26,5 @@ Thumbs.db
 # Local agent tooling
 /.opencode/
 /.qoder/
+/.impeccable/
 /AGENT_GUIDE.md

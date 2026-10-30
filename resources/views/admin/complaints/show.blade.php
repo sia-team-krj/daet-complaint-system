@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', $complaint->ticket_id . ' — Admin')
+@section('title', $complaint->ticket_id . ' - Admin')
 @section('admin-content')
 <div class="admin-page">
     <nav class="admin-breadcrumb" aria-label="Breadcrumb">
@@ -58,6 +58,28 @@
                         <div class="admin-prose-block">
                             <h2>Reported location</h2>
                             <p>{{ $complaint->address_text }}</p>
+                        </div>
+                    @endif
+
+                    {{--
+                        The exact position, for whoever is dispatched.
+
+                        An admin was seeing nothing here: this block only ever
+                        existed for address_text, and the exact position reached
+                        it only by accident, because the filing form wrote the
+                        coordinate into that field. Stopping that would have left
+                        the administrator with no position at all, so it is stated
+                        here explicitly. The public transparency page shows no
+                        more than the barangay, which makes this the only place
+                        the precise point appears - as it should be.
+                    --}}
+                    @if($complaint->latitude !== null && $complaint->longitude !== null)
+                        <div class="admin-prose-block">
+                            <h2>Exact coordinates</h2>
+                            <p class="admin-coords">
+                                {{ number_format((float) $complaint->latitude, 6) }},
+                                {{ number_format((float) $complaint->longitude, 6) }}
+                            </p>
                         </div>
                     @endif
                 </div>
@@ -136,14 +158,21 @@
                         </select>
                     </label>
 
-                    <label class="admin-field">
+                    {{--
+                        Public visibility is no longer an administrative field. It
+                        is the resident's decision, set when they file and
+                        changeable only by them, so there is nothing here to edit.
+                        Use the moderation panel below to withhold or redact the
+                        public presentation; that is a different power and the
+                        one this screen legitimately has.
+                    --}}
+                    <div class="admin-field">
                         <span>Public visibility</span>
                         <span class="admin-checkbox-field">
-                            <input type="hidden" name="is_public" value="0">
-                            <input type="checkbox" name="is_public" value="1" @checked($complaint->is_public)>
-                            <span>Show on the public transparency register after verification</span>
+                            <strong>{{ $complaint->is_public ? 'Published by the resident' : 'Kept private by the resident' }}</strong>
+                            <span>Not editable here. An admin can moderate the public page but cannot consent on a resident's behalf.</span>
                         </span>
-                    </label>
+                    </div>
 
                     <label class="admin-field">
                         <span>Review notes</span>
@@ -166,7 +195,7 @@
                             <option value="">Unassigned</option>
                             @foreach($staffMembers as $staff)
                                 <option value="{{ $staff->id }}" data-department-id="{{ $staff->department_id }}" @selected((string) $complaint->assigned_staff_id === (string) $staff->id)>
-                                    {{ $staff->full_name }} — {{ $staff->department?->name ?? 'Unassigned' }}
+                                    {{ $staff->full_name }} - {{ $staff->department?->name ?? 'Unassigned' }}
                                 </option>
                             @endforeach
                         </select>
@@ -215,6 +244,81 @@
         </aside>
     </div>
 </div>
+
+{{--
+    Admin moderation. Same capability and same limits as the department
+    verifier's: withhold or redact, with a reason, and never publish.
+--}}
+<div class="moderation-panel">
+  <h3 class="moderation-panel__title">Public presentation</h3>
+  <p class="moderation-panel__lede">You can withhold this report or clean up sensitive parts of it. You cannot publish or unpublish it.</p>
+
+  <p class="moderation-panel__consent">
+    <strong>{{ $complaint->is_public ? 'The resident published this.' : 'The resident kept this private.' }}</strong>
+    {{ $complaint->is_public
+        ? 'It appears on the transparency page under their display alias. Moderating below can withhold it, but nothing here can change that choice.'
+        : 'It does not appear on the transparency page, and nothing you do here can put it there.' }}
+  </p>
+
+  <form method="POST" action="{{ route('admin.complaints.moderate', $complaint) }}">
+    @csrf
+
+    <div class="moderation-field">
+      <label class="moderation-check" for="admin-moderation-hide">
+        <input type="hidden" name="hidden_from_public" value="0">
+        <input type="checkbox" id="admin-moderation-hide" name="hidden_from_public" value="1" @checked($complaint->hidden_from_public)>
+        <span class="moderation-check__text">Remove this report from the public transparency page</span>
+      </label>
+    </div>
+
+    <div class="moderation-field">
+      <label for="admin-redacted_title">Replacement title for the public page</label>
+      <input type="text" id="admin-redacted_title" name="redacted_title" maxlength="255"
+             value="{{ old('redacted_title', $complaint->redacted_title) }}"
+             placeholder="{{ $complaint->title }}">
+    </div>
+
+    <div class="moderation-field">
+      <label for="admin-redacted_description">Replacement description for the public page</label>
+      <textarea id="admin-redacted_description" name="redacted_description" rows="4" maxlength="5000"
+                placeholder="{{ $complaint->description }}">{{ old('redacted_description', $complaint->redacted_description) }}</textarea>
+    </div>
+
+    @if (count($complaint->allImagePaths()) > 0)
+      <div class="moderation-field">
+        <label>Evidence photos</label>
+        <div class="moderation-photos">
+          @foreach ($complaint->allImagePaths() as $path)
+            @php $isWithheld = in_array($path, $complaint->withheldImagePaths(), true); @endphp
+            <div class="moderation-photo">
+              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ basename($path) }}</span>
+              @if ($isWithheld)
+                <label style="margin: 0; color: var(--color-gold); cursor: pointer;">
+                  <input type="checkbox" name="restore_image_paths[]" value="{{ $path }}"> Restore
+                </label>
+              @else
+                <label style="margin: 0; cursor: pointer;">
+                  <input type="checkbox" name="withheld_image_paths[]" value="{{ $path }}"> Withhold
+                </label>
+              @endif
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+
+    <div class="moderation-field">
+      <label for="admin-moderation_reason">Reason (required)</label>
+      <textarea id="admin-moderation_reason" name="moderation_reason" rows="2" maxlength="1000"
+                placeholder="Why is this being withheld or cleaned up?">{{ old('moderation_reason', $complaint->moderation_reason) }}</textarea>
+    </div>
+
+    @error('moderation_reason') <div class="filing-error">{{ $message }}</div> @enderror
+
+    <button type="submit" class="moderation-panel__submit">Save moderation</button>
+  </form>
+</div>
+
 @endsection
 
 @push('scripts')

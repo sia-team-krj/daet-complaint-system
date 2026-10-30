@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Complaint Submitted — ' . $complaint->ticket_id)
+@section('title', 'Complaint Submitted - ' . $complaint->ticket_id)
 
 @section('content')
 <style>
@@ -14,7 +14,7 @@
   }
   
   .success-root {
-    min-height: calc(100svh - 64px);
+    min-height: calc(100svh - var(--navbar-height));
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
     position: relative;
     display: flex;

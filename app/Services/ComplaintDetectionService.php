@@ -64,6 +64,11 @@ class ComplaintDetectionService
             $reasons[] = 'Description is unusually short';
         }
 
+        if ($this->isGibberish($title . ' ' . $description)) {
+            $score += 40;
+            $reasons[] = 'Contains keyboard mashing or random gibberish text';
+        }
+
         $letters = preg_replace('/[^A-Z]/', '', $title) ?? '';
         if (mb_strlen($letters) >= 12 && $letters === mb_strtoupper($letters)) {
             $score += 10;
@@ -170,5 +175,45 @@ class ComplaintDetectionService
         $words = preg_split('/[^\pL\pN]+/u', $value, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         return array_values(array_diff(array_filter($words, fn ($word) => mb_strlen($word) >= 4), $stopWords));
+    }
+
+    /**
+     * Detect keyboard mashing, repeated nonsense, or random character strings.
+     */
+    private function isGibberish(string $text): bool
+    {
+        $words = preg_split('/\s+/', $text) ?: [];
+
+        foreach ($words as $rawWord) {
+            $clean = strtolower(preg_replace('/[^a-z]/i', '', $rawWord) ?? '');
+            $len = strlen($clean);
+
+            if ($len < 10) {
+                continue;
+            }
+
+            // 1. Extreme word length without spaces (e.g. 35+ continuous letters)
+            if ($len > 35) {
+                return true;
+            }
+
+            // 2. 5 or more consecutive consonants (rare/impossible in natural text)
+            if (preg_match('/[bcdfghjklmnpqrstvwxyz]{5,}/i', $clean)) {
+                return true;
+            }
+
+            // 3. Repeating 2-4 character chunks (e.g., "adadasd", "qweqweqwe")
+            if (preg_match('/(.{2,4})\1{2,}/i', $clean)) {
+                return true;
+            }
+
+            // 4. Low character diversity / repetitive alphabet keys in strings >= 12 chars
+            $uniqueChars = count(count_chars($clean, 1));
+            if ($len >= 12 && ($uniqueChars / $len) < 0.35) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

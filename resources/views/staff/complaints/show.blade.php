@@ -1,5 +1,6 @@
 @extends('staff.layouts.app')
-@section('title', $complaint->ticket_id . ' — Staff View')
+@section('title', $complaint->ticket_id . ' - Staff View')
+
 
 @section('staff-content')
 <style>
@@ -20,7 +21,7 @@
   }
 
   .staff-root {
-    min-height: calc(100svh - 64px);
+    min-height: calc(100svh - var(--navbar-height));
     background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
     position: relative;
     padding: 40px 0;
@@ -89,7 +90,7 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .fu { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both; }
+  .fu { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1) both; }
   .d1 { animation-delay: 0.04s; }
   .d2 { animation-delay: 0.14s; }
   .d3 { animation-delay: 0.24s; }
@@ -339,6 +340,23 @@
     height: 280px;
     border-radius: 0 0 6px 6px;
     overflow: hidden;
+  }
+  /* A pin on a map is not something you can type into a handheld GPS, and
+     reaching the site without signal is when the numbers matter most. */
+  .complaint-coords {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  .complaint-coords__value {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
   }
   .map-placeholder {
     height: 280px;
@@ -1018,19 +1036,77 @@
                 <div class="form-hint">Required when the review decision is Verified.</div>
               </div>
               <div class="form-group">
+                <label class="form-label" for="verification_method">How was this checked</label>
+                <select name="verification_method" id="verification_method" class="form-select">
+                  <option value="">Not recorded</option>
+                  @foreach(\App\Enums\VerificationMethod::cases() as $methodOption)
+                    <option value="{{ $methodOption->value }}" @selected($complaint->verification_method === $methodOption->value)>{{ $methodOption->label() }}</option>
+                  @endforeach
+                </select>
+                <div class="form-hint">This is what the public register shows. "Report reviewed" and "Site attended" are different claims.</div>
+              </div>
+              <div class="form-group">
                 <label class="form-label" for="review_notes">Review notes</label>
                 <textarea name="review_notes" id="review_notes" class="form-textarea" rows="3" placeholder="Record what was checked and why.">{{ old('review_notes', $complaint->review_notes) }}</textarea>
               </div>
-              <label class="review-public-toggle">
-                <input type="hidden" name="is_public" value="0">
-                <input type="checkbox" name="is_public" value="1" @checked($complaint->is_public)>
-                <span>Allow this verified report on the public transparency register</span>
-              </label>
               <button type="submit" class="btn-submit">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
                 Save review decision
               </button>
             </form>
+
+            {{-- Verification is a capability, so these only render for staff who
+                 actually hold it. Everything above stays visible to every staff
+                 member; only the decision is gated. --}}
+            @if(auth()->user()->canVerifyComplaints())
+              <div class="verification-extra">
+                <h3 class="verification-extra__title">Need more before deciding?</h3>
+
+                @php $outstandingRequest = $complaint->outstandingInformationRequest(); @endphp
+
+                @if($outstandingRequest)
+                  <div class="verification-request verification-request--{{ $outstandingRequest->status->value }}">
+                    <p class="verification-request__status">{{ $outstandingRequest->status->label() }} · round {{ $outstandingRequest->round }}</p>
+                    <p class="verification-request__question">{{ $outstandingRequest->question }}</p>
+                    @if($outstandingRequest->response_text)
+                      <p class="verification-request__response">
+                        <strong>Resident replied:</strong> {{ $outstandingRequest->response_text }}
+                      </p>
+                    @endif
+                  </div>
+                @else
+                  <form method="POST" action="{{ route('staff.complaints.verification.request-information', $complaint) }}" class="verification-extra__form">
+                    @csrf
+                    <div class="form-group">
+                      <label class="form-label" for="question">What is missing?</label>
+                      <textarea name="question" id="question" class="form-textarea" rows="3" required minlength="15" maxlength="1000" placeholder="The streetlight photo is too dark to read the pole number. Please send a closer shot.">{{ old('question') }}</textarea>
+                      <div class="form-hint">The resident sees this question, so be specific about what would settle it.</div>
+                      @error('question')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <button type="submit" class="btn-submit btn-submit--ghost">Ask the resident for more evidence</button>
+                  </form>
+                @endif
+
+                @if($departmentVerifiers->isNotEmpty())
+                  <form method="POST" action="{{ route('staff.complaints.verification.delegate', $complaint) }}" class="verification-extra__form">
+                    @csrf
+                    <div class="form-group">
+                      <label class="form-label" for="verifying_staff_id">Hand verification to</label>
+                      <select name="verifying_staff_id" id="verifying_staff_id" class="form-select">
+                        @foreach($departmentVerifiers as $verifierOption)
+                          <option value="{{ $verifierOption->id }}" @selected($complaint->verifying_staff_id === $verifierOption->id)>
+                            {{ $verifierOption->full_name }}{{ $verifierOption->id === $complaint->assigned_staff_id ? ' (assigned worker)' : '' }}
+                          </option>
+                        @endforeach
+                      </select>
+                      <div class="form-hint">The assigned worker cannot verify their own assignment.</div>
+                      @error('verifying_staff_id')<div class="form-error">{{ $message }}</div>@enderror
+                    </div>
+                    <button type="submit" class="btn-submit btn-submit--ghost">Hand over verification</button>
+                  </form>
+                @endif
+              </div>
+            @endif
           </div>
         </div>
 
@@ -1056,8 +1132,16 @@
             </div>
             <div class="card-header-title">Complaint Location</div>
           </div>
-          @if($complaint->latitude && $complaint->longitude)
-            <div id="complaint-map" class="map-container"></div>
+          @if($complaint->latitude !== null && $complaint->longitude !== null)
+            <div id="complaint-map" class="map-container"
+                 data-latitude="{{ (float) $complaint->latitude }}"
+                 data-longitude="{{ (float) $complaint->longitude }}"></div>
+            <div class="complaint-coords">
+              <span class="complaint-coords__value">{{ number_format((float) $complaint->latitude, 6) }}, {{ number_format((float) $complaint->longitude, 6) }}</span>
+              @if($complaint->user?->barangay)
+                <span>{{ $complaint->user->barangay }}</span>
+              @endif
+            </div>
           @else
             <div class="map-placeholder">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1255,11 +1339,164 @@
     </div>
   </div>
 </div>
+
+{{--
+    Moderation, not publication.
+
+    This used to be a checkbox that let a reviewer put a report on the public
+    register. It is gone: whether a resident's complaint is public is their
+    decision, and no review form can override it. What remains is the power to
+    withhold or redact content that should not be broadcast, which is a
+    different question and needs a stated reason.
+--}}
+<div class="moderation-panel">
+  <h3 class="moderation-panel__title">Public presentation</h3>
+  <p class="moderation-panel__lede">You can withhold this report or clean up sensitive parts of it. You cannot publish or unpublish it.</p>
+
+  <p class="moderation-panel__consent">
+    <strong>{{ $complaint->is_public ? 'The resident published this.' : 'The resident kept this private.' }}</strong>
+    {{ $complaint->is_public
+        ? 'It appears on the transparency page under their display alias. Moderating below can withhold it, but nothing here can change that choice.'
+        : 'It does not appear on the transparency page, and nothing you do here can put it there.' }}
+  </p>
+
+  <form method="POST" action="{{ route('staff.complaints.moderate', $complaint) }}">
+    @csrf
+
+    <div class="moderation-field">
+      <label class="moderation-check" for="moderation-hide">
+        <input type="hidden" name="hidden_from_public" value="0">
+        <input type="checkbox" id="moderation-hide" name="hidden_from_public" value="1" @checked($complaint->hidden_from_public)>
+        <span class="moderation-check__text">Remove this report from the public transparency page</span>
+      </label>
+    </div>
+
+    <div class="moderation-field">
+      <label for="redacted_title">Replacement title for the public page</label>
+      <input type="text" id="redacted_title" name="redacted_title" maxlength="255"
+             value="{{ old('redacted_title', $complaint->redacted_title) }}"
+             placeholder="{{ $complaint->title }}">
+      <small class="visibility-panel__lede">Leave blank to show the original title unchanged.</small>
+    </div>
+
+    <div class="moderation-field">
+      <label for="redacted_description">Replacement description for the public page</label>
+      <textarea id="redacted_description" name="redacted_description" rows="4" maxlength="5000"
+                placeholder="{{ $complaint->description }}">{{ old('redacted_description', $complaint->redacted_description) }}</textarea>
+      <small class="visibility-panel__lede">Leave blank to show the original description unchanged.</small>
+    </div>
+
+    @if (count($complaint->allImagePaths()) > 0)
+      <div class="moderation-field">
+        <label>Evidence photos</label>
+        <div class="moderation-photos">
+          @foreach ($complaint->allImagePaths() as $path)
+            @php $isWithheld = in_array($path, $complaint->withheldImagePaths(), true); @endphp
+            <div class="moderation-photo">
+              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ basename($path) }}</span>
+              @if ($isWithheld)
+                <input type="hidden" name="restore_image_paths[]" value="{{ $path }}">
+                <label style="margin: 0; color: var(--color-gold); cursor: pointer;">
+                  <input type="checkbox" name="restore_image_paths[]" value="{{ $path }}"> Restore
+                </label>
+              @else
+                <label style="margin: 0; cursor: pointer;">
+                  <input type="checkbox" name="withheld_image_paths[]" value="{{ $path }}"> Withhold
+                </label>
+              @endif
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
+
+    <div class="moderation-field">
+      <label for="moderation_reason">Reason (required)</label>
+      <textarea id="moderation_reason" name="moderation_reason" rows="2" maxlength="1000"
+                placeholder="Why is this being withheld or cleaned up?">{{ old('moderation_reason', $complaint->moderation_reason) }}</textarea>
+    </div>
+
+    @error('moderation_reason') <div class="filing-error">{{ $message }}</div> @enderror
+
+    <button type="submit" class="moderation-panel__submit">Save moderation</button>
+  </form>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
     (() => {
+        /*
+         * The location map.
+         *
+         * This was missing entirely: the page rendered a #complaint-map div and
+         * the stylesheet for it, but never loaded Leaflet and never built a map
+         * in it. A staff member dispatched to a complaint saw an empty box. The
+         * coordinates are printed underneath it, so the work can still be done,
+         * but the map looked broken rather than absent, which is how it survived
+         * so long.
+         *
+         * The map is what a field worker recognises their destination by. The
+         * digits are what they type into a handheld GPS when the phone has no
+         * signal. Both are on this page deliberately.
+         */
+        const buildComplaintMap = () => {
+            const mapElement = document.getElementById('complaint-map');
+            if (!mapElement) return;
+            if (mapElement.dataset.mapInitialized === 'true') return;
+            mapElement.dataset.mapInitialized = 'true';
+
+            const latitude = Number.parseFloat(mapElement.dataset.latitude);
+            const longitude = Number.parseFloat(mapElement.dataset.longitude);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+            const map = window.L.map(mapElement, {
+                scrollWheelZoom: false,
+            }).setView([latitude, longitude], 16);
+
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 18,
+            }).addTo(map);
+
+            window.L.marker([latitude, longitude]).addTo(map);
+
+            // Leaflet measures its container once and caches that. A desktop
+            // viewport has settled by then; a phone has not - the URL bar
+            // collapses, scrollbars come and go, a late webfont reflows the card
+            // around the map - and a map sized from a stale measurement renders
+            // as a blank band or a strip of clipped tiles. `animate: false`
+            // because a re-measure is not a user gesture and should not zoom the
+            // map at them.
+            const keepMapSized = () => map.invalidateSize({ animate: false });
+
+            window.requestAnimationFrame(keepMapSized);
+            window.setTimeout(keepMapSized, 300);
+            window.addEventListener('resize', keepMapSized);
+            window.addEventListener('orientationchange', () => {
+                window.setTimeout(keepMapSized, 150);
+            });
+        };
+
+        // Leaflet is bundled rather than fetched from a CDN, but a bundled
+        // module is deferred and this inline script is not, so the map waits for
+        // the callback rather than reaching for window.L and finding it undefined
+        // on a page that is otherwise fine.
+        const startComplaintMap = () => window.whenLeafletReady(buildComplaintMap, {
+            onUnavailable: () => {
+                const mapElement = document.getElementById('complaint-map');
+                if (!mapElement) return;
+                mapElement.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.55);font-size:12px">Map unavailable. The coordinates below can still be entered in a handheld GPS.</div>';
+            },
+        });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', startComplaintMap);
+        } else {
+            startComplaintMap();
+        }
+
         const initializeDocumentationProof = () => {
             const form = document.getElementById('staff-response-form');
             if (!form || form.dataset.documentationProofInitialized === 'true') return;

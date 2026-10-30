@@ -108,6 +108,10 @@ class ActivityLogTest extends TestCase
         ])->assertRedirect(route('admin.staff.index'));
 
         $staff = User::where('email', 'maria.santos@example.com')->sole();
+        $this->assertDatabaseHas('email_verification_codes', [
+            'user_id' => $staff->id,
+            'purpose' => 'registration',
+        ]);
 
         $this->actingAs($this->admin)
             ->post(route('admin.staff.toggle', $staff))

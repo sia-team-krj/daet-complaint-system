@@ -75,7 +75,6 @@
 - `resources/views/layouts/guest-navbar.blade.php` — Added `aria-expanded`, fixed mobile menu to use `.hidden` class consistently, updated JS to use `classList`
 - `resources/views/pages/home.blade.php` — Removed redundant font import, added `prefers-reduced-motion`
 - `resources/views/pages/home/guest.blade.php` — Fixed empty `href=""` CTAs → proper routes, added `prefers-reduced-motion`
-- `resources/views/pages/rewards/index.blade.php` — Removed font import, added `prefers-reduced-motion`
 - `resources/views/pages/transparency/index.blade.php` — Removed font import, added `prefers-reduced-motion`
 - `resources/views/auth/login.blade.php` — Removed `user-select: none` from labels
 - `resources/views/auth/register.blade.php` — Removed `user-select: none` from labels
@@ -120,11 +119,23 @@
 
 - `PASSWORD_REQUIREMENTS_PLAN.md` documents the registration and invitation UX before implementation
 - Added shared live password checklist to standard registration and invitation redemption
-- Requirements update as the user types: 8+ characters, uppercase/lowercase, and at least one number
+- Requirements update as the user types: 8+ characters, separate uppercase and lowercase letters, and at least one number
+- Re-initializes after Livewire navigation and removes the redundant strength meter labels
+- Replaced the registration Barangay select with a searchable, keyboard-accessible suggestion field
 - Added accessible status markers and `aria-live` feedback without exposing password values
 - Fixed invitation initialization by adding the missing `id="password"` target
 - `PASSWORD_REQUIREMENTS_FIX_PLAN.md` records the interaction defect and correction
-- Verification: 35 tests passing, 126 assertions; production build and diff checks successful
+- Verification: 92 tests passing, 494 assertions; production build and diff checks successful
+
+## Email OTP Verification — Completed
+
+- Added hashed, expiring six-digit OTP records with attempt and resend limits
+- Registration now creates an unverified account, sends an OTP, and redirects to `/email/verify`
+- Staff invitation redemption and direct staff creation also issue a first OTP
+- Protected citizen, staff, and admin routes require a verified email
+- Registered users can request a new email and verify it before replacing the current address
+- Added Mailpit-compatible SMTP fallback and Brevo API delivery for OTP
+- Added Brevo API key, sender, and endpoint configuration for production
 
 ## Staff Dashboard Workspace — Completed
 

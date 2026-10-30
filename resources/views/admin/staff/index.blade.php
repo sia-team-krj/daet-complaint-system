@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Staff Accounts — Admin')
+@section('title', 'Staff Accounts - Admin')
 @section('admin-content')
 <div class="admin-page">
     <header class="admin-page-header">
@@ -29,7 +29,12 @@
                         <td>{{ $staffMember->email }}</td>
                         <td>{{ $staffMember->department?->name ?? 'Unassigned' }}</td>
                         <td class="admin-muted-cell">{{ $staffMember->contact_number ?? 'Not provided' }}</td>
-                        <td><span class="admin-status {{ $staffMember->is_active ? 'admin-status--active' : 'admin-status--revoked' }}">{{ $staffMember->is_active ? 'Active' : 'Inactive' }}</span></td>
+                        <td>
+                            <span class="admin-status {{ $staffMember->is_active ? 'admin-status--active' : 'admin-status--revoked' }}">{{ $staffMember->is_active ? 'Active' : 'Inactive' }}</span>
+                            @if($staffMember->can_verify)
+                                <span class="admin-status admin-status--ready">Verifier</span>
+                            @endif
+                        </td>
                         <td>
                             <div class="admin-staff-actions">
                                 <form method="POST" action="{{ route('admin.staff.update-department', $staffMember) }}">
@@ -41,6 +46,12 @@
                                             <option value="{{ $department->id }}" @selected((string) $staffMember->department_id === (string) $department->id)>{{ $department->name }}</option>
                                         @endforeach
                                     </select>
+                                </form>
+                                <form method="POST" action="{{ route('admin.staff.toggle-verification', $staffMember) }}" onsubmit="return confirm('{{ $staffMember->can_verify ? 'Revoke' : 'Grant' }} verification rights for {{ $staffMember->full_name }}?')">
+                                    @csrf
+                                    <button type="submit" class="admin-button admin-button--compact {{ $staffMember->can_verify ? 'admin-button--secondary' : 'admin-button--primary' }}">
+                                        {{ $staffMember->can_verify ? 'Revoke verifier' : 'Make verifier' }}
+                                    </button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.staff.toggle', $staffMember) }}" onsubmit="return confirm('{{ $staffMember->is_active ? 'Deactivate' : 'Activate' }} {{ $staffMember->full_name }}?')">
                                     @csrf

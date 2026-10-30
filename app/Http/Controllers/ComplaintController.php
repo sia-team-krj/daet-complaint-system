@@ -7,17 +7,25 @@ use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Models\Department;
+use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\ComplaintDetectionService;
 use App\Services\ComplaintPriorityService;
+use App\Services\ComplaintVerificationService;
 use App\Services\DepartmentRouter;
+use App\Services\NotificationService;
+use App\Services\BarangayLocator;
+use App\Services\PendingLocationUpload;
 use App\Services\PhotoLocationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -40,6 +48,25 @@ class ComplaintController extends Controller
         'stray_animals',
         'others',
     ];
+
+    /**
+     * Visibility of a complaint on the public transparency page.
+     *
+     * These are the values the filing form submits. They are the resident's
+     * choice alone — staff and admins have no route that writes them, only
+     * moderation, which is a separate decision with its own reason trail.
+     */
+    public const VISIBILITY_PRIVATE = 'private';
+
+    public const VISIBILITY_PUBLIC = 'public';
+
+    /**
+     * Which location a complaint is filed at when a photo's own GPS and the pin
+     * the resident placed disagree.
+     */
+    public const LOCATION_CHOICE_PHOTO = 'photo';
+
+    public const LOCATION_CHOICE_MAP = 'map';
 
     /**
      * List all complaints for the authenticated user.
@@ -75,9 +102,149 @@ class ComplaintController extends Controller
     {
         $this->authorize('view', $complaint);
 
-        $complaint->load(['department', 'logs.actor']);
+        $complaint->load(['department', 'logs.actor', 'informationRequests.requester']);
 
         return view('complaints.show', compact('complaint'));
+    }
+
+    /**
+     * The resident changes whether their own complaint is public.
+     *
+     * Ownership is checked explicitly rather than inferred from a policy so
+     * that the reason this is resident-only is legible here. Staff and admins
+     * can moderate content, but consent is not theirs to give or withdraw.
+     */
+    public function updateVisibility(Request $request, Complaint $complaint, ActivityLogger $activityLogger)
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $complaint->visibilityIsOwnedBy($user),
+            403,
+            'Only the resident who filed this complaint can change whether it is public.',
+        );
+
+        $validated = $request->validate([
+            'visibility' => ['required', Rule::in([self::VISIBILITY_PRIVATE, self::VISIBILITY_PUBLIC])],
+        ]);
+
+        $wasPublic = $complaint->is_public;
+        $isPublic = $validated['visibility'] === self::VISIBILITY_PUBLIC;
+
+        if ($wasPublic === $isPublic) {
+            return redirect()
+                ->route('complaints.show', $complaint)
+                ->with('status', $isPublic
+                    ? 'This complaint is already published on the transparency page.'
+                    : 'This complaint is already private.');
+        }
+
+        $complaint->update(['is_public' => $isPublic]);
+
+        $activityLogger->log(
+            'complaint.visibility_changed',
+            $isPublic
+                ? "{$user->full_name} published complaint {$complaint->ticket_id} on the transparency page."
+                : "{$user->full_name} made complaint {$complaint->ticket_id} private.",
+            $complaint,
+            metadata: [
+                'from' => $wasPublic ? self::VISIBILITY_PUBLIC : self::VISIBILITY_PRIVATE,
+                'to' => $isPublic ? self::VISIBILITY_PUBLIC : self::VISIBILITY_PRIVATE,
+            ],
+        );
+
+        return redirect()
+            ->route('complaints.show', $complaint)
+            ->with('status', $isPublic
+                ? 'Your complaint is now published on the public transparency page.'
+                : 'Your complaint is now private and has been removed from the transparency page.');
+    }
+
+    /**
+     * The resident answers a verifier's request for better evidence.
+     *
+     * This is the only write path a resident has on an existing complaint, and
+     * it exists solely to close the verification loop. Without it the "needs
+     * information" state is a dead end: the dashboard can announce it, but the
+     * resident can do nothing about it.
+     */
+    public function provideInformation(
+        Request $request,
+        Complaint $complaint,
+        ComplaintVerificationService $verification,
+        PhotoLocationService $photoLocationService,
+        ActivityLogger $activityLogger,
+        NotificationService $notifications,
+    ): RedirectResponse {
+        $this->authorize('view', $complaint);
+
+        $validated = $request->validate([
+            'response' => ['required', 'string', 'min:10', 'max:2000'],
+            'images' => ['nullable', 'array', 'max:5'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'response.min' => 'Please write at least a sentence so the department has something to work with.',
+        ]);
+
+        $photos = $request->file('images', []);
+        $storedPaths = [];
+
+        try {
+            foreach ($photos as $photo) {
+                $path = $photo->store('complaints/information', 'minio');
+
+                if (! is_string($path) || $path === '') {
+                    throw new \RuntimeException('The additional photo could not be stored.');
+                }
+
+                $storedPaths[] = $path;
+            }
+        } catch (Throwable $exception) {
+            Storage::disk('minio')->delete($storedPaths);
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['images' => 'We could not save your photos. Please try again.']);
+        }
+
+        // Re-read the photo GPS so a verifier can compare it against the
+        // original report, exactly as they can for a first submission.
+        $photoLocation = ($photos[0] ?? null) !== null
+            ? $photoLocationService->extract($photos[0])
+            : null;
+
+        try {
+            $informationRequest = $verification->recordResidentReply(
+                $complaint,
+                Auth::user(),
+                $validated['response'],
+                $storedPaths,
+            );
+        } catch (ValidationException $exception) {
+            // Never leave orphaned uploads behind when the reply is refused.
+            Storage::disk('minio')->delete($storedPaths);
+
+            return back()
+                ->withInput()
+                ->withErrors($exception->errors())
+                ->with('error', $exception->getMessage());
+        }
+
+        $activityLogger->log(
+            'complaint.information_provided',
+            "Resident provided more evidence on {$complaint->ticket_id} (round {$informationRequest->round}"
+                .($photoLocation ? ', photo GPS available' : '')
+                .').',
+            $complaint,
+        );
+
+        $notifications->informationProvided($complaint, $informationRequest);
+
+        return back()->with(
+            'status',
+            'Thank you. The department has your additional details and will continue the review.',
+        );
     }
 
     /**
@@ -127,7 +294,11 @@ class ComplaintController extends Controller
     {
         $this->ensurePublicTransparencyComplaint($complaint);
 
-        $paths = $complaint->evidence_images;
+        // Indexed against the PUBLIC path list, not the full one. Serving from
+        // the full list would let anyone holding a URL for photo 1 fetch a
+        // photo that has since been withheld, which is precisely what
+        // withholding a photo is supposed to prevent.
+        $paths = $complaint->publicImagePaths();
 
         if (! array_key_exists($index, $paths)) {
             abort(404);
@@ -212,11 +383,20 @@ class ComplaintController extends Controller
     /**
      * Show the complaint creation form.
      */
-    public function create()
+    public function create(PendingLocationUpload $pendingUpload)
     {
         $categoryOptions = DepartmentRouter::getCategoryOptions();
 
-        return view('complaints.create', compact('categoryOptions'));
+        // A resident sent back to the form to answer the location question must
+        // find that question still there, with their photos still attached.
+        // Reading it from the staged upload rather than the session flash means a
+        // refresh, a back button or a second tab does not lose the decision.
+        $pending = $pendingUpload->pending();
+
+        return view('complaints.create', [
+            'categoryOptions' => $categoryOptions,
+            'locationConflict' => $pending['context'] ?? null,
+        ]);
     }
 
     /**
@@ -229,10 +409,13 @@ class ComplaintController extends Controller
      */
     public function store(
         Request $request,
+        NotificationService $notifications,
         ActivityLogger $activityLogger,
         ComplaintDetectionService $detector,
         ComplaintPriorityService $priorityService,
         PhotoLocationService $photoLocationService,
+        PendingLocationUpload $pendingUpload,
+        BarangayLocator $barangays,
     ) {
         $validated = $request->validate([
             'category' => ['required', 'string', 'in:'.implode(',', self::VALID_CATEGORIES)],
@@ -245,20 +428,57 @@ class ComplaintController extends Controller
             'camera_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'terms' => ['accepted'],
+            // Jurisdiction, not just a coordinate range. `between:-90,90` accepted
+            // a pin anywhere on the planet; a complaint outside Daet has no
+            // department to route to and no business being on this system.
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            // The resident's own decision on whether this may appear on the
+            // public transparency page. `private` is the default, both in the
+            // validation below and in the schema, so a form that predates this
+            // field — a bookmarked page, an old client — files privately
+            // rather than publishing by accident.
+            'visibility' => ['nullable', Rule::in([self::VISIBILITY_PRIVATE, self::VISIBILITY_PUBLIC])],
             'address_text' => ['nullable', 'string', 'max:500'],
+            // The resident's own answer to "which barangay is this?", which they
+            // are simply asked rather than guessed for. Guessing from a single
+            // reference point per barangay gets it wrong across most of a large
+            // barangay, and Daet is only 10 km across, so the guess was showing
+            // residents the wrong area for their own home.
+            //
+            // Nullable rather than required so that a form predating this field
+            // — a bookmarked page, an old client — still files. It falls back to
+            // the barangay the resident gave at registration, which is their own
+            // statement rather than our inference, so the column is never
+            // populated from a guess.
+            'barangay' => [
+                'nullable',
+                'string',
+                Rule::in(User::BARANGAYS),
+            ],
+            // Which of two disagreeing locations the resident means. Only
+            // present when the form asked; absent on a first, unambiguous submit.
+            'location_choice' => ['nullable', Rule::in([
+                self::LOCATION_CHOICE_PHOTO,
+                self::LOCATION_CHOICE_MAP,
+            ])],
         ]);
 
         $photos = $this->evidencePhotos($request);
 
-        if ($photos === []) {
+        // Evidence is required, but on the second pass of a location decision the
+        // photos are already held rather than re-uploaded — asking for them again
+        // would make the resident re-attach three photos from a phone to answer a
+        // yes/no question, so the holding area counts as having them.
+        $hasHeldPhotos = $pendingUpload->hasStagedFiles();
+
+        if ($photos === [] && ! $hasHeldPhotos) {
             return back()
                 ->withInput()
                 ->withErrors(['images' => 'Add at least one clear photo of the issue.']);
         }
 
-        if (count($photos) > 5) {
+        if ($photos !== [] && count($photos) > 5) {
             return back()
                 ->withInput()
                 ->withErrors(['images' => 'You can attach a maximum of five photos.']);
@@ -279,16 +499,101 @@ class ComplaintController extends Controller
             }
         }
 
-        $imagePaths = [];
-        try {
-            foreach ($photos as $photo) {
-                $path = $photo->store('complaints', 'minio');
+        // On the second pass there is no file to read, so the photo's coordinates
+        // come from what was recorded when the question was first asked.
+        if ($photoLocation === null && $hasHeldPhotos) {
+            $photoLocation = $pendingUpload->pending()['context']['photo'] ?? null;
+        }
 
-                if (! is_string($path) || $path === '') {
-                    throw new \RuntimeException('The evidence photo could not be stored.');
+        /*
+         * Which of the two locations wins.
+         *
+         * The photo's own GPS used to be applied silently and unconditionally, so
+         * a photo taken at home filed the complaint at home while the resident
+         * stood at the pothole and pointed at the map. That is a trust problem
+         * more than a data problem: the system was choosing on their behalf and
+         * saying nothing. When the two disagree by more than a rounding error,
+         * the resident is asked, and the uploads are parked so they do not have
+         * to attach the same photos twice.
+         */
+        $choice = $validated['location_choice'] ?? null;
+
+        if ($choice === null
+            && $pendingUpload->isConflict(
+                $photoLocation,
+                $validated['latitude'] ?? null,
+                $validated['longitude'] ?? null,
+            )) {
+            $imagePaths = [];
+            try {
+                foreach ($photos as $photo) {
+                    $path = $photo->store('complaints', 'minio');
+
+                    if (! is_string($path) || $path === '') {
+                        throw new \RuntimeException('The evidence photo could not be stored.');
+                    }
+
+                    $imagePaths[] = $path;
                 }
 
-                $imagePaths[] = $path;
+                $mapLocation = [
+                    'latitude' => (float) $validated['latitude'],
+                    'longitude' => (float) $validated['longitude'],
+                ];
+
+                // Residents are shown a barangay, never a coordinate. Four
+                // decimal places of latitude is not a place anyone recognises,
+                // and it is the same information we have decided not to publish.
+                $pendingUpload->stage($imagePaths, [
+                    'photo' => $photoLocation + [
+                        'barangay' => $barangays->describe($photoLocation['latitude'], $photoLocation['longitude']),
+                    ],
+                    'map' => $mapLocation + [
+                        'barangay' => $barangays->describe($mapLocation['latitude'], $mapLocation['longitude']),
+                    ],
+                    'distance_metres' => (int) round($pendingUpload->metresBetween(
+                        (float) $photoLocation['latitude'],
+                        (float) $photoLocation['longitude'],
+                        (float) $validated['latitude'],
+                        (float) $validated['longitude'],
+                    )),
+                ]);
+            } catch (Throwable $exception) {
+                Storage::disk('minio')->delete($imagePaths);
+                report($exception);
+
+                return back()
+                    ->withInput()
+                    ->withErrors(['images' => 'We could not save the photos. Please try again.']);
+            }
+
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'location_choice' => 'One of your photos was taken somewhere else. '
+                        .'Tell us which location the problem is at.',
+                ]);
+        }
+
+        $imagePaths = [];
+        try {
+            if ($choice !== null && $pendingUpload->pending() !== null) {
+                // Second pass: the photos are already stored from the first one.
+                $imagePaths = $pendingUpload->release();
+
+                if ($imagePaths === []) {
+                    throw new \RuntimeException('The held evidence photos could not be recovered.');
+                }
+            } else {
+                foreach ($photos as $photo) {
+                    $path = $photo->store('complaints', 'minio');
+
+                    if (! is_string($path) || $path === '') {
+                        throw new \RuntimeException('The evidence photo could not be stored.');
+                    }
+
+                    $imagePaths[] = $path;
+                }
             }
         } catch (Throwable $exception) {
             Storage::disk('minio')->delete($imagePaths);
@@ -300,14 +605,49 @@ class ComplaintController extends Controller
         }
 
         $imagePath = $imagePaths[0];
-        $locationSource = $photoLocation
-            ? 'photo_gps'
-            : (filled($validated['latitude'] ?? null) && filled($validated['longitude'] ?? null)
-                ? 'map'
-                : (filled($validated['address_text'] ?? null) ? 'address' : 'none'));
+        /*
+         * Resolve the location that will actually be stored, and say plainly in
+         * the audit trail which of the possible sources it came from. A department
+         * reading "photo_gps" needs it to be true, because that is what tells them
+         * whether the pin was placed by hand or inherited from a file.
+         */
+        $pinLatitude = $validated['latitude'] ?? null;
+        $pinLongitude = $validated['longitude'] ?? null;
+        $hasPin = $pinLatitude !== null && $pinLatitude !== ''
+            && $pinLongitude !== null && $pinLongitude !== '';
+        $hasPhoto = $photoLocation !== null;
+
+        if ($choice === self::LOCATION_CHOICE_MAP) {
+            $latitude = $hasPin ? (float) $pinLatitude : null;
+            $longitude = $hasPin ? (float) $pinLongitude : null;
+            $locationSource = $hasPin ? 'map' : 'none';
+        } elseif ($choice === self::LOCATION_CHOICE_PHOTO) {
+            $latitude = $photoLocation['latitude'];
+            $longitude = $photoLocation['longitude'];
+            $locationSource = 'photo_gps';
+        } else {
+            // No question was asked, so the existing preference stands: a photo
+            // that knows where it was taken beats a pin, and a pin beats prose.
+            $latitude = $hasPhoto ? $photoLocation['latitude'] : ($hasPin ? (float) $pinLatitude : null);
+            $longitude = $hasPhoto ? $photoLocation['longitude'] : ($hasPin ? (float) $pinLongitude : null);
+            $locationSource = $hasPhoto
+                ? 'photo_gps'
+                : ($hasPin ? 'map' : (filled($validated['address_text'] ?? null) ? 'address' : 'none'));
+        }
 
         try {
-            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $photoLocation, $locationSource, $activityLogger, $detector, $priorityService) {
+            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $activityLogger, $detector, $priorityService) {
+                // The resident's stated barangay: what they chose on the form, or
+                // failing that what they gave at registration. Never a guess — a
+                // guess from a reference point is wrong across most of a large
+                // barangay, and a wrong barangay on a public page is worse than
+                // no barangay at all.
+                $barangay = $validated['barangay'] ?? null;
+
+                if ($barangay === null || $barangay === '') {
+                    $barangay = Auth::user()?->barangay ?: null;
+                }
+
                 $complaint = Complaint::create([
                     'user_id' => Auth::id(),
                     'department_id' => $department?->id,
@@ -316,11 +656,14 @@ class ComplaintController extends Controller
                     'description' => $validated['description'],
                     'image_path' => $imagePath,
                     'image_paths' => $imagePaths,
-                    'latitude' => $photoLocation['latitude'] ?? $validated['latitude'] ?? null,
-                    'longitude' => $photoLocation['longitude'] ?? $validated['longitude'] ?? null,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
                     'address_text' => $validated['address_text'] ?? null,
+                    'barangay' => $barangay,
                     'status' => ComplaintStatus::Submitted->value,
-                    'is_public' => 0,
+                    // Private unless the resident explicitly asked otherwise.
+                    'is_public' => ($validated['visibility'] ?? self::VISIBILITY_PRIVATE)
+                        === self::VISIBILITY_PUBLIC,
                     'review_status' => ComplaintReviewStatus::Pending->value,
                     'suggested_priority' => 'routine',
                 ]);
@@ -384,6 +727,16 @@ class ComplaintController extends Controller
             'new_ticket' => $complaint->ticket_id,
             'complaint_location_source' => $locationSource,
         ]);
+
+        // Tell the department somebody can settle it. Without this a new report
+        // is invisible until a verifier happens to open the queue. Notification
+        // failure must never cost the resident their complaint, so it is
+        // reported rather than allowed to abort the request.
+        try {
+            $notifications->complaintNeedsVerification($complaint, Auth::user());
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return redirect()->route('complaints.success', $complaint);
     }
