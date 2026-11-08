@@ -20,7 +20,8 @@
 
       <ul class="nav-links">
         @if(auth()->user()->role === 'citizen')
-          <li><a href="{{ route('dashboard') }}" wire:navigate class="nav-link">{{ __('nav.dashboard') }}</a></li>
+          <li><a href="{{ route('dashboard') }}" wire:navigate class="nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif>{{ __('nav.dashboard') }}</a></li>
+          <li><a href="{{ route('complaints.index') }}" wire:navigate class="nav-link {{ request()->routeIs('complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a></li>
         @endif
         @if(auth()->user()->role !== 'admin')
           <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">{{ __('nav.transparency') }}</a></li>
