@@ -3,595 +3,380 @@
 
     Everything in here is derived from one query in TransparencyFeed, so all of
     it re-renders together. Anything on this page that does NOT come from that
-    query - the styles, the footer, the map and filter scripts - stays in the
-    page view, because a component that re-renders a timer does not need to
-    re-render the static chrome along with it.
+    query - the styles, the map and filter scripts - stays in the page view,
+    because a component that re-renders a timer does not need to re-render the
+    static chrome along with it.
 
-    The map payload below is a data attribute rather than the
-    <script type="application/json"> island it used to be, and that is not a
-    stylistic choice. Livewire treats a <script> it finds inside a component as
-    code to evaluate, and this file is JSON, not code. An attribute has no such
-    ambiguity: it is text, it round-trips through the morph untouched, and the
-    page script reads it with JSON.parse.
+    The map payload below is a data attribute rather than a <script> island on
+    purpose: Livewire treats a <script> it finds inside a component as code to
+    evaluate, and this file reads it with JSON.parse.
+
+    Row markup is rendered exactly once. register-script.blade.php moves every
+    [data-report-row] element into #complaint-table-body when it re-sorts, so a
+    second mobile-only copy of the rows would land in the wrong place. The
+    same <a> is a grid on desktop and a flex card on mobile; CSS decides which.
 --}}
 <div class="transparency-page"
      wire:poll.{{ \App\Livewire\TransparencyRegister::REFRESH_SECONDS }}s.visible>
 
     @push('styles')
-    <style>
-        /* ── Design tokens ── */
-        :root {
-            --bg: #f6f8fb;
-            --card: #ffffff;
-            --border: #cdd5e1;
-            --ink: #172b49;
-            --muted: #64748b;
-            --navy: #0b1f3a;
-            --gold: #8a6a12;
-            --gold-light: #e2c06a;
-            --radius: 12px;
-        }
-
-        *,
-        *::before,
-        *::after { box-sizing: border-box; }
-
-        body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Inter", ui-sans-serif, system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
-
-        .transparency-page { min-height: 100vh; display: flex; flex-direction: column; }
-
-        .transparency-container {
-            width: 100%;
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        @media (max-width: 768px) {
-            .transparency-container { padding: 0 16px; }
-        }
-
-        /* ── Page header (compact, no hero) ── */
-        .transparency-header { padding: 32px 0 24px; }
-
-        .transparency-header .kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--gold);
-            margin-bottom: 10px;
-        }
-
-        .transparency-header h1 {
-            margin: 0 0 12px;
-            font-size: clamp(32px, 5vw, 40px);
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-        }
-
-        .transparency-header .privacy {
-            margin: 0 0 16px;
-            font-size: 14px;
-            color: var(--muted);
-            line-height: 1.6;
-            max-width: 700px;
-        }
-
-        .transparency-header .privacy a {
-            color: var(--ink);
-            text-decoration: underline;
-            text-underline-offset: 2px;
-            font-weight: 600;
-        }
-
-        .transparency-header .meta {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .transparency-header .meta svg {
-            width: 14px;
-            height: 14px;
-            color: var(--gold);
-            flex-shrink: 0;
-        }
-
-        /* ── Map section ── */
-        .map-section { padding: 24px 0 32px; }
-
-        .map-section .section-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .map-section .kicker {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .map-section h2 {
-            margin: 0;
-            font-size: clamp(20px, 3vw, 24px);
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            line-height: 1.2;
-        }
-
-        .map-card {
-            height: 360px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--card);
-            position: relative;
-            overflow: hidden;
-        }
-
-        @media (max-width: 768px) {
-            .map-card { height: 280px; }
-        }
-
-        .map-status {
-            position: absolute;
-            z-index: 10;
-            top: 12px;
-            left: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border: 1px solid rgba(11, 31, 58, 0.2);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.85);
-            color: var(--ink);
-            font-size: 12px;
-            line-height: 1.4;
-            pointer-events: none;
-            backdrop-filter: blur(4px);
-        }
-
-        .map-status--loading {
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        .loading-skeleton {
-            width: 120px;
-            height: 16px;
-            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        /* ── Register section ── */
-        .register-section { padding: 0 0 64px; }
-
-        .register-section .section-head { margin-bottom: 20px; }
-
-        .register-section .kicker {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-
-        .register-section h2 {
-            margin: 0 0 8px;
-            font-size: clamp(20px, 3vw, 24px);
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            line-height: 1.2;
-        }
-
-        /* ── Filter bar ── */
-        .filter-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 20px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--card);
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .filter-bar .search { flex: 1 1 280px; min-width: 0; }
-
-        .filter-bar .filters-chip-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .filter-bar .status-label {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-right: 8px;
-        }
-
-        .filter-bar .status-chip {
-            padding: 6px 12px;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            background: var(--card);
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .filter-bar .status-chip.selected {
-            background: var(--navy);
-            color: #fff;
-            border-color: var(--navy);
-        }
-
-        .filter-bar .filter-selects {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-bar .filter-selects select {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--card);
-            font-size: 12px;
-            color: var(--ink);
-            cursor: pointer;
-            min-width: 130px;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3e%3cpath d='M6 8l2 2 2-2'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            background-size: 16px;
-            padding-right: 32px;
-        }
-
-        .filter-bar .clear-filters,
-        .filter-bar .apply-filters {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--ink);
-            text-decoration: underline;
-            text-underline-offset: 2px;
-            background: none;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-        }
-
-        .filter-bar .clear-filters:hidden,
-        .filter-bar .apply-filters:hidden { display: none; }
-
-        /* ── Results summary ── */
-        .results-summary {
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        /* ── Desktop table ── */
-        .desktop-table { display: block; overflow-x: auto; }
-
-        .desktop-table table { width: 100%; border-collapse: collapse; }
-
-        .desktop-table th {
-            text-align: left;
-            padding: 12px 16px;
-            border-bottom: 2px solid var(--border);
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--muted);
-            position: sticky;
-            top: 0;
-            background: var(--card);
-            z-index: 2;
-        }
-
-        .desktop-table td {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-            color: var(--ink);
-            vertical-align: middle;
-        }
-
-        .desktop-table tr:hover { background: #f1f5f9; }
-
-        .desktop-table tr a { text-decoration: none; color: inherit; }
-
-        .desktop-table .ticket-id {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--navy);
-        }
-
-        .desktop-table .title {
-            font-weight: 600;
-            color: var(--ink);
-            max-width: 260px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .desktop-table .location-line {
-            display: block;
-            margin-top: 2px;
-            font-size: 11px;
-            color: var(--muted);
-            font-weight: 400;
-        }
-
-        .desktop-table .category,
-        .desktop-table .department,
-        .desktop-table .status,
-        .desktop-table .reported { font-size: 12px; }
-
-        /* ── Mobile cards ── */
-        .mobile-list { display: none; }
-
-        @media (max-width: 768px) {
-            .desktop-table { display: none; }
-            .mobile-list { display: block; }
-        }
-
-        /* ── Empty states ── */
-        .empty-state { text-align: center; padding: 64px 20px; }
-
-        .empty-state strong {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--ink);
-        }
-
-        .empty-state p {
-            margin: 0;
-            font-size: 14px;
-            color: var(--muted);
-        }
-
-        /* ── Status pills ── */
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 1.5px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .status-pill.submitted   { background: #dbeafe; color: #1d4ed8; }
-        .status-pill.verified    { background: #dcfce7; color: #15803d; }
-        .status-pill.assigned    { background: #eff6ff; color: #1e3a8a; }
-        .status-pill.in_progress { background: #fef3c7; color: #92400e; }
-        .status-pill.resolved    { background: #dcfce7; color: #15803d; }
-        .status-pill.rejected    { background: #fee2e2; color: #991b1b; }
-        .status-pill.closed      { background: #f1f5f9; color: #475569; }
-        .status-pill.default     { background: #f1f5f9; color: #475569; }
-
-        /* ── Focus styles ── */
-        :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-
-        /* ── Map attribution ── */
-        .leaflet-control-attribution { font-size: 10px !important; }
-
-        /* ── List styling ── */
-        ul, ol { list-style: none; padding: 0; margin: 0; }
-    </style>
+        @include('pages.transparency.partials.component-styles')
     @endpush
 
-    <!-- ── Page Header ── -->
-    <header class="transparency-header">
-        <div class="transparency-container">
-            <span class="kicker">{{ __('transparency.header.kicker') }}</span>
-            <h1>{{ __('transparency.header.title') }}</h1>
-            <p class="privacy">
-                {{ __('transparency.header.privacy') }}
-                <a href="#" data-popover-trigger>{{ __('transparency.header.privacy_link') }}</a>
-            </p>
-            <div class="meta">
-                <span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l3 3"></path><path d="M19 12H3"></path></svg>
-                    {{ $reports->count() }} {{ $reports->count() === 1 ? __('transparency.header.report_one') : __('transparency.header.report_other') }}
-                </span>
-                <span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+    {{-- ════════════ BANNER ════════════ --}}
+    <header class="tr-banner">
+        <div class="tr-container">
+            <h1 class="tr-h1">{{ __('transparency.header.title') }}</h1>
+            <span class="tr-goldbar" aria-hidden="true"></span>
+            <p class="tr-privacy">{{ __('transparency.header.privacy') }}</p>
+
+            <details class="tr-how" wire:ignore>
+                <summary>
+                    {{ __('transparency.header.privacy_link') }}
+                    <svg class="tr-how__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </summary>
+                <div class="tr-how__card">
+                    <ul>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 10"/></svg>
+                            <span>{{ __('transparency.v2.how_bullet_1') }}</span>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 10"/></svg>
+                            <span>{{ __('transparency.v2.how_bullet_2') }}</span>
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 10"/></svg>
+                            <span>{{ __('transparency.v2.how_bullet_3') }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </details>
+
+            <p class="tr-updated">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                @if($lastUpdated)
                     {{ __('transparency.header.updated') }} {{ $lastUpdated }}
-                </span>
-            </div>
+                @else
+                    {{ __('transparency.v2.no_reports_yet') }}
+                @endif
+            </p>
         </div>
     </header>
 
-    <!-- ── Map Section ── -->
-    <section class="map-section" aria-label="{{ __('transparency.map.map_aria') }}">
-        <div class="transparency-container">
-            <div class="section-head">
-                <h2 id="map-heading">{{ __('transparency.map.heading') }}</h2>
+    {{-- ════════════ STAT STRIP (overlapping the banner) ════════════ --}}
+    <div class="tr-container">
+        <div class="tr-stats" role="list" aria-label="{{ __('transparency.v2.stat_total') }}">
+            <div class="tr-stat" role="listitem">
+                <span class="tr-stat__icon tr-stat__icon--navy">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </span>
+                <span>
+                    <span class="tr-stat__value">{{ $stats['total'] }}</span>
+                    <span class="tr-stat__label">{{ __('transparency.v2.stat_total') }}</span>
+                </span>
             </div>
-            <div class="map-card" id="map-container">
-                <div id="transparency-map" style="width: 100%; height: 100%;"></div>
-                <div id="map-status" class="map-status map-status--loading" aria-live="polite" role="status">
-                    <span class="sr-only">{{ __('transparency.map.loading') }}</span>
-                    <div class="loading-skeleton"></div>
+            <div class="tr-stat" role="listitem">
+                <span class="tr-stat__icon tr-stat__icon--amber">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
+                </span>
+                <span>
+                    <span class="tr-stat__value">{{ $stats['in_progress'] }}</span>
+                    <span class="tr-stat__label">{{ __('transparency.v2.stat_in_progress') }}</span>
+                </span>
+            </div>
+            <div class="tr-stat" role="listitem">
+                <span class="tr-stat__icon tr-stat__icon--green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                <span>
+                    <span class="tr-stat__value">{{ $stats['resolved'] }}</span>
+                    <span class="tr-stat__label">{{ __('transparency.v2.stat_resolved') }}</span>
+                </span>
+            </div>
+            <div class="tr-stat" role="listitem">
+                <span class="tr-stat__icon tr-stat__icon--sky">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </span>
+                <span>
+                    <span class="tr-stat__value">{{ $stats['resolution_rate'] === null ? '—' : round($stats['resolution_rate'] * 100) . '%' }}</span>
+                    <span class="tr-stat__label">{{ __('transparency.v2.stat_rate') }}</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {{-- ════════════ MAP + TOP AREAS ════════════ --}}
+    <section aria-labelledby="map-heading">
+        <div class="tr-container">
+            <div class="tr-map-grid">
+                <div class="tr-card tr-map-card">
+                    <div class="tr-map-card__head">
+                        <h2 class="tr-h2" id="map-heading">{{ __('transparency.map.heading') }}</h2>
+                        <div class="tr-legend">
+                            <span class="tr-legend__label">{{ __('transparency.map.legend_low') }}</span>
+                            <span class="tr-legend__bar" role="img" aria-label="{{ __('transparency.v2.legend_gradient_aria') }}"></span>
+                            <span class="tr-legend__label">{{ __('transparency.map.legend_high') }}</span>
+                        </div>
+                    </div>
+                    <div class="tr-map" id="map-container">
+                        <div id="transparency-map" class="tr-map__canvas"></div>
+                        <div id="map-status" class="tr-map-status" aria-live="polite" role="status">
+                            <span class="sr-only">{{ __('transparency.map.loading') }}</span>
+                            <span class="tr-map-status__skeleton" aria-hidden="true"></span>
+                        </div>
+                        <p class="tr-map__hint" id="map-hint">{{ __('transparency.v2.two_finger') }}</p>
+                    </div>
                 </div>
+
+                <aside class="tr-card tr-areas" id="top-areas" aria-labelledby="top-areas-heading">
+                    <h2 class="tr-h2" id="top-areas-heading">{{ __('transparency.v2.top_areas') }}</h2>
+
+                    @if($topAreas->isNotEmpty())
+                        <ol class="tr-areas__list" id="top-areas-list">
+                            @foreach($topAreas as $index => $area)
+                                <li class="tr-areas__item {{ $index >= 3 ? 'tr-areas__item--extra' : '' }}">
+                                    <button
+                                        type="button"
+                                        class="tr-areas__row"
+                                        data-barangay-filter="{{ $area['barangay'] }}"
+                                        data-barangay-label="{{ $area['label'] }}"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="tr-areas__rank">{{ $index + 1 }}</span>
+                                        <span class="tr-areas__name">{{ $area['label'] }}</span>
+                                        <span class="tr-areas__count">{{ __('transparency.v2.reports_count', ['count' => $area['count']]) }}</span>
+                                        <span class="tr-areas__bar" aria-hidden="true">
+                                            <span class="tr-areas__fill" style="width: {{ $area['share'] }}%"></span>
+                                        </span>
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ol>
+                        @if($topAreas->count() > 3)
+                            <button type="button" class="tr-areas__toggle" id="top-areas-toggle" aria-expanded="false" aria-controls="top-areas-list">
+                                <span class="tr-areas__toggle-label" data-show-all="{{ __('transparency.v2.show_all') }}" data-show-less="{{ __('transparency.v2.show_less') }}">{{ __('transparency.v2.show_all') }}</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                        @endif
+                    @else
+                        <div class="tr-areas__empty">
+                            <span class="tr-areas__empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            </span>
+                            <p>{{ __('transparency.v2.top_areas_empty') }}</p>
+                        </div>
+                    @endif
+                </aside>
             </div>
         </div>
     </section>
 
-    <!-- ── Register Section ── -->
-    <section class="register-section" id="register" aria-labelledby="register-heading">
-        <div class="transparency-container">
-            <div class="section-head">
-                <h2 id="register-heading">{{ __('transparency.register.heading') }}</h2>
+    {{-- ════════════ REGISTER ════════════ --}}
+    <section class="tr-register" aria-labelledby="register-heading">
+        <div class="tr-container">
+            <div class="tr-register-head">
+                <h2 class="tr-h2" id="register-heading">{{ __('transparency.register.heading') }}</h2>
+                <p class="tr-results" id="results-summary" aria-live="polite">
+                    {{ __('transparency.register.results', ['visible' => $reports->count(), 'total' => $reports->count()]) }}
+                </p>
             </div>
 
-            <!-- Filter bar -->
-            <div class="filter-bar" id="filter-bar">
-                <div class="search">
-                    <input
-                        id="complaint-search"
-                        type="search"
-                        placeholder="{{ __('transparency.register.search_placeholder') }}"
-                        autocomplete="off"
-                        class="w-full rounded-10 border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 placeholder-navy-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-900/20"
-                    >
-                </div>
-                <div class="filters-chip-group">
-                    <span class="status-label">{{ __('transparency.register.status_label') }}</span>
-                    <button type="button" class="status-chip selected" data-value="">{{ __('transparency.register.all_statuses') }}</button>
-                    @foreach($statusOptions as $status)
-                        <button type="button" class="status-chip" data-value="{{ $status['key'] }}">{{ $status['label'] }}</button>
-                    @endforeach
-                </div>
-                <div class="filter-selects">
-                    <select id="complaint-department" class="block w-full rounded-10 border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-900/20">
-                        <option value="">{{ __('transparency.register.all_departments') }}</option>
-                        @foreach($departmentOptions as $department)
-                            <option value="{{ $department }}">{{ $department }}</option>
-                        @endforeach
-                    </select>
-                    <select id="complaint-category" class="block w-full rounded-10 border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-900/20">
-                        <option value="">{{ __('transparency.register.all_categories') }}</option>
-                        @foreach($categoryOptions as $category)
-                            <option value="{{ $category['key'] }}">{{ $category['label'] }}</option>
-                        @endforeach
-                    </select>
-                    <select id="complaint-sort" class="block w-full rounded-10 border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-900/20">
-                        <option value="reported_desc">{{ __('transparency.register.sort_reported_desc') }}</option>
-                        <option value="reported_asc">{{ __('transparency.register.sort_reported_asc') }}</option>
-                        <option value="status_asc">{{ __('transparency.register.sort_status_asc') }}</option>
-                    </select>
-                </div>
-                <button type="button" id="clear-filters" class="clear-filters" hidden>{{ __('transparency.register.clear_filters') }}</button>
-            </div>
-
-            <!-- Desktop table -->
-            <div class="desktop-table" id="desktop-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">{{ __('transparency.register.table.ticket') }}</th>
-                            <th scope="col">{{ __('transparency.register.table.complaint') }}</th>
-                            <th scope="col">{{ __('transparency.register.table.category') }}</th>
-                            <th scope="col">{{ __('transparency.register.table.department') }}</th>
-                            <th scope="col">{{ __('transparency.register.table.status') }}</th>
-                            <th scope="col">{{ __('transparency.register.table.reported') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="complaint-table-body">
-                        @forelse($reports as $report)
-                            <tr
-                                data-report-row
-                                data-isodate="{{ $report['iso_date'] }}"
-                                data-report-id="{{ $report['ticket_id'] }}"
-                                data-search="{{ strtolower(implode(' ', [$report['ticket_id'], $report['title'], $report['category_label'], $report['department'], $report['location']])) }}"
-                                data-department="{{ $report['department'] }}"
-                                data-category="{{ $report['category'] }}"
-                                data-status="{{ $report['status_key'] }}"
-                                class="group"
-                            >
-                                <td class="ticket-id">
-                                    <a href="{{ $report['url'] }}" wire:navigate>{{ $report['ticket_id'] }}</a>
-                                </td>
-                                <td class="title">
-                                    <a href="{{ $report['url'] }}" wire:navigate class="block">{{ $report['title'] }}</a>
-                                    <span class="location-line">{{ $report['location'] }}</span>
-                                </td>
-                                <td class="category">{{ $report['category_label'] }}</td>
-                                <td class="department">{{ $report['department'] }}</td>
-                                <td class="status">
-                                    <span class="status-pill {{ $report['status_key'] }}">{{ $report['status_label'] }}</span>
-                                </td>
-                                <td class="reported"><time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="empty-cell">
-                                    <div class="empty-state">
-                                        <strong>{{ __('transparency.register.empty.title') }}</strong>
-                                        <p>{{ __('transparency.register.empty.body') }}</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                        <tr id="complaint-no-results" data-no-results hidden>
-                            <td colspan="6" class="empty-cell">
-                                <div class="empty-state">
-                                    <strong>{{ __('transparency.register.no_results.title') }}</strong>
-                                    <p>{{ __('transparency.register.no_results.body') }}</p>
-                                    <button type="button" id="clear-filters-table" class="clear-filters">{{ __('transparency.register.clear_filters') }}</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile cards -->
-            <div class="mobile-list" aria-label="{{ __('transparency.register.mobile_list') }}" id="mobile-list">
-                @forelse($reports as $report)
-                    <x-report-card :report="$report" />
-                @empty
-                    <div class="empty-state">
-                        <strong>{{ __('transparency.register.empty.title') }}</strong>
-                        <p>{{ __('transparency.register.empty.body') }}</p>
+            {{-- Filter card --}}
+            <div class="tr-card tr-filters" id="filter-bar">
+                <div class="tr-filters__row1">
+                    <label class="tr-search" for="complaint-search">
+                        <span class="sr-only">{{ __('transparency.register.search_label') }}</span>
+                        <svg class="tr-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input
+                            id="complaint-search"
+                            type="search"
+                            placeholder="{{ __('transparency.register.search_placeholder') }}"
+                            autocomplete="off"
+                        >
+                    </label>
+                    <div class="tr-selects">
+                        <div class="tr-select tr-select--department">
+                            <span class="sr-only" id="department-label">{{ __('transparency.register.department_label') }}</span>
+                            <select id="complaint-department" aria-labelledby="department-label">
+                                <option value="">{{ __('transparency.register.all_departments') }}</option>
+                                @foreach($departmentOptions as $department)
+                                    <option value="{{ $department }}">{{ $department }}</option>
+                                @endforeach
+                            </select>
+                            <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <div class="tr-select tr-select--category">
+                            <span class="sr-only" id="category-label">{{ __('transparency.register.category_label') }}</span>
+                            <select id="complaint-category" aria-labelledby="category-label">
+                                <option value="">{{ __('transparency.register.all_categories') }}</option>
+                                @foreach($categoryOptions as $category)
+                                    <option value="{{ $category['key'] }}">{{ $category['label'] }}</option>
+                                @endforeach
+                            </select>
+                            <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <div class="tr-select tr-select--sort">
+                            <span class="sr-only" id="sort-label">{{ __('transparency.register.sort_label') }}</span>
+                            <select id="complaint-sort" aria-labelledby="sort-label">
+                                <option value="reported_desc">{{ __('transparency.register.sort_reported_desc') }}</option>
+                                <option value="reported_asc">{{ __('transparency.register.sort_reported_asc') }}</option>
+                                <option value="status_asc">{{ __('transparency.register.sort_status_asc') }}</option>
+                            </select>
+                            <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
                     </div>
-                @endforelse
-                <div data-no-results hidden class="empty-state">
-                    <strong>{{ __('transparency.register.no_results.title') }}</strong>
-                    <p>{{ __('transparency.register.no_results.body') }}</p>
-                    <button type="button" id="clear-filters-card" class="clear-filters">{{ __('transparency.register.clear_filters') }}</button>
                 </div>
+
+                <div class="tr-filters__row2">
+                    <div class="tr-chips" role="group" aria-label="{{ __('transparency.register.status_label') }}">
+                        <button type="button" class="status-chip selected" data-value="">{{ __('transparency.register.all_statuses') }}</button>
+                        @foreach($statusOptions as $status)
+                            <button type="button" class="status-chip" data-value="{{ $status['key'] }}">{{ $status['label'] }}</button>
+                        @endforeach
+                    </div>
+
+                    <button type="button" class="tr-barangay-chip" id="barangay-chip" hidden>
+                        <span class="tr-barangay-chip__label"></span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+
+                    <button type="button" id="clear-filters" class="tr-clear" hidden>{{ __('transparency.register.clear_filters') }}</button>
+                </div>
+            </div>
+
+            {{-- List card --}}
+            <div class="tr-card tr-list-card">
+                <div class="report-list__head" aria-hidden="true">
+                    <span>{{ __('transparency.register.table.complaint') }}</span>
+                    <span>{{ __('transparency.register.table.department') }}</span>
+                    <span>{{ __('transparency.register.table.status') }}</span>
+                    <span>{{ __('transparency.register.table.reported') }}</span>
+                    <span></span>
+                </div>
+
+                <ul class="report-list" id="complaint-table-body">
+                    @forelse($reports as $report)
+                        @php
+                            $step = $report['progress_step'];
+                            $statusKey = $report['status_key'];
+                            $closed = $statusKey === 'closed';
+                            $isRejected = $statusKey === 'rejected' || $step === null;
+                        @endphp
+                        <li
+                            data-report-row
+                            data-report-id="{{ $report['ticket_id'] }}"
+                            data-search="{{ Str::lower($report['search_text']) }}"
+                            data-department="{{ $report['department'] }}"
+                            data-category="{{ $report['category'] }}"
+                            data-status="{{ $report['status_key'] }}"
+                            data-iso-date="{{ $report['iso_date'] }}"
+                            data-barangay="{{ $report['barangay'] }}"
+                        >
+                            <a class="report-row" href="{{ $report['url'] }}" wire:navigate>
+                                {{-- Complaint cell: icon + title + (ticket · pin barangay).
+                                     On mobile the wrappers dissolve (display: contents) and the
+                                     pieces join the wrapping flex line in order. --}}
+                                <span class="report-row__complaint">
+                                    @include('pages.transparency.partials.category-icon', ['category' => $report['category']])
+                                    <span class="report-row__text">
+                                        <span class="report-row__title">{{ $report['title'] }}</span>
+                                        <span class="report-row__meta">
+                                            <span class="ticket-id">{{ $report['ticket_id'] }}</span>
+                                            <span class="report-row__meta-dot" aria-hidden="true">·</span>
+                                            <svg class="report-row__meta-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                            <span class="report-row__brgy">{{ $report['barangay_label'] }}</span>
+                                        </span>
+                                    </span>
+                                </span>
+
+                                {{-- Department cell: code badge + name --}}
+                                <span class="report-row__dept">
+                                    @if($report['department_code'])
+                                        <span class="dept-badge" data-dept="{{ $report['department_code'] }}">{{ $report['department_code'] }}</span>
+                                    @endif
+                                    <span class="report-row__dept-name">{{ $report['department'] }}</span>
+                                </span>
+
+                                {{-- Status cell: pill + optional Verified + 5-segment bar (desktop mini) --}}
+                                <span class="report-row__status">
+                                    <span class="status-pill {{ $report['status_key'] }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $report['status_label'] }}</span>
+                                    @if($report['verified'])
+                                        <span class="report-row__verified">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 10"/></svg>
+                                            {{ __('transparency.v2.verified') }}
+                                        </span>
+                                    @endif
+                                    <span class="progress progress--mini" aria-hidden="true">
+                                        @for($segment = 1; $segment <= 5; $segment++)
+                                            <span class="progress__seg {{ $isRejected ? '' : ($segment < $step || $closed ? 'progress__seg--complete' : ($segment === $step ? 'progress__seg--current' : '')) }}"></span>
+                                        @endfor
+                                    </span>
+                                </span>
+
+                                {{-- Reported cell --}}
+                                <span class="report-row__reported">
+                                    <time datetime="{{ $report['iso_date'] }}">{{ $report['date'] }}</time>
+                                </span>
+
+                                {{-- Mobile-only line 4: full-width bar with step text --}}
+                                <span
+                                    class="report-row__progressline"
+                                    role="img"
+                                    aria-label="{{ $isRejected ? $report['status_label'] : __('transparency.v2.progress_aria', ['step' => $step, 'total' => 5, 'status' => $report['status_label']]) }}"
+                                >
+                                    <span class="progress__text">
+                                        @if($isRejected)
+                                            {{ $report['status_label'] }}
+                                        @else
+                                            {{ __('transparency.v2.step_status', ['step' => $step, 'total' => 5, 'status' => $report['status_label']]) }}
+                                        @endif
+                                    </span>
+                                    <span class="progress progress--full" aria-hidden="true">
+                                        @for($segment = 1; $segment <= 5; $segment++)
+                                            <span class="progress__seg {{ $isRejected ? '' : ($segment < $step || $closed ? 'progress__seg--complete' : ($segment === $step ? 'progress__seg--current' : '')) }}"></span>
+                                        @endfor
+                                    </span>
+                                </span>
+
+                                {{-- Desktop-only chevron --}}
+                                <svg class="report-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                            </a>
+                        </li>
+                    @empty
+                        <li>
+                            <div class="empty-state">
+                                <span class="empty-state__icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 6 8.38 8.38 0 0 1-3.8-.9L3 21l1.6-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 6-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                </span>
+                                <strong>{{ __('transparency.register.empty.title') }}</strong>
+                                <p>{{ __('transparency.register.empty.body') }}</p>
+                            </div>
+                        </li>
+                    @endforelse
+
+                    <li data-no-results hidden>
+                        <div class="empty-state">
+                            <span class="empty-state__icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                            </span>
+                            <strong>{{ __('transparency.register.no_results.title') }}</strong>
+                            <p>{{ __('transparency.register.no_results.body') }}</p>
+                            <button type="button" id="clear-filters-list" class="tr-button">{{ __('transparency.register.clear_filters') }}</button>
+                        </div>
+                    </li>
+
+                    <li data-error hidden>
+                        <div class="empty-state">
+                            <span class="empty-state__icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            </span>
+                            <strong>{{ __('transparency.v2.error_title') }}</strong>
+                            <p>{{ __('transparency.v2.error_body') }}</p>
+                            <button type="button" class="tr-button" data-retry>{{ __('transparency.v2.retry') }}</button>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
     </section>

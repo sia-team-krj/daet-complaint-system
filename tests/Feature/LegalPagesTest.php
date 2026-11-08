@@ -87,11 +87,30 @@ class LegalPagesTest extends TestCase
 
         $register = $this->get(route('transparency'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('Concerned resident', $register);
+        // The register list does not name the reporter at all; the alias
+        // appears only on the public detail page.
+        $this->assertStringNotContainsString(
+            'Concerned resident',
+            $register,
+            'The public register list must not show the reporter at all.',
+        );
         $this->assertStringNotContainsString(
             $resident->first_name.' '.$resident->last_name,
             $register,
             'The public register must not show the complainant\'s legal name.',
+        );
+
+        $detail = $this->get(route('transparency.complaints.show', $complaint))->assertOk()->getContent();
+
+        $this->assertStringContainsString(
+            'Concerned resident',
+            $detail,
+            'The public detail page must show the display alias, as the policy promises.',
+        );
+        $this->assertStringNotContainsString(
+            $resident->first_name.' '.$resident->last_name,
+            $detail,
+            'The public detail page must not show the complainant\'s legal name.',
         );
     }
 

@@ -9,11 +9,6 @@
          shell and the script stack. --}}
     <livewire:transparency-register />
 
-    {{-- The render is owned by the component; the shell layout must not add a
-         second footer. --}}
-    @section('site-footer')
-        <span hidden aria-hidden="true"></span>
-    @endsection
 @endsection
 
 @push('scripts')

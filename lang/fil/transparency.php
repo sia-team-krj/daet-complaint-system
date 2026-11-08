@@ -19,13 +19,13 @@ return [
 
     'map' => [
         'kicker' => 'Saan nakukuha ang mga ulat',
-        'heading' => 'Saan nakukuha ang mga ulat sa Daet.',
+        'heading' => 'Saan pinakamarami ang mga ulat',
         'card' => 'Heatmap ng mga Reklamo sa Daet',
         'legend_low' => 'Mababa',
         'legend_high' => 'Mataas',
         'legend' => 'Antas ng heatmap',
         'map_aria' => 'Halimbawa ng heatmap ng mga lugar ng pampublikong reklamo sa Daet',
-        'loading' => 'Naglo-load…',
+        'loading' => 'Naglo-load ng mapa…',
         'coordinates' => 'Ang mga lugar ay ginugroup sa barangay. Hindi kasama ang pribadong reklamo at posibleng spam.',
         'unavailable' => 'Ang interactive map ay hindi magagamit. Gamitin ang talahan ng reklamo sa ibaba.',
         'unavailable_load' => 'Hindi ma-load ang mga lugar ng pampublikong reklamo. Gamitin ang talahan ng reklamo sa ibaba.',
@@ -46,8 +46,8 @@ return [
         'department_label' => 'Departamento',
         'category_label' => 'Kategorya',
         'sort_label' => 'Pagsunod',
-        'sort_reported_desc' => 'Bagong una',
-        'sort_reported_asc' => 'Lumang una',
+        'sort_reported_desc' => 'Pinakabago muna',
+        'sort_reported_asc' => 'Pinakaluma muna',
         'sort_status_asc' => 'Estado',
         'clear_filters' => 'Alisin ang mga filter',
         'apply_filters' => 'I-apply',
@@ -64,7 +64,7 @@ return [
         'open_ticket' => 'Buksan ang :ticket',
         'mobile_list' => 'Lista ng pampublikong reklamo',
         'no_results' => [
-            'title' => 'Wala pong natagbang reklamo sa iyong mga filter.',
+            'title' => 'Walang reklamong tugma sa iyong mga filter.',
             'body' => 'Subukan ang ibang filter o alisin ang mga filter.',
         ],
         'empty' => [
@@ -135,5 +135,40 @@ return [
 
     'status' => [
         'unknown' => 'Hindi kilala',
+    ],
+
+    'v2' => [
+        'how_bullet_1' => 'Ang mga lokasyon ay ipinapakita ayon sa barangay, hindi batay sa pinpoint.',
+        'how_bullet_2' => 'Ang mga lugar na may napakakonting ulat ay hindi dine-highlight.',
+        'how_bullet_3' => 'Ang mga pribadong reklamo at posibleng spam ay itinatago.',
+
+        'stat_total' => 'Pampublikong ulat',
+        'stat_in_progress' => 'Isinasagawa',
+        'stat_resolved' => 'Nalutas',
+        'stat_rate' => 'Antas ng paglutas',
+
+        'legend_gradient_aria' => 'Konsentrasyon ng mga ulat, mula mababa hanggang mataas',
+        'two_finger' => 'Gamitin ang dalawang daliri upang ilipat ang mapa',
+
+        'top_areas' => 'Nangungunang mga lugar',
+        'top_areas_empty' => 'Hindi pa sapat ang mga ulat para ipakita ang pagkakahati-hati ayon sa lugar.',
+        'reports_count' => ':count na ulat',
+        'show_all' => 'Ipakita lahat',
+        'show_less' => 'Ipakita konti',
+
+        'step_status' => 'Hakbang :step sa :total · :status',
+        'progress_aria' => 'Hakbang :step sa :total: :status',
+        'verified' => 'Na-verify',
+
+        'error_title' => 'May nangyaring mali',
+        'error_body' => 'Hindi ma-load ang listahan ng pampublikong reklamo. Maaaring koneksyon ang problema.',
+        'retry' => 'Subukan muli',
+
+        'untitled' => 'Walang pamagat ang ulat',
+        'department_pending' => 'Nakabinbin ang departamento',
+        'verification_unrecorded' => 'Hindi naitala ang beripikasyon',
+        'community_member' => 'Miyembro ng komunidad',
+        'date_unavailable' => 'Walang petsa',
+        'no_reports_yet' => 'Wala pang pampublikong ulat',
     ],
 ];

@@ -1,34 +1,22 @@
 {{--
     The register's map and filters.
 
-    Both of these used to run once, on page load, and never again. The register
-    above them is now a Livewire component that re-renders on a timer, which
-    means two things this script has to deal with that it never had to before:
-
-      1. Livewire replaces the elements these listeners are attached to. The map
-         container, the search box, and all filter controls are inside the
-         component, so every poll strips their listeners. The script therefore
-         re-binds itself after every update instead of running once.
-
-      2. A poll must not throw away what the reader was doing. Someone who has
-         typed half a ticket number into the search box would otherwise watch it
-         clear itself every twenty seconds. The filter values and the focused
-         field are held here and re-applied after each render.
-
-    The map is the subtler half. Rebuilding it is expensive and visibly rude -
-    it would snap the view back to centre under anyone who had panned or zoomed -
-    so it is only rebuilt when the data actually moved. An unchanged poll costs
-    nothing and leaves the reader alone.
+    The register above is a Livewire component that re-renders on a timer,
+    and the morph reconciles the existing nodes in place: the search box and
+    the filter controls are the same objects after a poll, with their
+    contents replaced by the server. That rules out attaching listeners per
+    refresh - they would pile up on a node that never goes away. So every
+    interaction is delegated from the document, which is bound exactly once,
+    and the per-refresh work is limited to re-applying the reader's filter
+    state and rebuilding the map only when its payload moved.
 --}}
 <script>
 (() => {
     'use strict';
 
-    const FIELDS = ['search', 'department', 'category', 'status', 'sort'];
-
     // What the reader has entered or chosen. Defaults match what the server
     // renders, so an untouched page is indistinguishable from a tracked one.
-    const filters = { search: '', department: '', category: '', status: '', sort: 'reported_desc' };
+    const filters = { search: '', department: '', category: '', status: '', sort: 'reported_desc', barangay: '' };
     let caret = null;
     let focusedField = null;
 
@@ -48,24 +36,36 @@
         results: "{{ __('transparency.register.results') }}",
     };
 
-    // Leaflet is bundled rather than fetched from a CDN, but a bundled module is
-    // deferred and this inline script is not, so the map is built from a
-    // callback the bundle calls instead of by reaching for window.L and finding
-    // it undefined on a page that is otherwise fine. Only ever registered once,
-    // however many times the register re-renders.
-    //
-    // The absence of Leaflet is reported through the handshake's own
-    // `onUnavailable` option. It used to be handled by an early guard that
-    // tested for the global and bailed, and that is the silent failure this page
-    // is meant not to have: the guard ran before the bundle had any chance to
-    // load, so a perfectly healthy map lost its race against an inline script and
-    // the reader got an empty box with no explanation. Waiting is the fix; saying
-    // so when waiting fails is the handshake's job.
-    //
-    // (This comment once named that guard's expression outright, which is why it
-    // is described instead: the test that forbids the guard greps the file as
-    // plain text, comments included, and quoting it verbatim made this file fail
-    // the very check it was explaining.)
+    /* ── Small helpers ─────────────────────────────────────────────── */
+
+    const parseAttribute = (element, name, fallback) => {
+        try {
+            return JSON.parse(element.dataset[name] ?? '') ?? fallback;
+        } catch (error) {
+            return fallback;
+        }
+    };
+
+    // The heat colours, read from the shared tokens rather than hard-coded,
+    // so a palette change is one file, not two.
+    const token = (name, fallback) => {
+        try {
+            const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return value !== '' ? value : fallback;
+        } catch (error) {
+            return fallback;
+        }
+    };
+
+    const normalize = (value) => (value || '').trim().toLocaleLowerCase();
+
+    /* ── Leaflet handshake ─────────────────────────────────────────── */
+
+    // Leaflet is bundled rather than fetched from a CDN, but a bundled
+    // module is deferred and this inline script is not, so the map is built
+    // from a callback the bundle calls instead of by reaching for window.L
+    // and finding it undefined on a page that is otherwise fine. Only ever
+    // registered once, however many times the register re-renders.
     window.whenLeafletReady(() => {
         leafletReady = true;
         waitingForLeaflet.splice(0).forEach((run) => run());
@@ -81,17 +81,12 @@
         waitingForLeaflet.push(run);
     };
 
-    const parseAttribute = (element, name, fallback) => {
-        try {
-            return JSON.parse(element.dataset[name] ?? '') ?? fallback;
-        } catch (error) {
-            return fallback;
-        }
-    };
+    /* ── The map ───────────────────────────────────────────────────── */
 
-    // The payload lives in data attributes rather than a JSON <script> island
-    // because this markup is inside a Livewire component, and Livewire treats a
-    // script tag it finds there as code to run. An attribute is just text.
+    // The payload lives in data attributes rather than a JSON <script>
+    // island because this markup is inside a Livewire component, and
+    // Livewire treats a script tag it finds there as code to run. An
+    // attribute is just text.
     const readMapPayload = () => {
         const element = document.getElementById('transparency-map-data');
 
@@ -106,13 +101,26 @@
         };
     };
 
-    // Queried fresh on every call rather than captured once. The status element
-    // lives inside the polled component, so a reference held across a morph
-    // points at a node that is no longer in the document.
     const setStatus = (message) => {
-        const text = document.querySelector('#map-status');
+        const el = document.getElementById('map-status');
 
-        if (text) text.textContent = message;
+        if (!el) return;
+
+        el.replaceChildren();
+        el.classList.add('tr-map-status--message');
+
+        const text = document.createElement('p');
+        text.className = 'tr-map-status__message';
+        text.textContent = message;
+
+        el.appendChild(text);
+        el.hidden = false;
+    };
+
+    const hideMapStatus = () => {
+        const el = document.getElementById('map-status');
+
+        if (el) el.hidden = true;
     };
 
     const destroyMap = () => {
@@ -122,10 +130,10 @@
         onOrientationChange = null;
 
         if (map) {
-            // A morph may already have removed everything Leaflet put inside the
-            // container. Tearing down in that state is allowed to fail: this is
-            // cleanup for an object being discarded either way, and letting it
-            // throw would abandon the filter re-binding in the same pass.
+            // A morph may already have removed everything Leaflet put inside
+            // the container. Tearing down in that state is allowed to fail:
+            // this is cleanup for an object being discarded either way, and
+            // letting it throw would abandon the rest of the refresh pass.
             try {
                 map.remove();
             } catch (error) {
@@ -137,9 +145,8 @@
     };
 
     const buildMap = (payload) => {
-        // Re-queried every time: both elements are inside the polled component,
-        // so a reference captured on the first build is a reference to a node a
-        // later morph has already replaced.
+        // Re-queried every time: the map mounts into the polled component,
+        // so a captured reference goes stale on the next morph.
         const mapElement = document.getElementById('transparency-map');
 
         if (!mapElement) return;
@@ -151,6 +158,8 @@
 
         const points = payload.points;
         const center = payload.center;
+        const isMobile = (typeof window.L !== 'undefined' && window.L.Browser && window.L.Browser.mobile)
+            || (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches);
 
         whenLeafletReady(() => {
             destroyMap();
@@ -158,17 +167,38 @@
             map = window.L.map(mapElement, {
                 scrollWheelZoom: false,
                 zoomControl: true,
+                // One-finger pan would trap the page scroll under the map on
+                // touch screens, so mobile pans with two fingers instead and
+                // a hint on the card says so.
+                dragging: !isMobile,
+                tap: false,
             }).setView(center, 13);
 
+            // Two-finger pan: drag only while two or more fingers are down,
+            // so a single finger scrolls the page past the map.
+            if (isMobile) {
+                const el = map.getContainer();
+
+                el.addEventListener('touchstart', (event) => {
+                    if (event.touches.length >= 2 && map) map.dragging.enable();
+                    // Two-finger pan discovered once — retire the hint.
+                    const hint = document.getElementById('map-hint');
+                    if (hint) hint.style.display = 'none';
+                }, { passive: true });
+
+                el.addEventListener('touchend', (event) => {
+                    if (event.touches.length < 2 && map) map.dragging.disable();
+                }, { passive: true });
+            }
+
             /*
-             * Leaflet measures its container once, when the map is built, and
-             * caches that. A desktop viewport has settled by then; a phone has
-             * not. The URL bar collapses, scrollbars come and go, a late webfont
-             * reflows the card around the map, and the heat layer's own canvas
-             * is sized from the same stale figure. Any of those leaves the map
-             * drawn for a size the container no longer has, which shows as a
-             * blank band or a strip of clipped map. `animate: false` because a
-             * re-measure is not a user gesture and should not zoom at them.
+             * Leaflet measures its container once, when the map is built,
+             * and caches that. A desktop viewport has settled by then; a
+             * phone has not. The URL bar collapses, scrollbars come and go,
+             * a late webfont reflows the card around the map, and the heat
+             * layer's own canvas is sized from the same stale figure. Any
+             * of those leaves the map drawn for a size the container no
+             * longer has.
              */
             const keepMapSized = () => {
                 map.invalidateSize({ animate: false });
@@ -184,18 +214,37 @@
             window.addEventListener('resize', onResize);
             window.addEventListener('orientationchange', onOrientationChange);
 
-            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                maxZoom: 18,
+            // No keyless, calm raster style is available right now (CARTO
+            // basemaps moved behind an API key), so the stock OpenStreetMap
+            // tiles are used with a muted tile pane (see .leaflet-tile-pane
+            // in the component CSS) — the deliberate trade: full attribution
+            // stays on the map, and the heat colours still carry the signal.
+            window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
             }).addTo(map);
 
             // Hide the loading skeleton once the map is successfully built.
-            const statusEl = document.getElementById('map-status');
-            if (statusEl) statusEl.style.display = 'none';
+            hideMapStatus();
 
             const heatLayerAvailable = typeof window.L.heatLayer === 'function';
 
             if (points.length > 0 && heatLayerAvailable) {
+                // Read the heat ramp from the shared tokens so a palette
+                // change lands in one file. If any token is missing, fall
+                // back to Leaflet's default ramp rather than a second
+                // hard-coded palette.
+                const heatGradient = ['--heat-1', '--heat-2', '--heat-3', '--heat-4']
+                    .map((name) => token(name, ''))
+                    .every((value) => value !== '')
+                    ? {
+                        0.2: token('--heat-1', ''),
+                        0.45: token('--heat-2', ''),
+                        0.7: token('--heat-3', ''),
+                        1: token('--heat-4', ''),
+                    }
+                    : undefined;
+
                 window.L.heatLayer(
                     points.map((point) => [
                         Number(point.lat),
@@ -207,12 +256,7 @@
                         blur: 26,
                         minOpacity: 0.38,
                         maxZoom: 16,
-                        gradient: {
-                            0.2: '#6abf8a',
-                            0.45: '#e2c06a',
-                            0.7: '#d98a4a',
-                            1: '#c65b5b',
-                        },
+                        ...(heatGradient ? { gradient: heatGradient } : {}),
                     },
                 ).addTo(map);
             }
@@ -231,26 +275,14 @@
                 setStatus(TRANSPARENCY_STRINGS.noAreas);
             } else if (!heatLayerAvailable) {
                 setStatus(TRANSPARENCY_STRINGS.heatUnavailable);
-            } else {
-                const reportTotal = points.reduce((total, point) => total + (Number(point.count) || 0), 0);
-                // No floating "shown" badge anymore - count lives in the header.
             }
         });
     };
 
-    /*
-     * Is the built map still attached to the live document?
-     *
-     * This is the question that a "did the data change?" check cannot answer, and
-     * getting it wrong cost the map entirely. Every poll re-renders the whole
-     * register component, which replaces its markup wholesale - including the
-     * element Leaflet is mounted into. Leaflet does not notice: its own object is
-     * perfectly healthy, holding a container node that is no longer in the
-     * document. So a poll that found no new complaints left a page with no map
-     * on it, with the map status still reading its original "loading" message,
-     * and nothing on the page to explain it. It looked fine on first load, which
-     * is exactly why it survived being written.
-     */
+    // Is the built map still attached to the live document? A morph
+    // reconciles the container in place: the node can be the same object
+    // while everything Leaflet built inside it has been removed, so the
+    // signal has to be Leaflet's own panes.
     const mapHasBeenDetached = () => {
         if (!map) return false;
 
@@ -264,24 +296,11 @@
             return true;
         }
 
-        // The check that actually matters. A morph does not swap the container
-        // out for a new node - it reconciles the existing one in place, which
-        // means the element is still the very same object while everything
-        // Leaflet built inside it has been removed. Comparing nodes says
-        // "unchanged" and the map stays gone, so the signal has to be whether
-        // Leaflet's own panes are still in there.
         return !container.querySelector('.leaflet-pane');
     };
 
-    /*
-     * Rebuild only when it would actually change something: the data moved, or
-     * the container the map was mounted into was replaced by a poll.
-     *
-     * Rebuilding unconditionally would be worse than never rebuilding. It tears
-     * down and re-creates the map, which snaps the view back to fit - so anyone
-     * who had zoomed into their own barangay would have that yanked away every
-     * twenty seconds.
-     */
+    // Rebuilt only when it would actually change something: the data moved,
+    // or the container the map was mounted into was replaced by a poll.
     const refreshMap = () => {
         const payload = readMapPayload();
 
@@ -296,7 +315,9 @@
         buildMap(payload);
     };
 
-    const bindFilters = () => {
+    /* ── Filters ────────────────────────────────────────────────────── */
+
+    const applyFilters = () => {
         const search = document.getElementById('complaint-search');
         const department = document.getElementById('complaint-department');
         const category = document.getElementById('complaint-category');
@@ -307,157 +328,194 @@
         const rows = Array.from(document.querySelectorAll('[data-report-row]'));
         const statusChips = Array.from(document.querySelectorAll('.status-chip'));
 
-        if (!search || !department || !category || !sort || !clearFilters || !results || noResults.length === 0 || rows.length === 0) {
+        if (!search || !department || !category || !sort || !clearFilters || !results) {
             return;
         }
 
-        // Put back what the reader had. These elements were just replaced by the
-        // server render, which has no idea anyone was mid-search.
-        search.value = filters.search;
-        department.value = filters.department;
-        category.value = filters.category;
-        sort.value = filters.sort;
+        // Restore what the reader had, in case these nodes were re-created.
+        if (search.value !== filters.search) search.value = filters.search;
+        if (department.value !== filters.department) department.value = filters.department;
+        if (category.value !== filters.category) category.value = filters.category;
+        if (sort.value !== filters.sort) sort.value = filters.sort;
 
-        // Restore selected status chip.
         statusChips.forEach((chip) => {
             chip.classList.toggle('selected', chip.dataset.value === filters.status);
         });
 
-        const normalize = (value) => (value || '').trim().toLocaleLowerCase();
-        const total = new Set(rows.map((row) => row.dataset.reportId || row.dataset.search)).size;
+        const term = normalize(filters.search);
+        const selectedDepartment = normalize(filters.department);
+        const selectedCategory = normalize(filters.category);
+        const selectedStatus = normalize(filters.status);
+        const selectedBarangay = normalize(filters.barangay);
+        const selectedSort = filters.sort;
+        let visible = 0;
 
-        const anyFilterActive = () =>
+        rows.forEach((row) => {
+            const matchesSearch = !term || normalize(row.dataset.search).includes(term);
+            const matchesDepartment = !selectedDepartment || normalize(row.dataset.department) === selectedDepartment;
+            const matchesCategory = !selectedCategory || normalize(row.dataset.category) === selectedCategory;
+            const matchesStatus = !selectedStatus || normalize(row.dataset.status) === selectedStatus;
+            const matchesBarangay = !selectedBarangay || normalize(row.dataset.barangay) === selectedBarangay;
+            const matches = matchesSearch && matchesDepartment && matchesCategory && matchesStatus && matchesBarangay;
+
+            row.hidden = !matches;
+            if (matches) visible += 1;
+        });
+
+        results.textContent = TRANSPARENCY_STRINGS.results
+            .replace(':visible', String(visible))
+            .replace(':total', String(rows.length));
+
+        noResults.forEach((emptyState) => {
+            // Only meaningful when the register actually has rows to filter —
+            // with zero rows at all, the "no complaints yet" state speaks.
+            emptyState.hidden = visible !== 0 || rows.length === 0;
+        });
+
+        const sortedRows = rows
+            .filter((row) => !row.hidden)
+            .sort((a, b) => {
+                if (selectedSort === 'reported_desc') {
+                    return (b.dataset.isoDate || '') < (a.dataset.isoDate || '') ? -1 : 1;
+                }
+                if (selectedSort === 'reported_asc') {
+                    return (a.dataset.isoDate || '') < (b.dataset.isoDate || '') ? -1 : 1;
+                }
+                if (selectedSort === 'status_asc') {
+                    const sa = (a.dataset.status || '').localeCompare(b.dataset.status || '');
+                    if (sa !== 0) return sa;
+                    return (a.dataset.reportId || '').localeCompare(b.dataset.reportId || '');
+                }
+                return 0;
+            });
+
+        const list = document.getElementById('complaint-table-body');
+        if (list) {
+            sortedRows.forEach((row) => list.appendChild(row));
+        }
+
+        const anyFilterActive =
             filters.search !== '' ||
             filters.department !== '' ||
             filters.category !== '' ||
             filters.status !== '' ||
+            filters.barangay !== '' ||
             filters.sort !== 'reported_desc';
 
-        const toggleClearButton = () => {
-            clearFilters.hidden = !anyFilterActive();
-        };
+        if (clearFilters) clearFilters.hidden = !anyFilterActive;
 
-        const applyFilters = () => {
-            const term = normalize(search.value);
-            const selectedDepartment = normalize(department.value);
-            const selectedCategory = normalize(category.value);
-            const selectedStatus = normalize(filters.status);
-            const selectedSort = filters.sort;
-            const reportVisibility = new Map();
-
-            rows.forEach((row) => {
-                const matchesSearch = !term || normalize(row.dataset.search).includes(term);
-                const matchesDepartment = !selectedDepartment || normalize(row.dataset.department) === selectedDepartment;
-                const matchesCategory = !selectedCategory || normalize(row.dataset.category) === selectedCategory;
-                const matchesStatus = !selectedStatus || normalize(row.dataset.status) === selectedStatus;
-                const matches = matchesSearch && matchesDepartment && matchesCategory && matchesStatus;
-                const reportId = row.dataset.reportId || row.dataset.search;
-
-                row.hidden = !matches;
-                reportVisibility.set(reportId, matches);
-            });
-
-            const visible = Array.from(reportVisibility.values()).filter(Boolean).length;
-            results.textContent = TRANSPARENCY_STRINGS.results.replace(':visible', visible).replace(':total', total);
-            noResults.forEach((emptyState) => {
-                emptyState.hidden = visible !== 0;
-            });
-
-            // Apply sort to visible rows in the DOM.
-            const sortedRows = Array.from(rows)
-                .filter((row) => !row.hidden)
-                .sort((a, b) => {
-                    if (selectedSort === 'reported_desc') {
-                        return (b.dataset.isoDate || '') < (a.dataset.isoDate || '') ? -1 : 1;
-                    }
-                    if (selectedSort === 'reported_asc') {
-                        return (a.dataset.isoDate || '') < (b.dataset.isoDate || '') ? -1 : 1;
-                    }
-                    if (selectedSort === 'status_asc') {
-                        const sa = (a.dataset.status || '').localeCompare(b.dataset.status || '');
-                        if (sa !== 0) return sa;
-                        return (a.dataset.reportId || '').localeCompare(b.dataset.reportId || '');
-                    }
-                    return 0;
-                });
-
-            const tbody = document.getElementById('complaint-table-body');
-            if (tbody) {
-                sortedRows.forEach((row) => tbody.appendChild(row));
-            }
-
-            toggleClearButton();
-        };
-
-        const track = (key) => (event) => {
-            filters[key] = event.target.value;
-            applyFilters();
-        };
-
-        search.addEventListener('input', (event) => {
-            caret = event.target.selectionStart;
-            track('search')(event);
-        });
-
-        [department, category, sort].forEach((control, index) => {
-            control.addEventListener('change', track(FIELDS[index + 1]));
-        });
-
-        // Status chips are buttons, not selects.
-        statusChips.forEach((chip) => {
-            chip.addEventListener('click', () => {
-                filters.status = chip.dataset.value;
-                statusChips.forEach((c) => c.classList.toggle('selected', c === chip));
-                applyFilters();
-            });
-        });
-
-        clearFilters.addEventListener('click', () => {
-            filters.search = '';
-            filters.department = '';
-            filters.category = '';
-            filters.status = '';
-            filters.sort = 'reported_desc';
-            caret = null;
-            search.value = '';
-            department.value = '';
-            category.value = '';
-            sort.value = 'reported_desc';
-            statusChips.forEach((chip) => chip.classList.toggle('selected', chip.dataset.value === ''));
-            applyFilters();
-            search.focus();
-        });
-
-        // A poll that added rows must respect the filter already in force,
-        // otherwise a search would appear to "fail" simply because new data
-        // arrived.
-        applyFilters();
-
-        // And the caret with it. Losing focus mid-word is the single most
-        // irritating thing a polling page can do.
-        if (focusedField) {
-            const field = document.getElementById(focusedField);
-
-            if (field) {
-                field.focus();
-
-                if (typeof field.setSelectionRange === 'function') {
-                    const position = caret === null ? (filters.search || '').length : caret;
-                    try {
-                        field.setSelectionRange(position, position);
-                    } catch (error) {
-                        // Not every input type supports selection ranges.
-                    }
-                }
+        // Keep the barangay chip and the Top areas pressed state in step.
+        const chip = document.getElementById('barangay-chip');
+        if (chip) {
+            chip.hidden = filters.barangay === '';
+            if (filters.barangay !== '') {
+                const button = document.querySelector('[data-barangay-filter="' + CSS.escape(filters.barangay) + '"]');
+                const label = chip.querySelector('.tr-barangay-chip__label');
+                if (label) label.textContent = button && button.dataset.barangayLabel ? button.dataset.barangayLabel : filters.barangay;
             }
         }
+
+        document.querySelectorAll('[data-barangay-filter]').forEach((button) => {
+            button.setAttribute('aria-pressed', String(button.dataset.barangayFilter === filters.barangay));
+        });
     };
 
-    // Focus is tracked on the document because the field it belongs to is
-    // replaced by the time the poll is over - reading activeElement afterwards
-    // would only ever find <body>.
+    const resetFilters = () => {
+        filters.search = '';
+        filters.department = '';
+        filters.category = '';
+        filters.status = '';
+        filters.barangay = '';
+        filters.sort = 'reported_desc';
+        caret = null;
+        applyFilters();
+    };
+
+    /* ── Delegated interaction (bound once) ────────────────────────── */
+
+    document.addEventListener('input', (event) => {
+        if (event.target.id !== 'complaint-search') return;
+        caret = event.target.selectionStart;
+        filters.search = event.target.value;
+        applyFilters();
+    });
+
+    document.addEventListener('change', (event) => {
+        const id = event.target.id;
+
+        if (id === 'complaint-department') filters.department = event.target.value;
+        else if (id === 'complaint-category') filters.category = event.target.value;
+        else if (id === 'complaint-sort') filters.sort = event.target.value;
+        else return;
+
+        applyFilters();
+    });
+
+    document.addEventListener('click', (event) => {
+        const chip = event.target.closest('.status-chip');
+
+        if (chip && chip.closest('#filter-bar')) {
+            filters.status = chip.dataset.value || '';
+            applyFilters();
+            return;
+        }
+
+        if (event.target.closest('#clear-filters') || event.target.closest('#clear-filters-list')) {
+            resetFilters();
+            const search = document.getElementById('complaint-search');
+            if (search) search.focus();
+            return;
+        }
+
+        const area = event.target.closest('[data-barangay-filter]');
+
+        if (area) {
+            filters.barangay = filters.barangay === area.dataset.barangayFilter
+                ? ''
+                : area.dataset.barangayFilter;
+            applyFilters();
+            return;
+        }
+
+        if (event.target.closest('#barangay-chip')) {
+            filters.barangay = '';
+            applyFilters();
+            return;
+        }
+
+        const toggle = event.target.closest('#top-areas-toggle');
+
+        if (toggle) {
+            const areas = document.getElementById('top-areas');
+            const label = toggle.querySelector('.tr-areas__toggle-label');
+
+            if (areas) {
+                const expanded = areas.dataset.expanded === 'true';
+                areas.dataset.expanded = String(!expanded);
+                toggle.setAttribute('aria-expanded', String(!expanded));
+
+                if (label) {
+                    label.textContent = !expanded
+                        ? (label.dataset.showLess ?? label.textContent)
+                        : (label.dataset.showAll ?? label.textContent);
+                }
+            }
+
+            return;
+        }
+
+        if (event.target.closest('[data-retry]')) {
+            window.location.reload();
+        }
+    });
+
+    // Focus is tracked on the document: after a morph the "current" element
+    // is whatever Livewire left under the caret, not the field the reader
+    // picked.
+    const TRACKED = ['complaint-search', 'complaint-department', 'complaint-category', 'complaint-sort'];
+
     document.addEventListener('focusin', (event) => {
-        if (FIELDS.includes(event.target.id.replace('complaint-', ''))) {
+        if (TRACKED.includes(event.target.id)) {
             focusedField = event.target.id;
         }
     });
@@ -469,34 +527,57 @@
         }
     });
 
-    const refresh = () => {
-        refreshMap();
-        bindFilters();
+    /* ── Per-render work ───────────────────────────────────────────── */
+
+    const showError = () => {
+        const error = document.querySelector('[data-error]');
+
+        if (error) error.hidden = false;
     };
 
-    // Livewire 4 has no `livewire:updated` DOM event. It went looking for one
-    // because that is what the Livewire 3 docs say, wrote the hook against it,
-    // and the map then never refreshed once - silently, because a listener on
-    // an event nobody dispatches fails exactly like code that was never written.
-    // The event this page actually gets is the `morphed` hook, fired once the
-    // component's DOM has been replaced.
-    //
-    // Guarded, because an unguarded `window.Livewire.hook(...)` throws outright
-    // wherever Livewire has not booted, and a throw here takes the rest of this
-    // page's initialisation with it - the map and the filters are set up below
-    // this line, so the reader would get neither and no indication why. Without
-    // the hook the register simply stops refreshing; with the page working, that
-    // is the better failure.
+    const refresh = () => {
+        try {
+            refreshMap();
+            applyFilters();
+        } catch (error) {
+            // A failed refresh must not take the register with it, but it
+            // must say something rather than freeze silently.
+            showError();
+            return;
+        }
+
+        // The caret is restored on every morph, so a reader mid-word is
+        // not thrown to the top of the field.
+        if (focusedField) {
+            const field = document.getElementById(focusedField);
+
+            if (field) {
+                field.focus();
+
+                if (typeof field.setSelectionRange === 'function') {
+                    const position = caret === null ? (filters.search || '').length : caret;
+                    try {
+                        field.setSelectionRange(position, position);
+                    } catch (selectionError) {
+                        // Not every input type supports selection ranges.
+                    }
+                }
+            }
+        }
+    };
+
+    // Livewire 4's morphed hook is what this page actually gets once the
+    // component's DOM has been replaced. Guarded, because an unguarded
+    // window.Livewire.hook(...) throws outright wherever Livewire has not
+    // booted.
     if (window.Livewire && typeof window.Livewire.hook === 'function') {
         window.Livewire.hook('morphed', () => {
             refresh();
         });
     }
 
-    // The first paint is server-rendered, so there is no morph to wait for and
-    // nothing below has run yet. This is also harmless when Livewire does boot:
-    // a second pass with unchanged data finds the same map payload and leaves
-    // the map alone.
+    // The first paint is server-rendered, so there is no morph to wait for
+    // and nothing below has run yet.
     refresh();
 })();
 </script>

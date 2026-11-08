@@ -1,0 +1,118 @@
+/*
+ * Daet Listens — shared design tokens ("official but human").
+ *
+ * One set of CSS custom properties for the whole portal. Components consume
+ * these tokens; they do not hard-code colours. Spacing uses only the 4/8/12/16/
+ * 24/32/48 scale, and measurement of anything interactive keeps a 44px target.
+ *
+ * Colour is used for meaning (departments, categories, status, heat), never as
+ * decoration. Gold is the single accent and is never used as text on white —
+ * on light surfaces it becomes --gold-700; on navy it becomes --gold-300.
+ *
+ * Loaded once, before app.css, so every page (public transparency, dashboard,
+ * My complaints, settings) sees the same vocabulary.
+ */
+
+:root {
+    /* ── Brand: navy authority + warm gold ─────────────────────────── */
+    --navy-950: #071226;
+    --navy-900: #0b1a33;
+    --navy-800: #102545;
+    --navy-700: #17305a;
+    --navy-600: #1e3f73;
+    --navy-100: #dbe4f3;
+    --navy-50: #eef3fb;
+
+    --gold-300: #e7c873;
+    --gold-500: #d4a947;
+    --gold-700: #8a6a12;
+
+    /* ── Neutrals ──────────────────────────────────────────────────── */
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --line: #d9e0ec;
+    --line-soft: #e8edf5;
+
+    --text: #0f172a;
+    --muted: #475569;
+    --faint: #64748b;
+
+    /* ── Shape + depth ─────────────────────────────────────────────── */
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+
+    --shadow-card: 0 1px 2px rgba(11, 26, 51, 0.06), 0 8px 24px -12px rgba(11, 26, 51, 0.18);
+    --shadow-lift: 0 2px 4px rgba(11, 26, 51, 0.08), 0 16px 32px -14px rgba(11, 26, 51, 0.28);
+
+    --ring: 0 0 0 3px rgba(212, 169, 71, 0.35);
+    --ring-inset: inset 0 0 0 3px rgba(212, 169, 71, 0.35);
+
+    /* ── Type ──────────────────────────────────────────────────────── */
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    --tracking-display: -0.02em;
+
+    /* ── Status pills (dot + text) ─────────────────────────────────── */
+    --status-submitted-bg: #dbeafe;
+    --status-submitted-text: #1e3a8a;
+    --status-submitted-dot: #3b82f6;
+
+    --status-review-bg: #e8eef8;
+    --status-review-text: #17305a;
+    --status-review-dot: #17305a;
+
+    --status-progress-bg: #fef3c7;
+    --status-progress-text: #92400e;
+    --status-progress-dot: #f59e0b;
+
+    --status-resolved-bg: #dcfce7;
+    --status-resolved-text: #166534;
+    --status-resolved-dot: #22c55e;
+
+    --status-rejected-bg: #fee2e2;
+    --status-rejected-text: #991b1b;
+    --status-rejected-dot: #ef4444;
+
+    --status-closed-bg: #e2e8f0;
+    --status-closed-text: #334155;
+    --status-closed-dot: #64748b;
+
+    /* ── Heat ramp (map legend + choropleth) ───────────────────────── */
+    --heat-1: #e0f2e9;
+    --heat-2: #fde68a;
+    --heat-3: #fb923c;
+    --heat-4: #dc2626;
+
+    /* ── Category icon circles (keyed by category key) ─────────────── */
+    --cat-road-bg: #fef3c7;
+    --cat-road-fg: #b45309;
+    --cat-noise-bg: #ede9fe;
+    --cat-noise-fg: #6d28d9;
+    --cat-flood-bg: #e0f2fe;
+    --cat-flood-fg: #0369a1;
+    --cat-waste-bg: #dcfce7;
+    --cat-waste-fg: #15803d;
+    --cat-streetlight-bg: #fef9c3;
+    --cat-streetlight-fg: #a16207;
+    --cat-other-bg: #e2e8f0;
+    --cat-other-fg: #475569;
+
+    /* ── Spacing scale: 4 · 8 · 12 · 16 · 24 · 32 · 48 ─────────────── */
+    /* (Informational; the portal writes raw multiples of these.) */
+
+    /* ── Loading overlay for the map (lives inside .tr-map) ────────── */
+    --map-loading-bg: #eef1f6;
+
+    /* ── Stacking contract ─────────────────────────────────────────── */
+    /* Leaflet internal panes reach z-index 1000 inside a map. The portal
+       traps that inside .tr-map's stacking context (isolation: isolate),
+       keeps the navbar at 900, the mobile drawer backdrop at 1000 and the
+       drawer itself at 1010, and fixed overlays (toast/modal) at 1100. */
+    --z-map: 0;
+    --z-navbar: 900;
+    --z-drawer-backdrop: 1000;
+    --z-drawer: 1010;
+    --z-overlay: 1100;
+}

@@ -590,7 +590,7 @@
             </p>
             <p>If you choose to publish, your report appears in the public transparency register where:</p>
             <ul>
-                <li>You are shown by the display alias you set, or as "Community member" - not by your legal name.</li>
+                <li>The register list never names you. The public detail page for a report shows your display alias, or "Community member" - never your legal name.</li>
                 <li>Your location is shown at barangay level and aggregated into a count on the map, never as a precise coordinate.</li>
                 <li>The public sees the content of your report and how the department settled it.</li>
             </ul>

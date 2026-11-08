@@ -617,7 +617,7 @@
             <p>When you choose to publish, the public register shows:</p>
             <ul>
                 <li>Your ticket reference number.</li>
-                <li>Your chosen <strong>display alias</strong>, or the words "Community member" if you did not set one - never your legal name against your account.</li>
+                <li>The register list does not name you at all. The public detail page for a report shows your chosen <strong>display alias</strong>, or the words "Community member" if you did not set one - never your legal name against your account.</li>
                 <li>The category, the title and description of the complaint, the handling department, and its current status.</li>
                 <li>The <strong>barangay</strong>, not a precise coordinate. The public map aggregates reports to the barangay level and shows a count, so no individual pin is exposed.</li>
                 <li>The date filed, and how the department settled the matter - for example whether the site was attended or the report was reviewed on paper.</li>

@@ -1,4 +1,4 @@
-<nav id="navbar" data-site-navbar class="fixed left-0 top-0 w-full max-w-full min-w-0 z-50 transition-all duration-300 bg-[#102847] backdrop-blur-md border-b border-[#C9A84C]/30">
+<nav id="navbar" data-site-navbar class="fixed left-0 top-0 w-full max-w-full min-w-0 z-[900] transition-all duration-300 bg-[#102847] backdrop-blur-md border-b border-[#C9A84C]/30">
   <div class="navbar-inner w-full max-w-full min-w-0">
     <div class="navbar-flex w-full max-w-full min-w-0">
       @php
@@ -177,7 +177,18 @@
     </div>
   </div>
 
-  <div id="mobile-menu" data-mobile-menu aria-hidden="true" class="mobile-menu" inert>
+</nav>
+
+{{-- Backdrop and drawer live outside <nav>: its backdrop-blur makes it a
+     stacking context, so a panel inside it could never out-paint later page
+     sections. See layouts/guest-navbar.blade.php. --}}
+<div class="mobile-menu-backdrop" data-mobile-menu-backdrop aria-hidden="true"></div>
+<div id="mobile-menu" data-mobile-menu aria-hidden="true" class="mobile-menu" inert>
+  <div class="mobile-menu-header">
+    <button type="button" class="mobile-menu-close" data-mobile-menu-toggle aria-controls="mobile-menu" aria-label="{{ __('nav.close_navigation') }}" aria-expanded="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
     <div class="mobile-menu-inner">
       <div class="mobile-user-info">
         <div class="mobile-user-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</div>
@@ -225,5 +236,4 @@
         </button>
       </form>
     </div>
-  </div>
-</nav>
+</div>

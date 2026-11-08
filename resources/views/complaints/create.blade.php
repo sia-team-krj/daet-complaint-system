@@ -1888,7 +1888,11 @@
                 const stepHint = document.getElementById('wizard-step-hint');
 
                 // The wizard only exists on phones. Desktop keeps the normal form.
-                const mobileQuery = window.matchMedia('(max-width: 640px)');
+                // jsdom has no matchMedia (the script-runtime audit runs this page
+                // there); a desktop-shaped stub is the honest fallback.
+                const mobileQuery = typeof window.matchMedia === 'function'
+                    ? window.matchMedia('(max-width: 640px)')
+                    : { matches: false };
                 const isWizardMode = () => mobileQuery.matches;
 
                 // Scope hook so CSS can hide the site footer on this page only.

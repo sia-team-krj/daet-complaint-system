@@ -172,7 +172,7 @@ class ComplaintMapRenderingTest extends TestCase
             'views/complaints/create.blade.php' => 'You can still submit',
             'views/complaints/show.blade.php' => 'Your coordinates are still listed below',
             'views/staff/complaints/show.blade.php' => 'handheld GPS',
-            'views/pages/transparency/index.blade.php' => 'Interactive map unavailable',
+            'views/pages/transparency/index.blade.php' => 'mapUnavailable',
         ];
 
         foreach ($expected as $template => $marker) {
@@ -191,6 +191,18 @@ class ComplaintMapRenderingTest extends TestCase
                 "{$template} has no message for when the map cannot load.",
             );
         }
+
+        // The transparency page's "map cannot load" copy is a translated
+        // string, so it lives in the lang files — the template wires the
+        // message, the language file carries the words.
+        $lang = file_get_contents(lang_path('en/transparency.php'));
+
+        $this->assertIsString($lang);
+        $this->assertStringContainsString(
+            'Interactive map unavailable',
+            $lang,
+            'The lang file no longer carries the message shown when the transparency map cannot load.',
+        );
     }
 
     public function test_every_page_with_a_map_actually_initialises_it(): void
@@ -288,7 +300,7 @@ class ComplaintMapRenderingTest extends TestCase
         $containers = [
             'views/complaints/create.blade.php' => 'filing-map',
             'views/complaints/show.blade.php' => 'map-container',
-            'views/pages/transparency/index.blade.php' => 'transparency-map-frame',
+            'views/livewire/transparency-register.blade.php' => 'tr-map',
             'views/staff/complaints/show.blade.php' => 'map-container',
         ];
 

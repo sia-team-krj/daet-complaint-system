@@ -308,12 +308,17 @@ class ResidentInformationResponseTest extends TestCase
             'verification_method' => VerificationMethod::SiteVisit->value,
         ]);
 
+        // The register row shows a plain "Verified" pill; the public detail
+        // page carries the honest claim, not a single vague "verified".
         $this->get(route('transparency'))
             ->assertOk()
             ->assertSee($complaint->ticket_id)
-            // The honest claim, not a single vague "verified".
-            ->assertSee('Site attended')
+            ->assertSee('Verified')
             ->assertDontSee('Verification not recorded');
+
+        $this->get(route('transparency.complaints.show', $complaint))
+            ->assertOk()
+            ->assertSee('Site attended');
     }
 
     public function test_a_desk_check_is_labelled_differently_from_a_site_visit(): void
@@ -326,9 +331,12 @@ class ResidentInformationResponseTest extends TestCase
             'verification_method' => VerificationMethod::Desk->value,
         ]);
 
-        $this->get(route('transparency'))
-            ->assertOk()
-            ->assertSee('Report reviewed')
+        // The method itself lives on the detail page; the desk check and the
+        // site visit can never read the same there.
+        $detail = $this->get(route('transparency.complaints.show', $complaint))
+            ->assertOk();
+
+        $detail->assertSee('Report reviewed')
             ->assertDontSee('Site attended');
     }
 

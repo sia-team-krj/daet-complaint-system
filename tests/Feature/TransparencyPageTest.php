@@ -89,15 +89,18 @@ class TransparencyPageTest extends TestCase
         $response = $this->get(route('transparency'));
 
         $response->assertOk()
-            ->assertSee('Community reports,')
             ->assertSee($publicOne->title)
             ->assertSee($publicTwo->title)
             ->assertSee(route('transparency.complaints.show', $publicOne), false)
-            ->assertSee('transparency-mobile-list', false)
+            // Single markup only: the register renders one row set that is
+            // restyled per breakpoint, never a second mobile-only copy.
+            ->assertSee('id="complaint-table-body"', false)
             ->assertSee('data-report-id="'.$publicOne->ticket_id.'"', false)
-            ->assertSee('All public complaints.')
-            ->assertSee('Barangay VI, Daet')
-            ->assertSee('Community neighbor')
+            ->assertSee('Public complaints')
+            ->assertSee('Barangay VI')
+            // Reporter aliases are no longer rendered on the register at all —
+            // the resident's name never reaches this page.
+            ->assertDontSee('Community neighbor')
             // The heat plugin is bundled rather than linked, so what matters is
             // that the page ships the bundle that contains it.
             ->assertSee('build/assets/app-', false)
@@ -147,7 +150,7 @@ class TransparencyPageTest extends TestCase
                     && $point['lng'] === $reference[1];
             });
 
-        $this->assertSame(2, substr_count($response->getContent(), '<section class="transparency-section'));
+        $this->assertSame(2, substr_count($response->getContent(), '<section'));
     }
 
     public function test_public_complaint_detail_exposes_safe_updates_documentation_and_dates(): void
@@ -190,7 +193,7 @@ class TransparencyPageTest extends TestCase
             ->assertSee('The public repair update is documented.')
             ->assertSee('Exact location withheld')
             ->assertDontSee('123 Main Street')
-            ->assertSee('1 photo', false)
+            ->assertSee('1 Photo', false)
             ->assertSee('Public neighbor')
             ->assertSee('Barangay VI, Daet');
 
@@ -228,7 +231,7 @@ class TransparencyPageTest extends TestCase
         $response = $this->get(route('transparency'));
 
         $response->assertOk()
-            ->assertSee('No public complaints to show.')
+            ->assertSee('No public complaints yet')
             ->assertSee('No approximate public areas are available yet.');
 
         Livewire::test(TransparencyRegister::class)
@@ -268,7 +271,7 @@ class TransparencyPageTest extends TestCase
         $component->call('$refresh')
             ->assertSee('Filed after the page loaded')
             // The count in the header moves with the rows, or the page contradicts itself.
-            ->assertSee('1 public report', false);
+            ->assertSee('Showing 1 of 1 public complaints', false);
 
         // Now the other half of the complaint: a report going private must stop
         // being public, which means it has to disappear from the register.
@@ -276,7 +279,7 @@ class TransparencyPageTest extends TestCase
 
         $component->call('$refresh')
             ->assertDontSee('Filed after the page loaded')
-            ->assertSee('No public complaints to show.');
+            ->assertSee('No public complaints yet');
     }
 
     /**
@@ -325,7 +328,7 @@ class TransparencyPageTest extends TestCase
         $response = $this->actingAs(User::factory()->create())
             ->get(route('transparency'));
 
-        $response->assertOk()->assertSee('transparency-root', false);
+        $response->assertOk()->assertSee('transparency-page', false);
         $body = $response->getContent();
 
         $this->assertMatchesRegularExpression(

@@ -136,4 +136,39 @@ return [
     'status' => [
         'unknown' => 'Unknown',
     ],
+
+    'v2' => [
+        'how_bullet_1' => 'Locations are grouped by barangay, not shown pinpoint by pinpoint.',
+        'how_bullet_2' => 'Areas with very few reports are not highlighted.',
+        'how_bullet_3' => 'Private complaints and likely spam are hidden.',
+
+        'stat_total' => 'Public reports',
+        'stat_in_progress' => 'In progress',
+        'stat_resolved' => 'Resolved',
+        'stat_rate' => 'Resolution rate',
+
+        'legend_gradient_aria' => 'Concentration of reports, from low to high',
+        'two_finger' => 'Use two fingers to move the map',
+
+        'top_areas' => 'Top areas',
+        'top_areas_empty' => 'Not enough reports yet to show an area breakdown.',
+        'reports_count' => ':count reports',
+        'show_all' => 'Show all',
+        'show_less' => 'Show less',
+
+        'step_status' => 'Step :step of :total · :status',
+        'progress_aria' => 'Step :step of :total: :status',
+        'verified' => 'Verified',
+
+        'error_title' => 'Something went wrong',
+        'error_body' => 'The public complaint register could not be loaded. It may be a connection problem.',
+        'retry' => 'Retry',
+
+        'untitled' => 'Untitled report',
+        'department_pending' => 'Department pending',
+        'verification_unrecorded' => 'Verification not recorded',
+        'community_member' => 'Community member',
+        'date_unavailable' => 'Date unavailable',
+        'no_reports_yet' => 'No public reports yet',
+    ],
 ];

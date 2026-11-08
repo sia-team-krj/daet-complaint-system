@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./tokens.css";
 
 /* Numeric font (digits only) — IBM Plex Mono, chosen for clear, professional numerals in a government system context */
 @font-face {
@@ -281,6 +282,8 @@ main {
     overflow: visible;
     background: #102847; /* slightly darker than page navy for navbar/sidebar separation */
     border-bottom-color: rgba(201, 168, 76, 0.32);
+    /* Above any page content (including a map trapped at --z-map) but below the drawer. */
+    z-index: var(--z-navbar, 900);
 }
 
 .navbar-inner {
@@ -322,10 +325,32 @@ main {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 0;
+    min-width: auto;
     max-width: 100%;
     text-decoration: none;
     flex: 0 0 auto;
+    flex-shrink: 0; /* the brand must never be squeezed by the centre nav */
+    overflow: hidden;
+}
+
+.navbar-logo .logo-text {
+    min-width: 0;
+}
+
+.navbar-logo .logo-name,
+.navbar-logo .logo-sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Keep nav links from collapsing into the brand on narrow screens */
+.nav-links {
+    min-width: auto;
+}
+
+.nav-link {
+    min-width: auto;
 }
 
 .navbar-logo .logo-text {
@@ -1799,30 +1824,41 @@ body:has(.settings-page) > main {
     color: #f87171;
 }
 
-@keyframes mobile-menu-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+/* Mobile menu. Rendered as a direct child of <body>, outside the navbar's
+   stacking context (the navbar has backdrop-blur). Layering contract:
+   navbar 900 < backdrop 1000 < drawer 1010. Closed state is inert:
+   pointer-events none + visibility hidden so it can never catch taps. */
+.mobile-menu-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-drawer-backdrop, 1000);
+    background: rgba(7, 18, 38, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 180ms ease, visibility 0s linear 320ms;
 }
 
-/* Mobile menu */
+.mobile-menu-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+}
+
 .mobile-menu {
-    position: absolute;
-    top: var(--navbar-height);
+    position: fixed;
+    top: 0;
     right: 0;
+    bottom: 0;
     left: auto;
     display: none;
-    width: 70vw;
-    min-width: 60vw;
-    max-width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    min-height: 0;
-    max-height: 100vh;
-    max-height: 100dvh;
+    width: min(85vw, 320px);
+    max-width: 100vw;
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--color-navy-mid);
-    border-top: 1px solid rgba(201, 168, 76, 0.32);
     border-left: 1px solid rgba(201, 168, 76, 0.22);
     box-shadow: -18px 18px 36px rgba(0, 0, 0, 0.32);
     opacity: 0;
@@ -1832,7 +1868,7 @@ body:has(.settings-page) > main {
     transform-origin: right center;
     transition: transform 320ms cubic-bezier(0.22, 0.68, 0, 1), opacity 180ms ease, visibility 0s linear 320ms;
     will-change: transform;
-    z-index: 60;
+    z-index: var(--z-drawer, 1010);
     -webkit-overflow-scrolling: touch;
 }
 
@@ -1844,8 +1880,38 @@ body:has(.settings-page) > main {
     transition-delay: 0s;
 }
 
+.mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 8px 12px 0;
+}
+
+.mobile-menu-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.84);
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+}
+
+.mobile-menu-close:hover,
+.mobile-menu-close:focus-visible {
+    background: rgba(201, 168, 76, 0.14);
+    color: var(--color-gold-light);
+}
+
 .mobile-menu-inner {
-    padding: 16px clamp(16px, 4vw, 24px) 20px;
+    padding: 4px clamp(16px, 4vw, 24px) 20px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1903,8 +1969,10 @@ body:has(.settings-page) > main {
     color: rgba(255, 255, 255, 0.84);
     text-decoration: none;
     padding: 12px 12px;
+    min-height: 44px;
     border-radius: 6px;
-    display: block;
+    display: flex;
+    align-items: center;
     transition: background 0.18s, color 0.18s;
     background: none;
     border: none;
@@ -2044,18 +2112,9 @@ body:has(.settings-page) > main {
         gap: 8px;
     }
 
-    #navbar .mobile-menu {
+    .mobile-menu,
+    .mobile-menu-backdrop {
         display: block;
-    }
-
-    body.mobile-menu-open::before {
-        content: '';
-        position: fixed;
-        inset: var(--navbar-height) 0 0;
-        z-index: 49;
-        background: rgba(4, 14, 29, 0.38);
-        animation: mobile-menu-fade-in 180ms ease both;
-        pointer-events: auto;
     }
 
     html.mobile-menu-open,
@@ -8626,7 +8685,7 @@ select.staff-input option {
         visibility: hidden;
         pointer-events: none;
         transition: opacity 0.2s ease, visibility 0.2s ease;
-        z-index: 90;
+        z-index: var(--z-drawer-backdrop, 1000);
     }
     .mobile-nav-overlay.is-open {
         opacity: 1;
@@ -8647,7 +8706,7 @@ select.staff-input option {
         transform: translateX(100%);
         visibility: hidden;
         transition: transform 0.22s ease, visibility 0.22s ease;
-        z-index: 100;
+        z-index: var(--z-drawer, 1010);
         overflow: hidden;
     }
     .mobile-nav-drawer.is-open {
