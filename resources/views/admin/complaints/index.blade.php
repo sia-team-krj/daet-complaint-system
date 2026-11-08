@@ -49,93 +49,103 @@
     @endphp
 
     <section class="admin-filter-panel" aria-label="Complaint filters">
-        <form method="GET" action="{{ route('admin.complaints.index') }}" class="admin-filter-grid admin-complaints-filter-grid" data-filter-form>
-            <label class="admin-field">
-                <span>Department</span>
-                <select name="department" class="admin-input" data-filter-auto>
-                    <option value="">All departments</option>
-                    <option value="unassigned" @selected(request('department') === 'unassigned')>Unassigned</option>
-                    @foreach($departments as $department)
-                        <option value="{{ $department->id }}" @selected((string) request('department') === (string) $department->id)>{{ $department->name }}</option>
-                    @endforeach
-                </select>
-            </label>
-
-            <label class="admin-field">
-                <span>Status</span>
-                <select name="status" class="admin-input" data-filter-auto>
-                    <option value="">All statuses</option>
-                    @foreach($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
-            </label>
-
-            <label class="admin-field admin-field--wide">
+        <form method="GET" action="{{ route('admin.complaints.index') }}" class="admin-filter-grid admin-complaints-filter-grid admin-queue-filters" data-filter-form>
+            <label class="admin-field admin-field--wide admin-queue-filter-search">
                 <span>Ticket ID</span>
                 <input type="search" name="search" class="admin-input" placeholder="Search by ticket ID" value="{{ request('search') }}">
             </label>
 
-            {{-- Second row: the disclosure and the submit pair share it, so the
-                 apply control never ends up stranded on a line of its own. --}}
-            <div class="admin-filter-secondary">
-                <details class="admin-filter-more" @if($activeFilters->hasAny(['review', 'priority', 'flagged', 'date_from', 'date_to'])) open @endif>
-                    <summary class="admin-button admin-button--compact admin-button--secondary">
-                        More filters
-                        @if($activeFilters->intersect(array_keys(['review', 'priority', 'flagged', 'date_from', 'date_to']))->isNotEmpty())
-                            <span class="admin-filter-more__dot" aria-hidden="true"></span>
-                        @endif
-                    </summary>
-
-                    <div class="admin-filter-more__body">
-                        <label class="admin-field">
-                            <span>Review status</span>
-                            <select name="review" class="admin-input" data-filter-auto>
-                                <option value="">All review statuses</option>
-                                @foreach($reviewStatusOptions as $reviewOption)
-                                    <option value="{{ $reviewOption->value }}" @selected(request('review') === $reviewOption->value)>{{ $reviewOption->label() }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-
-                        <label class="admin-field">
-                            <span>Confirmed priority</span>
-                            <select name="priority" class="admin-input" data-filter-auto>
-                                <option value="">All priorities</option>
-                                @foreach($priorityOptions as $priorityOption)
-                                    <option value="{{ $priorityOption->value }}" @selected(request('priority') === $priorityOption->value)>{{ $priorityOption->label() }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-
-                        <label class="admin-field">
-                            <span>Moderation</span>
-                            <select name="flagged" class="admin-input" data-filter-auto>
-                                <option value="">All complaints</option>
-                                <option value="1" @selected(request('flagged') === '1')>Flagged only</option>
-                            </select>
-                        </label>
-
-                        <label class="admin-field">
-                            <span>From</span>
-                            <input type="date" name="date_from" class="admin-input" value="{{ request('date_from') }}">
-                        </label>
-
-                        <label class="admin-field">
-                            <span>To</span>
-                            <input type="date" name="date_to" class="admin-input" value="{{ request('date_to') }}">
-                        </label>
-                    </div>
-                </details>
-
-                <div class="admin-filter-actions">
-                    <button type="submit" class="admin-button admin-button--primary">Apply</button>
-                    @if($activeFilters->isNotEmpty())
-                        <a href="{{ route('admin.complaints.index') }}" class="admin-button admin-button--secondary">Clear</a>
+            <details class="admin-queue-filters-collapsible" data-queue-filters-mobile @if($activeFilters->except(['search'])->isNotEmpty()) open @endif>
+                <summary class="admin-button admin-button--secondary admin-queue-filters-toggle">
+                    Filters
+                    @if($activeFilters->except(['search'])->isNotEmpty())
+                        <span class="admin-queue-filters-badge">{{ $activeFilters->except(['search'])->count() }}</span>
                     @endif
+                </summary>
+                <div class="admin-queue-filters-collapsible__body">
+                    <label class="admin-field">
+                        <span>Department</span>
+                        <select name="department" class="admin-input" data-filter-auto>
+                            <option value="">All departments</option>
+                            <option value="unassigned" @selected(request('department') === 'unassigned')>Unassigned</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}" @selected((string) request('department') === (string) $department->id)>{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    <label class="admin-field">
+                        <span>Status</span>
+                        <select name="status" class="admin-input" data-filter-auto>
+                            <option value="">All statuses</option>
+                            @foreach($statuses as $status)
+                                <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+
+                    {{-- Second row: the disclosure and the submit pair share it, so the
+                         apply control never ends up stranded on a line of its own. --}}
+                    <div class="admin-filter-secondary">
+                        <details class="admin-filter-more" @if($activeFilters->hasAny(['review', 'priority', 'flagged', 'date_from', 'date_to'])) open @endif>
+                            <summary class="admin-button admin-button--compact admin-button--secondary">
+                                More filters
+                                @if($activeFilters->intersect(array_keys(['review', 'priority', 'flagged', 'date_from', 'date_to']))->isNotEmpty())
+                                    <span class="admin-filter-more__dot" aria-hidden="true"></span>
+                                @endif
+                            </summary>
+
+                            <div class="admin-filter-more__body">
+                                <label class="admin-field">
+                                    <span>Review status</span>
+                                    <select name="review" class="admin-input" data-filter-auto>
+                                        <option value="">All review statuses</option>
+                                        @foreach($reviewStatusOptions as $reviewOption)
+                                            <option value="{{ $reviewOption->value }}" @selected(request('review') === $reviewOption->value)>{{ $reviewOption->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+
+                                <label class="admin-field">
+                                    <span>Confirmed priority</span>
+                                    <select name="priority" class="admin-input" data-filter-auto>
+                                        <option value="">All priorities</option>
+                                        @foreach($priorityOptions as $priorityOption)
+                                            <option value="{{ $priorityOption->value }}" @selected(request('priority') === $priorityOption->value)>{{ $priorityOption->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+
+                                <label class="admin-field">
+                                    <span>Moderation</span>
+                                    <select name="flagged" class="admin-input" data-filter-auto>
+                                        <option value="">All complaints</option>
+                                        <option value="1" @selected(request('flagged') === '1')>Flagged only</option>
+                                    </select>
+                                </label>
+
+                                <label class="admin-field">
+                                    <span>From</span>
+                                    <input type="date" name="date_from" class="admin-input" value="{{ request('date_from') }}">
+                                </label>
+
+                                <label class="admin-field">
+                                    <span>To</span>
+                                    <input type="date" name="date_to" class="admin-input" value="{{ request('date_to') }}">
+                                </label>
+                            </div>
+                        </details>
+
+                        <div class="admin-filter-actions">
+                            <button type="submit" class="admin-button admin-button--primary">Apply</button>
+                            @if($activeFilters->isNotEmpty())
+                                <a href="{{ route('admin.complaints.index') }}" class="admin-button admin-button--secondary">Clear</a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-            </form>
-            </div>
+            </details>
+        </form>
 
         @if($activeFilters->isNotEmpty())
             {{-- The statement the old page never made. Without it a filtered
@@ -162,8 +172,8 @@
     <form method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" class="admin-bulk-form" data-bulk-form>
         @csrf
         <section class="admin-section admin-section--flush" aria-labelledby="complaint-queue-title">
-            <div class="admin-section-heading">
-                <div>
+            <div class="admin-section-heading admin-queue-section-heading">
+                <div class="admin-section-heading__copy">
                     <h2 id="complaint-queue-title" class="admin-section-title">Complaint queue</h2>
                     <p class="admin-section-description">{{ $complaints->total() }} {{ Str::plural('complaint', $complaints->total()) }} found.</p>
                 </div>
@@ -193,7 +203,13 @@
                      when an admin has overridden it - which is the interesting
                      case. --}}
             <div class="admin-table-wrap admin-queue-wrap">
-                <table class="admin-table admin-queue">
+                <div class="admin-queue-select-all-mobile" data-bulk-select-all-mobile>
+                    <label class="admin-queue-select-all-mobile__label">
+                        <input type="checkbox" class="admin-queue-checkbox" data-select-all="complaint-checkboxes" aria-label="Select all complaints on this page">
+                        <span>Select all</span>
+                    </label>
+                </div>
+                <table class="admin-table admin-queue admin-table--queue-mobile">
                     {{-- Column widths live here, not on the cells.
 
                          With `table-layout: fixed` the browser sizes columns from
@@ -211,7 +227,7 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="admin-table__checkbox"><input type="checkbox" data-select-all="complaint-checkboxes" aria-label="Select all complaints on this page"></th>
+                            <th class="admin-table__checkbox"><input type="checkbox" class="admin-queue-checkbox" data-select-all="complaint-checkboxes" data-select-all-desktop aria-label="Select all complaints on this page"></th>
                             <th>Complaint</th>
                             <th>Department</th>
                             <th>State</th>
@@ -221,65 +237,86 @@
                     </thead>
                     <tbody>
                         @forelse($complaints as $complaint)
-                            <tr>
-                                <td class="admin-table__checkbox">
-                                    <input type="checkbox" name="complaint_ids[]" value="{{ $complaint->id }}" data-complaint-checkbox aria-label="Select {{ $complaint->ticket_id }}">
+                            @php
+                                $qPriority = $complaint->confirmedPriorityEnum?->label() ?? 'Pending';
+                                $qPrioritySlug = str($complaint->confirmedPriorityEnum?->value ?? 'pending')->slug();
+                                $qWaiting = $complaint->created_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) ?? '—';
+                            @endphp
+                            <tr class="admin-queue-row">
+                                <td class="admin-table__checkbox admin-queue-cell--check" data-label="Select">
+                                    <label class="admin-queue-check">
+                                        <input type="checkbox" class="admin-queue-checkbox" name="complaint_ids[]" value="{{ $complaint->id }}" data-complaint-checkbox aria-label="Select {{ $complaint->ticket_id }}">
+                                        <span class="admin-queue-check__box" aria-hidden="true"></span>
+                                    </label>
                                 </td>
 
-                                <td class="admin-queue__complaint-cell">
-<div class="admin-queue__complaint">
-                                    <div class="admin-queue__id">
-                                        <a href="{{ route('admin.complaints.show', $complaint) }}" class="admin-ticket-id">{{ $complaint->ticket_id }}</a>
-                                        @if($complaint->isModerationFlagged())
-                                            <span class="admin-status admin-status--warning">{{ $complaint->moderationLabel() }}</span>
-                                        @endif
+                                <td class="admin-queue__complaint-cell admin-queue-cell--complaint" data-label="Complaint">
+                                    <div class="admin-queue__complaint admin-queue-card">
+                                        <div class="admin-queue-card__line1">
+                                            <a href="{{ route('admin.complaints.show', $complaint) }}" class="admin-ticket-id admin-queue-card__ticket">{{ $complaint->ticket_id }}</a>
+                                            <span class="admin-queue-card__status admin-queue-mobile-only">
+                                                <span class="admin-status admin-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
+                                            </span>
+                                        </div>
+                                        <a href="{{ route('admin.complaints.show', $complaint) }}" class="admin-queue__title admin-queue-card__title">{{ $complaint->title }}</a>
+                                        <p class="admin-queue__meta admin-queue-card__meta">
+                                            <span>{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
+                                            <span aria-hidden="true">·</span>
+                                            <span>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</span>
+                                        </p>
+                                        <div class="admin-queue-card__footer admin-queue-mobile-only">
+                                            <span class="admin-queue-card__dept">
+                                                @if($complaint->department)
+                                                    <span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span class="dept-indicator__name">{{ $complaint->department->name }}</span></span>
+                                                @else
+                                                    <span class="admin-queue__unassigned">Unassigned</span>
+                                                @endif
+                                                <span class="admin-queue-card__filed">{{ $complaint->created_at?->format('M j') }}</span>
+                                            </span>
+                                            <span class="admin-queue-card__right">
+                                                <span class="admin-queue-priority-chip admin-queue-priority-chip--{{ $qPrioritySlug }}">{{ $qPriority }}</span>
+                                                <span class="admin-queue-card__wait">{{ $qWaiting }}</span>
+                                            </span>
+                                        </div>
                                     </div>
-
-                                    {{-- The subject. Without it the queue said only
-                                         that a complaint existed. --}}
-                                    <a href="{{ route('admin.complaints.show', $complaint) }}" class="admin-queue__title">{{ $complaint->title }}</a>
-
-                                    <p class="admin-queue__meta">
-                                        <span>{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
-                                        <span aria-hidden="true">·</span>
-                                        <span>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</span>
-                                    </p>
-</div>
                                 </td>
 
-                                <td class="admin-queue__department-cell">
+                                <td class="admin-queue__department-cell admin-queue-cell--department admin-queue-desktop-only" data-label="Department">
                                     @if($complaint->department)
-                                        <span class="admin-queue__department">{{ $complaint->department->name }}</span>
+                                        <span class="admin-queue__department dept-indicator" data-dept="{{ $complaint->department->code }}">
+                                            <span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span>
+                                            <span class="dept-indicator__name">{{ $complaint->department->name }}</span>
+                                        </span>
                                     @else
                                         <span class="admin-queue__unassigned">Unassigned</span>
                                     @endif
                                 </td>
 
-                                <td>
-<div class="admin-queue__state">
-                                    <span class="admin-status admin-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
-                                    <span class="admin-status admin-status--{{ str($complaint->review_status)->slug() }}">{{ $complaint->reviewStatusEnum->label() }}</span>
-</div>
+                                <td class="admin-queue-cell--state admin-queue-desktop-only" data-label="State">
+                                    <div class="admin-queue__state">
+                                        <span class="admin-status admin-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
+                                        <span class="admin-status admin-status--{{ str($complaint->review_status)->slug() }}">{{ $complaint->reviewStatusEnum->label() }}</span>
+                                        @if($complaint->isModerationFlagged())
+                                            <span class="admin-status admin-status--warning">{{ $complaint->moderationLabel() }}</span>
+                                        @endif
+                                    </div>
                                 </td>
 
-                                <td>
-<div class="admin-queue__priority">
-                                    <span class="admin-queue__priority-value">{{ $complaint->confirmedPriorityEnum?->label() ?? 'Pending' }}</span>
-                                    @if($complaint->confirmedPriorityEnum !== null
-                                        && $complaint->confirmedPriorityEnum->value !== $complaint->suggested_priority)
-                                        {{-- Shown only when it was overridden, which is the
-                                             case worth reading. Repeating the system
-                                             suggestion on every row says nothing. --}}
-                                        <span class="admin-queue__priority-note">suggested {{ str($complaint->suggested_priority)->title() }}</span>
-                                    @endif
-</div>
+                                <td class="admin-queue-cell--priority admin-queue-desktop-only" data-label="Priority">
+                                    <div class="admin-queue__priority">
+                                        <span class="admin-queue__priority-value">{{ $complaint->confirmedPriorityEnum?->label() ?? 'Pending' }}</span>
+                                        @if($complaint->confirmedPriorityEnum !== null
+                                            && $complaint->confirmedPriorityEnum->value !== $complaint->suggested_priority)
+                                            <span class="admin-queue__priority-note">suggested {{ str($complaint->suggested_priority)->title() }}</span>
+                                        @endif
+                                    </div>
                                 </td>
 
-                                <td>
-<div class="admin-queue__age">
-                                    <span>{{ $complaint->created_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</span>
-                                    <span class="admin-queue__age-date">{{ $complaint->created_at?->format('M j, Y') }}</span>
-</div>
+                                <td class="admin-queue-cell--age admin-queue-desktop-only" data-label="Waiting">
+                                    <div class="admin-queue__age">
+                                        <span>{{ $complaint->created_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }}</span>
+                                        <span class="admin-queue__age-date">{{ $complaint->created_at?->format('M j, Y') }}</span>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -335,7 +372,10 @@
     </form>
 
     @if($complaints->hasPages())
-        <div class="admin-pagination">{{ $complaints->links() }}</div>
+        <div class="admin-pagination admin-pagination--queue">
+            <p class="admin-pagination__info-mobile">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }}</p>
+            {{ $complaints->links() }}
+        </div>
     @endif
 </div>
 @endsection
@@ -346,7 +386,7 @@
         const form = document.querySelector('[data-bulk-form]');
         if (!form) return;
 
-        const selectAll = form.querySelector('[data-select-all="complaint-checkboxes"]');
+        const selectAlls = [...form.querySelectorAll('[data-select-all="complaint-checkboxes"]')];
         const checkboxes = [...form.querySelectorAll('[data-complaint-checkbox]')];
         const bar = form.querySelector('[data-bulk-bar]');
         const count = form.querySelector('[data-bulk-count]');
@@ -356,7 +396,7 @@
         const clear = form.querySelector('[data-bulk-clear]');
         const note = form.querySelector('[data-bulk-note]');
 
-        if (!selectAll || !checkboxes.length || !bar) return;
+        if (!selectAlls.length || !checkboxes.length || !bar) return;
 
         const selected = () => checkboxes.filter((checkbox) => checkbox.checked);
 
@@ -382,16 +422,16 @@
                         : `Ownership moves to ${destination}. The resident sees the update; the change is logged.`;
             }
 
-            if (selectAll) {
-                selectAll.checked = chosen.length === checkboxes.length && checkboxes.length > 0;
-                selectAll.indeterminate = chosen.length > 0 && chosen.length < checkboxes.length;
-            }
+            selectAlls.forEach((el) => {
+                el.checked = chosen.length === checkboxes.length && checkboxes.length > 0;
+                el.indeterminate = chosen.length > 0 && chosen.length < checkboxes.length;
+            });
         };
 
-        selectAll.addEventListener('change', () => {
+        selectAlls.forEach((selectAll) => selectAll.addEventListener('change', () => {
             checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
             syncBulk();
-        });
+        }));
 
         checkboxes.forEach((checkbox) => checkbox.addEventListener('change', syncBulk));
         department?.addEventListener('change', syncBulk);
@@ -407,6 +447,14 @@
         document.querySelectorAll('[data-filter-auto]').forEach((field) => {
             field.addEventListener('change', () => field.form?.requestSubmit());
         });
+
+        // Desktop: force mobile <details> filter panel open (closed details hides content
+        // even with display:contents). Matches audit trail fix.
+        const queueFilterDetails = document.querySelectorAll('details.admin-queue-filters-collapsible[data-queue-filters-mobile]');
+        const qmq = window.matchMedia('(min-width: 641px)');
+        function syncQueueDetails() { queueFilterDetails.forEach(function(d){ if (qmq.matches) d.open = true; }); }
+        if (qmq.addEventListener) qmq.addEventListener('change', syncQueueDetails); else qmq.addListener(syncQueueDetails);
+        syncQueueDetails();
 
         syncBulk();
     })();

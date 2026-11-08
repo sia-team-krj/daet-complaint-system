@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\NotificationService;
 use Database\Seeders\DepartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -477,6 +478,178 @@ class NotificationDeliveryTest extends TestCase
             ->assertSuccessful();
 
         $this->assertSame(1, Notification::where('type', Notification::COMPLAINT_INFORMATION_STALE)->count());
+    }
+
+    public function test_verifying_a_complaint_tells_the_resident(): void
+    {
+        $this->actingAs($this->verifier)
+            ->put(route('staff.complaints.review', $this->complaint), [
+                'review_status' => 'verified',
+                'confirmed_priority' => 'elevated',
+            ])
+            ->assertRedirect(route('staff.complaints.show', $this->complaint));
+
+        $notification = Notification::where('user_id', $this->resident->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_REVIEW_UPDATED, $notification->type);
+        $this->assertStringContainsString($this->complaint->ticket_id, $notification->title);
+        $this->assertStringContainsString('verified', $notification->title);
+    }
+
+    public function test_rejecting_a_complaint_tells_the_resident(): void
+    {
+        $this->actingAs($this->verifier)
+            ->put(route('staff.complaints.review', $this->complaint), [
+                'review_status' => 'rejected',
+                'review_notes' => 'The reported location could not be found.',
+            ])
+            ->assertRedirect(route('staff.complaints.show', $this->complaint));
+
+        $notification = Notification::where('user_id', $this->resident->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_REVIEW_UPDATED, $notification->type);
+        $this->assertStringContainsString('rejected', $notification->title);
+    }
+
+    public function test_an_admin_status_update_tells_the_resident(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'department_id' => null]);
+
+        $this->complaint->update([
+            'review_status' => 'verified',
+            'confirmed_priority' => 'elevated',
+        ]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.complaints.update', $this->complaint), [
+                'status' => 'Under Review',
+                'staff_note' => 'The report was checked and is now being scheduled.',
+            ])
+            ->assertRedirect(route('admin.complaints.show', $this->complaint));
+
+        $notification = Notification::where('user_id', $this->resident->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_STATUS_CHANGED, $notification->type);
+        $this->assertStringContainsString('Under Review', $notification->title);
+    }
+
+    public function test_an_admin_review_decision_tells_the_resident_once(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'department_id' => null]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.complaints.update', $this->complaint), [
+                'review_status' => 'verified',
+                'confirmed_priority' => 'elevated',
+            ])
+            ->assertRedirect(route('admin.complaints.show', $this->complaint));
+
+        // The review decision also advances Submitted -> Under Review. The
+        // resident gets one notification for the decision, not two.
+        $notification = Notification::where('user_id', $this->resident->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_REVIEW_UPDATED, $notification->type);
+        $this->assertStringContainsString('verified', $notification->title);
+    }
+
+    public function test_assigning_a_complaint_tells_the_worker(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'department_id' => null]);
+        $worker = $this->staff();
+
+        $this->actingAs($admin)
+            ->put(route('admin.complaints.update', $this->complaint), [
+                'assigned_staff_id' => $worker->id,
+            ])
+            ->assertRedirect(route('admin.complaints.show', $this->complaint));
+
+        $notification = Notification::where('user_id', $worker->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_ASSIGNED, $notification->type);
+        $this->assertStringContainsString($this->complaint->ticket_id, $notification->title);
+
+        // Assignment is not news for the resident.
+        $this->assertSame(0, Notification::where('user_id', $this->resident->id)->count());
+    }
+
+    public function test_admins_are_told_when_a_department_has_no_verifier(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'department_id' => null]);
+        $gso = Department::where('code', 'GSO')->firstOrFail();
+
+        // The only verifier in this test works for ENG, so GSO has nobody who
+        // can settle this complaint.
+        $this->complaint->update(['department_id' => $gso->id]);
+
+        app(NotificationService::class)->complaintNeedsVerification($this->complaint);
+
+        $notification = Notification::where('user_id', $admin->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_NEEDS_VERIFICATION, $notification->type);
+        $this->assertSame(0, Notification::where('user_id', $this->verifier->id)->count());
+    }
+
+    public function test_a_mail_transport_failure_does_not_suppress_the_in_app_notification(): void
+    {
+        $this->complaint->update([
+            'review_status' => 'verified',
+            'confirmed_priority' => 'elevated',
+        ]);
+
+        Mail::shouldReceive('to')
+            ->once()
+            ->andThrow(new \RuntimeException('SMTP is unreachable'));
+
+        $this->actingAs($this->verifier)
+            ->put(route('staff.complaints.update', $this->complaint), [
+                'status' => 'Under Review',
+                'note' => 'The report has been checked and is now queued for a crew.',
+            ])
+            ->assertRedirect(route('staff.complaints.show', $this->complaint));
+
+        $notification = Notification::where('user_id', $this->resident->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_STATUS_CHANGED, $notification->type);
+    }
+
+    public function test_the_live_feed_endpoint_returns_the_dropdown_markup_for_one_recipient(): void
+    {
+        Notification::create([
+            'user_id' => $this->verifier->id,
+            'type' => Notification::COMPLAINT_NEEDS_VERIFICATION,
+            'title' => 'Fresh item for the verifier',
+        ]);
+
+        $other = $this->staff();
+        Notification::create([
+            'user_id' => $other->id,
+            'type' => Notification::COMPLAINT_NEEDS_VERIFICATION,
+            'title' => 'Private to somebody else',
+        ]);
+
+        $this->actingAs($this->verifier)
+            ->get(route('notifications.feed'))
+            ->assertOk()
+            ->assertSee('Fresh item for the verifier')
+            ->assertDontSee('Private to somebody else')
+            ->assertDontSee('<!DOCTYPE html>', false);
+    }
+
+    public function test_the_live_unread_count_matches_the_badge(): void
+    {
+        Notification::create([
+            'user_id' => $this->verifier->id,
+            'type' => Notification::COMPLAINT_NEEDS_VERIFICATION,
+            'title' => 'One unread item',
+        ]);
+
+        $this->actingAs($this->verifier)
+            ->getJson(route('notifications.unread-count'))
+            ->assertOk()
+            ->assertJson([
+                'badge' => '1',
+                'unread' => 1,
+            ]);
     }
 
     private function openRequest(): ComplaintInformationRequest

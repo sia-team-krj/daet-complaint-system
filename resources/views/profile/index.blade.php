@@ -6,8 +6,8 @@
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
   
   :root {
-    --navy: #0B1F3A;
-    --navy-mid: #12294d;
+    --navy: #142D4F;
+    --navy-mid: #1B3A61;
     --gold: #C9A84C;
     --gold-light: #E2C06A;
     --gold-pale: rgba(201,168,76,0.12);
@@ -30,14 +30,7 @@
     pointer-events: none;
   }
   
-  .profile-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.06));
-  }
+
   
   .profile-container {
     max-width: 1200px;
@@ -333,7 +326,7 @@
 
 <div class="profile-root">
   <div class="profile-bg"></div>
-  <div class="profile-bar"></div>
+
   
   <div class="profile-container">
     <div class="profile-eyebrow fu d1">Your Account</div>

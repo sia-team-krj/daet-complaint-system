@@ -23,9 +23,9 @@ enum VerificationMethod: string
     public function label(): string
     {
         return match ($this) {
-            self::Desk => 'Report reviewed',
-            self::SiteVisit => 'Site attended',
-            self::DuplicateMatch => 'Already reported',
+            self::Desk => __('statuses.verification_method.desk'),
+            self::SiteVisit => __('statuses.verification_method.site_visit'),
+            self::DuplicateMatch => __('statuses.verification_method.duplicate_match'),
         };
     }
 

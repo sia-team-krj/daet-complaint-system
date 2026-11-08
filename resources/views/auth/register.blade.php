@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Create Account - Daet Listens')
+@section('title', __('auth_ui.titles.register'))
 @section('content')
 
 <style>
@@ -7,8 +7,8 @@
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
+    --navy:        #142D4F;
+    --navy-mid:    #1B3A61;
     --gold:        #C9A84C;
     --gold-light:  #E2C06A;
     --gold-pale:   rgba(201,168,76,0.12);
@@ -31,14 +31,26 @@
   .auth-root {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     font-family: 'DM Sans', sans-serif;
-    position: static;
+    position: relative;
     background: var(--navy);
     overflow: visible;
     padding-top: calc(var(--navbar-height) + 8px);
     /* Stops the viewport jumping when the barangay suggestion list is inserted
        above the field. Still needed now that the document scrolls. */
     overflow-anchor: none;
+  }
+
+  /* Clips only the decorative glows/watermark. The glows are wider than the
+     viewport by design (right: -8%), so without this they extend the document
+     sideways and expose a white strip beside the full-bleed form panel. */
+  .auth-decorations {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
   }
 
   .auth-bg {
@@ -59,10 +71,6 @@
     width: 40vw; height: 40vw; max-width: 560px; max-height: 560px;
     background: radial-gradient(ellipse, rgba(26,53,96,0.6) 0%, transparent 70%);
     pointer-events: none;
-  }
-  .auth-bar {
-    position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-    background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.06));
   }
   .auth-wm {
     position: absolute; bottom: -4%; right: -1%;
@@ -88,12 +96,6 @@
     /* Sticks below the fixed navbar while the form scrolls past it. */
     position: sticky; top: calc(var(--navbar-height) + 8px); align-self: start;
     min-height: calc(100svh - var(--navbar-height) - 8px);
-  }
-
-  .auth-brand::after {
-    content: ''; position: absolute; top: 8%; right: 0;
-    width: 1px; height: 84%;
-    background: linear-gradient(180deg, transparent, rgba(201,168,76,0.22) 20%, rgba(201,168,76,0.22) 80%, transparent);
   }
 
   .auth-badge {
@@ -133,12 +135,14 @@
   .auth-form-panel {
     display: flex; flex-direction: column;
     justify-content: flex-start; align-items: center;
+    width: 100%;
+    min-width: 0;
     padding: clamp(40px, 5vh, 72px) clamp(40px, 5vw, 80px) clamp(48px, 6vh, 80px) clamp(32px, 4vw, 64px);
   }
 
   .auth-form-wrap {
     width: 100%;
-    max-width: min(440px, 90%);
+    max-width: 440px;
   }
 
   .auth-form-eyebrow { display: inline-flex; align-items: center; gap: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
@@ -151,13 +155,30 @@
   /* Fields */
   .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .field-group { margin-bottom: 16px; }
-  .field-label { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 7px; }
+  .field-label { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 7px; }
   .field-wrap { position: relative; }
-  .field-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(201,168,76,0.5); pointer-events: none; transition: color 0.2s; }
-  .field-wrap:focus-within .field-icon { color: rgba(201,168,76,0.9); }
-  .field-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.18); border-radius: 4px; padding: 12px 14px 12px 42px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--white); outline: none; transition: border-color 0.22s, background 0.22s, box-shadow 0.22s; }
-  .field-input::placeholder { color: rgba(255,255,255,0.2); }
-  .field-input:focus { border-color: rgba(201,168,76,0.55); background: rgba(255,255,255,0.06); box-shadow: 0 0 0 3px rgba(201,168,76,0.06); }
+  .field-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(201,168,76,0.85); pointer-events: none; transition: color 0.2s; }
+  .field-wrap:focus-within .field-icon { color: var(--gold-light); }
+  .field-input {
+    width: 100%;
+    background: #1F3D60;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 4px;
+    padding: 12px 14px 12px 42px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: #ffffff;
+    caret-color: #ffffff;
+    outline: none;
+    transition: border-color 0.22s, background 0.22s, box-shadow 0.22s;
+  }
+  .field-input::placeholder { color: rgba(255,255,255,0.55); opacity: 1; }
+  .field-input:hover { border-color: rgba(255,255,255,0.34); }
+  .field-input:focus {
+    border-color: #D4A947;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212,169,71,0.2);
+  }
   .field-underline { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; border-radius: 0 0 4px 4px; }
   .field-input:focus ~ .field-underline { transform: scaleX(1); }
 
@@ -226,51 +247,51 @@
        broke this form on phones in the first place. */
     .auth-layout { grid-template-columns: 1fr; min-height: 0; }
     .auth-brand { display: none; }
-    .auth-form-panel { padding: 48px 24px 90px; justify-content: flex-start; }
+    .auth-form-panel { padding: 48px 20px 90px; justify-content: flex-start; }
     .auth-wm { display: none; }
   }
 
   @media (max-width: 480px) {
-    .auth-form-panel { padding: 36px 16px 90px; }
+    .auth-form-panel { padding: 36px 20px 90px; }
     .field-row-2 { grid-template-columns: 1fr; }
   }
 </style>
 
 <div class="auth-root">
-  <div class="auth-bg"></div>
-  <div class="auth-glow-tr"></div>
-  <div class="auth-glow-bl"></div>
-  <div class="auth-bar"></div>
-  <div class="auth-wm">DAET</div>
+  <div class="auth-decorations">
+    <div class="auth-bg"></div>
+    <div class="auth-glow-tr"></div>
+    <div class="auth-glow-bl"></div>
+    <div class="auth-wm">DAET</div>
+  </div>
 
   <div class="auth-layout">
 
     {{-- LEFT: Brand --}}
     <div class="auth-brand">
       <div class="auth-badge fu d1">
-        Official Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
+        {{ __('auth_ui.common.official_portal') }}
       </div>
       <h2 class="auth-brand-title fu d2">
-        Join<br>
-        <span class="gold-line">Daet Listens.</span>
+        {{ __('auth_ui.register.join') }}<br>
+        <span class="gold-line">{{ __('auth_ui.register.daet_listens') }}</span>
       </h2>
       <div class="auth-brand-divider fu d2"></div>
       <p class="auth-brand-desc fu d3">
-        Create your account and become part of a community committed to a
-        more transparent, accountable, and responsive local government.
+        {{ __('auth_ui.register.description') }}
       </p>
       <div class="auth-benefits fu d4">
         <div class="auth-benefit">
           <div class="auth-benefit-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-          <div><div class="auth-benefit-title">Track Every Complaint</div><div class="auth-benefit-desc">Real-time updates from submission to resolution.</div></div>
+          <div><div class="auth-benefit-title">{{ __('auth_ui.register.benefit_tracking_title') }}</div><div class="auth-benefit-desc">{{ __('auth_ui.register.benefit_tracking_desc') }}</div></div>
         </div>
         <div class="auth-benefit">
           <div class="auth-benefit-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <div><div class="auth-benefit-title">Secure &amp; Confidential</div><div class="auth-benefit-desc">Encrypted and protected under RA 6713 and FOI.</div></div>
+          <div><div class="auth-benefit-title">{{ __('auth_ui.register.benefit_secure_title') }}</div><div class="auth-benefit-desc">{{ __('auth_ui.register.benefit_secure_desc') }}</div></div>
         </div>
         <div class="auth-benefit">
           <div class="auth-benefit-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-          <div><div class="auth-benefit-title">Drive Accountability</div><div class="auth-benefit-desc">Hold offices to measurable public standards.</div></div>
+          <div><div class="auth-benefit-title">{{ __('auth_ui.register.benefit_accountability_title') }}</div><div class="auth-benefit-desc">{{ __('auth_ui.register.benefit_accountability_desc') }}</div></div>
         </div>
       </div>
     </div>
@@ -279,11 +300,11 @@
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
 
-        <div class="auth-form-eyebrow fu d1">Create Account</div>
-        <h1 class="auth-form-heading fu d2">Register</h1>
+        <div class="auth-form-eyebrow fu d1">{{ __('auth_ui.register.eyebrow') }}</div>
+        <h1 class="auth-form-heading fu d2">{{ __('auth_ui.register.heading') }}</h1>
         <p class="auth-form-sub fu d2">
-          Already have an account?
-          <a href="{{ route('login') }}" wire:navigate>Sign in here</a>
+          {{ __('auth_ui.register.already_have') }}
+          <a href="{{ route('login') }}" wire:navigate>{{ __('auth_ui.register.sign_in_here') }}</a>
         </p>
 
         @if ($errors->any())
@@ -297,7 +318,7 @@
 
           <div class="field-row-2 fu d3">
             <div class="field-group">
-              <label class="field-label" for="first_name">First Name</label>
+              <label class="field-label" for="first_name">{{ __('auth_ui.register.first_name') }}</label>
               <div class="field-wrap">
                 <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                 <input id="first_name" name="first_name" type="text" class="field-input" placeholder="Juan" value="{{ old('first_name') }}" required>
@@ -305,7 +326,7 @@
               </div>
             </div>
             <div class="field-group">
-              <label class="field-label" for="last_name">Last Name</label>
+              <label class="field-label" for="last_name">{{ __('auth_ui.register.last_name') }}</label>
               <div class="field-wrap">
                 <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                 <input id="last_name" name="last_name" type="text" class="field-input" placeholder="dela Cruz" value="{{ old('last_name') }}" required>
@@ -315,7 +336,7 @@
           </div>
 
           <div class="field-group fu d3">
-            <label class="field-label" for="email">Email Address</label>
+            <label class="field-label" for="email">{{ __('auth_ui.common.email') }}</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
               <input id="email" name="email" type="email" class="field-input" placeholder="your@email.com" value="{{ old('email') }}" required>
@@ -324,7 +345,7 @@
           </div>
 
           <div class="field-group fu d3">
-            <label class="field-label" for="phone">Contact Number</label>
+            <label class="field-label" for="phone">{{ __('auth_ui.register.contact_number') }}</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.91-.82a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
               <input id="phone" name="phone" type="tel" class="field-input" placeholder="09XX XXX XXXX" value="{{ old('phone') }}">
@@ -333,7 +354,7 @@
           </div>
 
           <div class="field-group has-suggestions fu d4">
-            <label class="field-label" for="barangay">Barangay</label>
+            <label class="field-label" for="barangay">{{ __('auth_ui.register.barangay') }}</label>
             <div class="field-wrap" data-barangay-search data-suggestions="barangay-suggestions" data-status="barangay-status">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
               <input
@@ -341,7 +362,7 @@
                 name="barangay"
                 type="search"
                 class="field-input"
-                placeholder="Type a barangay"
+                placeholder="{{ __('auth_ui.register.barangay_placeholder') }}"
                 value="{{ old('barangay') }}"
                 role="combobox"
                 aria-autocomplete="list"
@@ -354,7 +375,7 @@
                 data-barangay-input
               >
               <div class="field-underline"></div>
-              <ul id="barangay-suggestions" class="barangay-suggestions" role="listbox" aria-label="Barangay suggestions" hidden>
+              <ul id="barangay-suggestions" class="barangay-suggestions" role="listbox" aria-label="{{ __('auth_ui.register.barangay_suggestions') }}" hidden>
                 @foreach (App\Models\User::BARANGAYS as $barangay)
                   <li
                     id="barangay-option-{{ $loop->index }}"
@@ -366,24 +387,24 @@
                 @endforeach
               </ul>
             </div>
-            <span id="barangay-status" class="barangay-search-status" aria-live="polite">Type a barangay to see suggestions.</span>
+            <span id="barangay-status" class="barangay-search-status" aria-live="polite">{{ __('auth_ui.register.barangay_status') }}</span>
           </div>
 
           <div class="field-group fu d4">
-            <label class="field-label" for="password">Password</label>
+            <label class="field-label" for="password">{{ __('auth_ui.common.password') }}</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-              <input id="password" name="password" type="password" class="field-input" placeholder="Minimum 8 characters" required autocomplete="new-password">
+              <input id="password" name="password" type="password" class="field-input" placeholder="{{ __('auth_ui.register.password_placeholder') }}" required autocomplete="new-password">
               <div class="field-underline"></div>
             </div>
             @include('auth.partials.password-requirements', ['passwordTarget' => 'password'])
           </div>
 
           <div class="field-group fu d4">
-            <label class="field-label" for="password_confirmation">Confirm Password</label>
+            <label class="field-label" for="password_confirmation">{{ __('auth_ui.common.confirm_password') }}</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-              <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="Re-enter password" required autocomplete="new-password">
+              <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="{{ __('auth_ui.register.confirm_password_placeholder') }}" required autocomplete="new-password">
               <div class="field-underline"></div>
             </div>
           </div>
@@ -395,21 +416,21 @@
                 a new browsing context.
             --}}
             <input type="checkbox" name="terms" required>
-            <span class="field-terms-label">I agree to the <a href="{{ route('terms') }}" target="_blank" rel="noopener">Terms and Conditions</a> and <a href="{{ route('privacy') }}" target="_blank" rel="noopener">Privacy Policy</a> of the Municipality of Daet Transparency Complaint Portal.</span>
+            <span class="field-terms-label">{{ __('auth_ui.register.terms_prefix') }} <a href="{{ route('terms') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.terms') }}</a> {{ __('auth_ui.register.and') }} <a href="{{ route('privacy') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.privacy') }}</a> {{ __('auth_ui.register.terms_suffix') }}</span>
           </label>
 
           <button type="submit" class="btn-submit fu d5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-            Create My Account
+            {{ __('auth_ui.common.create_my_account') }}
           </button>
 
           <div class="auth-or fu d5">
-            <div class="auth-or-line"></div><span class="auth-or-text">or</span><div class="auth-or-line"></div>
+            <div class="auth-or-line"></div><span class="auth-or-text">{{ __('auth_ui.common.or') }}</span><div class="auth-or-line"></div>
           </div>
 
           <p class="auth-alt-link fu d5">
-            Already have an account?
-            <a href="{{ route('login') }}">Sign in &rarr;</a>
+            {{ __('auth_ui.register.already_have') }}
+            <a href="{{ route('login') }}">{{ __('auth_ui.register.sign_in_link') }}</a>
           </p>
         </form>
       </div>

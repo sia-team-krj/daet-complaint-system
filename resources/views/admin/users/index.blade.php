@@ -143,8 +143,11 @@
                                 </td>
                                 <td data-label="Department">
                                     @if($directoryUser->department)
-                                        <span class="admin-department-cell">{{ $directoryUser->department->name }}</span>
-                                        <small class="admin-table-subtext">{{ $directoryUser->department->code }}</small>
+                                        <span class="admin-department-cell dept-indicator">
+                                            <span class="dept-dot" data-dept="{{ $directoryUser->department->code }}" aria-hidden="true"></span>
+                                            <span class="dept-indicator__name">{{ $directoryUser->department->name }}</span>
+                                        </span>
+                                        <small class="admin-table-subtext"><span class="dept-chip" data-dept="{{ $directoryUser->department->code }}">{{ $directoryUser->department->code }}</span></small>
                                     @else
                                         <span class="admin-muted-cell">Unassigned</span>
                                     @endif

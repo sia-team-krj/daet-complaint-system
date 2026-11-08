@@ -29,12 +29,12 @@ enum ComplaintStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Submitted => "Submitted",
-            self::UnderReview => "Under Review",
-            self::InProgress => "In Progress",
-            self::Resolved => "Resolved",
-            self::Rejected => "Rejected",
-            self::Closed => "Closed",
+            self::Submitted => __('statuses.complaint_status.submitted'),
+            self::UnderReview => __('statuses.complaint_status.under_review'),
+            self::InProgress => __('statuses.complaint_status.in_progress'),
+            self::Resolved => __('statuses.complaint_status.resolved'),
+            self::Rejected => __('statuses.complaint_status.rejected'),
+            self::Closed => __('statuses.complaint_status.closed'),
         };
     }
 

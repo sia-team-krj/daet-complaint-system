@@ -8,7 +8,7 @@
     <div class="staff-department-context">
         <span class="staff-department-label">Assigned department</span>
         <strong>{{ auth()->user()->department?->name ?? 'Department pending' }}</strong>
-        @if(auth()->user()->department?->code)<span>{{ auth()->user()->department->code }}</span>@endif
+        @if(auth()->user()->department?->code)<span class="dept-chip" data-dept="{{ auth()->user()->department->code }}">{{ auth()->user()->department->code }}</span>@endif
     </div>
 
     <nav class="staff-sidebar-nav" aria-label="Staff sections">

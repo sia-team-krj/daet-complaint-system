@@ -294,7 +294,7 @@ class StaffController extends Controller
     /**
      * Review complaint legitimacy and confirm the operational priority.
      */
-    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification): RedirectResponse
+    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications): RedirectResponse
     {
         $user = Auth::user();
 
@@ -373,6 +373,17 @@ class StaffController extends Controller
                 ],
             );
         });
+
+        // A review decision is the event the resident is waiting for. Sending it
+        // is secondary to saving the decision, so a notification failure must
+        // not make the review look like it did not land.
+        if ($oldReviewStatus !== $reviewStatus) {
+            try {
+                $notifications->reviewUpdated($complaint, $reviewStatus, $user);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
 
         return redirect()
             ->route('staff.complaints.show', $complaint)
@@ -575,17 +586,27 @@ class StaffController extends Controller
             throw $exception;
         }
 
-        // Send email notification to citizen
-        Mail::to($complaint->user->email)->send(
-            new ComplaintUpdatedMail($complaint, $newStatus->value, $validated['note'])
-        );
-
-        // And the in-app notification, so the resident learns of the change
-        // without having to remember to open the page. Reported rather than
-        // thrown: a failed notification must not undo a status change the
-        // department has already committed to, with its proof photos attached.
+        // In-app first, so the resident learns of the change without having to
+        // remember to open the page. Reported rather than thrown: a failed
+        // notification must not undo a status change the department has already
+        // committed to, with its proof photos attached.
         try {
             $notifications->statusChanged($complaint, $newStatus->label(), $user);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        // Email is best-effort for the same reason. A dead SMTP host used to
+        // abort the request after the status was already saved and before the
+        // in-app notification was created, leaving the resident with neither.
+        try {
+            $recipient = $complaint->user;
+
+            if ($recipient?->email) {
+                Mail::to($recipient->email)->send(
+                    new ComplaintUpdatedMail($complaint, $newStatus->value, $validated['note'])
+                );
+            }
         } catch (Throwable $exception) {
             report($exception);
         }

@@ -1,12 +1,12 @@
 @extends($mainLayout)
 
-@section('title', 'Public Transparency - Daet Listens')
+@section('title', __('transparency.index.title'))
 
 @push('styles')
     <style>
         .transparency-root {
             --tp-navy: #0b1f3a;
-            --tp-navy-mid: #12294d;
+            --tp-navy-mid: #1B3A61;
             --tp-gold: #c9a84c;
             --tp-gold-light: #e2c06a;
             --tp-cream: #f5f0e8;
@@ -45,7 +45,7 @@
         .transparency-header {
             position: relative;
             overflow: hidden;
-            padding: 132px 40px 54px;
+            padding: clamp(96px, 14vw, 132px) clamp(14px, 4vw, 40px) clamp(32px, 5vw, 54px);
             background: var(--tp-navy);
             color: #fff;
         }
@@ -108,10 +108,10 @@
             margin-bottom: 18px;
             color: #fff;
             font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: clamp(46px, 6vw, 78px);
+            font-size: clamp(1.75rem, 5vw, 3.25rem);
             font-weight: 700;
-            letter-spacing: -0.025em;
-            line-height: 0.96;
+            letter-spacing: -0.01em;
+            line-height: 1.08;
         }
 
         .transparency-header h1 em {
@@ -123,9 +123,9 @@
             max-width: 650px;
             margin-bottom: 22px;
             color: rgba(255, 255, 255, 0.7);
-            font-size: 15px;
+            font-size: clamp(0.9375rem, 1.5vw, 1rem);
             font-weight: 300;
-            line-height: 1.75;
+            line-height: 1.7;
         }
 
         .transparency-header__meta {
@@ -196,7 +196,7 @@
         /* ── Shared sections ───────────────────────────────────────────── */
         .transparency-section {
             scroll-margin-top: 84px;
-            padding: 72px 40px 84px;
+            padding: clamp(40px, 6vw, 72px) clamp(14px, 4vw, 40px) clamp(48px, 7vw, 84px);
         }
 
         .transparency-section--map {
@@ -220,26 +220,26 @@
             margin-bottom: 10px;
             color: var(--tp-navy);
             font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: clamp(34px, 4vw, 52px);
+            font-size: clamp(1.375rem, 3.5vw, 2.25rem);
             font-weight: 700;
             letter-spacing: -0.02em;
-            line-height: 0.98;
+            line-height: 1.1;
         }
 
         .transparency-section__head p {
             max-width: 670px;
             margin-bottom: 0;
             color: var(--tp-muted);
-            font-size: 13px;
+            font-size: clamp(0.8125rem, 1.4vw, 0.875rem);
             font-weight: 300;
-            line-height: 1.7;
+            line-height: 1.65;
         }
 
         .transparency-count {
             flex: 0 0 auto;
             color: #9a741e;
-            font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: 38px;
+            font-family: "IBM Plex Mono", "Numeric", ui-monospace, monospace;
+            font-size: clamp(1.5rem, 3vw, 2rem);
             font-weight: 700;
             line-height: 1;
         }
@@ -500,9 +500,10 @@
             max-width: 100%;
             overflow: hidden;
             color: #8b6719;
+            font-family: "IBM Plex Mono", "Numeric", ui-monospace, monospace;
             font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.02em;
             text-decoration: none;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -714,7 +715,7 @@
             }
 
             .transparency-header h1 {
-                font-size: 48px;
+                font-size: clamp(1.625rem, 7vw, 2.25rem);
             }
 
             .transparency-header__actions,
@@ -793,9 +794,10 @@
                 min-width: 0;
                 overflow: hidden;
                 color: #8b6719;
+                font-family: "IBM Plex Mono", "Numeric", ui-monospace, monospace;
                 font-size: 10px;
                 font-weight: 700;
-                letter-spacing: 0.04em;
+                letter-spacing: 0.02em;
                 text-decoration: none;
                 text-overflow: ellipsis;
                 white-space: nowrap;
@@ -900,7 +902,7 @@
             }
 
             .transparency-header h1 {
-                font-size: 38px;
+                font-size: clamp(1.5rem, 8vw, 1.875rem);
             }
 
             .transparency-map-frame {

@@ -22,7 +22,7 @@
     <style>
         .legal-root {
             --lg-navy: #0b1f3a;
-            --lg-navy-mid: #12294d;
+            --lg-navy-mid: #1B3A61;
             --lg-gold: #c9a84c;
             --lg-gold-light: #e2c06a;
             --lg-cream: #f5f0e8;

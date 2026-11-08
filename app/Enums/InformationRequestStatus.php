@@ -24,9 +24,9 @@ enum InformationRequestStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Open => 'Waiting on resident',
-            self::Answered => 'Resident replied',
-            self::Resolved => 'Closed',
+            self::Open => __('statuses.information_request.open'),
+            self::Answered => __('statuses.information_request.answered'),
+            self::Resolved => __('statuses.information_request.resolved'),
         };
     }
 

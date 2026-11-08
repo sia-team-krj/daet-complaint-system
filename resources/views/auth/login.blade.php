@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Login - Daet Listens')
+@section('title', __('auth_ui.titles.login'))
 @section('content')
 
 {{-- When user is logged in, and tried to logged in new/existing account thru new tab after clicking submit button
@@ -12,7 +12,6 @@
     <div class="auth-bg"></div>
     <div class="auth-glow-tr"></div>
     <div class="auth-glow-bl"></div>
-    <div class="auth-bar"></div>
     <div class="auth-wm">DAET</div>
   </div>
 
@@ -21,19 +20,17 @@
     {{-- LEFT: Brand --}}
     <div class="auth-brand">
       <div class="auth-badge fu d1">
-        Official Portal &nbsp;·&nbsp; LGU Daet, Camarines Norte
+        {{ __('auth_ui.common.official_portal') }}
       </div>
 
       <h2 class="auth-brand-title fu d2">
-        Welcome Back<br>
-        <span class="gold-line">to Daet Listens.</span>
+        {{ __('auth_ui.login.welcome_back') }}<br>
+        <span class="gold-line">{{ __('auth_ui.login.to_daet_listens') }}</span>
       </h2>
       <div class="auth-brand-divider fu d2"></div>
 
       <p class="auth-brand-desc fu d3">
-        Sign in to access your complaints, track ongoing cases,
-        and hold your local government to a higher standard of
-        transparency and accountability.
+        {{ __('auth_ui.login.description') }}
       </p>
 
     </div>
@@ -42,11 +39,11 @@
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
 
-        <div class="auth-form-eyebrow fu d1">Secure Access</div>
-        <h1 class="auth-form-heading fu d2">Sign In</h1>
+        <div class="auth-form-eyebrow fu d1">{{ __('auth_ui.login.eyebrow') }}</div>
+        <h1 class="auth-form-heading fu d2">{{ __('auth_ui.common.sign_in') }}</h1>
         <p class="auth-form-sub fu d2">
-          Don't have an account?
-          <a href="{{ route('register') }}" wire:navigate>Create one here</a>
+          {{ __('auth_ui.login.no_account') }}
+          <a href="{{ route('register') }}" wire:navigate>{{ __('auth_ui.login.create_one') }}</a>
         </p>
 
         @if ($errors->any())
@@ -62,7 +59,7 @@
           @csrf
 
           <div class="field-group fu d3">
-            <label class="field-label" for="email">Email Address</label>
+            <label class="field-label" for="email">{{ __('auth_ui.common.email') }}</label>
             <div class="field-wrap">
               <span class="field-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -73,7 +70,7 @@
           </div>
 
           <div class="field-group fu d3">
-            <label class="field-label" for="password">Password</label>
+            <label class="field-label" for="password">{{ __('auth_ui.common.password') }}</label>
             <div class="field-wrap">
               <span class="field-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -86,25 +83,25 @@
           <div class="field-opts fu d4">
             <label class="field-check">
               <input type="checkbox" name="remember">
-              <span class="field-check-label">Keep me signed in</span>
+              <span class="field-check-label">{{ __('auth_ui.login.keep_signed_in') }}</span>
             </label>
-            <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>
+            <a href="{{ route('password.request') }}" class="forgot-link">{{ __('auth_ui.login.forgot_password') }}</a>
           </div>
 
           <button type="submit" class="btn-submit fu d5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            Sign In to Your Account
+            {{ __('auth_ui.common.sign_in_to_account') }}
           </button>
 
           <div class="auth-or fu d5">
             <div class="auth-or-line"></div>
-            <span class="auth-or-text">or</span>
+            <span class="auth-or-text">{{ __('auth_ui.common.or') }}</span>
             <div class="auth-or-line"></div>
           </div>
 
           <p class="auth-alt-link fu d5">
-            New to Daet Listens?
-            <a href="{{ route('register') }}" wire:navigate>Create an account &rarr;</a>
+            {{ __('auth_ui.login.new_to') }}
+            <a href="{{ route('register') }}" wire:navigate>{{ __('auth_ui.login.create_account_link') }}</a>
           </p>
         </form>
       </div>
@@ -120,8 +117,8 @@
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
+    --navy:        #142D4F;
+    --navy-mid:    #1B3A61;
     --gold:        #C9A84C;
     --gold-light:  #E2C06A;
     --gold-pale:   rgba(201,168,76,0.12);
@@ -138,6 +135,9 @@
    * Only the inner .auth-decorations wrapper clips its children.
    */
   .auth-root {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       font-family: 'DM Sans', sans-serif;
       padding-top: var(--navbar-height);
       min-height: 100svh;
@@ -176,11 +176,6 @@
     width: 40vw; height: 40vw; max-width: 560px; max-height: 560px;
     background: radial-gradient(ellipse, rgba(26,53,96,0.6) 0%, transparent 70%);
   }
-  .auth-bar {
-    position: absolute; top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: linear-gradient(180deg, var(--gold), rgba(201,168,76,0.06));
-  }
   .auth-wm {
     position: absolute; bottom: -4%; right: 0;
     font-family: 'Cormorant Garamond', serif;
@@ -203,17 +198,6 @@
     display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
     padding: clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px) clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px);
     position: relative;
-  }
-  .auth-brand::after {
-    content: '';
-    position: absolute; top: 8%; right: 0;
-    width: 1px; height: 84%;
-    background: linear-gradient(180deg,
-      transparent 0%,
-      rgba(201,168,76,0.22) 20%,
-      rgba(201,168,76,0.22) 80%,
-      transparent 100%
-    );
   }
 
   .auth-badge {
@@ -250,11 +234,13 @@
     display: flex; flex-direction: column;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    min-width: 0;
     padding: clamp(40px, 5vh, 80px) clamp(40px, 5vw, 80px) clamp(40px, 5vh, 80px) clamp(32px, 4vw, 64px);
   }
   .auth-form-wrap {
     width: 100%;
-    max-width: min(420px, 90%);
+    max-width: 420px;
   }
 
   .auth-form-eyebrow {
@@ -280,25 +266,33 @@
   .field-label {
     display: block; font-size: 10.5px; font-weight: 600;
     letter-spacing: 0.12em; text-transform: uppercase;
-    color: rgba(255,255,255,0.45); margin-bottom: 8px;
+    color: rgba(255,255,255,0.55); margin-bottom: 8px;
   }
   .field-wrap { position: relative; }
   .field-icon {
     position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-    color: rgba(201,168,76,0.5); pointer-events: none; transition: color 0.2s;
+    color: rgba(201,168,76,0.85); pointer-events: none; transition: color 0.2s;
   }
-  .field-wrap:focus-within .field-icon { color: rgba(201,168,76,0.9); }
+  .field-wrap:focus-within .field-icon { color: var(--gold-light); }
   .field-input {
-    width: 100%; background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(201,168,76,0.18); border-radius: 4px;
+    width: 100%;
+    background: #1F3D60;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 4px;
     padding: 13px 14px 13px 42px;
-    font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: var(--white);
-    outline: none; transition: border-color 0.22s, background 0.22s, box-shadow 0.22s;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    color: #ffffff;
+    caret-color: #ffffff;
+    outline: none;
+    transition: border-color 0.22s, background 0.22s, box-shadow 0.22s;
   }
-  .field-input::placeholder { color: rgba(255,255,255,0.2); }
+  .field-input::placeholder { color: rgba(255,255,255,0.55); opacity: 1; }
+  .field-input:hover { border-color: rgba(255,255,255,0.34); }
   .field-input:focus {
-    border-color: rgba(201,168,76,0.55); background: rgba(255,255,255,0.06);
-    box-shadow: 0 0 0 3px rgba(201,168,76,0.06);
+    border-color: #D4A947;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212,169,71,0.2);
   }
   .field-underline {
     position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
@@ -380,12 +374,12 @@
     .auth-root { min-height: calc(100svh - var(--navbar-height)); }
     .auth-layout { grid-template-columns: 1fr; min-height: calc(100svh - var(--navbar-height)); }
     .auth-brand { display: none; }
-    .auth-form-panel { padding: 48px 24px 80px; justify-content: flex-start; }
+    .auth-form-panel { padding: 48px 20px 80px; justify-content: flex-start; }
     .auth-decorations .auth-wm { display: none; }
   }
 
   @media (max-width: 480px) {
-    .auth-form-panel { padding: 36px 16px 80px; }
+    .auth-form-panel { padding: 36px 20px 80px; }
     .field-opts { flex-direction: column; align-items: flex-start; }
   }
 </style>

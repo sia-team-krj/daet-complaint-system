@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ComplaintVerificationController;
@@ -24,6 +25,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// The language switch is public on purpose: a resident must be able to read
+// the portal before they have an account. It is a POST so crawlers and link
+// prefetchers cannot silently change the language of the site.
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 // ── STANDING LEGAL DOCUMENTS ───────────────────────
 // Public and guest-accessible on purpose: a privacy policy a resident cannot

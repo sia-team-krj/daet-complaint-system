@@ -17,11 +17,22 @@
     shells know the page owns its footer and do not add a second. That section
     must contain something - `@hasSection` compiles to a non-empty content
     check, so an empty section is treated as absent.
+
+    The footer is full-bleed, but its inner container shares the standard
+    1040px max-width and 24px / 16px horizontal padding with the page content,
+    so header, content and footer edges line up at every width. Text colours
+    are kept at WCAG AA (4.5:1) or better against the #060f1e fill — the
+    previous rgba(255,255,255,0.16–0.45) values were near-invisible on navy.
+
+    Labels come from lang/{locale}/footer.php, so the footer follows the same
+    locale as the rest of the portal (English by default). It is never
+    hardcoded to a single language.
 --}}
 <footer class="site-footer">
+  <div class="site-footer__inner">
     <p class="site-footer__id">
-        <strong>Municipality of Daet</strong> &nbsp;&middot;&nbsp; Camarines Norte
-        &nbsp;&middot;&nbsp; Official Transparency Complaint Portal
+        <strong>{{ __('footer.municipality') }}</strong> &nbsp;&middot;&nbsp; {{ __('footer.province') }}
+        &nbsp;&middot;&nbsp; {{ __('footer.portal') }}
     </p>
 
     {{-- The Transparency Register is withheld from administrators, matching the
@@ -29,15 +40,22 @@
          TransparencyPageTest asserts the link is absent from their shell. The
          legal documents are shown to everyone - an operator is still bound by
          them and needs to be able to read them. --}}
-    <nav class="site-footer__legal" aria-label="Legal and public information">
-        <a href="{{ route('terms') }}" wire:navigate>Terms &amp; Conditions</a>
-        <a href="{{ route('privacy') }}" wire:navigate>Privacy Policy</a>
+    <nav class="site-footer__legal" aria-label="{{ __('footer.legal_nav') }}">
+        <a href="{{ route('terms') }}" wire:navigate>{{ __('footer.terms') }}</a>
+        <a href="{{ route('privacy') }}" wire:navigate>{{ __('footer.privacy') }}</a>
         @if(auth()->user()?->role !== 'admin')
-            <a href="{{ route('transparency') }}" wire:navigate>Transparency Register</a>
+            <a href="{{ route('transparency') }}" wire:navigate>{{ __('footer.transparency_register') }}</a>
         @endif
     </nav>
 
-    <span class="site-footer__seal">Republic Act 6713 &nbsp;&middot;&nbsp; FOI Compliant</span>
+    @if(!auth()->check() || auth()->user()->role === 'citizen')
+        <div class="site-footer__language">
+            @include('layouts.partials.language-switcher', ['variant' => 'footer'])
+        </div>
+    @endif
+
+    <span class="site-footer__seal">{{ __('footer.seal') }}</span>
+  </div>
 </footer>
 
 <style>
@@ -46,24 +64,31 @@
         z-index: 1;
         background: #060f1e;
         border-top: 1px solid rgba(201, 168, 76, 0.14);
-        padding: 18px clamp(20px, 3vw, 48px);
+    }
+
+    .site-footer__inner {
+        width: 100%;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 18px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 10px 24px;
+        box-sizing: border-box;
     }
 
     .site-footer__id {
         margin: 0;
         font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
         font-size: 11px;
-        color: rgba(255, 255, 255, 0.24);
+        color: rgba(255, 255, 255, 0.72);
         letter-spacing: 0.06em;
     }
 
     .site-footer__id strong {
-        color: rgba(201, 168, 76, 0.5);
+        color: #E2C06A;
     }
 
     .site-footer__legal {
@@ -73,25 +98,27 @@
         flex-wrap: wrap;
     }
 
-    /* Contrast is deliberately restrained: these are quiet reference links, not
-       calls to action. They still clear 4.5:1 against the footer fill, and the
-       hover state is what signals interactivity rather than resting colour. */
+    .site-footer__language {
+        flex: 0 0 auto;
+        min-width: 210px;
+    }
+
     .site-footer__legal a {
         font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
         font-size: 11px;
         letter-spacing: 0.06em;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(255, 255, 255, 0.78);
         text-decoration: none;
         transition: color 0.18s ease;
     }
 
     .site-footer__legal a:hover,
     .site-footer__legal a:focus-visible {
-        color: rgba(226, 192, 106, 0.95);
+        color: #E2C06A;
     }
 
     .site-footer__legal a:focus-visible {
-        outline: 1px solid rgba(201, 168, 76, 0.7);
+        outline: 2px solid #E2C06A;
         outline-offset: 3px;
     }
 
@@ -100,19 +127,24 @@
         font-size: 10px;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.16);
+        color: rgba(255, 255, 255, 0.72);
     }
 
-    @media (max-width: 600px) {
-        .site-footer {
+    @media (max-width: 768px) {
+        .site-footer__inner {
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
-            padding: 20px 18px;
+            padding: 20px 16px;
         }
 
         .site-footer__legal {
             gap: 6px 16px;
+        }
+
+        .site-footer__language {
+            width: 100%;
+            min-width: 0;
         }
     }
 </style>

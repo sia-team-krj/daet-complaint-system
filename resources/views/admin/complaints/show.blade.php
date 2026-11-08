@@ -46,7 +46,7 @@
                         <div><dt>Review status</dt><dd>{{ $complaint->reviewStatusEnum->label() }}</dd></div>
                         <div><dt>Suggested priority</dt><dd>{{ $complaint->suggestedPriorityEnum->label() }}</dd></div>
                         <div><dt>Confirmed priority</dt><dd>{{ $complaint->confirmedPriorityEnum?->label() ?? 'Awaiting confirmation' }}</dd></div>
-                        <div><dt>Department</dt><dd>{{ $complaint->department?->name ?? 'Unassigned' }}</dd></div>
+                        <div><dt>Department</dt><dd>@if($complaint->department)<span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span class="dept-indicator__name">{{ $complaint->department->name }} <span class="dept-chip" data-dept="{{ $complaint->department->code }}">{{ $complaint->department->code }}</span></span></span>@else Unassigned @endif</dd></div>
                         <div><dt>Reviewed by</dt><dd>{{ $complaint->reviewedBy?->full_name ?? 'Not reviewed yet' }}</dd></div>
                         <div><dt>Filed</dt><dd>{{ $complaint->created_at?->format('M j, Y g:i A') }}</dd></div>
                     </dl>

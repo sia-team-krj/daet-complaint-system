@@ -12,10 +12,10 @@ enum ComplaintPriority: string
     public function label(): string
     {
         return match ($this) {
-            self::Routine => 'Routine',
-            self::Elevated => 'Elevated',
-            self::Urgent => 'Urgent',
-            self::Critical => 'Critical',
+            self::Routine => __('statuses.priority.routine'),
+            self::Elevated => __('statuses.priority.elevated'),
+            self::Urgent => __('statuses.priority.urgent'),
+            self::Critical => __('statuses.priority.critical'),
         };
     }
 

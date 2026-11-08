@@ -81,6 +81,12 @@ return Application::configure(basePath: dirname(__DIR__))
             "admin" => \App\Http\Middleware\AdminMiddleware::class,
             "email.verified" => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
+
+        // Resolve the resident's language after the session and cookies are
+        // available, but before any controller or Blade view runs.
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) use ($csrfFailureTarget) {
         /*

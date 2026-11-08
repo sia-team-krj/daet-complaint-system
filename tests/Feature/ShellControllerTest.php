@@ -24,16 +24,34 @@ class ShellControllerTest extends TestCase
 {
     public function test_the_shell_controller_never_leaves_two_surfaces_open(): void
     {
-        $audit = base_path('tests/Support/js/shell-controller-audit.mjs');
+        $this->runAudit(
+            'tests/Support/js/shell-controller-audit.mjs',
+            'the navbar shell controller',
+            'The navbar shell controller left a surface open that it should have closed.',
+        );
+    }
+
+    public function test_the_notification_bell_polls_and_refreshes_its_feed(): void
+    {
+        $this->runAudit(
+            'tests/Support/js/notification-poll-audit.mjs',
+            'the notification poller',
+            'The notification bell did not keep its badge or feed current.',
+        );
+    }
+
+    private function runAudit(string $relativePath, string $label, string $failureMessage): void
+    {
+        $audit = base_path($relativePath);
 
         $this->assertFileExists(
             $audit,
-            'The shell controller audit is missing, so nothing on this controller is ever executed.',
+            "The audit at {$relativePath} is missing, so nothing on this controller is ever executed.",
         );
 
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $process = proc_open(
-            ['node', $audit, public_path('js/shell.js'), 'the navbar shell controller'],
+            ['node', $audit, public_path('js/shell.js'), $label],
             $descriptors,
             $pipes,
             base_path(),
@@ -50,8 +68,7 @@ class ShellControllerTest extends TestCase
         $this->assertSame(
             0,
             $status,
-            "The navbar shell controller left a surface open that it should have closed.\n\n"
-            .trim($stdout)."\n".trim($stderr),
+            "{$failureMessage}\n\n".trim($stdout)."\n".trim($stderr),
         );
     }
 }

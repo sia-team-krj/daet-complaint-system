@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Verify Email - Daet Listens')
+@section('title', __('auth_ui.titles.verify'))
 
 @section('content')
 <style>
@@ -202,13 +202,13 @@
       </svg>
     </div>
 
-    <p class="verification-eyebrow">Account security</p>
-    <h1 class="verification-title">Verify your email</h1>
+    <p class="verification-eyebrow">{{ __('auth_ui.verify.eyebrow') }}</p>
+    <h1 class="verification-title">{{ __('auth_ui.verify.heading') }}</h1>
     <p class="verification-copy">
       @if ($isEmailChange)
-        Enter the code sent to your new email address to confirm the change.
+        {{ __('auth_ui.verify.email_change') }}
       @else
-        We sent a six-digit code to <span class="verification-email">{{ $verificationEmail }}</span>. Enter it below to activate your account.
+        {{ __('auth_ui.verify.sent_code_before') }} <span class="verification-email">{{ $verificationEmail }}</span>{{ __('auth_ui.verify.sent_code_after') }}
       @endif
     </p>
 
@@ -224,7 +224,7 @@
       @csrf
       <input type="hidden" name="purpose" value="{{ old('purpose', $purpose) }}">
 
-      <label class="verification-label" for="otp">Verification code</label>
+      <label class="verification-label" for="otp">{{ __('auth_ui.verify.code_label') }}</label>
       <input
         id="otp"
         name="code"
@@ -245,10 +245,10 @@
         <p class="verification-error" role="alert">{{ $message }}</p>
       @enderror
 
-      <button type="submit" class="verification-submit">Verify email</button>
+      <button type="submit" class="verification-submit">{{ __('auth_ui.verify.verify_button') }}</button>
     </form>
 
-    <p class="verification-note">Codes expire after {{ config('email-verification.expires_in_minutes', 10) }} minutes.</p>
+    <p class="verification-note">{{ __('auth_ui.verify.expires', ['minutes' => config('email-verification.expires_in_minutes', 10)]) }}</p>
 
     {{--
         The button is deliberately NOT disabled in the markup. Without
@@ -265,13 +265,13 @@
         class="verification-resend"
         data-resend-button
         data-remaining="{{ $resendAvailableIn }}"
-        data-label="Send a new code"
-      ><span data-resend-label>Send a new code</span></button>
+        data-label="{{ __('auth_ui.verify.resend') }}"
+      ><span data-resend-label>{{ __('auth_ui.verify.resend') }}</span></button>
     </form>
 
     <form method="POST" action="{{ route('logout') }}">
       @csrf
-      <button type="submit" class="verification-signout">Sign out</button>
+      <button type="submit" class="verification-signout">{{ __('auth_ui.verify.sign_out') }}</button>
     </form>
   </div>
 </div>

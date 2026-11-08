@@ -7,9 +7,9 @@
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
-    --navy-light:  #1a3560;
+    --navy:        #142D4F;
+    --navy-mid:    #1B3A61;
+    --navy-light:  #244874;
     --gold:        #C9A84C;
     --gold-light:  #E2C06A;
     --gold-pale:   rgba(201,168,76,0.12);
@@ -247,6 +247,7 @@
   }
   .detail-value {
     font-size: 14px; color: var(--text-body); line-height: 1.6;
+    overflow-wrap: anywhere;
   }
   .detail-value-large {
     font-size: 16px; line-height: 1.7;
@@ -262,6 +263,64 @@
   .detail-dept {
     font-size: 14px; font-weight: 600; color: var(--navy);
   }
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .show-layout > * { min-width: 0; }
+
+  /* ── Resident visibility control ──
+     The complaint page is a light surface. The shared visibility-panel styles
+     were written for the dark operator workspaces, so keep their structure but
+     re-paint this instance with the page's light card language. */
+  .show-root .visibility-panel {
+    margin: 0 0 24px;
+    padding: 20px 24px;
+    background: var(--white);
+    border: 1px solid var(--border-gold);
+    border-radius: 8px;
+  }
+  .show-root .visibility-panel__title {
+    color: var(--navy);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+  }
+  .show-root .visibility-panel__lede {
+    margin-top: 7px;
+    color: var(--text-body);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .show-root .visibility-panel__actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .show-root .visibility-panel__button {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px 18px;
+    color: var(--navy);
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+  .show-root .visibility-panel__state {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .show-root .visibility-moderation {
+    color: var(--text-body);
+    background: var(--gold-pale);
+    border-color: rgba(201,168,76,0.32);
+    font-size: 12px;
+  }
+  .show-root .visibility-moderation svg { color: #8A6D1F; }
+  .show-root .visibility-moderation strong { color: var(--navy); font-size: 12.5px; }
+  .show-root .visibility-moderation p { color: var(--text-body); }
+  .show-root .visibility-moderation em { color: var(--navy); }
 
   /* ── Image Gallery ── */
   .image-wrap {
@@ -283,8 +342,9 @@
     min-width: 0;
   }
   .image-gallery .image-wrap img {
-    max-height: 260px;
-    object-fit: cover;
+    max-height: 320px;
+    object-fit: contain;
+    background: var(--cream-dark);
   }
   .no-image {
     padding: 40px; text-align: center;
@@ -310,6 +370,7 @@
     position: sticky; top: 80px;
   }
   .timeline-header {
+    display: flex; align-items: center; gap: 10px;
     padding: 20px 24px;
     border-bottom: 1px solid rgba(201,168,76,0.15);
   }
@@ -349,12 +410,19 @@
   .timeline-note {
     font-size: 13px; color: var(--text-body);
     line-height: 1.5; margin-bottom: 6px;
+    overflow-wrap: anywhere;
   }
   .timeline-meta {
-    font-size: 11px; color: var(--text-muted);
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 2px 8px;
+    font-size: 11.5px; color: var(--text-muted);
+    line-height: 1.5;
   }
   .timeline-actor {
-    font-weight: 600; color: var(--gold);
+    font-weight: 600; color: var(--navy);
+  }
+  .timeline-time::before {
+    content: '•'; margin-right: 8px; color: var(--gold);
   }
   .timeline-evidence {
     display: grid;
@@ -405,9 +473,16 @@
     .show-body { padding: 24px 20px 48px; }
     .show-title-wrap { flex-direction: column; }
     .detail-card-header, .detail-card-body { padding: 16px 20px; }
+    .show-root .visibility-panel { padding: 16px 20px; }
+    .image-gallery { gap: 12px; padding: 12px; }
     .timeline { padding-left: 20px; }
     .timeline::before { left: 0; }
     .timeline-item::before { left: -20px; margin-left: -3.5px; width: 9px; height: 9px; }
+    .timeline-meta { flex-direction: column; align-items: flex-start; gap: 1px; }
+    .timeline-time::before { display: none; }
+  }
+  @media (max-width: 560px) {
+    .details-grid { grid-template-columns: 1fr; gap: 16px; }
   }
 </style>
 
@@ -565,10 +640,10 @@
             <span class="detail-card-title">Details</span>
           </div>
           <div class="detail-card-body">
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+            <div class="details-grid">
               <div class="detail-field">
                 <div class="detail-label">Category</div>
-                <span class="detail-pill">{{ $complaint->category }}</span>
+                <span class="detail-pill">{{ \Illuminate\Support\Str::headline($complaint->category) }}</span>
               </div>
               <div class="detail-field">
                 <div class="detail-label">Review status</div>
@@ -588,7 +663,7 @@
               </div>
               <div class="detail-field">
                 <div class="detail-label">Department</div>
-                <div class="detail-dept">{{ $complaint->department->name ?? 'Unassigned' }}</div>
+                <div class="detail-dept">@if($complaint->department)<span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span class="dept-indicator__name">{{ $complaint->department->name }}</span></span>@else Unassigned @endif</div>
                 @if($complaint->department)
                   <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
                     Code: {{ $complaint->department->code }}
@@ -597,7 +672,7 @@
               </div>
               <div class="detail-field">
                 <div class="detail-label">Date Filed</div>
-                <div class="detail-value">{{ $complaint->created_at->format('F d, Y') }}</div>
+                <div class="detail-value">{{ $complaint->created_at->format('F j, Y') }}</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
                   {{ $complaint->created_at->diffForHumans() }}
                 </div>
@@ -666,6 +741,7 @@
       <div class="fu d4">
         <div class="timeline-card">
           <div class="timeline-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
             <div class="timeline-title">Staff Responses</div>
           </div>
           <div class="timeline-body">
@@ -703,7 +779,7 @@
 
                     <div class="timeline-meta">
                       <span class="timeline-actor">Responded by {{ $complaint->department->name ?? 'LGU' }} Staff</span>
-                      • {{ $log->created_at->diffForHumans() }}
+                      <span class="timeline-time">{{ $log->created_at->diffForHumans() }}</span>
                     </div>
                   </div>
                 @endforeach

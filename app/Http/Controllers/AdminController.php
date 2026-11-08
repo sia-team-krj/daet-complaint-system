@@ -17,6 +17,7 @@ use App\Services\ComplaintModerationService;
 use App\Services\ComplaintVerificationService;
 use App\Services\EmailVerificationService;
 use App\Services\DepartmentRouter;
+use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -56,13 +57,15 @@ class AdminController extends Controller
         // Recent complaints (all departments)
         $recentComplaints = Complaint::with(['user', 'department'])
             ->latest()
-            ->limit(10)
+            ->orderByDesc('id')
+            ->limit(5)
             ->get();
 
         // Unassigned complaints (highlighted)
         $unassignedComplaints = Complaint::with('user')
             ->whereNull('department_id')
             ->latest()
+            ->orderByDesc('id')
             ->limit(5)
             ->get();
 
@@ -291,9 +294,23 @@ class AdminController extends Controller
 
     public function auditIndex(Request $request): View
     {
+        $departmentId = $request->filled('department_id') ? (int) $request->department_id : null;
+        $actorId = $request->filled('actor_id') ? (int) $request->actor_id : null;
+
+        // If a mismatched actor is supplied (e.g. URL tampering or stale query), ignore actor_id
+        // instead of erroring; the actor filter is dependent on department in the UI.
+        if ($departmentId && $actorId) {
+            $actorMatchesDept = User::whereKey($actorId)
+                ->where('department_id', $departmentId)
+                ->exists();
+            if (! $actorMatchesDept) {
+                $actorId = null;
+            }
+        }
+
         $logs = ActivityLog::with(['actor', 'department', 'subject'])
-            ->when($request->filled('department_id'), fn ($query) => $query->forDepartment((int) $request->department_id))
-            ->when($request->filled('actor_id'), fn ($query) => $query->where('actor_id', $request->actor_id))
+            ->when($departmentId, fn ($query) => $query->forDepartment($departmentId))
+            ->when($actorId, fn ($query) => $query->where('actor_id', $actorId))
             ->when($request->filled('action'), fn ($query) => $query->where('action', $request->action))
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->search);
@@ -558,7 +575,7 @@ class AdminController extends Controller
     /**
      * Update complaint status, department, or staff assignment
      */
-    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification): RedirectResponse
+    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['nullable', Rule::enum(ComplaintStatus::class)],
@@ -578,6 +595,8 @@ class AdminController extends Controller
         $oldDeptId = $complaint->department_id;
         $oldReviewStatus = $complaint->reviewStatusEnum;
         $oldPriority = $complaint->confirmedPriorityEnum;
+        $oldAssignedStaffId = $complaint->assigned_staff_id;
+        $assignedStaff = null;
         $updates = [];
         $logEntries = [];
 
@@ -632,6 +651,7 @@ class AdminController extends Controller
 
             if ($staff && $staff->role === 'staff' && (int) $staff->department_id === $targetDepartmentId) {
                 $updates['assigned_staff_id'] = $staff->id;
+                $assignedStaff = $staff;
                 $logEntries[] = "Assigned to staff: {$staff->full_name}";
             }
         }
@@ -746,6 +766,42 @@ class AdminController extends Controller
                 $complaint,
                 metadata: ['note' => $validated['staff_note']],
             );
+        }
+
+        // Tell the people the update is about. A review decision takes
+        // precedence over the status transition it may cause, so one admin
+        // action cannot produce two notifications for the same thing.
+        try {
+            $reviewChanged = $reviewInputProvided
+                && isset($updates['review_status'])
+                && (string) $updates['review_status'] !== $oldReviewStatus->value;
+
+            $reviewNotification = null;
+
+            if ($reviewChanged) {
+                $reviewNotification = $notifications->reviewUpdated(
+                    $complaint,
+                    ComplaintReviewStatus::from($updates['review_status']),
+                    Auth::user(),
+                );
+            }
+
+            $statusChanged = isset($updates['status'])
+                && (string) $updates['status'] !== $oldStatus->value;
+
+            if ($statusChanged && $reviewNotification === null) {
+                $notifications->statusChanged(
+                    $complaint,
+                    ComplaintStatus::from($updates['status'])->label(),
+                    Auth::user(),
+                );
+            }
+
+            if ($assignedStaff !== null && (int) $assignedStaff->id !== (int) $oldAssignedStaffId) {
+                $notifications->complaintAssigned($complaint, $assignedStaff, Auth::user());
+            }
+        } catch (Throwable $exception) {
+            report($exception);
         }
 
         return redirect()

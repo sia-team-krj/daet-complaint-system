@@ -6,8 +6,8 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
   :root {
-    --navy: #0B1F3A;
-    --navy-mid: #12294d;
+    --navy: #142D4F;
+    --navy-mid: #1B3A61;
     --gold: #C9A84C;
     --gold-light: #E2C06A;
     --gold-pale: rgba(201,168,76,0.12);
@@ -947,7 +947,7 @@
         <span class="meta-dot">·</span>
         <span class="meta-item">{{ $complaint->category }}</span>
         <span class="meta-dot">·</span>
-        <span class="meta-item">{{ $complaint->department->name ?? 'Unassigned' }}</span>
+        <span class="meta-item">@if($complaint->department)<span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span>{{ $complaint->department->name }}</span></span>@else Unassigned @endif</span>
         <span class="meta-dot">·</span>
         <span class="meta-item">{{ $daysOpen }} days open</span>
       </div>

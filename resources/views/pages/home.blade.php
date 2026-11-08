@@ -10,7 +10,7 @@
     no thick coloured border-left, no bounce easing, no unicode glyph icons.
 --}}
 @extends('layouts.app')
-@section('title', 'Daet Listens - File a Complaint')
+@section('title', __('home.title'))
 
 @section('content')
 
@@ -25,25 +25,23 @@
             <div class="space-y-6">
                 
 
-                <h1 class="text-[clamp(3rem,6vw,5rem)] font-display font-bold leading-[1.05] tracking-tight">
-                    Your Voice.<br>
-                    <span class="text-gold italic block">Our Accountability.</span>
+                <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-display font-bold leading-[1.1] tracking-tight">
+                    {{ __('home.hero.title_line_1') }}<br>
+                    <span class="text-gold italic block">{{ __('home.hero.title_line_2') }}</span>
                 </h1>
 
-                <p class="text-lg leading-1.85 text-white/90 max-w-[52ch]">
-                    A direct, secure, and trackable channel for every Daet resident
-                    to raise concerns with the local government. Your identity is
-                    protected &mdash; you choose what the public sees.
+                <p class="text-base sm:text-lg leading-relaxed text-white/90 max-w-[52ch]">
+                    {{ __('home.hero.description') }}
                 </p>
 
                 <div class="flex flex-wrap gap-3 pt-6">
                     <a href="{{ route('complaints.create') }}" wire:navigate class="inline-flex items-center gap-2 rounded-6 bg-gold text-navy font-bold text-sm uppercase tracking-tight px-6 py-3 shadow-[0_4px_24px_rgba(201,168,76,0.32)] hover:shadow-[0_10px_32px_rgba(201,168,76,0.48)] hover:-translate-y-1 transition-all duration-200 group">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform duration-200"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                        File a Complaint
+                        {{ __('home.hero.file_complaint') }}
                     </a>
                     <a href="{{ route('complaints.track') }}" wire:navigate class="inline-flex items-center gap-2 rounded-6 border border-white/20 text-white/90 font-bold text-sm uppercase tracking-tight px-6 py-3 hover:bg-white/5 hover:border-white/30 hover:-translate-y-1 transition-all duration-200 group">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform duration-200"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        Track My Complaint
+                        {{ __('home.hero.track_complaint') }}
                     </a>
                 </div>
 
@@ -51,15 +49,15 @@
                 <div class="flex flex-wrap gap-4 pt-6 text-xs text-white/60">
                     <div class="flex items-center gap-2">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 0 5.5 2.25 5.5 5v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-16a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3a1 1 0 0 1 1-1V7a1 1 0 0 0 1-1c0-2.75 2.25-5 5-5z"/></svg>
-                        Identity protected
+                        {{ __('home.hero.identity_protected') }}
                     </div>
                     <div class="flex items-center gap-2">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        Trackable
+                        {{ __('home.hero.trackable') }}
                     </div>
                     <div class="flex items-center gap-2">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
-                        RA 6713 &middot; FOI compliant
+                        {{ __('home.hero.foi_compliant') }}
                     </div>
                 </div>
             </div>
@@ -68,7 +66,7 @@
             <div class="relative z-10">
                 <div class="bg-white rounded-[16px] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-white/10">
                     <div class="flex items-start justify-between mb-4">
-                        <span class="text-xs font-bold uppercase text-navy tracking-tighter">Tracking number</span>
+                        <span class="text-xs font-bold uppercase text-navy tracking-tighter">{{ __('home.status_card.tracking_number') }}</span>
                         <span class="text-xs font-mono text-navy">DAET-2026-00123</span>
                     </div>
 
@@ -76,8 +74,8 @@
                         <div class="absolute left-1/2 top-0 bottom-0 w-[1px] bg-gold/20"></div>
                         <div class="relative z-10">
                             <div class="flex justify-between mb-2">
-                                <span class="text-xs font-semibold text-navy">Received</span>
-                                <span class="text-xs font-semibold text-gold">Resolved</span>
+                                <span class="text-xs font-semibold text-navy">{{ __('home.status_card.received') }}</span>
+                                <span class="text-xs font-semibold text-gold">{{ __('home.status_card.resolved') }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <div class="flex items-center gap-2">
@@ -97,7 +95,7 @@
                         <div class="flex items-center gap-2 pt-2">
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1.5 text-xs font-bold text-gold border border-gold/20">
                                 <span class="w-2 h-2 rounded-full bg-gold"></span>
-                                Resolved
+                                {{ __('home.status_card.resolved') }}
                             </span>
                         </div>
                     </div>
@@ -111,24 +109,24 @@
     {{-- ═══════════════════════════════════════════════════════════════════════════
        STATS STRIP
        ═══════════════════════════════════════════════════════════════════════════ --}}
-    <section class="relative bg-navy py-16 px-4">
+    <section class="relative bg-navy py-10 sm:py-14 lg:py-16 px-4 sm:px-6">
         <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-white">
-                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#0B1F3A]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-display font-bold text-gold leading-none" id="stat-complaints">0</span>
-                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">Complaints Filed</span>
+                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-complaints" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.complaints_filed') }}</span>
                 </div>
-                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#0B1F3A]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-display font-bold text-gold leading-none" id="stat-resolved">0</span>
-                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">Resolved</span>
+                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-resolved" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.resolved') }}</span>
                 </div>
-                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#0B1F3A]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-display font-bold text-gold leading-none" id="stat-avg">0</span>
-                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">Avg. Response Time</span>
+                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-avg" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.avg_response') }}</span>
                 </div>
-                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#0B1F3A]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-display font-bold text-gold leading-none" id="stat-barangays">0</span>
-                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">Barangays Served</span>
+                <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-barangays" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.barangays_served') }}</span>
                 </div>
             </div>
         </div>
@@ -140,8 +138,8 @@
     <section class="relative bg-[#F5F0E8] py-24 px-4 overflow-hidden">
         <div class="max-w-7xl mx-auto">
             <div class="text-center max-w-[56ch] mx-auto mb-16">
-                <h2 class="font-display text-[clamp(2rem,5vw,3rem)] font-bold text-navy leading-[1.1] mb-4">How it works</h2>
-                <p class="text-lg text-navy/70 max-w-[44ch] mx-auto">Filing is straightforward and transparent. Every concern receives proper attention.</p>
+                <h2 class="font-display text-[clamp(1.5rem,4vw,2.25rem)] font-bold text-navy leading-[1.15] mb-3 sm:mb-4">{{ __('home.how.title') }}</h2>
+                <p class="text-base sm:text-lg text-navy/70 max-w-[44ch] mx-auto">{{ __('home.how.subtitle') }}</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -149,37 +147,37 @@
                     <!-- Connector line -->
                     <div class="absolute left-1/2 top-[24px] bottom-[24px] w-[1px] bg-gold/20"></div>
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-display font-bold text-xl flex items-center justify-center">01</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">01</div>
                         <div class="flex-1">
-                            <h3 class="font-display font-bold text-navy text-lg mb-2">Submit your complaint</h3>
-                            <p class="text-sm text-navy/60 leading-1.6">Complete the form with your concern, the relevant department, and any supporting documents.</p>
+                            <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step1_title') }}</h3>
+                            <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step1_body') }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-display font-bold text-xl flex items-center justify-center">02</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">02</div>
                         <div class="flex-1">
-                            <h3 class="font-display font-bold text-navy text-lg mb-2">Receive a reference</h3>
-                            <p class="text-sm text-navy/60 leading-1.6">A unique tracking number is issued instantly so you can monitor your complaint's status at any time.</p>
+                            <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step2_title') }}</h3>
+                            <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step2_body') }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-display font-bold text-xl flex items-center justify-center">03</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">03</div>
                         <div class="flex-1">
-                            <h3 class="font-display font-bold text-navy text-lg mb-2">LGU reviews &amp; acts</h3>
-                            <p class="text-sm text-navy/60 leading-1.6">The appropriate office investigates and takes corrective action within the mandated timeframe.</p>
+                            <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step3_title') }}</h3>
+                            <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step3_body') }}</p>
                         </div>
                     </div>
                 </div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-display font-bold text-xl flex items-center justify-center">04</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">04</div>
                         <div class="flex-1">
-                            <h3 class="font-display font-bold text-navy text-lg mb-2">Resolution &amp; feedback</h3>
-                            <p class="text-sm text-navy/60 leading-1.6">You are notified once resolved. Your feedback helps improve public service delivery.</p>
+                            <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step4_title') }}</h3>
+                            <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step4_body') }}</p>
                         </div>
                     </div>
                 </div>
@@ -190,11 +188,11 @@
     {{-- ═══════════════════════════════════════════════════════════════════════════
        FEATURES
        ═══════════════════════════════════════════════════════════════════════════ --}}
-    <section class="relative bg-white py-24 px-4 overflow-hidden">
+    <section class="relative bg-slate-50 py-12 sm:py-16 lg:py-24 px-4 sm:px-6 overflow-hidden">
         <div class="max-w-7xl mx-auto">
-            <div class="text-center max-w-[56ch] mx-auto mb-16">
-                <h2 class="font-display text-[clamp(2rem,5vw,3rem)] font-bold text-navy leading-[1.1] mb-4">Features</h2>
-                <p class="text-lg text-navy/70 max-w-[44ch] mx-auto">Everything you need to file, track, and trust the process.</p>
+            <div class="text-center max-w-[56ch] mx-auto mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="font-display text-[clamp(1.5rem,4vw,2.25rem)] font-bold text-navy leading-[1.15] mb-3 sm:mb-4">{{ __('home.features.title') }}</h2>
+                <p class="text-base sm:text-lg text-navy/70 max-w-[44ch] mx-auto">{{ __('home.features.subtitle') }}</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -204,8 +202,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 0 5.5 2.25 5.5 5v1a1 1 0 0 0 1 1h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-16a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h3a1 1 0 0 1 1-1V7a1 1 0 0 0 1-1c0-2.75 2.25-5 5-5z"/></svg>
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-display font-bold text-navy text-lg mb-1">Anonymous or named filing</h3>
-                        <p class="text-sm text-navy/60 leading-1.6">Choose whether to file under your name or a display alias. Your identity stays protected.</p>
+                        <h3 class="font-display font-bold text-navy text-lg mb-1">{{ __('home.features.anonymous_title') }}</h3>
+                        <p class="text-sm text-navy/60 leading-1.6">{{ __('home.features.anonymous_body') }}</p>
                     </div>
                 </div>
                 <!-- Feature 2 -->
@@ -214,8 +212,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 18 3 12"/></svg>
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-display font-bold text-navy text-lg mb-1">Unique tracking number</h3>
-                        <p class="text-sm text-navy/60 leading-1.6">Every complaint gets a tracking number so you can follow its progress at any time.</p>
+                        <h3 class="font-display font-bold text-navy text-lg mb-1">{{ __('home.features.tracking_title') }}</h3>
+                        <p class="text-sm text-navy/60 leading-1.6">{{ __('home.features.tracking_body') }}</p>
                     </div>
                 </div>
                 <!-- Feature 3 -->
@@ -224,8 +222,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-display font-bold text-navy text-lg mb-1">Attach photos &amp; documents</h3>
-                        <p class="text-sm text-navy/60 leading-1.6">Upload photos and supporting documents to strengthen your complaint.</p>
+                        <h3 class="font-display font-bold text-navy text-lg mb-1">{{ __('home.features.photos_title') }}</h3>
+                        <p class="text-sm text-navy/60 leading-1.6">{{ __('home.features.photos_body') }}</p>
                     </div>
                 </div>
                 <!-- Feature 4 -->
@@ -234,8 +232,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-display font-bold text-navy text-lg mb-1">Department routing</h3>
-                        <p class="text-sm text-navy/60 leading-1.6">Complaints are automatically directed to the correct LGU department.</p>
+                        <h3 class="font-display font-bold text-navy text-lg mb-1">{{ __('home.features.routing_title') }}</h3>
+                        <p class="text-sm text-navy/60 leading-1.6">{{ __('home.features.routing_body') }}</p>
                     </div>
                 </div>
                 <!-- Feature 5 -->
@@ -244,8 +242,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 18 12 12"/></svg>
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-display font-bold text-navy text-lg mb-1">Real-time status updates</h3>
-                        <p class="text-sm text-navy/60 leading-1.6">Follow your complaint from submission through investigation to resolution.</p>
+                        <h3 class="font-display font-bold text-navy text-lg mb-1">{{ __('home.features.status_title') }}</h3>
+                        <p class="text-sm text-navy/60 leading-1.6">{{ __('home.features.status_body') }}</p>
                     </div>
                 </div>
                 <!-- Feature 6 -->
@@ -254,8 +252,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                     </div>
                     <div class="flex-1">
-                        <h3 class="font-display font-bold text-navy text-lg mb-1">Feedback &amp; rating</h3>
-                        <p class="text-sm text-navy/60 leading-1.6">Rate your experience after resolution to help improve public service.</p>
+                        <h3 class="font-display font-bold text-navy text-lg mb-1">{{ __('home.features.feedback_title') }}</h3>
+                        <p class="text-sm text-navy/60 leading-1.6">{{ __('home.features.feedback_body') }}</p>
                     </div>
                 </div>
             </div>
@@ -265,50 +263,50 @@
     {{-- ═══════════════════════════════════════════════════════════════════════════
        PRIVACY &amp; TRANSPARENCY
        ═══════════════════════════════════════════════════════════════════════════ --}}
-    <section class="relative bg-navy text-white py-24 px-4 overflow-hidden">
+    <section class="relative bg-navy text-white py-12 sm:py-16 lg:py-24 px-4 sm:px-6 overflow-hidden">
         <div class="max-w-7xl mx-auto">
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 <div>
-                    <h2 class="font-display text-[clamp(2rem,5vw,3rem)] font-bold text-white mb-6">You control what the public sees</h2>
-                    <ul class="space-y-4 text-lg text-white/90 leading-1.7">
+                    <h2 class="font-display text-[clamp(1.5rem,4vw,2.25rem)] font-bold text-white mb-4 sm:mb-6">{{ __('home.privacy.title') }}</h2>
+                    <ul class="space-y-3 sm:space-y-4 text-base sm:text-lg text-white/90 leading-relaxed">
                         <li class="flex items-start gap-3">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 text-gold mt-0.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"/></svg>
-                            <span>Your identity is protected. Reports are handled confidentially, and you choose what the public sees.</span>
+                            <span>{{ __('home.privacy.identity') }}</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 text-gold mt-0.5"><polyline points="22 12 18 12 15 21 9 18 3 12"/></svg>
-                            <span>File under a display alias instead of your real name.</span>
+                            <span>{{ __('home.privacy.alias') }}</span>
                         </li>
                         <li class="flex items-start gap-3">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 text-gold mt-0.5"><path d="M20 14H2v2h18v-2z"/><path d="M8 15h8"/></svg>
-                            <span>Resolution data is published publicly, holding each office accountable to transparent performance.</span>
+                            <span>{{ __('home.privacy.data') }}</span>
                         </li>
                     </ul>
                 </div>
-                <div class="bg-[#0B1F3A] border border-[#C9A84C]/30 rounded-[16px] p-8 shadow-2xl shadow-navy/40">
+                <div class="bg-[#142D4F] border border-[#C9A84C]/30 rounded-[16px] p-8 shadow-2xl shadow-navy/40">
                     <div class="flex items-center justify-between mb-6">
-                        <span class="text-xs font-bold uppercase text-gold tracking-tighter">Visibility settings</span>
+                        <span class="text-xs font-bold uppercase text-gold tracking-tighter">{{ __('home.privacy.visibility_settings') }}</span>
                         <div class="flex gap-2">
-                            <span class="w-2 h-2 rounded-full bg-[#0B1F3A] border border-white"></span>
-                            <span class="text-xs text-white/50">Private</span>
-                            <span class="text-xs text-white/50">Public</span>
+                            <span class="w-2 h-2 rounded-full bg-[#142D4F] border border-white"></span>
+                            <span class="text-xs text-white/50">{{ __('home.privacy.private') }}</span>
+                            <span class="text-xs text-white/50">{{ __('home.privacy.public') }}</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <input type="radio" name="visibility" id="vis-private" class="w-4 h-4 rounded-full border-2 border-gold checked:bg-gold checked:border-gold text-gold focus:ring-2 focus:ring-gold/50" checked>
-                        <label class="text-sm text-white/90 cursor-pointer">Private - only you and the department</label>
+                        <label class="text-sm text-white/90 cursor-pointer">{{ __('home.privacy.private_option') }}</label>
                     </div>
                     <div class="flex items-center gap-3">
                         <input type="radio" name="visibility" id="vis-anonymous" class="w-4 h-4 rounded-full border-2 border-gold checked:bg-gold checked:border-gold text-gold focus:ring-2 focus:ring-gold/50">
-                        <label class="text-sm text-white/90 cursor-pointer">Anonymous - barangay alias, no real name</label>
+                        <label class="text-sm text-white/90 cursor-pointer">{{ __('home.privacy.anonymous_option') }}</label>
                     </div>
                     <div class="flex items-center gap-3">
                         <input type="radio" name="visibility" id="vis-public" class="w-4 h-4 rounded-full border-2 border-gold checked:bg-gold checked:border-gold text-gold focus:ring-2 focus:ring-gold/50">
-                        <label class="text-sm text-white/90 cursor-pointer">Public - visible on the transparency register</label>
+                        <label class="text-sm text-white/90 cursor-pointer">{{ __('home.privacy.public_option') }}</label>
                     </div>
-                    <p class="mt-4 text-sm text-white/50">You can change your visibility choice at any time. Department moderation cannot override your decision.</p>
+                    <p class="mt-4 text-sm text-white/50">{{ __('home.privacy.note') }}</p>
                     <a href="{{ route('transparency') }}" wire:navigate class="mt-6 inline-flex items-center gap-2 text-sm font-bold text-gold hover:text-white transition-colors">
-                        View the transparency register &rarr;
+                        {{ __('home.privacy.view_register') }} &rarr;
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </a>
                 </div>
@@ -319,57 +317,57 @@
     {{-- ═══════════════════════════════════════════════════════════════════════════
        FAQ
        ═══════════════════════════════════════════════════════════════════════════ --}}
-    <section class="relative bg-[#F5F0E8] py-24 px-4 overflow-hidden">
+    <section class="relative bg-white py-12 sm:py-16 lg:py-24 px-4 sm:px-6 overflow-hidden">
         <div class="max-w-7xl mx-auto">
-            <div class="text-center max-w-[56ch] mx-auto mb-16">
-                <h2 class="font-display text-[clamp(2rem,5vw,3rem)] font-bold text-navy leading-[1.1] mb-4">Frequently asked questions</h2>
-                <p class="text-lg text-navy/70 max-w-[44ch] mx-auto">Common questions about filing and tracking complaints with the LGU Daet.</p>
+            <div class="text-center max-w-[56ch] mx-auto mb-8 sm:mb-12 lg:mb-16">
+                <h2 class="font-display text-[clamp(1.5rem,4vw,2.25rem)] font-bold text-navy leading-[1.15] mb-3 sm:mb-4">{{ __('home.faq.title') }}</h2>
+                <p class="text-base sm:text-lg text-navy/70 max-w-[44ch] mx-auto">{{ __('home.faq.subtitle') }}</p>
             </div>
 
             <div class="max-w-[56ch] mx-auto space-y-3">
                 <details class="border border-[#C9A84C]/20 rounded-[12px] bg-white overflow-hidden">
                     <summary class="flex items-center justify-between p-4 cursor-pointer list-none" role="button" tabindex="0">
-                        <span class="font-bold text-navy">Who can file a complaint?</span>
+                        <span class="font-bold text-navy">{{ __('home.faq.q1') }}</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                     </div>
                     <div class="px-4 pb-4 text-sm text-navy/70 leading-1.6">
-                        Any resident of Daet, Camarines Norte can file a complaint about municipal services, infrastructure, or public utilities. No identification is required if you file anonymously.
+                        {{ __('home.faq.a1') }}
                     </p>
                 </details>
                 <div class="border border-[#C9A84C]/20 rounded-[12px] bg-white overflow-hidden">
                     <summary class="flex items-center justify-between p-4 cursor-pointer list-none" role="button" tabindex="0">
-                        <span class="font-bold text-navy">Is it really anonymous?</span>
+                        <span class="font-bold text-navy">{{ __('home.faq.q2') }}</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                     </summary>
                     <div class="px-4 pb-4 text-sm text-navy/70 leading-1.6">
-                        Yes. When you file anonymously, we use a display alias instead of your real name. Your contact details are never shown on the public transparency feed.
+                        {{ __('home.faq.a2') }}
                     </p>
                 </details>
                 <div class="border border-[#C9A84C]/20 rounded-[12px] bg-white overflow-hidden">
                     <summary class="flex items-center justify-between p-4 cursor-pointer list-none" role="button" tabindex="0">
-                        <span class="font-bold text-navy">How long until I get a response?</span>
+                        <span class="font-bold text-navy">{{ __('home.faq.q3') }}</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                     </summary>
                     <div class="px-4 pb-4 text-sm text-navy/70 leading-1.6">
-                        The department reviews your complaint and typically responds within the mandated timeframe. You will receive updates through the tracking system.
+                        {{ __('home.faq.a3') }}
                     </p>
                 </details>
                 <div class="border border-[#C9A84C]/20 rounded-[12px] bg-white overflow-hidden">
                     <summary class="flex items-center justify-between p-4 cursor-pointer list-none" role="button" tabindex="0">
-                        <span class="font-bold text-navy">What can I complain about?</span>
+                        <span class="font-bold text-navy">{{ __('home.faq.q4') }}</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                     </summary>
                     <div class="px-4 pb-4 text-sm text-navy/70 leading-1.6">
-                        Road damage, drainage, street lighting, waste collection, and other municipal services. If it affects the public, you can report it.
+                        {{ __('home.faq.a4') }}
                     </p>
                 </details>
                 <div class="border border-[#C9A84C]/20 rounded-[12px] bg-white overflow-hidden">
                     <summary class="flex items-center justify-between p-4 cursor-pointer list-none" role="button" tabindex="0">
-                        <span class="font-bold text-navy">How do I track my complaint?</span>
+                        <span class="font-bold text-navy">{{ __('home.faq.q5') }}</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                     </summary>
                     <div class="px-4 pb-4 text-sm text-navy/70 leading-1.6">
-                        Use the tracking number you received when you filed. Enter it on the transparency page to see the current status of your complaint.
+                        {{ __('home.faq.a5') }}
                     </p>
                 </details>
             </div>
@@ -379,20 +377,20 @@
     {{-- ═══════════════════════════════════════════════════════════════════════════
        FINAL CTA
        ═══════════════════════════════════════════════════════════════════════════ --}}
-    <section class="relative bg-navy py-20 px-4 overflow-hidden">
+    <section class="relative bg-navy py-12 sm:py-16 lg:py-20 px-4 sm:px-6 overflow-hidden">
         <div class="absolute inset-0 -z-10 opacity-20 overflow-hidden">
             <div class="absolute -top-[10%] -right-[10%] w-[80vw] h-[80vw] max-w-[700px] max-h-[700px] rounded-full blur-[100px] bg-gold/10 animate-[spin_14s_linear_infinite]"></div>
         </div>
 
         <div class="max-w-7xl mx-auto relative z-10">
             <div class="text-center max-w-[56ch] mx-auto">
-                <h2 class="font-display text-[clamp(2rem,5vw,3rem)] font-bold text-white leading-[1.1] mb-4">Ready to file a complaint?</h2>
-                <p class="text-lg text-white/70 max-w-[44ch] mx-auto">Your voice matters. File it today and hold your local government to account.</p>
+                <h2 class="font-display text-[clamp(1.5rem,4vw,2.25rem)] font-bold text-white leading-[1.15] mb-3 sm:mb-4">{{ __('home.cta.title') }}</h2>
+                <p class="text-base sm:text-lg text-white/70 max-w-[44ch] mx-auto">{{ __('home.cta.subtitle') }}</p>
             </div>
-            <div class="mt-10">
+            <div class="mt-6 sm:mt-8 lg:mt-10">
                 <a href="{{ route('complaints.create') }}" wire:navigate class="inline-flex items-center justify-center gap-2 rounded-6 bg-gold text-navy font-bold text-sm uppercase tracking-tight px-8 py-4 shadow-[0_4px_24px_rgba(201,168,76,0.32)] hover:shadow-[0_10px_32px_rgba(201,168,76,0.48)] hover:-translate-y-1 transition-all duration-200 group">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform duration-200"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    File a Complaint Now
+                    {{ __('home.cta.button') }}
                 </a>
             </div>
         </div>
@@ -422,7 +420,7 @@
         const stats = [
             { id: 'stat-complaints', target: 1247 },
             { id: 'stat-resolved', target: 891 },
-            { id: 'stat-avg', target: 7.2, suffix: ' days' },
+            { id: 'stat-avg', target: 7.2, suffix: @json(' ' . __('home.stats.days')) },
             { id: 'stat-barangays', target: 25 }
         ];
 

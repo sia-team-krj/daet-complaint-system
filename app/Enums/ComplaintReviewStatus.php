@@ -14,12 +14,12 @@ enum ComplaintReviewStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Pending => 'Pending verification',
-            self::Verified => 'Verified',
-            self::NeedsInformation => 'Needs information',
-            self::Duplicate => 'Duplicate',
-            self::Rejected => 'Rejected',
-            self::Escalated => 'Escalated',
+            self::Pending => __('statuses.review_status.pending'),
+            self::Verified => __('statuses.review_status.verified'),
+            self::NeedsInformation => __('statuses.review_status.needs_information'),
+            self::Duplicate => __('statuses.review_status.duplicate'),
+            self::Rejected => __('statuses.review_status.rejected'),
+            self::Escalated => __('statuses.review_status.escalated'),
         };
     }
 

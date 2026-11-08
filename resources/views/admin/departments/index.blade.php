@@ -63,9 +63,9 @@
             --}}
             <div class="admin-department-list">
                 @forelse($departments as $department)
-                    <details class="admin-dept {{ $department->is_active ? '' : 'is-archived' }}">
+                    <details class="admin-dept {{ $department->is_active ? '' : 'is-archived' }}" data-dept="{{ $department->code }}">
                         <summary class="admin-dept__summary">
-                            <span class="admin-department-code">{{ $department->code }}</span>
+                            <span class="admin-department-code" data-dept="{{ $department->code }}">{{ $department->code }}</span>
                             <span class="admin-dept__name">{{ $department->name }}</span>
 
                             {{-- Only when there is something to act on. A "0 open"

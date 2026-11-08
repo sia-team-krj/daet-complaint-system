@@ -67,6 +67,7 @@ class User extends Authenticatable
         "prefers_anonymity",
         "is_active",
         "can_verify",
+        "locale",
     ];
 
     protected $hidden = ["password", "remember_token"];

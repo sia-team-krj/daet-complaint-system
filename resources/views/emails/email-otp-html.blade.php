@@ -7,7 +7,7 @@
 </head>
 <body style="margin:0;background:#f5f0e8;color:#0b1f3a;font-family:Arial,sans-serif;">
     <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
-        <div style="background:#12294d;border:1px solid rgba(201,168,76,.45);border-radius:8px;padding:36px;">
+        <div style="background:#1B3A61;border:1px solid rgba(201,168,76,.45);border-radius:8px;padding:36px;">
             <p style="margin:0 0 12px;color:#c9a84c;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Account security</p>
             <h1 style="margin:0 0 18px;color:#fff;font-size:32px;line-height:1.1;">Verify your {{ $appName }} email</h1>
 

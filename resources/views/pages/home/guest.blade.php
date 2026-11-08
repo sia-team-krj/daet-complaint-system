@@ -2,12 +2,12 @@
 @section('content')
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
 
   :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
-    --navy-light:  #1a3560;
+    --navy:        #142D4F;
+    --navy-mid:    #1B3A61;
+    --navy-light:  #244874;
     --gold:        #C9A84C;
     --gold-light:  #E2C06A;
     --gold-pale:   rgba(201,168,76,0.12);
@@ -84,10 +84,10 @@
   .hero-inner {
     position: relative; z-index: 2;
     width: 100%; max-width: 1280px; margin: 0 auto;
-    padding: 56px 40px 72px;
+    padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem) clamp(2.5rem, 5vw, 4.5rem);
     display: grid;
     grid-template-columns: 55fr 45fr;
-    gap: 80px;
+    gap: clamp(2rem, 5vw, 5rem);
     align-items: center;
   }
 
@@ -118,11 +118,11 @@
   /* Title */
   .hero-title {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(38px, 5.5vw, 72px);
+    font-size: clamp(1.75rem, 5vw, 3.25rem);
     font-weight: 700;
-    line-height: 1.05;
+    line-height: 1.08;
     color: var(--white);
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     letter-spacing: -0.01em;
   }
   .hero-title .gold-line {
@@ -209,8 +209,8 @@
   .stat-cell:hover::before { height: 100%; }
 
   .stat-num {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(30px, 3.5vw, 46px);
+    font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;
+    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
     font-weight: 700; color: var(--gold);
     line-height: 1; margin-bottom: 5px;
     letter-spacing: -0.01em;
@@ -268,16 +268,16 @@
 
   .section-heading {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(28px, 3.5vw, 46px);
+    font-size: clamp(1.375rem, 3.5vw, 2.25rem);
     font-weight: 700; color: var(--navy);
-    line-height: 1.12; max-width: 540px;
-    margin-bottom: 14px; letter-spacing: -0.01em;
+    line-height: 1.15; max-width: 540px;
+    margin-bottom: 12px; letter-spacing: -0.01em;
   }
 
   .section-sub {
-    font-size: 14.5px; color: var(--text-muted);
-    max-width: 500px; line-height: 1.75;
-    margin-bottom: 56px; font-weight: 300;
+    font-size: clamp(0.9375rem, 1.5vw, 1rem); color: var(--text-muted);
+    max-width: 500px; line-height: 1.65;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem); font-weight: 300;
   }
 
   /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -285,7 +285,7 @@
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .process {
     background: var(--cream);
-    padding: 104px 40px;
+    padding: clamp(3rem, 6vw, 6.5rem) clamp(1rem, 4vw, 2.5rem);
     position: relative;
   }
   .process::before {
@@ -326,7 +326,7 @@
     border: 1.5px solid var(--gold);
     display: flex; align-items: center; justify-content: center;
     margin: 0 auto 24px;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;
     font-size: 22px; font-weight: 700; color: var(--gold);
     letter-spacing: -0.01em;
     transition: transform 0.28s, box-shadow 0.28s, background 0.28s;
@@ -362,7 +362,7 @@
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .features {
     background: var(--cream-dark);
-    padding: 104px 40px;
+    padding: clamp(3rem, 6vw, 6.5rem) clamp(1rem, 4vw, 2.5rem);
     position: relative;
   }
   .features::before {
@@ -426,7 +426,7 @@
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   .cta-banner {
     background: var(--navy);
-    padding: 80px 40px;
+    padding: clamp(2.5rem, 5vw, 5rem) clamp(1rem, 4vw, 2.5rem);
     position: relative; overflow: hidden;
   }
   .cta-banner::before {
@@ -454,9 +454,9 @@
   .cta-label::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
   .cta-text h3 {
     font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(24px, 3.2vw, 38px);
+    font-size: clamp(1.25rem, 3vw, 2rem);
     font-weight: 700; color: var(--white);
-    line-height: 1.1; margin-bottom: 10px;
+    line-height: 1.15; margin-bottom: 10px;
   }
   .cta-text p {
     font-size: 14px; color: rgba(255,255,255,0.46);
@@ -508,10 +508,10 @@
 
   @media (max-width: 540px) {
     .steps { grid-template-columns: 1fr; gap: 36px; }
-    .hero-title { font-size: 36px; }
+    .hero-title { font-size: clamp(1.625rem, 8vw, 2rem); }
     .stats-row { grid-template-columns: 1fr 1fr; }
     .stat-cell { padding: 20px 16px; }
-    .stat-num { font-size: 28px; }
+    .stat-num { font-size: clamp(1.375rem, 6vw, 1.75rem); }
   }
 </style>
 
@@ -531,38 +531,34 @@
         
 
         <h1 class="hero-title fu d2">
-          Your Voice.<br>
-          <span class="gold-line">Our Accountability.</span>
+          {{ __('home.hero.title_line_1') }}<br>
+          <span class="gold-line">{{ __('home.hero.title_line_2') }}</span>
         </h1>
 
         <div class="hero-divider fu d3"></div>
 
         <p class="hero-desc fu d3">
-          A direct, secure, and trackable channel for every Daet resident
-          to raise concerns with the local government. Because genuine
-          transparency begins with an open door.
+          {{ __('home.guest.hero_description') }}
         </p>
 
         <div class="hero-ctas fu d4">
           @auth
-          {{-- route('complaints.create')  --}}
-            <a href="" class="btn-primary">
+            <a href="{{ route('complaints.create') }}" class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              File a Complaint
+              {{ __('home.hero.file_complaint') }}
             </a>
-            {{-- route('complaints.track') --}}
-            <a href="" class="btn-secondary">
+            <a href="{{ route('complaints.track') }}" class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Track My Complaint
+              {{ __('home.hero.track_complaint') }}
             </a>
           @else
             <a href="{{ route('register') }}" wire:navigate  class="btn-primary">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              Get Started
+              {{ __('home.guest.get_started') }}
             </a>
             <a href="{{ route('login') }}"  wire:navigate  class="btn-secondary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              Login to Track
+              {{ __('home.guest.login_to_track') }}
             </a>
           @endauth
         </div>
@@ -574,21 +570,21 @@
           <div class="stats-row">
             <div class="stat-cell">
               <div class="stat-num">{{ $totalComplaints ?? '0' }}</div>
-              <div class="stat-lbl">Total Filed</div>
+              <div class="stat-lbl">{{ __('home.guest.stats.total_filed') }}</div>
             </div>
             <div class="stat-cell">
               <div class="stat-num">{{ $resolvedComplaints ?? '0' }}</div>
-              <div class="stat-lbl">Resolved</div>
+              <div class="stat-lbl">{{ __('home.guest.stats.resolved') }}</div>
             </div>
           </div>
           <div class="stats-row">
             <div class="stat-cell">
               <div class="stat-num">{{ $pendingComplaints ?? '0' }}</div>
-              <div class="stat-lbl">In Progress</div>
+              <div class="stat-lbl">{{ __('home.guest.stats.in_progress') }}</div>
             </div>
             <div class="stat-cell">
               <div class="stat-num">{{ $avgDays ?? '-' }}</div>
-              <div class="stat-lbl">Avg. Days</div>
+              <div class="stat-lbl">{{ __('home.guest.stats.avg_days') }}</div>
             </div>
           </div>
           <div class="stats-footer">
@@ -604,11 +600,10 @@
   {{-- PROCESS  --}}
   <section class="process" id="process">
     <div class="section-wrap">
-      <div class="section-eyebrow">How It Works</div>
-      <h2 class="section-heading">Four Steps from Complaint to Resolution</h2>
+      <div class="section-eyebrow">{{ __('home.guest.process.eyebrow') }}</div>
+      <h2 class="section-heading">{{ __('home.guest.process.title') }}</h2>
       <p class="section-sub">
-        Filing a complaint is straightforward and transparent. Our process is designed
-        to keep you informed and ensure every concern receives proper attention.
+        {{ __('home.guest.process.subtitle') }}
       </p>
 
       <div class="steps">
@@ -622,8 +617,8 @@
             <line x1="16" y1="17" x2="8" y2="17"/>
             <polyline points="10 9 9 9 8 9"/>
           </svg>
-          <div class="step-title">Submit Your Complaint</div>
-          <p class="step-desc">Complete the form with your concern, the relevant department, and any supporting documents.</p>
+          <div class="step-title">{{ __('home.guest.process.step1_title') }}</div>
+          <p class="step-desc">{{ __('home.guest.process.step1_body') }}</p>
         </div>
 
         <div class="step">
@@ -632,8 +627,8 @@
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
           </svg>
-          <div class="step-title">Receive a Reference</div>
-          <p class="step-desc">A unique tracking number is issued instantly so you can monitor your complaint's status at any time.</p>
+          <div class="step-title">{{ __('home.guest.process.step2_title') }}</div>
+          <p class="step-desc">{{ __('home.guest.process.step2_body') }}</p>
         </div>
 
         <div class="step">
@@ -643,8 +638,8 @@
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
             <path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 7.76a6 6 0 0 0 0 8.49"/>
           </svg>
-          <div class="step-title">LGU Reviews & Acts</div>
-          <p class="step-desc">The appropriate office investigates and takes the necessary corrective action within the mandated timeframe.</p>
+          <div class="step-title">{{ __('home.guest.process.step3_title') }}</div>
+          <p class="step-desc">{{ __('home.guest.process.step3_body') }}</p>
         </div>
 
         <div class="step">
@@ -653,8 +648,8 @@
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          <div class="step-title">Resolution & Feedback</div>
-          <p class="step-desc">You are notified once your complaint is resolved. Your feedback helps us improve public service delivery.</p>
+          <div class="step-title">{{ __('home.guest.process.step4_title') }}</div>
+          <p class="step-desc">{{ __('home.guest.process.step4_body') }}</p>
         </div>
 
       </div>
@@ -664,11 +659,10 @@
   {{--  FEATURES --}}
   <section class="features" id="features">
     <div class="section-wrap">
-      <div class="section-eyebrow">Why This System</div>
-      <h2 class="section-heading">Built for Every Resident of Daet</h2>
+      <div class="section-eyebrow">{{ __('home.guest.features.eyebrow') }}</div>
+      <h2 class="section-heading">{{ __('home.guest.features.title') }}</h2>
       <p class="section-sub">
-        Accessible, secure, and built to the highest standards of public accountability -
-        regardless of your age or technical experience.
+        {{ __('home.guest.features.subtitle') }}
       </p>
 
       <div class="features-grid">
@@ -680,8 +674,8 @@
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </div>
-          <div class="feature-title">Secure & Confidential</div>
-          <p class="feature-desc">Your identity and complaint details are fully protected. All submissions are encrypted and handled with strict confidentiality.</p>
+          <div class="feature-title">{{ __('home.guest.features.secure_title') }}</div>
+          <p class="feature-desc">{{ __('home.guest.features.secure_body') }}</p>
         </div>
 
         <div class="feature-card">
@@ -690,8 +684,8 @@
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
           </div>
-          <div class="feature-title">Real-Time Tracking</div>
-          <p class="feature-desc">Know exactly where your complaint stands - from submission to investigation to final resolution - updated live.</p>
+          <div class="feature-title">{{ __('home.guest.features.tracking_title') }}</div>
+          <p class="feature-desc">{{ __('home.guest.features.tracking_body') }}</p>
         </div>
 
         <div class="feature-card">
@@ -701,8 +695,8 @@
               <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
           </div>
-          <div class="feature-title">Routed to the Right Office</div>
-          <p class="feature-desc">Complaints are automatically directed to the correct LGU department, eliminating delays and miscommunication.</p>
+          <div class="feature-title">{{ __('home.guest.features.routing_title') }}</div>
+          <p class="feature-desc">{{ __('home.guest.features.routing_body') }}</p>
         </div>
 
         <div class="feature-card">
@@ -713,8 +707,8 @@
               <line x1="6" y1="20" x2="6" y2="14"/>
             </svg>
           </div>
-          <div class="feature-title">Public Accountability</div>
-          <p class="feature-desc">Resolution statistics are published publicly, holding each office accountable to transparent performance benchmarks.</p>
+          <div class="feature-title">{{ __('home.guest.features.accountability_title') }}</div>
+          <p class="feature-desc">{{ __('home.guest.features.accountability_body') }}</p>
         </div>
 
         <div class="feature-card">
@@ -724,8 +718,8 @@
               <line x1="12" y1="18" x2="12.01" y2="18"/>
             </svg>
           </div>
-          <div class="feature-title">Any Device, Anywhere</div>
-          <p class="feature-desc">File and track complaints from your phone, tablet, or desktop - no app installation required.</p>
+          <div class="feature-title">{{ __('home.guest.features.device_title') }}</div>
+          <p class="feature-desc">{{ __('home.guest.features.device_body') }}</p>
         </div>
 
         <div class="feature-card">
@@ -736,8 +730,8 @@
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <div class="feature-title">RA 6713 Compliant</div>
-          <p class="feature-desc">Fully aligned with the Code of Conduct and Ethical Standards for Public Officials and Employees.</p>
+          <div class="feature-title">{{ __('home.guest.features.ra6713_title') }}</div>
+          <p class="feature-desc">{{ __('home.guest.features.ra6713_body') }}</p>
         </div>
 
       </div>
@@ -748,22 +742,21 @@
   <div class="cta-banner">
     <div class="cta-inner">
       <div class="cta-text">
-        <div class="cta-label">Take Action</div>
-        <h3>Ready to file a complaint?</h3>
+        <div class="cta-label">{{ __('home.guest.cta.label') }}</div>
+        <h3>{{ __('home.guest.cta.title') }}</h3>
         <p>
-          Join the growing community of Daet residents holding their local
-          government to a higher standard - one verified report at a time.
+          {{ __('home.guest.cta.body') }}
         </p>
       </div>
       @auth
         <a href="{{ route('complaints.create') }}"  wire:navigate class="btn-primary" style="flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          File a Complaint Now
+          {{ __('home.guest.cta.file_now') }}
         </a>
       @else
         <a href="{{ route('register') }}" wire:navigate class="btn-primary" style="flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Get Started Free
+          {{ __('home.guest.cta.get_started_free') }}
         </a>
       @endauth
     </div>

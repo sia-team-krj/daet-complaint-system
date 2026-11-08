@@ -6,9 +6,9 @@
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
-    --navy-light:  #1a3560;
+    --navy:        #142D4F;
+    --navy-mid:    #1B3A61;
+    --navy-light:  #244874;
     --gold:        #C9A84C;
     --gold-light:  #E2C06A;
     --gold-pale:   rgba(201,168,76,0.12);
@@ -365,7 +365,7 @@
             <p class="card-desc">{{ Str::limit($complaint->description, 150) }}</p>
             <div class="card-meta">
               <span class="card-review-label">{{ $complaint->reviewStatusEnum->label() }}</span>
-              <span class="card-dept">{{ $complaint->department->name ?? 'Unassigned' }}</span>
+              <span class="card-dept">@if($complaint->department)<span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span>{{ $complaint->department->name }}</span></span>@else Unassigned @endif</span>
               <span>{{ $complaint->created_at->format('M d, Y') }}</span>
               <a href="{{ route('complaints.show', $complaint) }}" class="card-action" wire:navigate>View →</a>
             </div>

@@ -38,7 +38,7 @@
 
                     <span class="notification-feed__body">
                         <span class="notification-feed__headline">
-                            @if($entity !== '')<strong>{{ $entity }}</strong>@endif{{ $remainder }}
+                            @if($entity !== '')<strong>{{ $entity }}</strong> {{ $remainder }}@else{{ $remainder }}@endif
                         </span>
                         <span class="notification-feed__meta">
                             <span class="notification-feed__label">{{ $notification->typeLabel() }}</span>

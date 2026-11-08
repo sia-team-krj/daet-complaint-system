@@ -36,6 +36,12 @@ class Notification extends Model
     /** The resident's own complaint changed state. */
     public const COMPLAINT_STATUS_CHANGED = 'complaint.status_changed';
 
+    /** A verifier or administrator settled the review decision. */
+    public const COMPLAINT_REVIEW_UPDATED = 'complaint.review_updated';
+
+    /** A complaint was handed to a staff member to work. */
+    public const COMPLAINT_ASSIGNED = 'complaint.assigned';
+
     protected $fillable = [
         'user_id',
         'type',
@@ -123,6 +129,8 @@ class Notification extends Model
             self::COMPLAINT_INFORMATION_PROVIDED => 'reply',
             self::COMPLAINT_INFORMATION_STALE => 'waiting',
             self::COMPLAINT_STATUS_CHANGED => 'status',
+            self::COMPLAINT_REVIEW_UPDATED => 'review',
+            self::COMPLAINT_ASSIGNED => 'handover',
             default => 'bell',
         };
     }
@@ -167,7 +175,54 @@ class Notification extends Model
             self::COMPLAINT_INFORMATION_PROVIDED => 'Resident replied',
             self::COMPLAINT_INFORMATION_STALE => 'Waiting on resident',
             self::COMPLAINT_STATUS_CHANGED => 'Status changed',
+            self::COMPLAINT_REVIEW_UPDATED => 'Review updated',
+            self::COMPLAINT_ASSIGNED => 'Assigned to you',
             default => 'Update',
+        };
+    }
+
+    /**
+     * Complaint category label for the list pill. Falls back to the
+     * event label when the notification has no complaint subject (or the
+     * subject was deleted), so the pill is never empty.
+     */
+    public function categoryLabel(): string
+    {
+        $complaint = $this->subject instanceof Complaint ? $this->subject : null;
+
+        if ($complaint && is_string($complaint->category) && $complaint->category !== '') {
+            $labels = \App\Services\DepartmentRouter::getCategoryOptions();
+            $flat = collect($labels)->flatten(1)->pluck('label', 'value');
+
+            return $flat->get($complaint->category, $this->typeLabel());
+        }
+
+        return $this->typeLabel();
+    }
+
+    /**
+     * Group key for the list: today / earlier-this-week / older.
+     * Earlier this week means the past 7 days excluding today.
+     */
+    public function groupKey(): string
+    {
+        $created = $this->created_at;
+
+        if ($created?->isToday()) {
+            return 'today';
+        }
+
+        return $created && $created->greaterThanOrEqualTo(now()->subDays(7))
+            ? 'earlier-this-week'
+            : 'older';
+    }
+
+    public function groupLabel(): string
+    {
+        return match ($this->groupKey()) {
+            'today' => 'Today',
+            'earlier-this-week' => 'Earlier this week',
+            default => 'Older',
         };
     }
 

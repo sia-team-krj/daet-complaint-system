@@ -6,7 +6,7 @@
     <style>
         .public-ticket-root {
             --pt-navy: #0b1f3a;
-            --pt-navy-mid: #12294d;
+            --pt-navy-mid: #1B3A61;
             --pt-gold: #c9a84c;
             --pt-gold-light: #e2c06a;
             --pt-cream: #f5f0e8;

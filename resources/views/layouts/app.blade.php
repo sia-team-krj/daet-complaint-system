@@ -20,7 +20,7 @@
     ╚══════════════════════════════════════════════════════════════╝
 --}}
 <!DOCTYPE html>
-<html lang="en" class="w-full max-w-full overflow-x-hidden">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="w-full max-w-full overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -33,7 +33,7 @@
     {{-- Fonts: loaded here once for ALL pages --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     {{-- Must come before @vite: the module is deferred, this is not. --}}
     @include('partials.leaflet-bootstrap')
@@ -73,13 +73,21 @@
 {{--
     Body background logic:
     - Authenticated users land on cream (#F5F0E8) - this is the "inside the app" feel.
-    - Guest users on most pages see navy (#0B1F3A) - the dark institutional landing.
+    - Guest users on most pages see navy (#142D4F) - the dark institutional landing.
     - Public-facing pages such as transparency use navy too even when auth'd,
       because those pages have their own dark hero sections that override body bg.
     - Pass $bodyClass from the controller to override, e.g.:
         return view('pages.transparency', ['bodyClass' => 'bg-navy']);
 --}}
-<body class="w-full max-w-full overflow-x-clip {{ auth()->check() ? 'bg-[#F5F0E8]' : 'bg-[#0B1F3A]' }} {{ $bodyClass ?? '' }}">
+<body
+    @auth
+        data-role="{{ auth()->user()->role }}"
+        class="w-full max-w-full overflow-x-clip bg-white is-auth role-{{ auth()->user()->role }} {{ $bodyClass ?? '' }} @yield('body-class')"
+    @else
+        data-role="guest"
+        class="w-full max-w-full overflow-x-clip bg-white role-guest {{ $bodyClass ?? '' }} @yield('body-class')"
+    @endauth
+>
 
     {{--
         NAVBAR SWITCH:
@@ -88,6 +96,7 @@
     --}}
     @auth
         @include('layouts.navbar')
+        @include('layouts.partials.mobile-drawer')
     @else
         @include('layouts.guest-navbar')
     @endauth

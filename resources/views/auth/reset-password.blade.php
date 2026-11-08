@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Set New Password - Daet Listens')
+@section('title', __('auth_ui.titles.reset'))
 @section('content')
 
 <div class="auth-root">
@@ -18,10 +18,10 @@
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
 
-        <div class="auth-form-eyebrow fu d1">New Password</div>
-        <h1 class="auth-form-heading fu d2">Set New Password</h1>
+        <div class="auth-form-eyebrow fu d1">{{ __('auth_ui.reset.eyebrow') }}</div>
+        <h1 class="auth-form-heading fu d2">{{ __('auth_ui.reset.heading') }}</h1>
         <p class="auth-form-sub fu d2">
-          Create a strong password for your account. Your new password must be at least 8 characters long.
+          {{ __('auth_ui.reset.description') }}
         </p>
 
         @if ($errors->any())
@@ -38,7 +38,7 @@
 
           {{-- Email (pre-filled, readonly) --}}
           <div class="field-group fu d3">
-            <label class="field-label" for="email">Email Address</label>
+            <label class="field-label" for="email">{{ __('auth_ui.common.email') }}</label>
             <div class="field-wrap">
               <span class="field-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -50,7 +50,7 @@
 
           {{-- New Password --}}
           <div class="field-group fu d3">
-            <label class="field-label" for="password">New Password</label>
+            <label class="field-label" for="password">{{ __('auth_ui.common.new_password') }}</label>
             <div class="field-wrap">
               <span class="field-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -63,7 +63,7 @@
 
           {{-- Confirm Password --}}
           <div class="field-group fu d4">
-            <label class="field-label" for="password_confirmation">Confirm Password</label>
+            <label class="field-label" for="password_confirmation">{{ __('auth_ui.common.confirm_password') }}</label>
             <div class="field-wrap">
               <span class="field-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -75,11 +75,11 @@
 
           <button type="submit" class="btn-submit fu d5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            Update Password
+            {{ __('auth_ui.common.update_password') }}
           </button>
 
           <div class="auth-alt-link fu d5">
-            <a href="{{ route('login') }}" wire:navigate>&larr; Back to Sign In</a>
+            <a href="{{ route('login') }}" wire:navigate>&larr; {{ __('auth_ui.common.back_to_sign_in') }}</a>
           </div>
         </form>
       </div>
@@ -94,8 +94,8 @@
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
   :root {
-    --navy:        #0B1F3A;
-    --navy-mid:    #12294d;
+    --navy:        #142D4F;
+    --navy-mid:    #1B3A61;
     --gold:        #C9A84C;
     --gold-light:  #E2C06A;
     --gold-pale:   rgba(201,168,76,0.12);

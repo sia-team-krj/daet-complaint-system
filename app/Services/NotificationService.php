@@ -48,6 +48,21 @@ class NotificationService
             ->get();
     }
 
+    /**
+     * Administrators can verify across departments, so they are the safety net
+     * when no department verifier can take the work.
+     *
+     * @return Collection<int, User>
+     */
+    private function adminFallbackFor(?User $actor = null): Collection
+    {
+        return User::query()
+            ->where('role', 'admin')
+            ->where('is_active', true)
+            ->when($actor !== null, fn ($query) => $query->where('id', '!=', $actor->id))
+            ->get();
+    }
+
     public function notifyDepartmentVerifiers(
         Complaint $complaint,
         string $type,
@@ -55,8 +70,18 @@ class NotificationService
         ?User $actor = null,
         array $context = [],
     ): int {
+        $recipients = $this->departmentVerifiersFor($complaint, $actor);
+
+        // A department with no verifier, or one whose only verifier is the
+        // person who acted, would otherwise leave a complaint in a queue that
+        // nobody can settle. Administrators can verify across departments, so
+        // they are the fallback rather than letting the report go unnoticed.
+        if ($recipients->isEmpty()) {
+            $recipients = $this->adminFallbackFor($actor);
+        }
+
         return $this->notifyMany(
-            $this->departmentVerifiersFor($complaint, $actor),
+            $recipients,
             $type,
             $title,
             $complaint,
@@ -145,13 +170,12 @@ class NotificationService
      */
     public function informationStale(Complaint $complaint, ComplaintInformationRequest $request): int
     {
-        return $this->notifyMany(
-            $this->departmentVerifiersFor($complaint),
+        return $this->notifyDepartmentVerifiers(
+            $complaint,
             Notification::COMPLAINT_INFORMATION_STALE,
             "{$complaint->ticket_id} has been waiting on the resident for "
                 .$request->created_at->diffInDays().' days',
-            $complaint,
-            [
+            context: [
                 'ticket_id' => $complaint->ticket_id,
                 'days' => (int) $request->created_at->diffInDays(),
                 // Keyed on the request, not the complaint: the subject stays the
@@ -159,6 +183,69 @@ class NotificationService
                 // to recognise it already warned about this specific ask.
                 'request_id' => $request->id,
             ],
+        );
+    }
+
+    /**
+     * The department settled the review, which is the event a resident is
+     * actually waiting for. Kept separate from statusChanged so an approval
+     * does not masquerade as routine progress and a rejection is unmistakable.
+     */
+    public function reviewUpdated(
+        Complaint $complaint,
+        ComplaintReviewStatus $reviewStatus,
+        ?User $actor = null,
+    ): ?Notification {
+        $owner = $complaint->user;
+
+        if ($owner === null) {
+            return null;
+        }
+
+        $action = match ($reviewStatus) {
+            ComplaintReviewStatus::Verified => 'was verified',
+            ComplaintReviewStatus::Rejected => 'was rejected',
+            ComplaintReviewStatus::Duplicate => 'was marked as a duplicate',
+            ComplaintReviewStatus::NeedsInformation => 'needs more information',
+            ComplaintReviewStatus::Escalated => 'was escalated',
+            ComplaintReviewStatus::Pending => null,
+        };
+
+        // "Pending verification" is the state the resident already knows about;
+        // it is not news worth a bell.
+        if ($action === null) {
+            return null;
+        }
+
+        return $this->notifyUser(
+            $owner,
+            Notification::COMPLAINT_REVIEW_UPDATED,
+            "{$complaint->ticket_id} {$action}",
+            $actor,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'review_status' => $reviewStatus->value,
+                'status' => $complaint->status,
+            ],
+            $complaint,
+        );
+    }
+
+    /**
+     * Hand the physical work to a staff member.
+     */
+    public function complaintAssigned(Complaint $complaint, User $assignee, ?User $actor = null): ?Notification
+    {
+        return $this->notifyUser(
+            $assignee,
+            Notification::COMPLAINT_ASSIGNED,
+            "{$complaint->ticket_id} was assigned to you",
+            $actor,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'department_id' => $complaint->department_id,
+            ],
+            $complaint,
         );
     }
 

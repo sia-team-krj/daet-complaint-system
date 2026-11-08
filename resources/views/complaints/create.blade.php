@@ -6,7 +6,7 @@
     <style>
         .filing-page {
             --filing-navy: #0b1f3a;
-            --filing-navy-mid: #12294d;
+            --filing-navy-mid: #1B3A61;
             --filing-gold: #c9a84c;
             --filing-gold-light: #e2c06a;
             --filing-gold-pale: rgba(201, 168, 76, 0.12);
@@ -374,89 +374,77 @@
         }
 
         /* ─── Visibility choice ───
-     A fieldset of radios rather than a switch: the two outcomes carry equal
-     weight, so both have to be readable before one is chosen. A switch only
-     ever shows you the option you are not currently on.
+           A fieldset of radios rather than a switch: the two outcomes carry equal
+           weight, so both have to be readable before one is chosen. */
+        .visibility-choice {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+        }
 
-     Type is taken from the form around it, not chosen: the same stack the form
-     root sets, the same 11px/1.55 secondary step as .filing-field__hint, and the
-     same ink and muted tokens as .filing-field label. The card heading above is
-     Cormorant Garamond because .filing-card__header h2 already sets that, so
-     this block inherits the established hierarchy instead of inventing one.
+        .visibility-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #fcfbf8;
+            border: 1px solid rgba(11, 31, 58, 0.16);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: border-color 0.18s ease, background 0.18s ease;
+        }
 
-     Colours are the light filing-form palette. This card is --filing-white, so
-     the dark-shell palette used elsewhere in the app is unreadable here. */
-  .visibility-choice {
-    display: grid;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  }
+        .visibility-option:hover {
+            border-color: var(--filing-gold);
+            background: var(--filing-gold-pale);
+        }
 
-  .visibility-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
-    background: #fcfbf8;
-    border: 1px solid rgba(11, 31, 58, 0.16);
-    border-radius: 5px;
-    cursor: pointer;
-    transition: border-color 0.18s ease, background 0.18s ease;
-  }
+        .visibility-option input {
+            margin: 2px 0 0;
+            accent-color: var(--filing-gold);
+            flex-shrink: 0;
+        }
 
-  .visibility-option:hover {
-    border-color: var(--filing-gold);
-    background: var(--filing-gold-pale);
-  }
+        .visibility-option:has(input:checked) {
+            background: var(--filing-gold-pale);
+            border-color: var(--filing-gold);
+        }
 
-  .visibility-option input {
-    margin: 2px 0 0;
-    accent-color: var(--filing-gold);
-    flex-shrink: 0;
-  }
+        .visibility-option:has(input:focus-visible) {
+            outline: 2px solid var(--filing-gold);
+            outline-offset: 2px;
+        }
 
-  /* The selected row reads as chosen without relying on the radio alone, so
-     the state survives a high-contrast mode that hides the control. */
-  .visibility-option:has(input:checked) {
-    background: var(--filing-gold-pale);
-    border-color: var(--filing-gold);
-  }
+        .visibility-option__body {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+        }
 
-  .visibility-option:has(input:focus-visible) {
-    outline: 2px solid var(--filing-gold);
-    outline-offset: 2px;
-  }
+        .visibility-option__title {
+            color: var(--filing-navy);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
 
-  .visibility-option__body {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
-  }
+        .visibility-option__note {
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
 
-  .visibility-option__title {
-    color: var(--filing-navy);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.4;
-  }
+        .visibility-footnote {
+            margin: 14px 0 0;
+            color: var(--filing-muted);
+            font-size: 11px;
+            line-height: 1.55;
+        }
 
-  .visibility-option__note {
-    color: var(--filing-muted);
-    font-size: 11px;
-    line-height: 1.55;
-  }
-
-  .visibility-footnote {
-    margin: 14px 0 0;
-    color: var(--filing-muted);
-    font-size: 11px;
-    line-height: 1.55;
-  }
-
-  .filing-route {
+        .filing-route {
             display: flex;
             align-items: flex-start;
             gap: 10px;
@@ -668,9 +656,6 @@
             background: #dce8e7;
         }
 
-        /* Locate-me control. A real labelled button rather than a target icon
-           in the corner: it does something the map does not, and a resident
-           should be able to tell what it is before tapping it. */
         .filing-locate {
             display: inline-flex;
             align-items: center;
@@ -717,10 +702,6 @@
             display: none;
         }
 
-        /* ─── Location choice ───
-           Shown only when a photo's own GPS disagrees with the pin. Both
-           candidates are stated with their distance apart, because "somewhere
-           else" without a number is not enough to choose on. */
         .location-choice {
             margin-top: 15px;
             padding: 16px;
@@ -1169,6 +1150,301 @@
                 animation: none;
             }
         }
+
+        /* ═══════════════════════════════════════════════════════════════
+           MOBILE WIZARD
+           Everything wizard-related is scoped to `.filing-page.wizard-on`,
+           a class the script adds ONLY while the viewport is ≤640px.
+           Desktop never gets it, and if the script fails the plain form
+           still shows.
+           ═══════════════════════════════════════════════════════════════ */
+
+        .filing-page [hidden] {
+            display: none !important;
+        }
+
+        @keyframes wizardFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        /* Step headings: screen-reader only on desktop, visible in the wizard */
+        .wizard-step-title {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Hidden by default (desktop) */
+        .wizard-progress-header,
+        .wizard-action-bar,
+        .wizard-draft-banner {
+            display: none;
+        }
+
+        @media (max-width: 640px) {
+            /* Compact hero */
+            .filing-header {
+                padding: 76px 16px 16px;
+            }
+
+            .filing-header h1 {
+                margin-bottom: 0;
+                font-size: 28px;
+                line-height: 1.15;
+            }
+
+            .filing-header__lede,
+            .filing-header__aside {
+                display: none;
+            }
+
+            .filing-back {
+                margin-bottom: 10px;
+            }
+
+            /* Page chrome */
+            .filing-stepper {
+                display: none;
+            }
+
+            .filing-main {
+                padding: 16px 16px calc(104px + env(safe-area-inset-bottom));
+            }
+
+            .filing-layout {
+                display: block;
+            }
+
+            .filing-aside {
+                display: none !important;
+            }
+
+            .page-complaint-create footer {
+                display: none !important;
+            }
+
+            /* Progress header */
+            .filing-page.wizard-on .wizard-progress-header {
+                display: block;
+                margin-bottom: 16px;
+                padding: 16px;
+                border: 1px solid var(--filing-border);
+                border-radius: 12px;
+                background: #fff;
+                box-shadow: 0 4px 16px rgba(11, 31, 58, 0.06);
+            }
+
+            .wizard-progress-meta {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                color: var(--filing-muted);
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .wizard-progress-title {
+                color: var(--filing-navy);
+                font-size: 15px;
+                font-weight: 700;
+            }
+
+            .wizard-progress-track {
+                width: 100%;
+                height: 6px;
+                overflow: hidden;
+                border-radius: 3px;
+                background: var(--filing-cream-dark);
+            }
+
+            .wizard-progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--filing-gold), var(--filing-gold-light));
+                transition: width 0.25s ease;
+            }
+
+            /* Draft banner */
+            .filing-page.wizard-on .wizard-draft-banner {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-bottom: 16px;
+                padding: 12px 16px;
+                border: 1px solid rgba(201, 168, 76, 0.4);
+                border-radius: 8px;
+                background: #fdf6e4;
+                color: var(--filing-navy);
+                font-size: 12px;
+            }
+
+            .wizard-draft-actions {
+                display: flex;
+                gap: 6px;
+            }
+
+            .wizard-draft-banner button {
+                padding: 8px 12px;
+                border: 0;
+                border-radius: 6px;
+                background: var(--filing-gold);
+                color: var(--filing-navy);
+                font-size: 11px;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+            .wizard-draft-banner .wizard-draft-reset {
+                background: transparent;
+                border: 1px solid rgba(11, 31, 58, 0.25);
+            }
+
+            /* Wrapper cards vanish; only the active step shows */
+            .filing-page.wizard-on .filing-form {
+                gap: 0;
+            }
+
+            .filing-page.wizard-on #filing-details,
+            .filing-page.wizard-on #filing-location,
+            .filing-page.wizard-on #filing-details > .filing-card__body,
+            .filing-page.wizard-on #filing-location > .filing-card__body {
+                display: contents;
+            }
+
+            .filing-page.wizard-on #filing-details > .filing-card__header,
+            .filing-page.wizard-on #filing-location > .filing-card__header {
+                display: none;
+            }
+
+            .filing-page.wizard-on [data-wizard-step] {
+                display: none;
+            }
+
+            .filing-page.wizard-on [data-wizard-step].wizard-step-active {
+                display: block;
+                animation: wizardFadeIn 0.2s ease both;
+            }
+
+            /* Steps that are plain <div>s get their own card look */
+            .filing-page.wizard-on div[data-wizard-step].wizard-step-active {
+                padding: 18px;
+                border: 1px solid var(--filing-border);
+                border-radius: 12px;
+                background: var(--filing-white);
+                box-shadow: 0 4px 16px rgba(11, 31, 58, 0.06);
+            }
+
+            .filing-page.wizard-on section.filing-card[data-wizard-step].wizard-step-active {
+                border-radius: 12px;
+            }
+
+            .filing-page.wizard-on section.filing-card[data-wizard-step] .filing-card__body {
+                padding: 18px;
+            }
+
+            .filing-page.wizard-on .wizard-step-title {
+                position: static;
+                width: auto;
+                height: auto;
+                margin: 0 0 14px;
+                overflow: visible;
+                clip: auto;
+                white-space: normal;
+                color: var(--filing-navy);
+                font-family: "Cormorant Garamond", Georgia, serif;
+                font-size: 24px;
+                font-weight: 700;
+                line-height: 1.1;
+            }
+
+            /* The action bar's last button submits, so hide the in-page one */
+            .filing-page.wizard-on .filing-submit {
+                display: none;
+            }
+
+            /* Action bar */
+            .filing-page.wizard-on .wizard-action-bar {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+                border-top: 1px solid var(--filing-border);
+                background: #fff;
+                box-shadow: 0 -4px 20px rgba(11, 31, 58, 0.1);
+            }
+
+            .wizard-btn-back,
+            .wizard-btn-next {
+                display: inline-flex;
+                flex: 1;
+                min-height: 48px;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                font: inherit;
+                font-size: 14px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: opacity 0.2s ease;
+            }
+
+            .wizard-btn-back {
+                border: 1px solid var(--filing-border);
+                background: #fcfbf8;
+                color: var(--filing-navy);
+            }
+
+            .wizard-btn-next {
+                border: 0;
+                background: linear-gradient(135deg, var(--filing-gold), var(--filing-gold-light));
+                color: var(--filing-navy);
+                box-shadow: 0 6px 16px rgba(201, 168, 76, 0.3);
+            }
+
+            .wizard-btn-next:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                box-shadow: none;
+            }
+
+            .wizard-step-hint {
+                position: absolute;
+                top: -44px;
+                right: 16px;
+                left: 16px;
+                padding: 8px 12px;
+                border: 1px solid rgba(220, 38, 38, 0.3);
+                border-radius: 6px;
+                background: #fff;
+                color: #b91c1c;
+                font-size: 12px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .filing-page.wizard-on [data-wizard-step].wizard-step-active {
+                animation: none;
+            }
+
+            .wizard-progress-fill {
+                transition: none;
+            }
+        }
     </style>
 @endpush
 
@@ -1209,6 +1485,24 @@
                 </div>
             </nav>
 
+            <div class="wizard-progress-header" aria-hidden="true">
+                <div class="wizard-progress-meta">
+                    <span id="wizard-step-counter">Step 1 of 7</span>
+                    <span class="wizard-progress-title" id="wizard-step-label">Category</span>
+                </div>
+                <div class="wizard-progress-track">
+                    <div class="wizard-progress-fill" id="wizard-progress-fill" style="width: 14.28%;"></div>
+                </div>
+            </div>
+
+            <div class="wizard-draft-banner" id="wizard-draft-banner" hidden>
+                <span>Resume your previous draft?</span>
+                <div class="wizard-draft-actions">
+                    <button type="button" id="wizard-draft-resume">Resume</button>
+                    <button type="button" id="wizard-draft-reset" class="wizard-draft-reset">Start over</button>
+                </div>
+            </div>
+
             <div class="filing-layout">
                 <form method="POST" action="{{ route('complaints.store') }}" enctype="multipart/form-data" id="complaint-form" class="filing-form">
                     @csrf
@@ -1227,13 +1521,13 @@
                         </div>
                     @endif
 
-                    <section class="filing-card" id="filing-category">
+                    <section class="filing-card" id="filing-category" data-wizard-step="1" role="group" aria-labelledby="step1-heading">
                         <div class="filing-card__header">
                             <span class="filing-card__icon" aria-hidden="true">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
                             </span>
                             <div>
-                                <h2>What are you reporting?</h2>
+                                <h2 id="step1-heading">What are you reporting?</h2>
                                 <p>Choose the closest category so we can route it correctly.</p>
                             </div>
                         </div>
@@ -1265,19 +1559,18 @@
                         is the default. Real radio inputs rather than a switch,
                         because the choice is between two equally weighted
                         outcomes and both need to be readable before one is
-                        picked - a switch hides the option it is not on.
+                        picked.
 
                         Nothing in the staff or admin interface can change this
-                        afterwards. It is the one thing about a complaint the
-                        handling office does not get a say in.
+                        afterwards.
                     --}}
-                    <section class="filing-card" id="filing-visibility">
+                    <section class="filing-card" id="filing-visibility" data-wizard-step="6" role="group" aria-labelledby="step6-heading">
                         <div class="filing-card__header">
                             <span class="filing-card__icon" aria-hidden="true">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path><path d="M4 4l16 16"></path></svg>
                             </span>
                             <div>
-                                <h2>Who can see this</h2>
+                                <h2 id="step6-heading">Who can see this</h2>
                                 <p>You decide this. No member of staff can change it later.</p>
                             </div>
                         </div>
@@ -1324,44 +1617,55 @@
                             </div>
                         </div>
                         <div class="filing-card__body">
-                            <div class="filing-field">
-                                <label for="title">Short title <span>*</span></label>
-                                <p class="filing-field__hint">Summarize the problem in one sentence.</p>
-                                <input id="title" name="title" class="filing-input" type="text" maxlength="255" placeholder="e.g. Fallen tree blocking the road" value="{{ old('title') }}" required>
-                                @error('title') <div class="filing-error">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="filing-field">
-                                <label for="description">What happened? <span>*</span></label>
-                                <p class="filing-field__hint">Include when it started, who is affected, and any immediate risk. Minimum 20 characters.</p>
-                                <textarea id="description" name="description" class="filing-textarea" minlength="20" placeholder="Describe what you observed and how it affects the community..." required>{{ old('description') }}</textarea>
-                                @error('description') <div class="filing-error">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="filing-review-notice">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
-                                <span><strong>No urgency selection is needed.</strong> The system will suggest a priority from your category and description. The responsible department verifies the report and confirms the final priority.</span>
-                            </div>
-                            <div class="filing-field">
-                                <label for="images-input">Photo evidence <span>*</span></label>
-                                <p class="filing-field__hint">Required. Add up to five clear photos taken at the issue location. GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
-                                <div class="filing-upload" id="upload-zone">
-                                    <input class="filing-upload__input" type="file" name="images[]" id="images-input" accept="image/jpeg,image/png,image/webp" multiple>
-                                    <input class="filing-upload__input" type="file" name="camera_photo" id="camera-input" accept="image/jpeg,image/png,image/webp" capture="environment">
-                                    <div class="filing-upload__icon">
-                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
-                                    </div>
-                                    <strong>Add up to five photos</strong>
-                                    <span>Choose from your device or use your phone’s camera.</span>
-                                    <div class="filing-upload__actions">
-                                        <button type="button" class="filing-upload__action" data-upload-trigger="images-input">Choose photos</button>
-                                        <button type="button" class="filing-upload__action filing-upload__action--camera" data-upload-trigger="camera-input">Use camera</button>
-                                    </div>
-                                    <div class="filing-upload__counter"><strong id="photo-count">0 / 5</strong> photos attached</div>
-                                    <div class="filing-upload__previews" id="upload-previews" aria-live="polite"></div>
-                                    <div class="filing-upload__error" id="upload-client-error" role="alert" hidden></div>
+                            <div data-wizard-step="2" role="group" aria-labelledby="step2-heading">
+                                <h3 id="step2-heading" class="wizard-step-title">Give your report a short title</h3>
+                                <div class="filing-field">
+                                    <label for="title">Short title <span>*</span></label>
+                                    <p class="filing-field__hint">Summarize the problem in one sentence.</p>
+                                    <input id="title" name="title" class="filing-input" type="text" maxlength="255" placeholder="e.g. Fallen tree blocking the road" value="{{ old('title') }}" required>
+                                    @error('title') <div class="filing-error">{{ $message }}</div> @enderror
                                 </div>
-                                @error('images') <div class="filing-error">{{ $message }}</div> @enderror
-                                @error('camera_photo') <div class="filing-error">{{ $message }}</div> @enderror
-                                @error('image') <div class="filing-error">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div data-wizard-step="3" role="group" aria-labelledby="step3-heading">
+                                <h3 id="step3-heading" class="wizard-step-title">What happened?</h3>
+                                <div class="filing-field">
+                                    <label for="description">What happened? <span>*</span></label>
+                                    <p class="filing-field__hint">Include when it started, who is affected, and any immediate risk. Minimum 20 characters.</p>
+                                    <textarea id="description" name="description" class="filing-textarea" minlength="20" placeholder="Describe what you observed and how it affects the community..." required>{{ old('description') }}</textarea>
+                                    @error('description') <div class="filing-error">{{ $message }}</div> @enderror
+                                </div>
+                                <div class="filing-review-notice">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
+                                    <span><strong>No urgency selection is needed.</strong> The system will suggest a priority from your category and description. The responsible department verifies the report and confirms the final priority.</span>
+                                </div>
+                            </div>
+
+                            <div data-wizard-step="4" role="group" aria-labelledby="step4-heading">
+                                <h3 id="step4-heading" class="wizard-step-title">Add photo evidence</h3>
+                                <div class="filing-field">
+                                    <label for="images-input">Photo evidence <span>*</span></label>
+                                    <p class="filing-field__hint">Required. Add up to five clear photos taken at the issue location. GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
+                                    <div class="filing-upload" id="upload-zone">
+                                        <input class="filing-upload__input" type="file" name="images[]" id="images-input" accept="image/jpeg,image/png,image/webp" multiple>
+                                        <input class="filing-upload__input" type="file" name="camera_photo" id="camera-input" accept="image/jpeg,image/png,image/webp" capture="environment">
+                                        <div class="filing-upload__icon">
+                                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
+                                        </div>
+                                        <strong>Add up to five photos</strong>
+                                        <span>Choose from your device or use your phone’s camera.</span>
+                                        <div class="filing-upload__actions">
+                                            <button type="button" class="filing-upload__action" data-upload-trigger="images-input">Choose photos</button>
+                                            <button type="button" class="filing-upload__action filing-upload__action--camera" data-upload-trigger="camera-input">Use camera</button>
+                                        </div>
+                                        <div class="filing-upload__counter"><strong id="photo-count">0 / 5</strong> photos attached</div>
+                                        <div class="filing-upload__previews" id="upload-previews" aria-live="polite"></div>
+                                        <div class="filing-upload__error" id="upload-client-error" role="alert" hidden></div>
+                                    </div>
+                                    @error('images') <div class="filing-error">{{ $message }}</div> @enderror
+                                    @error('camera_photo') <div class="filing-error">{{ $message }}</div> @enderror
+                                    @error('image') <div class="filing-error">{{ $message }}</div> @enderror
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -1377,120 +1681,127 @@
                             </div>
                         </div>
                         <div class="filing-card__body">
-                            <div class="filing-field">
-                                <label for="barangay">Which barangay <span>(required)</span></label>
-                                <p class="filing-field__hint">Prefilled from your account. Change it if the problem is somewhere else.</p>
-                                <input
-                                    id="barangay"
-                                    name="barangay"
-                                    class="filing-input"
-                                    type="search"
-                                    list="complaint-barangay-options"
-                                    autocomplete="off"
-                                    value="{{ old('barangay', auth()->user()?->barangay ?? '') }}"
-                                    required
-                                >
-                                {{--
-                                    A native list alongside the field, so the form
-                                    still completes without JavaScript and a phone
-                                    gets its own picker rather than a combobox that
-                                    has to be driven by hand.
-                                --}}
-                                <datalist id="complaint-barangay-options">
-                                    @foreach (\App\Models\User::BARANGAYS as $barangayOption)
-                                        <option value="{{ $barangayOption }}"></option>
-                                    @endforeach
-                                </datalist>
-                                @error('barangay') <div class="filing-error">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="filing-field">
-                                <label for="address_text">Address or nearest landmark <span>(optional)</span></label>
-                                <p class="filing-field__hint">Example: in front of Daet Public Market, Barangay VI.</p>
-                                <input id="address_text" name="address_text" class="filing-input" type="text" maxlength="500" placeholder="Describe the location..." value="{{ old('address_text') }}">
-                                @error('address_text') <div class="filing-error">{{ $message }}</div> @enderror
-                            </div>
-                            <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
-                            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
-                            <div id="complaint-map" class="filing-map" aria-label="Map for selecting the complaint location"></div>
-                            <p class="filing-map-note">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
-                                Click the map to place a marker, or enter a nearby landmark above.
-                            </p>
-
-                            <button type="button" class="filing-locate" id="locate-me" data-locate-button>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path></svg>
-                                Use my current location
-                            </button>
-                            <p class="filing-locate-status" id="locate-status" role="status" aria-live="polite" hidden></p>
-
-                            {{--
-                                Only present when a photo's own GPS and the pin the
-                                resident placed disagree by more than the rounding
-                                threshold. Both candidates are shown with their
-                                coordinates and the distance between them, because
-                                "somewhere else" is not enough to choose on, and
-                                silently picking for them is the behaviour this
-                                replaces.
-                            --}}
-                            @if ($locationConflict)
-                                <div class="location-choice">
-                                    <h3 class="location-choice__title">Where is the problem?</h3>
-                                    <p class="location-choice__note">One of your photos was taken in a different area from the point you marked on the map. Pick the place the problem is actually at.</p>
-
-                                    <fieldset class="location-choice__options">
-                                        <legend class="sr-only">Which location is the problem at?</legend>
-
-                                        <label class="location-choice__option">
-                                            <input type="radio" name="location_choice" value="map"
-                                                   @checked(old('location_choice', \App\Http\Controllers\ComplaintController::LOCATION_CHOICE_MAP) === 'map')>
-                                            <span>
-                                                <span class="location-choice__label">The point I marked on the map</span>
-                                                <span class="location-choice__coords">
-                                                    {{ $locationConflict['map']['barangay'] ?? 'Location not recognised' }}
-                                                </span>
-                                            </span>
-                                        </label>
-
-                                        <label class="location-choice__option">
-                                            <input type="radio" name="location_choice" value="photo"
-                                                   @checked(old('location_choice', \App\Http\Controllers\ComplaintController::LOCATION_CHOICE_PHOTO) === 'photo')>
-                                            <span>
-                                                <span class="location-choice__label">Where the photo was taken</span>
-                                                <span class="location-choice__coords">
-                                                    {{ $locationConflict['photo']['barangay'] ?? 'Location not recognised' }}
-                                                </span>
-                                            </span>
-                                        </label>
-                                    </fieldset>
-
-                                    @error('location_choice')
-                                        <p class="location-choice__error">{{ $message }}</p>
-                                    @enderror
+                            <div data-wizard-step="5" role="group" aria-labelledby="step5-heading">
+                                <h3 id="step5-heading" class="wizard-step-title">Where is the issue?</h3>
+                                <div class="filing-field">
+                                    <label for="barangay">Which barangay <span>(required)</span></label>
+                                    <p class="filing-field__hint">Prefilled from your account. Change it if the problem is somewhere else.</p>
+                                    <input
+                                        id="barangay"
+                                        name="barangay"
+                                        class="filing-input"
+                                        type="search"
+                                        list="complaint-barangay-options"
+                                        autocomplete="off"
+                                        value="{{ old('barangay', auth()->user()?->barangay ?? '') }}"
+                                        required
+                                    >
+                                    {{--
+                                        A native list alongside the field, so the form
+                                        still completes without JavaScript and a phone
+                                        gets its own picker.
+                                    --}}
+                                    <datalist id="complaint-barangay-options">
+                                        @foreach (\App\Models\User::BARANGAYS as $barangayOption)
+                                            <option value="{{ $barangayOption }}"></option>
+                                        @endforeach
+                                    </datalist>
+                                    @error('barangay') <div class="filing-error">{{ $message }}</div> @enderror
                                 </div>
-                            @endif
-                            @error('latitude') <div class="filing-error">{{ $message }}</div> @enderror
-                            @error('longitude') <div class="filing-error">{{ $message }}</div> @enderror
 
-                            <div class="filing-summary" aria-live="polite">
-                                <h3>Ready to submit?</h3>
-                                <div class="filing-summary__row"><span>Category</span><strong id="review-category">Not selected</strong></div>
-                                <div class="filing-summary__row"><span>Department</span><strong id="review-department">Not routed yet</strong></div>
-                                <div class="filing-summary__row"><span>Location</span><strong id="review-location">No location added</strong></div>
+                                <div class="filing-field">
+                                    <label for="address_text">Address or nearest landmark <span>(optional)</span></label>
+                                    <p class="filing-field__hint">Example: in front of Daet Public Market, Barangay VI.</p>
+                                    <input id="address_text" name="address_text" class="filing-input" type="text" maxlength="500" placeholder="Describe the location..." value="{{ old('address_text') }}">
+                                    @error('address_text') <div class="filing-error">{{ $message }}</div> @enderror
+                                </div>
+                                <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
+                                <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
+                                <div id="complaint-map" class="filing-map" aria-label="Map for selecting the complaint location"></div>
+                                <p class="filing-map-note">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
+                                    Click the map to place a marker, or enter a nearby landmark above.
+                                </p>
+
+                                <button type="button" class="filing-locate" id="locate-me" data-locate-button>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path></svg>
+                                    Use my current location
+                                </button>
+                                <p class="filing-locate-status" id="locate-status" role="status" aria-live="polite" hidden></p>
+
+                                {{--
+                                    Only present when a photo's own GPS and the pin the
+                                    resident placed disagree by more than the rounding
+                                    threshold.
+                                --}}
+                                @if ($locationConflict)
+                                    <div class="location-choice">
+                                        <h3 class="location-choice__title">Where is the problem?</h3>
+                                        <p class="location-choice__note">One of your photos was taken in a different area from the point you marked on the map. Pick the place the problem is actually at.</p>
+
+                                        <fieldset class="location-choice__options">
+                                            <legend class="sr-only">Which location is the problem at?</legend>
+
+                                            <label class="location-choice__option">
+                                                <input type="radio" name="location_choice" value="map"
+                                                       @checked(old('location_choice', \App\Http\Controllers\ComplaintController::LOCATION_CHOICE_MAP) === 'map')>
+                                                <span>
+                                                    <span class="location-choice__label">The point I marked on the map</span>
+                                                    <span class="location-choice__coords">
+                                                        {{ $locationConflict['map']['barangay'] ?? 'Location not recognised' }}
+                                                    </span>
+                                                </span>
+                                            </label>
+
+                                            <label class="location-choice__option">
+                                                <input type="radio" name="location_choice" value="photo"
+                                                       @checked(old('location_choice', \App\Http\Controllers\ComplaintController::LOCATION_CHOICE_PHOTO) === 'photo')>
+                                                <span>
+                                                    <span class="location-choice__label">Where the photo was taken</span>
+                                                    <span class="location-choice__coords">
+                                                        {{ $locationConflict['photo']['barangay'] ?? 'Location not recognised' }}
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        </fieldset>
+
+                                        @error('location_choice')
+                                            <p class="location-choice__error">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
+                                @error('latitude') <div class="filing-error">{{ $message }}</div> @enderror
+                                @error('longitude') <div class="filing-error">{{ $message }}</div> @enderror
                             </div>
 
-                            <div class="filing-terms">
-                                <input type="checkbox" name="terms" id="terms" value="1" @checked(old('terms')) required>
-                                <label for="terms">I confirm that the information provided is accurate. I understand that the department will verify this report before deciding its priority and next action. <a href="#" target="_blank" rel="noopener">Read the complaint policy.</a></label>
-                            </div>
-                            @error('terms') <div class="filing-error">{{ $message }}</div> @enderror
+                            <div data-wizard-step="7" role="group" aria-labelledby="step7-heading">
+                                <h3 id="step7-heading" class="wizard-step-title">Review &amp; submit</h3>
+                                <div class="filing-summary" aria-live="polite">
+                                    <h3>Ready to submit?</h3>
+                                    <div class="filing-summary__row"><span>Category</span><strong id="review-category">Not selected</strong></div>
+                                    <div class="filing-summary__row"><span>Department</span><strong id="review-department">Not routed yet</strong></div>
+                                    <div class="filing-summary__row"><span>Location</span><strong id="review-location">No location added</strong></div>
+                                </div>
 
-                            <button type="submit" class="filing-submit" id="submit-btn">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
-                                Submit for department review
-                            </button>
+                                <div class="filing-terms">
+                                    <input type="checkbox" name="terms" id="terms" value="1" @checked(old('terms')) required>
+                                    <label for="terms">I confirm that the information provided is accurate. I understand that the department will verify this report before deciding its priority and next action. <a href="#" target="_blank" rel="noopener">Read the complaint policy.</a></label>
+                                </div>
+                                @error('terms') <div class="filing-error">{{ $message }}</div> @enderror
+
+                                <button type="submit" class="filing-submit" id="submit-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                                    Submit for department review
+                                </button>
+                            </div>
                         </div>
                     </section>
+
+                    <div class="wizard-action-bar">
+                        <div class="wizard-step-hint" id="wizard-step-hint" role="status" aria-live="polite" hidden></div>
+                        <button type="button" class="wizard-btn-back" id="wizard-btn-back">Back</button>
+                        <button type="button" class="wizard-btn-next" id="wizard-btn-next">Next</button>
+                    </div>
                 </form>
 
                 <aside class="filing-aside" aria-label="Filing guidance">
@@ -1544,6 +1855,7 @@
                 if (!form || form.dataset.filingInitialized === 'true') return;
                 form.dataset.filingInitialized = 'true';
 
+                const page = document.querySelector('.filing-page');
                 const imagesInput = document.getElementById('images-input');
                 const cameraInput = document.getElementById('camera-input');
                 const uploadZone = document.getElementById('upload-zone');
@@ -1560,18 +1872,249 @@
                 const submitButton = document.getElementById('submit-btn');
                 const categoryDataElement = document.getElementById('category-department-data');
 
-                // Declared here, with the other element lookups, rather than down
-                // by the map code. updateSummary() is called a hundred lines
-                // earlier, and optional chaining does not rescue a `const` that is
-                // still in its temporal dead zone - `latitudeInput?.value` throws
-                // a ReferenceError exactly like `latitudeInput.value` does. That
-                // exception aborted initializeFilingPage before it ever reached
-                // initializeMap, so the form showed no map at all and said
-                // nothing about why.
                 const latitudeInput = document.getElementById('latitude');
                 const longitudeInput = document.getElementById('longitude');
                 const mapElement = document.getElementById('complaint-map');
                 const barangayInput = document.getElementById('barangay');
+
+                // Wizard shell elements
+                const stepCounter = document.getElementById('wizard-step-counter');
+                const stepLabel = document.getElementById('wizard-step-label');
+                const progressFill = document.getElementById('wizard-progress-fill');
+                const draftBanner = document.getElementById('wizard-draft-banner');
+                const draftResumeBtn = document.getElementById('wizard-draft-resume');
+                const btnBack = document.getElementById('wizard-btn-back');
+                const btnNext = document.getElementById('wizard-btn-next');
+                const stepHint = document.getElementById('wizard-step-hint');
+
+                // The wizard only exists on phones. Desktop keeps the normal form.
+                const mobileQuery = window.matchMedia('(max-width: 640px)');
+                const isWizardMode = () => mobileQuery.matches;
+
+                // Scope hook so CSS can hide the site footer on this page only.
+                document.body.classList.add('page-complaint-create');
+                document.addEventListener('livewire:navigating', () => {
+                    document.body.classList.remove('page-complaint-create');
+                }, { once: true });
+
+                const currentUserId = '{{ auth()->id() ?? 'guest' }}';
+                const draftKey = `wizard:v1:${currentUserId}`;
+                const totalSteps = 7;
+                let currentStep = 1;
+                let touchedBack = {};
+                let touchedNext = {};
+
+                const stepNames = {
+                    1: 'Category',
+                    2: 'Title',
+                    3: 'What happened',
+                    4: 'Photos',
+                    5: 'Location',
+                    6: 'Visibility',
+                    7: 'Review & submit'
+                };
+
+                const stepConfigs = {
+                    1: {
+                        validate: () => {
+                            const val = categorySelect?.value;
+                            return { valid: Boolean(val), hint: 'Please select a complaint category.' };
+                        }
+                    },
+                    2: {
+                        validate: () => {
+                            const val = document.getElementById('title')?.value?.trim();
+                            return { valid: Boolean(val), hint: 'Enter a short title for the problem.' };
+                        }
+                    },
+                    3: {
+                        validate: () => {
+                            const val = document.getElementById('description')?.value?.trim();
+                            const len = val?.length || 0;
+                            return { valid: len >= 20, hint: `Enter at least 20 characters (${Math.max(0, 20 - len)} more needed).` };
+                        }
+                    },
+                    4: {
+                        validate: () => {
+                            const count = selectedPhotos.length;
+                            return { valid: count >= 1, hint: 'Add at least one clear photo.' };
+                        }
+                    },
+                    5: {
+                        validate: () => {
+                            const barangay = barangayInput?.value?.trim();
+                            return { valid: Boolean(barangay), hint: 'Please enter or select a barangay.' };
+                        }
+                    },
+                    6: {
+                        validate: () => ({ valid: true, hint: '' })
+                    },
+                    7: {
+                        validate: () => {
+                            const terms = document.getElementById('terms')?.checked;
+                            return { valid: Boolean(terms), hint: 'You must confirm policy and accuracy.' };
+                        }
+                    }
+                };
+
+                const saveDraft = () => {
+                    try {
+                        const data = {
+                            category: categorySelect?.value || '',
+                            title: document.getElementById('title')?.value || '',
+                            description: document.getElementById('description')?.value || '',
+                            barangay: barangayInput?.value || '',
+                            address_text: addressInput?.value || '',
+                            latitude: latitudeInput?.value || '',
+                            longitude: longitudeInput?.value || '',
+                            visibility: document.querySelector('input[name="visibility"]:checked')?.value || 'private',
+                            location_choice: document.querySelector('input[name="location_choice"]:checked')?.value || '',
+                            terms: document.getElementById('terms')?.checked || false
+                        };
+                        sessionStorage.setItem(draftKey, JSON.stringify(data));
+                    } catch (e) {}
+                };
+
+                const loadDraft = () => {
+                    try {
+                        const raw = sessionStorage.getItem(draftKey);
+                        if (!raw) return null;
+                        return JSON.parse(raw);
+                    } catch (e) {
+                        return null;
+                    }
+                };
+
+                const applyDraft = (draft) => {
+                    if (!draft) return;
+                    if (categorySelect && draft.category) {
+                        categorySelect.value = draft.category;
+                        categorySelect.dispatchEvent(new Event('change'));
+                    }
+                    const titleEl = document.getElementById('title');
+                    if (titleEl && draft.title) titleEl.value = draft.title;
+                    const descEl = document.getElementById('description');
+                    if (descEl && draft.description) descEl.value = draft.description;
+                    if (barangayInput && draft.barangay) barangayInput.value = draft.barangay;
+                    if (addressInput && draft.address_text) addressInput.value = draft.address_text;
+                    if (latitudeInput && draft.latitude) latitudeInput.value = draft.latitude;
+                    if (longitudeInput && draft.longitude) longitudeInput.value = draft.longitude;
+                    if (draft.visibility) {
+                        const vis = document.querySelector(`input[name="visibility"][value="${draft.visibility}"]`);
+                        if (vis) vis.checked = true;
+                    }
+                    if (draft.location_choice) {
+                        const loc = document.querySelector(`input[name="location_choice"][value="${draft.location_choice}"]`);
+                        if (loc) loc.checked = true;
+                    }
+                    const termsEl = document.getElementById('terms');
+                    if (termsEl && draft.terms) termsEl.checked = true;
+                    updateSummary();
+                    updateWizardUI();
+                };
+
+                const getErrorStep = () => {
+                    @if($errors->has('category'))
+                        return 1;
+                    @endif
+                    @if($errors->has('title'))
+                        return 2;
+                    @endif
+                    @if($errors->has('description'))
+                        return 3;
+                    @endif
+                    @if($errors->has('images') || $errors->has('camera_photo') || $errors->has('image'))
+                        return 4;
+                    @endif
+                    @if($errors->has('barangay') || $errors->has('address_text') || $errors->has('latitude') || $errors->has('longitude') || $errors->has('location_choice'))
+                        return 5;
+                    @endif
+                    @if($errors->has('visibility'))
+                        return 6;
+                    @endif
+                    @if($errors->has('terms'))
+                        return 7;
+                    @endif
+                    return 0;
+                };
+
+                const updateWizardUI = () => {
+                    const wizardOn = isWizardMode();
+                    page?.classList.toggle('wizard-on', wizardOn);
+
+                    // Hidden required fields would silently block submit on mobile.
+                    // The server validates everything again, so skip native checks there.
+                    form.noValidate = wizardOn;
+
+                    if (!wizardOn) {
+                        // Desktop: show everything, exactly like the original form.
+                        document.querySelectorAll('[data-wizard-step]').forEach((el) => {
+                            el.classList.remove('wizard-step-active');
+                            el.removeAttribute('hidden');
+                        });
+                        return;
+                    }
+
+                    document.querySelectorAll('[data-wizard-step]').forEach((el) => {
+                        const stepNum = Number.parseInt(el.getAttribute('data-wizard-step'), 10);
+                        if (stepNum === currentStep) {
+                            el.classList.add('wizard-step-active');
+                            el.removeAttribute('hidden');
+                        } else {
+                            el.classList.remove('wizard-step-active');
+                            el.setAttribute('hidden', 'true');
+                        }
+                    });
+
+                    if (stepCounter) stepCounter.textContent = `Step ${currentStep} of ${totalSteps}`;
+                    if (stepLabel) stepLabel.textContent = stepNames[currentStep] || '';
+                    if (progressFill) progressFill.style.width = `${(currentStep / totalSteps) * 100}%`;
+
+                    if (btnBack) {
+                        btnBack.style.display = currentStep === 1 ? 'none' : 'inline-flex';
+                    }
+
+                    if (btnNext) {
+                        if (currentStep === totalSteps) {
+                            btnNext.textContent = 'Submit for department review';
+                            btnNext.type = 'submit';
+                        } else {
+                            btnNext.textContent = 'Next';
+                            btnNext.type = 'button';
+                        }
+                    }
+
+                    const config = stepConfigs[currentStep];
+                    if (config) {
+                        const res = config.validate();
+                        if (btnNext) {
+                            btnNext.disabled = currentStep < totalSteps ? !res.valid : false;
+                        }
+                        if (stepHint) {
+                            if (!res.valid && res.hint && touchedNext[currentStep]) {
+                                stepHint.textContent = res.hint;
+                                stepHint.hidden = false;
+                            } else {
+                                stepHint.hidden = true;
+                            }
+                        }
+                    }
+
+                    if (currentStep === 5 && window.invalidateComplaintMap) {
+                        window.invalidateComplaintMap();
+                    }
+                };
+
+                const goToStep = (step, updateHash = true) => {
+                    if (!isWizardMode()) return;
+                    if (step < 1 || step > totalSteps) return;
+                    currentStep = step;
+                    updateWizardUI();
+                    if (updateHash) {
+                        window.location.hash = `#step-${currentStep}`;
+                    }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
 
                 let categoryToDepartment = {};
 
@@ -1587,25 +2130,6 @@
                     reviewCategory.textContent = categoryLabel && categoryLabel !== '- Select a category -' ? categoryLabel : 'Not selected';
                     reviewDepartment.textContent = department || 'Not routed yet';
 
-                    // The summary confirms what is being submitted, and a
-                    // resident cannot confirm a pair of decimal degrees. It shows
-                    // the barangay they named and the landmark they described, in
-                    // their own words.
-                    //
-                    // It used to derive the barangay from the pin, using one
-                    // reference point per barangay. That is wrong wherever a point
-                    // sits further from its own barangay's reference point than
-                    // from a neighbour's, which is most of a large barangay, and
-                    // Daet is only about 10 km across - residents were shown the
-                    // wrong area for their own home. OpenStreetMap carries a
-                    // single label point per barangay for Daet and no boundary
-                    // polygons at all, so there is no better offline source than
-                    // asking them, and they already said at registration.
-                    //
-                    // What is submitted is unchanged: the exact coordinates go
-                    // into the hidden fields and are what the department is
-                    // given. This row is the resident reading their own report
-                    // back to themselves before sending it.
                     const description = addressInput?.value?.trim();
                     const barangay = barangayInput?.value?.trim();
 
@@ -1694,6 +2218,7 @@
                         preview.appendChild(remove);
                         uploadPreviews.appendChild(preview);
                     });
+                    updateWizardUI();
                 };
 
                 const addPhotos = (files) => {
@@ -1774,15 +2299,6 @@
                 const updateCoordinates = (latitude, longitude) => {
                     if (latitudeInput) latitudeInput.value = latitude.toFixed(8);
                     if (longitudeInput) longitudeInput.value = longitude.toFixed(8);
-                    // The address field is deliberately NOT auto-filled with the
-                    // coordinate. It used to be, which was wrong three times
-                    // over: a resident who typed a landmark watched their own
-                    // words get replaced by a pair of numbers, the department
-                    // received "14.11220, 122.95530" where an address should be,
-                    // and the server-side privacy scrub - which works by
-                    // removing address_text from the public copy - had nothing to
-                    // remove. The coordinates are already captured in the hidden
-                    // inputs above; this field is for prose only.
                     updateSummary();
                 };
 
@@ -1800,26 +2316,6 @@
                         marker = null;
                     }
 
-
-                    /*
-                     * Keep the map honest about its own size.
-                     *
-                     * Leaflet measures the container once, when the map is built,
-                     * and caches that measurement. It is never wrong on a desktop
-                     * because a desktop viewport has settled by then. A phone
-                     * has not: the URL bar collapses, scrollbars appear and
-                     * disappear, a late webfont reflows the card around the map,
-                     * and the keyboard opens. Any of those after the measurement
-                     * leaves the tiles laid out for a size the container no
-                     * longer is - which shows up as a blank band, or as map
-                     * content clipped to a strip across the middle.
-                     *
-                     * invalidateSize() re-reads the container. Called on the next
-                     * frame and once more after a short delay to catch late
-                     * layout, then on every resize and rotation. `animate: false`
-                     * because a re-measure is not a user gesture and should not
-                     * zoom the map at them.
-                     */
                     const keepMapSized = (target) => {
                         if (!target) return;
 
@@ -1833,12 +2329,14 @@
                         });
                     };
                     map = window.L.map(mapElement).setView([14.1153, 122.9553], 14);
-                    // 1 keeps the map from bouncing back at all; 0 would let it
-                    // follow the drag anywhere. Full stop, no rubber-banding.
                     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; OpenStreetMap contributors',
                         maxZoom: 18,
                     }).addTo(map);
+
+                    window.invalidateComplaintMap = () => {
+                        if (map) map.invalidateSize({ animate: false });
+                    };
 
                     const pinIcon = window.L.divIcon({
                         className: 'gold-pin-marker',
@@ -1871,20 +2369,6 @@
 
                     keepMapSized(map);
 
-                    /*
-                     * "Use my current location".
-                     *
-                     * This is the dependable location source. The photo's EXIF is
-                     * not: WebKit bug 207088 records that since iOS 13 Safari
-                     * strips EXIF from uploaded images, and there is still no
-                     * standard way for a site to ask a browser to keep it. The
-                     * Geolocation API is explicit, consent-based, and present in
-                     * every browser that matters.
-                     *
-                     * The map is only created once, so the button is wired from
-                     * here rather than earlier, where it would run before
-                     * placeMarker exists.
-                     */
                     const locateButton = document.getElementById('locate-me');
                     const locateStatus = document.getElementById('locate-status');
 
@@ -1904,7 +2388,6 @@
                         locateButton.addEventListener('click', () => {
                             if (!navigator.geolocation) {
                                 sayLocating('This browser cannot share your location. Please place the pin on the map.');
-
                                 return;
                             }
 
@@ -1930,17 +2413,11 @@
                                 (error) => {
                                     locateButton.disabled = false;
 
-                                    // Chrome only reports a secure context for the
-                                    // Geolocation API, and this portal is often
-                                    // opened on a plain-http LAN address in
-                                    // testing, where the failure is confusing
-                                    // unless it is named.
                                     if (error.code === 1 && !window.isSecureContext) {
                                         sayLocating(
                                             'Your browser only shares a location over a secure (https) connection. '
                                             + 'Please place the pin on the map.',
                                         );
-
                                         return;
                                     }
 
@@ -1955,24 +2432,135 @@
                     }
                 };
 
-                // Leaflet is bundled rather than fetched from a CDN, but a
-                // bundled module is deferred and this inline script is not, so
-                // the map is built from a callback the bundle calls instead of
-                // by reaching for window.L and finding it undefined on a page
-                // that is otherwise fine. `onUnavailable` is the part that
-                // matters: a map that silently never appears is
-                // indistinguishable from one that captured the location, and a
-                // resident who cannot tell the difference has no reason to
-                // trust that their report has a location at all.
                 window.whenLeafletReady(initializeMap, { onUnavailable: showMapUnavailable });
+
+                // Initial step: server errors win, then the URL hash (mobile only)
+                const serverErrStep = getErrorStep();
+                const initialHashMatch = window.location.hash.match(/^#step-(\d+)$/);
+                const hashStep = initialHashMatch ? Number.parseInt(initialHashMatch[1], 10) : null;
+
+                if (serverErrStep > 0) {
+                    currentStep = serverErrStep;
+                } else if (isWizardMode() && hashStep && hashStep >= 1 && hashStep <= totalSteps) {
+                    currentStep = hashStep;
+                } else {
+                    currentStep = 1;
+                }
+
+                // Draft banner: only when the draft has real content
+                const existingDraft = loadDraft();
+                @if(!$errors->any())
+                if (existingDraft && draftBanner) {
+                    const meaningful = ['category', 'title', 'description', 'address_text']
+                        .filter((key) => existingDraft[key]).length;
+                    if (meaningful >= 2) {
+                        draftBanner.hidden = false;
+                    }
+                }
+                @endif
+
+                draftResumeBtn?.addEventListener('click', () => {
+                    applyDraft(existingDraft);
+                    if (draftBanner) draftBanner.hidden = true;
+                });
+
+                const draftResetBtn = document.getElementById('wizard-draft-reset');
+                draftResetBtn?.addEventListener('click', () => {
+                    try {
+                        sessionStorage.removeItem(draftKey);
+                    } catch (e) {}
+                    if (draftBanner) draftBanner.hidden = true;
+                });
+
+                // Auto-save on inputs
+                form.addEventListener('input', () => {
+                    saveDraft();
+                    updateWizardUI();
+                });
+                form.addEventListener('change', () => {
+                    saveDraft();
+                    updateWizardUI();
+                });
+
+                btnNext?.addEventListener('click', (e) => {
+                    touchedNext[currentStep] = true;
+                    const config = stepConfigs[currentStep];
+                    if (config) {
+                        const res = config.validate();
+                        if (!res.valid) {
+                            e.preventDefault();
+                            if (stepHint) {
+                                stepHint.textContent = res.hint;
+                                stepHint.hidden = false;
+                            }
+                            return;
+                        }
+                    }
+                    if (currentStep < totalSteps) {
+                        goToStep(currentStep + 1);
+                    }
+                });
+
+                btnBack?.addEventListener('click', () => {
+                    touchedBack[currentStep] = true;
+                    if (currentStep > 1) {
+                        goToStep(currentStep - 1);
+                    }
+                });
+
+                window.addEventListener('hashchange', () => {
+                    if (!isWizardMode()) return;
+                    const match = window.location.hash.match(/^#step-(\d+)$/);
+                    if (match) {
+                        const s = Number.parseInt(match[1], 10);
+                        if (s >= 1 && s <= totalSteps && s !== currentStep) {
+                            currentStep = s;
+                            updateWizardUI();
+                        }
+                    }
+                });
+
+                // Auto-advance for tile-like steps (category and visibility), phone only
+                categorySelect?.addEventListener('change', () => {
+                    if (isWizardMode() && currentStep === 1 && !touchedBack[1] && categorySelect.value) {
+                        window.setTimeout(() => {
+                            if (currentStep === 1) goToStep(2);
+                        }, 250);
+                    }
+                });
+
+                document.querySelectorAll('input[name="visibility"]').forEach((radio) => {
+                    radio.addEventListener('change', () => {
+                        if (isWizardMode() && currentStep === 6 && !touchedBack[6] && radio.checked) {
+                            window.setTimeout(() => {
+                                if (currentStep === 6) goToStep(7);
+                            }, 250);
+                        }
+                    });
+                });
+
+                // Rotate / resize between phone and desktop without losing anything
+                if (mobileQuery.addEventListener) {
+                    mobileQuery.addEventListener('change', updateWizardUI);
+                } else if (mobileQuery.addListener) {
+                    mobileQuery.addListener(updateWizardUI);
+                }
+
+                updateWizardUI();
 
                 form.addEventListener('submit', (event) => {
                     if (selectedPhotos.length === 0) {
                         event.preventDefault();
                         showUploadError('Add at least one clear photo before submitting.');
-                        document.querySelector('[data-upload-trigger="images-input"]')?.focus();
+                        goToStep(4);
                         return;
                     }
+
+                    try {
+                        sessionStorage.removeItem(draftKey);
+                    } catch (e) {}
+
+                    if (btnNext) btnNext.disabled = true;
 
                     if (!submitButton) return;
                     submitButton.disabled = true;
