@@ -123,8 +123,9 @@ class TransparencyFeed
                     'barangay' => $barangay,
                     'lat' => $point[0],
                     'lng' => $point[1],
-                    'intensity' => min(1, 0.4 + (min($count, 5) * 0.12)),
+                    'intensity' => $count < 3 ? 0 : min(1, 0.4 + (min($count, 5) * 0.12)),
                     'count' => $count,
+                    'low_volume' => $count < 3,
                 ];
             })
             ->filter()

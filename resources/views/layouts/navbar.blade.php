@@ -57,7 +57,7 @@
 
         {{-- Filing a complaint is a citizen action. LGU operators manage the
              queue from their workspace, so the CTA stays out of their bar. --}}
-        @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard'))
+        @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard', 'complaints.index'))
           <li><a href="{{ route('complaints.create') }}" class="btn-nav-cta">{{ __('nav.file_complaint') }}</a></li>
         @endif
 
@@ -164,7 +164,7 @@
             </div>
           </div>
         @else
-          @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard'))
+          @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard', 'complaints.index'))
             <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm hidden sm:flex">{{ __('nav.file') }}</a>
           @endif
           <button id="mobile-menu-btn" data-mobile-menu-toggle aria-controls="mobile-menu" aria-label="{{ __('nav.open_navigation') }}" aria-expanded="false" class="hamburger-btn" type="button">
@@ -188,6 +188,9 @@
       </div>
       <div class="mobile-divider"></div>
 
+      @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard', 'complaints.index'))
+        <a href="{{ route('complaints.create') }}" wire:navigate class="mobile-nav-link mobile-nav-link--primary">{{ __('nav.file_complaint') }}</a>
+      @endif
       @if(auth()->user()->role === 'citizen')
         <a href="{{ route('dashboard') }}" wire:navigate class="mobile-nav-link">{{ __('nav.dashboard') }}</a>
       @endif

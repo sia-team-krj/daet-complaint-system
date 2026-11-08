@@ -64,12 +64,12 @@
         @else
             <p class="mobile-nav-drawer__group">{{ __('nav.menu') }}</p>
             <ul class="mobile-nav-drawer__list">
+                @if(!request()->routeIs('dashboard'))
+                <li><a href="{{ route('complaints.create') }}" class="mobile-nav-drawer__item mobile-nav-drawer__item--primary {{ request()->routeIs('complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.create')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg><span>{{ __('nav.file_complaint') }}</span></a></li>
+                @endif
                 <li><a href="{{ route('dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
                 <li><a href="{{ url('/transparency') }}" class="mobile-nav-drawer__item {{ request()->is('transparency*') ? 'is-active' : '' }}" @if(request()->is('transparency*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 14 3-3 3 3 5-6"></path></svg><span>{{ __('nav.transparency') }}</span></a></li>
                 <li><a href="{{ route('complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg><span>{{ __('nav.my_complaints') }}</span></a></li>
-                @if(!request()->routeIs('dashboard'))
-                <li><a href="{{ route('complaints.create') }}" class="mobile-nav-drawer__item {{ request()->routeIs('complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.create')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg><span>{{ __('nav.file_complaint') }}</span></a></li>
-                @endif
             </ul>
         @endif
     </nav>

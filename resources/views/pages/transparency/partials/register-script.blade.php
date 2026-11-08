@@ -6,7 +6,7 @@
     means two things this script has to deal with that it never had to before:
 
       1. Livewire replaces the elements these listeners are attached to. The map
-         container, the search box, and all three selects are inside the
+         container, the search box, and all filter controls are inside the
          component, so every poll strips their listeners. The script therefore
          re-binds itself after every update instead of running once.
 
@@ -15,20 +15,20 @@
          clear itself every twenty seconds. The filter values and the focused
          field are held here and re-applied after each render.
 
-    The map is the subtler half. Rebuilding it is expensive and visibly rude - it
-    would snap the view back to centre under anyone who had panned or zoomed - so
-    it is only rebuilt when the data actually moved. An unchanged poll costs
+    The map is the subtler half. Rebuilding it is expensive and visibly rude -
+    it would snap the view back to centre under anyone who had panned or zoomed -
+    so it is only rebuilt when the data actually moved. An unchanged poll costs
     nothing and leaves the reader alone.
 --}}
 <script>
 (() => {
     'use strict';
 
-    const FIELDS = ['search', 'department', 'category', 'status'];
+    const FIELDS = ['search', 'department', 'category', 'status', 'sort'];
 
     // What the reader has entered or chosen. Defaults match what the server
     // renders, so an untouched page is indistinguishable from a tracked one.
-    const filters = { search: '', department: '', category: '', status: '' };
+    const filters = { search: '', department: '', category: '', status: '', sort: 'reported_desc' };
     let caret = null;
     let focusedField = null;
 
@@ -45,7 +45,6 @@
         mapUnavailableLoad: "{{ __('transparency.map.unavailable_load') }}",
         noAreas: "{{ __('transparency.map.no_areas') }}",
         heatUnavailable: "{{ __('transparency.map.heat_unavailable') }}",
-        shown: "{{ __('transparency.map.shown_template') }}",
         results: "{{ __('transparency.register.results') }}",
     };
 
@@ -111,7 +110,7 @@
     // lives inside the polled component, so a reference held across a morph
     // points at a node that is no longer in the document.
     const setStatus = (message) => {
-        const text = document.querySelector('#transparency-map-status span');
+        const text = document.querySelector('#map-status');
 
         if (text) text.textContent = message;
     };
@@ -230,7 +229,7 @@
                 setStatus(TRANSPARENCY_STRINGS.heatUnavailable);
             } else {
                 const reportTotal = points.reduce((total, point) => total + (Number(point.count) || 0), 0);
-                setStatus(TRANSPARENCY_STRINGS.shown.replace(':count', reportTotal));
+                // No floating "shown" badge anymore - count lives in the header.
             }
         });
     };
@@ -297,13 +296,14 @@
         const search = document.getElementById('complaint-search');
         const department = document.getElementById('complaint-department');
         const category = document.getElementById('complaint-category');
-        const status = document.getElementById('complaint-status');
-        const reset = document.getElementById('complaint-reset');
-        const results = document.getElementById('complaint-results');
+        const sort = document.getElementById('complaint-sort');
+        const clearFilters = document.getElementById('clear-filters');
+        const results = document.getElementById('results-summary');
         const noResults = Array.from(document.querySelectorAll('[data-no-results]'));
         const rows = Array.from(document.querySelectorAll('[data-report-row]'));
+        const statusChips = Array.from(document.querySelectorAll('.status-chip'));
 
-        if (!search || !department || !category || !status || !reset || !results || noResults.length === 0 || rows.length === 0) {
+        if (!search || !department || !category || !sort || !clearFilters || !results || noResults.length === 0 || rows.length === 0) {
             return;
         }
 
@@ -312,16 +312,33 @@
         search.value = filters.search;
         department.value = filters.department;
         category.value = filters.category;
-        status.value = filters.status;
+        sort.value = filters.sort;
+
+        // Restore selected status chip.
+        statusChips.forEach((chip) => {
+            chip.classList.toggle('selected', chip.dataset.value === filters.status);
+        });
 
         const normalize = (value) => (value || '').trim().toLocaleLowerCase();
         const total = new Set(rows.map((row) => row.dataset.reportId || row.dataset.search)).size;
+
+        const anyFilterActive = () =>
+            filters.search !== '' ||
+            filters.department !== '' ||
+            filters.category !== '' ||
+            filters.status !== '' ||
+            filters.sort !== 'reported_desc';
+
+        const toggleClearButton = () => {
+            clearFilters.hidden = !anyFilterActive();
+        };
 
         const applyFilters = () => {
             const term = normalize(search.value);
             const selectedDepartment = normalize(department.value);
             const selectedCategory = normalize(category.value);
-            const selectedStatus = normalize(status.value);
+            const selectedStatus = normalize(filters.status);
+            const selectedSort = filters.sort;
             const reportVisibility = new Map();
 
             rows.forEach((row) => {
@@ -341,6 +358,31 @@
             noResults.forEach((emptyState) => {
                 emptyState.hidden = visible !== 0;
             });
+
+            // Apply sort to visible rows in the DOM.
+            const sortedRows = Array.from(rows)
+                .filter((row) => !row.hidden)
+                .sort((a, b) => {
+                    if (selectedSort === 'reported_desc') {
+                        return (b.dataset.isoDate || '') < (a.dataset.isoDate || '') ? -1 : 1;
+                    }
+                    if (selectedSort === 'reported_asc') {
+                        return (a.dataset.isoDate || '') < (b.dataset.isoDate || '') ? -1 : 1;
+                    }
+                    if (selectedSort === 'status_asc') {
+                        const sa = (a.dataset.status || '').localeCompare(b.dataset.status || '');
+                        if (sa !== 0) return sa;
+                        return (a.dataset.reportId || '').localeCompare(b.dataset.reportId || '');
+                    }
+                    return 0;
+                });
+
+            const tbody = document.getElementById('complaint-table-body');
+            if (tbody) {
+                sortedRows.forEach((row) => tbody.appendChild(row));
+            }
+
+            toggleClearButton();
         };
 
         const track = (key) => (event) => {
@@ -353,17 +395,31 @@
             track('search')(event);
         });
 
-        [department, category, status].forEach((control, index) => {
+        [department, category, sort].forEach((control, index) => {
             control.addEventListener('change', track(FIELDS[index + 1]));
         });
 
-        reset.addEventListener('click', () => {
-            FIELDS.forEach((key) => { filters[key] = ''; });
+        // Status chips are buttons, not selects.
+        statusChips.forEach((chip) => {
+            chip.addEventListener('click', () => {
+                filters.status = chip.dataset.value;
+                statusChips.forEach((c) => c.classList.toggle('selected', c === chip));
+                applyFilters();
+            });
+        });
+
+        clearFilters.addEventListener('click', () => {
+            filters.search = '';
+            filters.department = '';
+            filters.category = '';
+            filters.status = '';
+            filters.sort = 'reported_desc';
             caret = null;
             search.value = '';
             department.value = '';
             category.value = '';
-            status.value = '';
+            sort.value = 'reported_desc';
+            statusChips.forEach((chip) => chip.classList.toggle('selected', chip.dataset.value === ''));
             applyFilters();
             search.focus();
         });

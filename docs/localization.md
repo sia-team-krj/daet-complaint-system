@@ -39,6 +39,12 @@
 - Guest navbar, authenticated navbar, mobile drawer, and footer labels are translated.
 - Unsupported locales are rejected by validation and by the middleware.
 - The switcher is **not** shown to staff/admin.
+- **Public transparency pages** are fully translated (en + fil):
+  - Transparency register: header, map, filters, table, mobile cards, privacy note, empty/no-results states
+  - Transparency detail: progress, report, evidence, updates, details, privacy, footer
+  - Transparency inline script: map status messages and filter results via `TRANSPARENCY_STRINGS` JS object
+  - Status enum labels via `statuses.*` keys
+- Filipino transparency translations are simplified and Daet-localized; technical terms like "Loading…" kept in English.
 
 ---
 
@@ -124,6 +130,13 @@ A language switch changes stored state. Using `POST` means link prefetchers, cra
 | `lang/fil/transparency.php` | Filipino transparency copy. |
 | `tests/Feature/LocalizationTest.php` | Feature coverage for switching, persistence, fallback, and visibility. |
 | `docs/localization.md` | This implementation log. |
+| `docs/transparency-redesign.md` | Transparency page redesign: theme, UI, components, map rules, filter bar, layout, accessibility. |
+| `resources/views/components/button.blade.php` | Shared button component (primary/secondary/ghost/danger, size variants). |
+| `resources/views/components/card.blade.php` | Shared card component (white, border, radius, padding variants). |
+| `resources/views/components/pill.blade.php` | Shared status pill component (color variants per status). |
+| `resources/views/components/chip.blade.php` | Shared filter chip component (selected/unselected states). |
+| `resources/views/components/input.blade.php` | Shared input component (label, placeholder, required, error, helper). |
+| `resources/views/components/report-card.blade.php` | Shared mobile report card component (ticket, status pill, title, meta). |
 
 ## 6. Files modified
 
@@ -148,10 +161,14 @@ A language switch changes stored state. Using `POST` means link prefetchers, cra
 | `resources/views/auth/login.blade.php` | Email placeholder translated. |
 | `resources/views/auth/register.blade.php` | Name/email placeholders translated. |
 | `resources/views/auth/forgot-password.blade.php` | Email placeholder translated. |
-| `resources/views/livewire/transparency-register.blade.php` | All visible copy translated via `__('transparency.*')`. |
-| `resources/views/pages/transparency/index.blade.php` | Title uses `__('transparency.index.title')`. |
+| `resources/views/livewire/transparency-register.blade.php` | Complete redesign: compact header (no buttons), map section, filter bar (chips + dropdowns + sort), desktop sticky table, mobile ReportCard list, map data attribute. |
+| `resources/views/pages/transparency/index.blade.php` | Rewritten as thin Livewire shell wrapper — all visible markup lives in the component view. |
 | `resources/views/pages/transparency/show.blade.php` | All visible copy translated via `__('transparency.show.*')`. |
-| `resources/views/pages/transparency/partials/register-script.blade.php` | Map status and results strings injected as JS object. |
+| `resources/views/pages/transparency/partials/register-script.blade.php` | Complete rewrite: status chips, conditional clear-filters, sort select, client-side filtering with URL-ready state, no floating map badge. |
+| `app/Services/TransparencyFeed.php` | `mapPoints()` returns `intensity: 0` and `low_volume: true` for barangays with fewer than 3 reports. |
+| `resources/views/layouts/partials/mobile-drawer.blade.php` | "File a complaint" moved to top of citizen mobile drawer (primary gold button). |
+| `resources/views/layouts/navbar.blade.php` | "File a complaint" added to top of citizen mobile menu (authenticated shell). |
+| `resources/views/layouts/partials/site-footer.blade.php` | Language switcher removed from footer. |
 
 > **Note:** `resources/views/pages/home.blade.php` is not rendered today. `HomeController@index` returns `pages.home.guest`. The translation work there is harmless but not visible.
 

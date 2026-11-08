@@ -4,7 +4,9 @@
 <style>
   .list-root { --db-navy:#102545; --db-gold:#d4a947; --db-ink:#0f172a; --db-sub:#475569; --db-line:#cdd5e1; min-height:100dvh; padding-top:var(--navbar-height); background:#f6f8fb; color:var(--db-ink); font-family:var(--font-sans); overflow-x:hidden; }
   .list-container { width:100%; max-width:1040px; margin:0 auto; padding:0 24px; box-sizing:border-box; }
-  .list-header { padding:32px 0 20px; }
+  .list-header { padding:32px 0 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .dashboard-primary-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:10px 18px; background:#d4a947; color:#102545; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; flex-shrink:0; }
+  .dashboard-primary-action:hover { background:#b8902f; color:#fff; }
   .list-title { margin:0; font-family:var(--font-sans); font-size:32px; font-weight:700; line-height:1.15; color:var(--db-ink); }
   .list-subtitle { margin:6px 0 0; color:var(--db-sub); font-size:15px; }
   .list-body { padding:8px 0 48px; }
@@ -80,10 +82,18 @@
 <div class="list-root">
   <div class="list-container">
     <div class="list-header">
-      <h1 class="list-title">{{ __('nav.my_complaints') }}</h1>
-      <p class="list-subtitle">
-        @if($complaints->total() === 1)1 complaint @else{{ $complaints->total() }} complaints @endif
-      </p>
+      <div>
+        <h1 class="list-title">{{ __('nav.my_complaints') }}</h1>
+        <p class="list-subtitle">
+          @if($complaints->total() === 1)1 complaint @else{{ $complaints->total() }} complaints @endif
+        </p>
+      </div>
+      @if($counts['all'] > 0)
+      <a href="{{ route('complaints.create') }}" wire:navigate class="dashboard-primary-action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        {{ __('dashboard.file_complaint') }}
+      </a>
+      @endif
     </div>
 
     <div class="filter-bar">
