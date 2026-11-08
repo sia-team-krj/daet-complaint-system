@@ -24,22 +24,29 @@
     $pillVariant = $statusVariants[$statusKey] ?? 'default';
 @endphp
 
-<li {{ $attributes->merge(['class' => 'group']) }}>
-    <a href="{{ $url }}" wire:navigate class="block rounded-12 border border-navy-200 bg-white p-6 hover:border-navy-300 hover:shadow-sm transition-all" aria-label="{{ __('transparency.register.open_ticket', ['ticket' => $ticketId]) }}">
-        <div class="flex items-start justify-between gap-4">
-            <div class="flex items-center gap-2 min-w-0">
-                <span class="block truncate text-[11px] font-mono text-navy-700 leading-none">{{ $ticketId }}</span>
-                <x-pill variant="{{ $pillVariant }}">{{ $statusLabel }}</x-pill>
+<li style="margin-bottom: 12px;">
+    <a href="{{ $url }}" wire:navigate
+       style="display: block; border: 1px solid #cdd5e1; border-radius: 12px; background: #ffffff; padding: 16px; text-decoration: none; color: inherit; transition: border-color 0.18s ease, box-shadow 0.18s ease;"
+       onmouseover="this.style.borderColor='#94a3b8'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'"
+       onmouseout="this.style.borderColor='#cdd5e1'; this.style.boxShadow=''"
+       aria-label="{{ __('transparency.register.open_ticket', ['ticket' => $ticketId]) }}">
+        <div style="display: flex; align-items: start; gap: 12px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 700; color: #0b1f3a; line-height: 1;">
+                    {{ $ticketId }}
+                </span>
+                <span class="status-pill" style="{{ $pillVariant === 'submitted' ? 'background:#dbeafe;color:#1d4ed8;' : ($pillVariant === 'verified' ? 'background:#dcfce7;color:#15803d;' : ($pillVariant === 'assigned' ? 'background:#eff6ff;color:#1e3a8a;' : ($pillVariant === 'in_progress' ? 'background:#fef3c7;color:#92400e;' : ($pillVariant === 'resolved' ? 'background:#dcfce7;color:#15803d;' : ($pillVariant === 'rejected' ? 'background:#fee2e2;color:#991b1b;' : 'background:#f1f5f9;color:#475569;'))))) }}
+                    display: inline-flex; align-items: center; gap: 1.5px; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;">
+                    {{ $statusLabel }}
+                </span>
             </div>
         </div>
-
-        <h3 class="mt-4 text-sm font-medium text-navy-900 leading-tight line-clamp-2">{{ $title }}</h3>
-
-        <div class="mt-4 flex flex-wrap gap-3 text-[11px] text-navy-500">
-            <span class="truncate">{{ $report['category_label'] ?? '' }}</span>
-            <span class="truncate">{{ $department }}</span>
-            <span class="truncate">{{ $location }}</span>
-            <span class="truncate">{{ $reported }}</span>
+        <h3 style="margin: 0 0 12px; font-size: 17px; font-weight: 600; color: #172b49; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; overflow: hidden;">{{ $title }}</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 13px; color: #64748b; overflow-wrap: anywhere;">{{ $report['category_label'] ?? '' }}</span>
+            <span style="font-size: 13px; color: #64748b; overflow-wrap: anywhere;">{{ $department }}</span>
+            <span style="font-size: 13px; color: #64748b; overflow-wrap: anywhere;">{{ $location }}</span>
+            <span style="font-size: 13px; color: #64748b; overflow-wrap: anywhere;">{{ $reported }}</span>
         </div>
     </a>
 </li>

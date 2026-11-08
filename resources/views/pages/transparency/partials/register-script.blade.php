@@ -189,6 +189,10 @@
                 maxZoom: 18,
             }).addTo(map);
 
+            // Hide the loading skeleton once the map is successfully built.
+            const statusEl = document.getElementById('map-status');
+            if (statusEl) statusEl.style.display = 'none';
+
             const heatLayerAvailable = typeof window.L.heatLayer === 'function';
 
             if (points.length > 0 && heatLayerAvailable) {

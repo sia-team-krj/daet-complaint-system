@@ -192,7 +192,10 @@
         <a href="{{ route('complaints.create') }}" wire:navigate class="mobile-nav-link mobile-nav-link--primary">{{ __('nav.file_complaint') }}</a>
       @endif
       @if(auth()->user()->role === 'citizen')
-        <a href="{{ route('dashboard') }}" wire:navigate class="mobile-nav-link">{{ __('nav.dashboard') }}</a>
+        <a href="{{ route('dashboard') }}" wire:navigate class="mobile-nav-link{{ request()->routeIs('dashboard') ? ' is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif>{{ __('nav.dashboard') }}</a>
+      @endif
+      @if(auth()->user()->role === 'citizen')
+        <a href="{{ route('complaints.index') }}" wire:navigate class="mobile-nav-link{{ request()->routeIs('complaints.index') ? ' is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a>
       @endif
       @if(auth()->user()->role !== 'admin')
         <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">{{ __('nav.transparency') }}</a>
@@ -206,9 +209,7 @@
       <div class="mobile-divider"></div>
 
       <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="mobile-nav-link">{{ __('nav.settings') }}</a>
-      @if(auth()->user()->role !== 'admin')
-        <a href="{{ route('complaints.index') }}" wire:navigate class="mobile-nav-link">{{ __('nav.my_complaints') }}</a>
-      @endif
+
       @if(auth()->user()->role === 'admin')
         <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">{{ __('nav.admin_dashboard') }}</a>
       @elseif(auth()->user()->role === 'staff')

@@ -4,7 +4,16 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
     plugins: [
-        tailwindcss(),
+        tailwindcss({
+            content: [
+                './resources/views/**/*.blade.php',
+                './resources/views/components/**/*.blade.php',
+                './resources/views/pages/transparency/**/*.blade.php',
+                './resources/views/livewire/**/*.blade.php',
+                './resources/js/**/*.{js,ts,jsx,tsx}',
+                './resources/css/**/*.css',
+            ],
+        }),
         laravel({
             input: ["resources/css/app.css", "resources/js/app.js"],
             refresh: true, // Auto-refresh on Blade changes

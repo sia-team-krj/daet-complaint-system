@@ -325,7 +325,27 @@ main {
     min-width: 0;
     max-width: 100%;
     text-decoration: none;
-    flex: 0 1 auto;
+    flex: 0 0 auto;
+}
+
+.navbar-logo .logo-text {
+    min-width: 0;
+}
+
+.navbar-logo .logo-name,
+.navbar-logo .logo-sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Prevent nav links from collapsing into the brand on narrow screens */
+.nav-links {
+    min-width: 0;
+}
+
+.nav-link {
+    min-width: 0;
 }
 
 .logo-icon {
@@ -430,6 +450,16 @@ main {
     height: 1px;
     background: var(--color-gold);
     transition: width 0.28s ease;
+}
+
+.nav-link.is-active,
+.nav-link[aria-current="page"] {
+    color: #ffffff;
+}
+
+.nav-link.is-active::after,
+.nav-link[aria-current="page"]::after {
+    width: 100%;
 }
 
 .nav-link:hover {
@@ -1881,6 +1911,12 @@ body:has(.settings-page) > main {
     cursor: pointer;
     width: 100%;
     text-align: left;
+}
+
+.mobile-nav-link.is-active,
+.mobile-nav-link[aria-current="page"] {
+    background: rgba(201, 168, 76, 0.14);
+    color: var(--color-gold-light);
 }
 
 .mobile-nav-link:hover,

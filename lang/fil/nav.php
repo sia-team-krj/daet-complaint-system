@@ -8,7 +8,7 @@ return [
     'transparency' => 'Kalinawan',
     'login' => 'Mag-login',
     'get_started' => 'Magsimula',
-    'dashboard' => 'Dashboard',
+    'dashboard' => 'Panel',
     'file_complaint' => 'Maghain ng Reklamo',
     'file' => 'Maghain',
     'my_complaints' => 'Aking mga Reklamo',
