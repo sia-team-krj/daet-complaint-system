@@ -156,6 +156,7 @@
   .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .field-group { margin-bottom: 16px; }
   .field-label { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 7px; }
+  .field-label .required { color: var(--gold); margin-left: 3px; font-weight: 700; }
   .field-wrap { position: relative; }
   .field-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(201,168,76,0.85); pointer-events: none; transition: color 0.2s; }
   .field-wrap:focus-within .field-icon { color: var(--gold-light); }
@@ -318,28 +319,28 @@
 
           <div class="field-row-2 fu d3">
             <div class="field-group">
-              <label class="field-label" for="first_name">{{ __('auth_ui.register.first_name') }}</label>
+              <label class="field-label" for="first_name">{{ __('auth_ui.register.first_name') }} <span class="required">*</span></label>
               <div class="field-wrap">
                 <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <input id="first_name" name="first_name" type="text" class="field-input" placeholder="Juan" value="{{ old('first_name') }}" required>
+                <input id="first_name" name="first_name" type="text" class="field-input" placeholder="{{ __('auth_ui.register.first_name_placeholder') }}" value="{{ old('first_name') }}" required>
                 <div class="field-underline"></div>
               </div>
             </div>
             <div class="field-group">
-              <label class="field-label" for="last_name">{{ __('auth_ui.register.last_name') }}</label>
+              <label class="field-label" for="last_name">{{ __('auth_ui.register.last_name') }} <span class="required">*</span></label>
               <div class="field-wrap">
                 <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <input id="last_name" name="last_name" type="text" class="field-input" placeholder="dela Cruz" value="{{ old('last_name') }}" required>
+                <input id="last_name" name="last_name" type="text" class="field-input" placeholder="{{ __('auth_ui.register.last_name_placeholder') }}" value="{{ old('last_name') }}" required>
                 <div class="field-underline"></div>
               </div>
             </div>
           </div>
 
           <div class="field-group fu d3">
-            <label class="field-label" for="email">{{ __('auth_ui.common.email') }}</label>
+            <label class="field-label" for="email">{{ __('auth_ui.common.email') }} <span class="required">*</span></label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
-              <input id="email" name="email" type="email" class="field-input" placeholder="your@email.com" value="{{ old('email') }}" required>
+              <input id="email" name="email" type="email" class="field-input" placeholder="{{ __('auth_ui.common.email_placeholder') }}" value="{{ old('email') }}" required>
               <div class="field-underline"></div>
             </div>
           </div>
@@ -348,7 +349,7 @@
             <label class="field-label" for="phone">{{ __('auth_ui.register.contact_number') }}</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.91-.82a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-              <input id="phone" name="phone" type="tel" class="field-input" placeholder="09XX XXX XXXX" value="{{ old('phone') }}">
+              <input id="phone" name="phone" type="tel" class="field-input" placeholder="{{ __('auth_ui.register.phone_placeholder') }}" value="{{ old('phone') }}">
               <div class="field-underline"></div>
             </div>
           </div>
@@ -391,7 +392,7 @@
           </div>
 
           <div class="field-group fu d4">
-            <label class="field-label" for="password">{{ __('auth_ui.common.password') }}</label>
+            <label class="field-label" for="password">{{ __('auth_ui.common.password') }} <span class="required">*</span></label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
               <input id="password" name="password" type="password" class="field-input" placeholder="{{ __('auth_ui.register.password_placeholder') }}" required autocomplete="new-password">
@@ -401,7 +402,7 @@
           </div>
 
           <div class="field-group fu d4">
-            <label class="field-label" for="password_confirmation">{{ __('auth_ui.common.confirm_password') }}</label>
+            <label class="field-label" for="password_confirmation">{{ __('auth_ui.common.confirm_password') }} <span class="required">*</span></label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
               <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="{{ __('auth_ui.register.confirm_password_placeholder') }}" required autocomplete="new-password">
@@ -416,7 +417,7 @@
                 a new browsing context.
             --}}
             <input type="checkbox" name="terms" required>
-            <span class="field-terms-label">{{ __('auth_ui.register.terms_prefix') }} <a href="{{ route('terms') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.terms') }}</a> {{ __('auth_ui.register.and') }} <a href="{{ route('privacy') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.privacy') }}</a> {{ __('auth_ui.register.terms_suffix') }}</span>
+            <span class="field-terms-label">{{ __('auth_ui.register.terms_prefix') }} <span class="required">*</span> <a href="{{ route('terms') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.terms') }}</a> {{ __('auth_ui.register.and') }} <a href="{{ route('privacy') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.privacy') }}</a> {{ __('auth_ui.register.terms_suffix') }}</span>
           </label>
 
           <button type="submit" class="btn-submit fu d5">

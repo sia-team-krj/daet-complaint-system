@@ -10,6 +10,7 @@
     class="lang-switch lang-switch--{{ $variant }}"
     role="group"
     aria-label="{{ __('nav.language') }}"
+    @auth data-instant @endauth
 >
     @csrf
 
@@ -32,12 +33,59 @@
             title="{{ $label }}"
             aria-label="{{ $label }}"
             aria-pressed="{{ $current === $code ? 'true' : 'false' }}"
+            data-locale-choice="{{ $code }}"
         >
             <span class="lang-switch__label">{{ $label }}</span>
             <span class="lang-switch__code">{{ $code === 'fil' ? 'FIL' : strtoupper($code) }}</span>
         </button>
     @endforeach
 </form>
+
+@once
+<script>
+(function () {
+  // Guest choice lives in localStorage (per spec) and mirrors the cookie.
+  try {
+    var stored = localStorage.getItem('daet_locale');
+    if (stored && stored !== '{{ $current }}' && !document.querySelector('[data-user-dropdown]')) {
+      // Logged-out only: if the stored choice differs from the server
+      // locale, apply it via the switcher form without a manual click.
+      var form = document.querySelector('.lang-switch form, form.lang-switch');
+      var btn = form && form.querySelector('[data-locale-choice="' + stored + '"]');
+      if (form && btn && !btn.classList.contains('is-active')) {
+        btn.click();
+      }
+    }
+  } catch (e) {}
+
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('[data-locale-choice]');
+    if (!btn) return;
+    try { localStorage.setItem('daet_locale', btn.getAttribute('data-locale-choice')); } catch (e) {}
+    // Immediate, no-reload switch for logged-in users via fetch; guests
+    // fall back to the normal form POST (full load picks up the cookie).
+    var form = btn.closest('form.lang-switch');
+    if (form && form.hasAttribute('data-instant')) {
+      event.preventDefault();
+      // NOTE: new FormData(form) does NOT include the clicked submit
+      // button's name=value, so locale must be set explicitly or the
+      // server validation fails and nothing changes.
+      var data = new FormData(form);
+      data.set('locale', btn.getAttribute('data-locale-choice'));
+      fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value },
+        body: data
+      }).then(function (response) {
+        if (!response.ok) throw new Error('locale switch failed');
+        document.documentElement.lang = btn.getAttribute('data-locale-choice');
+        window.location.reload();
+      }).catch(function () { form.submit(); });
+    }
+  });
+})();
+</script>
+@endonce
 
 @once
 <style>

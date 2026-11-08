@@ -45,5 +45,7 @@ return [
     'log_out' => 'Log out',
     'operations' => 'Operations',
     'people' => 'People',
+    'settings' => 'Settings',
+    'system_settings' => 'System Settings',
     'legal' => 'Legal and public information',
 ];

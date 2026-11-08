@@ -60,6 +60,8 @@ class User extends Authenticatable
         "contact_number",
         "barangay",
         "password",
+        "must_change_password",
+        "password_expires_at",
         "role",
         "department_id",
         "created_by",
@@ -68,6 +70,10 @@ class User extends Authenticatable
         "is_active",
         "can_verify",
         "locale",
+        "text_size",
+        "notification_preferences",
+        "default_queue_view",
+        "daily_digest",
     ];
 
     protected $hidden = ["password", "remember_token"];
@@ -78,14 +84,40 @@ class User extends Authenticatable
             "email_verified_at" => "datetime",
             "password" => "hashed",
             "prefers_anonymity" => "boolean",
+            "must_change_password" => "boolean",
+            "password_expires_at" => "datetime",
             "is_active" => "boolean",
             "can_verify" => "boolean",
+            "notification_preferences" => "array",
+            "daily_digest" => "boolean",
         ];
     }
 
     public function hasVerifiedEmail(): bool
     {
         return $this->email_verified_at !== null;
+    }
+
+    /**
+     * Temporary-password expiry: a temp password that has passed its
+     * expiry instant can no longer be used to sign in.
+     */
+    public function temporaryPasswordExpired(): bool
+    {
+        return $this->must_change_password
+            && $this->password_expires_at !== null
+            && $this->password_expires_at->isPast();
+    }
+
+    /**
+     * Clear the forced-change flag after the user sets their own password.
+     */
+    public function clearMustChangePassword(): void
+    {
+        $this->forceFill([
+            'must_change_password' => false,
+            'password_expires_at' => null,
+        ])->save();
     }
 
     /**

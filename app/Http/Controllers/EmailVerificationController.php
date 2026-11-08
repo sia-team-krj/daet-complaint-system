@@ -119,12 +119,12 @@ class EmailVerificationController extends Controller
         if ($purpose === EmailVerificationService::PURPOSE_EMAIL_CHANGE) {
             return redirect()
                 ->route('profile')
-                ->with('status', 'Your email address was verified and updated successfully.');
+                ->with('status', __('auth.email_verified_and_updated'));
         }
 
         return redirect()
             ->intended($this->destinationRoute($user, $purpose))
-            ->with('status', 'Your email address was verified successfully.');
+            ->with('status', __('auth.email_verified'));
     }
 
     public function resend(Request $request): RedirectResponse
@@ -146,7 +146,7 @@ class EmailVerificationController extends Controller
         if ($purpose === EmailVerificationService::PURPOSE_EMAIL_CHANGE && ! $pending) {
             return redirect()
                 ->route('email.verify', ['purpose' => $purpose])
-                ->with('error', 'Start an email change before requesting a new code.');
+                ->with('error', __('auth.start_email_change_before_resend'));
         }
 
         if ($user->hasVerifiedEmail() && ! $pending) {
@@ -160,7 +160,7 @@ class EmailVerificationController extends Controller
                 ->route('email.verify', ['purpose' => $purpose])
                 ->with(
                     'error',
-                    "Please wait {$remaining} more seconds before requesting another code.",
+                    __('auth.wait_for_resend', ['seconds' => $remaining]),
                 );
         }
 
@@ -169,7 +169,7 @@ class EmailVerificationController extends Controller
         if (RateLimiter::tooManyAttempts($this->resendHourlyRateLimitKey($user, $purpose), $maxPerHour)) {
             return redirect()
                 ->route('email.verify', ['purpose' => $purpose])
-                ->with('error', 'You have requested several codes already. Please try again later.');
+                ->with('error', __('auth.several_codes_requested'));
         }
 
         /*
@@ -197,12 +197,12 @@ class EmailVerificationController extends Controller
 
             return redirect()
                 ->route('email.verify', ['purpose' => $purpose])
-                ->with('error', 'We could not send the verification email. Please try again.');
+                ->with('error', __('auth.could_not_send_verification_email'));
         }
 
         return redirect()
             ->route('email.verify', ['purpose' => $purpose])
-            ->with('status', 'A new verification code has been sent to your email address.');
+            ->with('status', __('auth.new_verification_code_sent'));
     }
 
     private function resolvePurpose(Request $request, User $user): string

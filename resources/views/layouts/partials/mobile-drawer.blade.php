@@ -60,7 +60,6 @@
             @endif
             <p class="mobile-nav-drawer__group">{{ __('nav.account') }}</p>
             <ul class="mobile-nav-drawer__list">
-                <li><a href="{{ route('profile') }}" class="mobile-nav-drawer__item {{ request()->routeIs('profile') ? 'is-active' : '' }}" @if(request()->routeIs('profile')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"></circle><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path></svg><span>{{ __('nav.profile') }}</span></a></li>
             </ul>
         @else
             <p class="mobile-nav-drawer__group">{{ __('nav.menu') }}</p>
@@ -68,18 +67,21 @@
                 <li><a href="{{ route('dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
                 <li><a href="{{ url('/transparency') }}" class="mobile-nav-drawer__item {{ request()->is('transparency*') ? 'is-active' : '' }}" @if(request()->is('transparency*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 14 3-3 3 3 5-6"></path></svg><span>{{ __('nav.transparency') }}</span></a></li>
                 <li><a href="{{ route('complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg><span>{{ __('nav.my_complaints') }}</span></a></li>
+                @if(!request()->routeIs('dashboard'))
                 <li><a href="{{ route('complaints.create') }}" class="mobile-nav-drawer__item {{ request()->routeIs('complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.create')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg><span>{{ __('nav.file_complaint') }}</span></a></li>
+                @endif
             </ul>
-            <div class="mobile-nav-drawer__language">
-                @include('layouts.partials.language-switcher', ['variant' => 'mobile'])
-            </div>
         @endif
     </nav>
 
     <div class="mobile-nav-drawer__actions">
-        <a href="{{ route('profile') }}" class="mobile-nav-drawer__item mobile-nav-drawer__action {{ request()->routeIs('profile') ? 'is-active' : '' }}" @if(request()->routeIs('profile')) aria-current="page" @endif>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"></circle><path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path></svg>
-            <span>{{ __('nav.my_account') }}</span>
+        <div class="mobile-nav-drawer__language">
+            <span class="mobile-nav-drawer__group">{{ __('nav.language') }}</span>
+            @include('layouts.partials.language-switcher', ['variant' => 'mobile'])
+        </div>
+        <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="mobile-nav-drawer__item mobile-nav-drawer__action {{ request()->routeIs('settings*') ? 'is-active' : '' }}" @if(request()->routeIs('settings*')) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>{{ __('nav.settings') }}</span>
         </a>
         <form method="POST" action="{{ route('logout') }}" class="mobile-nav-drawer__logout-form">
             @csrf

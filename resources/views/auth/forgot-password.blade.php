@@ -42,7 +42,7 @@
               <span class="field-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </span>
-              <input id="email" name="email" type="email" class="field-input" placeholder="your@email.com" value="{{ old('email') }}" required autocomplete="email" autofocus>
+              <input id="email" name="email" type="email" class="field-input" placeholder="{{ __('auth_ui.common.email_placeholder') }}" value="{{ old('email') }}" required autocomplete="email" autofocus>
               <div class="field-underline"></div>
             </div>
           </div>

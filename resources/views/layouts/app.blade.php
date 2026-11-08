@@ -82,7 +82,7 @@
 <body
     @auth
         data-role="{{ auth()->user()->role }}"
-        class="w-full max-w-full overflow-x-clip bg-white is-auth role-{{ auth()->user()->role }} {{ $bodyClass ?? '' }} @yield('body-class')"
+        class="w-full max-w-full overflow-x-clip bg-white is-auth role-{{ auth()->user()->role }} text-size-{{ auth()->user()->text_size ?? 'normal' }} {{ $bodyClass ?? '' }} @yield('body-class')"
     @else
         data-role="guest"
         class="w-full max-w-full overflow-x-clip bg-white role-guest {{ $bodyClass ?? '' }} @yield('body-class')"

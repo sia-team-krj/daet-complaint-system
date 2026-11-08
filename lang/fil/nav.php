@@ -45,5 +45,7 @@ return [
     'log_out' => 'Mag-log out',
     'operations' => 'Mga Operasyon',
     'people' => 'Mga Tao',
+    'settings' => 'Mga Setting',
+    'system_settings' => 'Mga Setting ng System',
     'legal' => 'Legal at pampublikong impormasyon',
 ];

@@ -74,25 +74,44 @@ class ComplaintController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Complaint::where('user_id', Auth::id())
-            ->with(['department', 'logs']);
+        $userId = Auth::id();
+        $base = Complaint::where('user_id', $userId)->with(['department', 'logs']);
+        $counts = [
+            'all' => (clone $base)->count(),
+            'open' => (clone $base)->whereIn('status', [ComplaintStatus::Submitted->value, ComplaintStatus::UnderReview->value, ComplaintStatus::InProgress->value])->count(),
+            'resolved' => (clone $base)->where('status', ComplaintStatus::Resolved->value)->count(),
+        ];
 
-        // Filter by status
-        if ($request->filled('status')) {
+        $query = clone $base;
+        $status = $request->query('status', 'all');
+        if ($status === 'open') {
+            $query->whereIn('status', [ComplaintStatus::Submitted->value, ComplaintStatus::UnderReview->value, ComplaintStatus::InProgress->value]);
+        } elseif ($status === 'resolved') {
+            $query->where('status', ComplaintStatus::Resolved->value);
+        } elseif ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Search by ticket_id
-        if ($request->filled('search')) {
+        if ($request->filled('q')) {
+            $q = '%'.$request->query('q').'%';
+            $query->where(function ($w) use ($q) {
+                $w->where('ticket_id', 'ILIKE', $q)->orWhere('title', 'ILIKE', $q);
+            });
+        } elseif ($request->filled('search')) {
             $query->where('ticket_id', 'ILIKE', '%'.$request->search.'%');
         }
 
-        $complaints = $query->latest()->paginate(12)->withQueryString();
+        $sort = $request->query('sort', 'newest');
+        if ($sort === 'oldest') {
+            $query->oldest();
+        } else {
+            $query->latest();
+        }
 
-        // Get status options for filter dropdown
+        $complaints = $query->paginate(10)->withQueryString();
         $statuses = ComplaintStatus::cases();
 
-        return view('complaints.index', compact('complaints', 'statuses'));
+        return view('complaints.index', compact('complaints', 'statuses', 'counts'));
     }
 
     /**

@@ -48,12 +48,6 @@
         @endif
     </nav>
 
-    @if(!auth()->check() || auth()->user()->role === 'citizen')
-        <div class="site-footer__language">
-            @include('layouts.partials.language-switcher', ['variant' => 'footer'])
-        </div>
-    @endif
-
     <span class="site-footer__seal">{{ __('footer.seal') }}</span>
   </div>
 </footer>
@@ -98,11 +92,6 @@
         flex-wrap: wrap;
     }
 
-    .site-footer__language {
-        flex: 0 0 auto;
-        min-width: 210px;
-    }
-
     .site-footer__legal a {
         font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
         font-size: 11px;
@@ -141,10 +130,4 @@
         .site-footer__legal {
             gap: 6px 16px;
         }
-
-        .site-footer__language {
-            width: 100%;
-            min-width: 0;
-        }
-    }
-</style>
+    }</style>

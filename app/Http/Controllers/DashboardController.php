@@ -23,10 +23,20 @@ class DashboardController extends Controller
         }
 
         // Paginated list of this citizen's complaints — latest first
-        $complaints = Complaint::where('user_id', $user->id)
-            ->with('department')
-            ->latest()
-            ->paginate(10);
+        $base = Complaint::where('user_id', $user->id);
+        $counts = [
+            'all' => (clone $base)->count(),
+            'open' => (clone $base)->whereIn('status', [ComplaintStatus::Submitted->value, ComplaintStatus::UnderReview->value, ComplaintStatus::InProgress->value])->count(),
+            'resolved' => (clone $base)->where('status', ComplaintStatus::Resolved->value)->count(),
+        ];
+        $totalReports = $counts['all'];
+        $filtered = clone $base;
+        if (request('filter') === 'open') {
+            $filtered->whereIn('status', [ComplaintStatus::Submitted->value, ComplaintStatus::UnderReview->value, ComplaintStatus::InProgress->value]);
+        } elseif (request('filter') === 'resolved') {
+            $filtered->where('status', ComplaintStatus::Resolved->value);
+        }
+        $complaints = $filtered->with('department')->latest()->paginate(5)->withQueryString();
 
         // Surface the newest active report with an LGU review update without
         // filling the dashboard with aggregate metric cards.
@@ -42,7 +52,9 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'complaints',
-            'attentionComplaint'
+            'attentionComplaint',
+            'counts',
+            'totalReports',
         ));
     }
 }

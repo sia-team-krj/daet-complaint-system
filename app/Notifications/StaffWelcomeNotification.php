@@ -24,8 +24,14 @@ class StaffWelcomeNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $locale = $notifiable->locale ?? 'en';
+        app()->setLocale($locale);
+        \Illuminate\Support\Facades\Lang::setLocale($locale);
+        $sender = \App\Models\SystemSetting::getValue('sender_name', 'Daet Listens');
+
         return (new MailMessage)
-            ->subject('Welcome to Daet Listens — Staff Account Created')
+            ->from(config('mail.from.address'), $sender)
+            ->subject(\App\Models\SystemSetting::getValue('subject_staff_welcome') ?: __('mail.welcome_subject'))
             ->view('mail.staff-welcome', [
                 'user' => $notifiable,
                 'tempPassword' => $this->tempPassword,

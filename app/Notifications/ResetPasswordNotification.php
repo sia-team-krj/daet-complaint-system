@@ -25,8 +25,12 @@ class ResetPasswordNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $locale = $notifiable->locale ?? 'en';
+        app()->setLocale($locale);
+        Lang::setLocale($locale);
+
         return (new MailMessage)
-            ->subject(Lang::get('Reset Your Password - Daet Listens'))
+            ->subject(\App\Models\SystemSetting::getValue('subject_reset') ?: Lang::get('mail.reset_subject'))
             ->view('mail.password-reset', [
                 'url' => $this->url,
                 'user' => $notifiable,

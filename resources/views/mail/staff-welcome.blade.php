@@ -20,14 +20,14 @@
             <p style="color: rgba(255,255,255,0.7); margin: 10px 0 0;">Staff Portal Access</p>
         </div>
         <div class="body">
-            <p>Hello {{ $user->first_name }},</p>
-            <p>An admin has created a staff account for you on the Daet Listens complaint portal.</p>
+            <p>{{ __('mail.welcome_hello') }} {{ $user->first_name }},</p>
+            <p>{{ __('mail.welcome_body') }}</p>
             <div class="credentials">
-                <p><strong>Email:</strong> {{ $user->email }}</p>
-                <p><strong>Temporary Password:</strong> {{ $tempPassword }}</p>
+                <p><strong>{{ __('mail.welcome_email') }}:</strong> {{ $user->email }}</p>
+                <p><strong>{{ __('mail.welcome_temp') }}:</strong> {{ $tempPassword }}</p>
             </div>
-            <p>Please log in at <a href="{{ url('/login') }}" style="color: #C9A84C;">{{ url('/login') }}</a> and change your password after your first login.</p>
-            <p>If you have any questions, please contact your department administrator.</p>
+            <p>{{ __('mail.welcome_login') }} <a href="{{ url('/login') }}" style="color: #C9A84C;">{{ url('/login') }}</a></p>
+            <p>{{ __('mail.welcome_contact') }}</p>
         </div>
         <div class="footer">
             Municipality of Daet · Camarines Norte<br>

@@ -1,6 +1,6 @@
 @extends($mainLayout)
 
-@section('title', $complaint->ticket_id.' - Public Transparency - Daet Listens')
+@section('title', $complaint->ticket_id.' - '.__('transparency.show.title'))
 
 @push('styles')
     <style>
@@ -767,7 +767,7 @@
                 <div class="public-ticket-heading">
                     <a href="{{ route('transparency') }}" class="public-ticket-back">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
-                        Back to public transparency
+                        {{ __('transparency.show.back') }}
                     </a>
                     <div class="public-ticket-id-row">
                         <span class="public-ticket-id">{{ $complaint->ticket_id }}</span>
@@ -791,7 +791,7 @@
                         </span>
                     </div>
                 </div>
-                <a href="{{ route('transparency') }}" class="public-ticket-header__action">Browse public complaints</a>
+                <a href="{{ route('transparency') }}" class="public-ticket-header__action">{{ __('transparency.show.browse') }}</a>
             </div>
         </header>
 
@@ -799,10 +799,10 @@
             <section class="public-ticket-panel public-progress-panel" aria-labelledby="public-progress-heading">
                 <div class="public-progress-heading">
                     <div>
-                        <h2 id="public-progress-heading">Resolution progress</h2>
-                        <p>Public dates for each stage of this complaint.</p>
+                        <h2 id="public-progress-heading">{{ __('transparency.show.progress') }}</h2>
+                        <p>{{ __('transparency.show.progress_dates') }}</p>
                     </div>
-                    <span class="public-progress-current">Current: {{ $complaint->statusEnum->label() }}</span>
+                    <span class="public-progress-current">{{ __('transparency.show.current') }} {{ $complaint->statusEnum->label() }}</span>
                 </div>
                 <ol class="public-progress-track">
                     @foreach($progressSteps as $step)
@@ -817,7 +817,7 @@
                                 @endif
                             </span>
                             <strong>{{ $step['label'] }}</strong>
-                            <small>{{ $step['date'] ?? 'Not started' }}</small>
+                            <small>{{ $step['date'] ?? __('transparency.show.not_started') }}</small>
                         </li>
                     @endforeach
                 </ol>
@@ -828,8 +828,8 @@
                     <section class="public-ticket-panel" aria-labelledby="public-report-heading">
                         <div class="public-ticket-panel__header">
                             <div>
-                                <h2 id="public-report-heading">Complaint report</h2>
-                                <p>The public description shared by the resident, with the exact location field withheld.</p>
+                                <h2 id="public-report-heading">{{ __('transparency.show.report') }}</h2>
+                                <p>{{ __('transparency.show.report_copy') }}</p>
                             </div>
                         </div>
                         <div class="public-ticket-panel__body">
@@ -840,25 +840,28 @@
                     <section class="public-ticket-panel" aria-labelledby="public-evidence-heading">
                         <div class="public-ticket-panel__header">
                             <div>
-                                <h2 id="public-evidence-heading">Resident evidence</h2>
-                                <p>Photos submitted with the original report.</p>
+                                <h2 id="public-evidence-heading">{{ __('transparency.show.evidence') }}</h2>
+                                <p>{{ __('transparency.show.evidence_copy') }}</p>
                             </div>
-                            <span class="public-ticket-id">{{ count($complaint->publicImagePaths()) }} {{ Str::plural('photo', count($complaint->publicImagePaths())) }}</span>
+                            @php
+                                $publicPhotoCount = count($complaint->publicImagePaths());
+                            @endphp
+                            <span class="public-ticket-id">{{ $publicPhotoCount }} {{ $publicPhotoCount === 1 ? __('transparency.show.photo') : __('transparency.show.photos') }}</span>
                         </div>
                         <div class="public-ticket-panel__body">
                             @if($complaint->publicImagePaths())
                                 <div class="public-evidence-grid">
                                     @foreach($complaint->publicImagePaths() as $imageIndex => $imagePath)
-                                        <a href="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" target="_blank" rel="noopener" class="public-evidence-link" aria-label="Open resident evidence photo {{ $imageIndex + 1 }}">
-                                            <img src="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" alt="Resident evidence photo {{ $imageIndex + 1 }}" loading="lazy">
+                                        <a href="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" target="_blank" rel="noopener" class="public-evidence-link" aria-label="{{ __('transparency.show.open_evidence_photo', ['index' => $imageIndex + 1]) }}">
+                                            <img src="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" alt="{{ __('transparency.show.evidence_photo', ['index' => $imageIndex + 1]) }}" loading="lazy">
                                         </a>
                                     @endforeach
                                 </div>
                             @else
                                 <div class="public-empty-state">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
-                                    <strong>No resident photos</strong>
-                                    <p>This public report does not have attached evidence.</p>
+                                    <strong>{{ __('transparency.show.no_photos') }}</strong>
+                                    <p>{{ __('transparency.show.no_evidence') }}</p>
                                 </div>
                             @endif
                         </div>
@@ -867,16 +870,16 @@
                     <section class="public-ticket-panel" aria-labelledby="public-updates-heading">
                         <div class="public-ticket-panel__header">
                             <div>
-                                <h2 id="public-updates-heading">Public updates</h2>
-                                <p>Status changes and documentation shared by the department.</p>
+                                <h2 id="public-updates-heading">{{ __('transparency.show.updates') }}</h2>
+                                <p>{{ __('transparency.show.updates_copy') }}</p>
                             </div>
                         </div>
                         <div class="public-ticket-panel__body">
                             @if($logs->isEmpty())
                                 <div class="public-empty-state">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                    <strong>No public updates yet</strong>
-                                    <p>The next department update will appear here.</p>
+                                    <strong>{{ __('transparency.show.no_updates') }}</strong>
+                                    <p>{{ __('transparency.show.next_update') }}</p>
                                 </div>
                             @else
                                 <div class="public-update-list">
@@ -895,10 +898,10 @@
                                                     <p>{{ $log->comment }}</p>
                                                 @endif
                                                 @if($log->documentation_images)
-                                                    <div class="public-update-evidence" aria-label="Documentation for this update">
+                                                    <div class="public-update-evidence" aria-label="{{ __('transparency.show.documentation') }}">
                                                         @foreach($log->documentation_images as $documentationIndex => $documentationPath)
-                                                            <a href="{{ route('transparency.complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener" class="public-evidence-link" aria-label="Open documentation photo {{ $documentationIndex + 1 }}">
-                                                                <img src="{{ route('transparency.complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
+                                                            <a href="{{ route('transparency.complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener" class="public-evidence-link" aria-label="{{ __('transparency.show.open_documentation', ['index' => $documentationIndex + 1]) }}">
+                                                                <img src="{{ route('transparency.complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('transparency.show.documentation_photo', ['index' => $documentationIndex + 1]) }}" loading="lazy">
                                                             </a>
                                                         @endforeach
                                                     </div>
@@ -916,38 +919,38 @@
                     <section class="public-ticket-panel" aria-labelledby="public-details-heading">
                         <div class="public-ticket-panel__header">
                             <div>
-                                <h2 id="public-details-heading">Ticket details</h2>
-                                <p>Public information for this report.</p>
+                                <h2 id="public-details-heading">{{ __('transparency.show.details') }}</h2>
+                                <p>{{ __('transparency.show.details_copy') }}</p>
                             </div>
                         </div>
                         <div class="public-ticket-panel__body">
                             <dl class="public-ticket-meta-list">
-                                <div><dt>Ticket</dt><dd>{{ $complaint->ticket_id }}</dd></div>
-                                <div><dt>Category</dt><dd>{{ $categoryLabel }}</dd></div>
-                                <div><dt>Department</dt><dd>{{ $complaint->department?->name ?? 'Department pending' }}</dd></div>
-                                <div><dt>Broad area</dt><dd>{{ $location }}</dd></div>
-                                <div><dt>Reported</dt><dd>{{ $complaint->created_at?->format('M j, Y') }}</dd></div>
-                                <div><dt>Public alias</dt><dd>{{ $reporter }}</dd></div>
+                                <div><dt>{{ __('transparency.show.labels.ticket') }}</dt><dd>{{ $complaint->ticket_id }}</dd></div>
+                                <div><dt>{{ __('transparency.show.labels.category') }}</dt><dd>{{ $categoryLabel }}</dd></div>
+                                <div><dt>{{ __('transparency.show.labels.department') }}</dt><dd>{{ $complaint->department?->name ?? __('transparency.show.department_pending') }}</dd></div>
+                                <div><dt>{{ __('transparency.show.labels.broad_area') }}</dt><dd>{{ $location }}</dd></div>
+                                <div><dt>{{ __('transparency.show.labels.reported') }}</dt><dd>{{ $complaint->created_at?->format('M j, Y') }}</dd></div>
+                                <div><dt>{{ __('transparency.show.labels.public_alias') }}</dt><dd>{{ $reporter }}</dd></div>
                             </dl>
                         </div>
                     </section>
 
-                    <section class="public-privacy-note" aria-label="Privacy information">
+                    <section class="public-privacy-note" aria-label="{{ __('transparency.show.privacy.label') }}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
                         <div>
-                            <strong>Privacy protected</strong>
-                            <p>This page shows only a complaint shared publicly. Exact addresses, coordinates, names, and contact details are not displayed.</p>
+                            <strong>{{ __('transparency.show.privacy.protected') }}</strong>
+                            <p>{{ __('transparency.show.privacy.copy') }}</p>
                         </div>
                     </section>
 
-                    <a href="{{ route('transparency') }}" class="public-ticket-header__action" style="background: transparent; color: var(--pt-navy); border-color: rgba(11, 31, 58, 0.2);">Return to complaint register</a>
+                    <a href="{{ route('transparency') }}" class="public-ticket-header__action" style="background: transparent; color: var(--pt-navy); border-color: rgba(11, 31, 58, 0.2);">{{ __('transparency.show.return') }}</a>
                 </aside>
             </div>
         </main>
 
         <footer class="public-ticket-footer">
-            <span>© 2026 <strong>LGU Daet</strong> · Public Service Management System</span>
-            <span>Public complaint record · Privacy-safe reporting</span>
+            <span>{!! __('transparency.show.footer.copyright') !!}</span>
+            <span>{{ __('transparency.show.footer.tagline') }}</span>
         </footer>
     </div>
 @endsection

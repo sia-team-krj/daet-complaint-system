@@ -56,10 +56,7 @@
 
         {{-- Filing a complaint is a citizen action. LGU operators manage the
              queue from their workspace, so the CTA stays out of their bar. --}}
-        @if(auth()->user()->role === 'citizen')
-          <li class="nav-lang-item">
-            @include('layouts.partials.language-switcher', ['variant' => 'compact'])
-          </li>
+        @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard'))
           <li><a href="{{ route('complaints.create') }}" class="btn-nav-cta">{{ __('nav.file_complaint') }}</a></li>
         @endif
 
@@ -88,9 +85,14 @@
               {{ __('nav.my_complaints') }}
             </a>
             @endif
-            <a href="{{ route('profile') }}" class="dropdown-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              {{ __('nav.my_account') }}
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-language">
+              <span class="dropdown-language__label">{{ __('nav.language') }}</span>
+              @include('layouts.partials.language-switcher', ['variant' => 'compact'])
+            </div>
+            <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="dropdown-item">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              {{ __('nav.settings') }}
             </a>
             <div class="dropdown-divider"></div>
             <form method="POST" action="{{ route('logout') }}">
@@ -141,9 +143,14 @@
                 {{ __('nav.my_complaints') }}
               </a>
               @endif
-              <a href="{{ route('profile') }}" class="dropdown-item">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                {{ __('nav.my_account') }}
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-language">
+                <span class="dropdown-language__label">{{ __('nav.language') }}</span>
+                @include('layouts.partials.language-switcher', ['variant' => 'compact'])
+              </div>
+              <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="dropdown-item">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                {{ __('nav.settings') }}
               </a>
               <div class="dropdown-divider"></div>
               <form method="POST" action="{{ route('logout') }}">
@@ -156,7 +163,7 @@
             </div>
           </div>
         @else
-          @if(auth()->user()->role === 'citizen')
+          @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard'))
             <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm hidden sm:flex">{{ __('nav.file') }}</a>
           @endif
           <button id="mobile-menu-btn" data-mobile-menu-toggle aria-controls="mobile-menu" aria-label="{{ __('nav.open_navigation') }}" aria-expanded="false" class="hamburger-btn" type="button">
@@ -188,12 +195,13 @@
       @endif
       <div class="mobile-divider"></div>
 
-      @if(auth()->user()->role === 'citizen')
+      <div class="mobile-nav-language">
+        <span class="mobile-nav-language__label">{{ __('nav.language') }}</span>
         @include('layouts.partials.language-switcher', ['variant' => 'mobile'])
-        <div class="mobile-divider"></div>
-      @endif
+      </div>
+      <div class="mobile-divider"></div>
 
-      <a href="{{ route('profile') }}" class="mobile-nav-link">{{ __('nav.my_account') }}</a>
+      <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="mobile-nav-link">{{ __('nav.settings') }}</a>
       @if(auth()->user()->role !== 'admin')
         <a href="{{ route('complaints.index') }}" wire:navigate class="mobile-nav-link">{{ __('nav.my_complaints') }}</a>
       @endif

@@ -57,8 +57,8 @@ class LocalizationTest extends TestCase
         $this->actingAs($user->fresh())
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Maghain ng Reklamo')
-            ->assertSee('Aking mga Reklamo')
+            ->assertSee('Maghain ng complaint')
+            ->assertSee('Ang iyong mga ulat')
             ->assertSee('lang="fil"', false);
     }
 
@@ -72,7 +72,7 @@ class LocalizationTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Maghain ng Reklamo')
+            ->assertSee('Maghain ng complaint')
             ->assertSee('lang="fil"', false);
     }
 
@@ -105,9 +105,14 @@ class LocalizationTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
+        // Logged-in users must not get the toggle in the main navbar bar or
+        // the sidebar — language lives in the profile dropdown, the mobile
+        // menu (above Settings), and Settings > Preferences.
         $this->actingAs($staff)
             ->get(route('staff.dashboard'))
             ->assertOk()
-            ->assertDontSee('lang-switch', false);
+            ->assertDontSee('nav-lang-item', false)
+            ->assertSee('dropdown-language', false)
+            ->assertSee(__('nav.settings'), false);
     }
 }

@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminInvitationController;
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\ComplaintController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ComplaintVerificationController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\TransparencyController;
 use Illuminate\Support\Facades\Route;
 
@@ -77,10 +80,16 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'force.password.change'])->group(function () {
     Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('email.verify');
     Route::post('/email/verify', [EmailVerificationController::class, 'verify'])->name('email.verify.submit');
     Route::post('/email/resend', [EmailVerificationController::class, 'resend'])->name('email.verify.resend');
+
+    // Forced password change for accounts created with a temporary password.
+    // Deliberately outside email.verified so a new staff member can set their
+    // own password before verifying their email.
+    Route::get('/password/change', [PasswordChangeController::class, 'show'])->name('password.change.show');
+    Route::post('/password/change', [PasswordChangeController::class, 'store'])->name('password.change.store');
 });
 
 // ── PASSWORD RESET ───────────────────────
@@ -104,11 +113,13 @@ Route::middleware('guest')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'email.verified'])->group(function () {
+Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name(
         'dashboard',
     );
-    Route::get('/profile', [ProfileController::class, 'index'])->name(
+    // My Profile is archived — everything is customizable in Settings.
+    // Kept as a redirect so old bookmarks/bookmarks in emails still work.
+    Route::get('/profile', fn () => redirect()->route('settings', ['tab' => 'profile']))->name(
         'profile',
     );
     Route::post('/profile', [ProfileController::class, 'update'])->name(
@@ -117,6 +128,17 @@ Route::middleware(['auth', 'email.verified'])->group(function () {
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name(
         'profile.password',
     );
+
+    // ── SETTINGS (all roles) ──
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
+    Route::post('/settings/logout-other-devices', [SettingsController::class, 'logoutOtherDevices'])->name('settings.logout-other-devices');
+    Route::post('/settings/sessions/{sessionId}/logout', [SettingsController::class, 'logoutSession'])->name('settings.sessions.logout');
+    Route::post('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('settings.notifications.update');
+    Route::post('/settings/preferences', [SettingsController::class, 'updatePreferences'])->name('settings.preferences.update');
+    Route::get('/settings/download-data', [SettingsController::class, 'downloadData'])->name('settings.download-data');
+    Route::post('/settings/delete-account', [SettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
     // ── NOTIFICATIONS ──
     // The in-app bell. Read state lives in the database, so the badge, the
@@ -157,7 +179,7 @@ Route::middleware(['auth', 'email.verified'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'email.verified', 'role:staff,admin'])
+Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password.change'])
     ->prefix('staff')
     ->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
@@ -186,7 +208,7 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'email.verified', 'role:admin'])
+Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.change'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', [
@@ -222,6 +244,7 @@ Route::middleware(['auth', 'email.verified', 'role:admin'])
         Route::post('/users/{user}/toggle', [AdminUserController::class, 'toggle'])->name('admin.users.toggle');
         Route::get('/staff', [AdminController::class, 'staffIndex'])->name('admin.staff.index');
         Route::get('/staff/create', [AdminController::class, 'staffCreate'])->name('admin.staff.create');
+        Route::get('/staff/created', [AdminController::class, 'staffCreated'])->name('admin.staff.created');
         Route::post('/staff', [AdminController::class, 'staffStore'])->name('admin.staff.store');
         Route::put('/staff/{user}/department', [AdminController::class, 'staffUpdateDepartment'])->name('admin.staff.update-department');
         Route::post('/staff/{user}/toggle', [AdminController::class, 'staffToggleStatus'])->name('admin.staff.toggle');
@@ -232,4 +255,9 @@ Route::middleware(['auth', 'email.verified', 'role:admin'])
         Route::post('/invitations', [AdminInvitationController::class, 'store'])->name('admin.invitations.store');
         Route::patch('/invitations/{invitation}/revoke', [AdminInvitationController::class, 'revoke'])->name('admin.invitations.revoke');
         Route::get('/audit-trail', [AdminController::class, 'auditIndex'])->name('admin.audit.index');
+        Route::get('/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
+        Route::put('/settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
+        Route::post('/settings/categories', [AdminSettingsController::class, 'storeCategory'])->name('admin.settings.categories.store');
+        Route::put('/settings/categories/{category}', [AdminSettingsController::class, 'updateCategory'])->name('admin.settings.categories.update');
+        Route::post('/settings/categories/{category}/toggle', [AdminSettingsController::class, 'toggleCategory'])->name('admin.settings.categories.toggle');
     });

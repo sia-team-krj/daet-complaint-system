@@ -11,6 +11,7 @@ use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\InvitationCode;
 use App\Notifications\StaffWelcomeNotification;
 use App\Services\ActivityLogger;
 use App\Services\ComplaintModerationService;
@@ -18,6 +19,7 @@ use App\Services\ComplaintVerificationService;
 use App\Services\EmailVerificationService;
 use App\Services\DepartmentRouter;
 use App\Services\NotificationService;
+use App\Services\StaffInvitationDelivery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -915,51 +917,215 @@ class AdminController extends Controller
     }
 
     /**
-     * Store new staff account
+     * One-time success screen for manual-password creation (option C).
+     * The temporary password travels only in the server-side session flash
+     * and is forgotten as soon as it is rendered, so it cannot be revisited
+     * by refreshing or by a back button.
+     */
+    public function staffCreated(Request $request): View|RedirectResponse
+    {
+        $created = $request->session()->pull('staff_created_once');
+
+        if (! is_array($created) || empty($created['email']) || empty($created['temporary_password'])) {
+            return redirect()
+                ->route('admin.staff.index')
+                ->with('error', 'That confirmation is no longer available. Create the account again if you still need the password.');
+        }
+
+        return view('admin.staff.created', $created);
+    }
+
+    /**
+     * Store new staff account.
+     *
+     * Three creation methods, chosen on the form:
+     *  - invitation: no user yet; a single-use invitation code is emailed.
+     *  - emailed_temp_password (default): a strong temporary password is
+     *    generated server-side, hashed, emailed, and must be changed on
+     *    first login. It expires after the configured window.
+     *  - manual_password: the admin chooses the temporary password; no
+     *    email is sent and the password is shown once on a success screen.
+     *
+     * The plain-text password is never stored, logged, or written to the
+     * audit trail — only its hash (B/C) or nothing at all (invitation).
      */
     public function staffStore(
         Request $request,
         ActivityLogger $activityLogger,
         EmailVerificationService $verificationService,
+        StaffInvitationDelivery $invitationDelivery,
     ): RedirectResponse {
         $request->merge([
             'email' => strtolower(trim((string) $request->input('email'))),
+            'creation_method' => $request->input('creation_method', 'emailed_temp_password'),
         ]);
 
-        $validated = $request->validate([
+        $method = (string) $request->input('creation_method');
+        if (! in_array($method, ['invitation', 'emailed_temp_password', 'manual_password'], true)) {
+            $method = 'emailed_temp_password';
+        }
+
+        $rules = [
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'department_id' => ['required', 'exists:departments,id'],
+            'department_id' => ['required', Rule::exists('departments', 'id')->where('is_active', true)],
             'contact_number' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
+            'creation_method' => ['required', Rule::in(['invitation', 'emailed_temp_password', 'manual_password'])],
+        ];
+
+        if ($method === 'invitation') {
+            $rules['invitation_expires_in_hours'] = ['required', Rule::in([24, 48, 168])];
+        }
+
+        if ($method === 'manual_password') {
+            $rules['temporary_password'] = [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                \Illuminate\Validation\Rules\Password::min(8)->mixedCase()->numbers(),
+            ];
+        }
+
+        $validated = $request->validate($rules, [
+            'temporary_password.confirmed' => 'Password confirmation does not match.',
+            'temporary_password.min' => 'Temporary password must be at least 8 characters.',
+            'invitation_expires_in_hours.in' => 'Choose a valid invitation expiry.',
         ]);
 
-        $tempPassword = Str::random(12);
+        $email = strtolower(trim($validated['email']));
+        $departmentId = (int) $validated['department_id'];
+        $tempExpiryHours = max(1, (int) config('staff_accounts.temp_password_expires_in_hours', 72));
 
-        $staff = DB::transaction(function () use ($validated, $tempPassword, $activityLogger): User {
+        // ── Option A: invitation link ──────────────────────────────────────
+        if ($method === 'invitation') {
+            if (InvitationCode::query()
+                ->where('invitee_email', $email)
+                ->where('is_active', true)
+                ->where('used_count', 0)
+                ->where('expires_at', '>', now())
+                ->exists()) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['email' => 'That email already has an active invitation.']);
+            }
+
+            $expiryHours = (int) $validated['invitation_expires_in_hours'];
+
+            $invitation = DB::transaction(function () use ($validated, $email, $departmentId, $expiryHours, $activityLogger): InvitationCode {
+                do {
+                    $code = Str::random(32);
+                } while (InvitationCode::where('code', $code)->exists());
+
+                $invitation = InvitationCode::create([
+                    'code' => $code,
+                    'invitee_name' => trim($validated['first_name'].' '.$validated['last_name']),
+                    'invitee_email' => $email,
+                    'department_id' => $departmentId,
+                    'created_by' => Auth::id(),
+                    'expires_at' => now()->addHours($expiryHours),
+                    'max_uses' => 1,
+                    'used_count' => 0,
+                    'is_active' => true,
+                ]);
+
+                $activityLogger->log(
+                    'staff.created',
+                    "Staff invitation created for {$invitation->invitee_name} ({$email}) via invitation link.",
+                    $invitation,
+                    departmentId: $departmentId,
+                    metadata: [
+                        'method' => 'invitation',
+                        'creation_method' => 'invitation',
+                        'expires_in_hours' => $expiryHours,
+                        'created_by' => Auth::id(),
+                    ],
+                );
+
+                // Keep the original invitation action name in the trail as well
+                // so existing audit filters continue to find it.
+                $activityLogger->log(
+                    'invitation.generated',
+                    "Single-use staff invitation generated for {$invitation->department->name}, addressed to {$email}.",
+                    $invitation,
+                    metadata: [
+                        'method' => 'invitation',
+                        'expires_in_hours' => $expiryHours,
+                    ],
+                );
+
+                return $invitation;
+            });
+
+            try {
+                $invitationDelivery->send($invitation, route('invitations.show', $invitation->code));
+                $invitation->forceFill(['emailed_at' => now()])->save();
+
+                return redirect()
+                    ->route('admin.invitations.index')
+                    ->with('status', "Invitation emailed to {$email}. The link expires in {$expiryHours} hours and can be used once.");
+            } catch (Throwable $exception) {
+                report($exception);
+
+                return redirect()
+                    ->route('admin.invitations.index')
+                    ->with('error', "The invitation was created but the email to {$email} could not be sent. Copy the link from the list and share it manually.");
+            }
+        }
+
+        // ── Options B and C: create the account now ────────────────────────
+        $isManual = $method === 'manual_password';
+        $tempPassword = $isManual
+            ? (string) $validated['temporary_password']
+            : $this->generateStrongPassword(14);
+
+        $staff = DB::transaction(function () use ($validated, $email, $departmentId, $tempPassword, $tempExpiryHours, $method, $activityLogger): User {
             $staff = User::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
-                'email' => $validated['email'],
+                'email' => $email,
                 'contact_number' => $validated['contact_number'] ?? null,
-                'department_id' => $validated['department_id'],
+                'department_id' => $departmentId,
                 'created_by' => Auth::id(),
                 'role' => 'staff',
                 'is_active' => true,
                 'password' => Hash::make($tempPassword),
+                'must_change_password' => true,
+                'password_expires_at' => now()->addHours($tempExpiryHours),
             ]);
 
             $activityLogger->log(
                 'staff.created',
-                "Staff account created for {$staff->full_name}.",
+                "Staff account created for {$staff->full_name} via ".($method === 'manual_password' ? 'manually set password' : 'emailed temporary password').".",
                 $staff,
-                departmentId: (int) $validated['department_id'],
+                departmentId: $departmentId,
+                metadata: [
+                    'method' => $method,
+                    'creation_method' => $method,
+                    'must_change_password' => true,
+                    'temp_password_expires_in_hours' => $tempExpiryHours,
+                    'created_by' => Auth::id(),
+                ],
             );
 
             return $staff;
         });
 
-        // Send welcome email and the first email-verification OTP.
+        // Option C sends no email at all — no welcome mail, no OTP.
+        if ($isManual) {
+            return redirect()
+                ->route('admin.staff.created')
+                ->with('staff_created_once', [
+                    'email' => $staff->email,
+                    'full_name' => $staff->full_name,
+                    'temporary_password' => $tempPassword,
+                    'department_name' => $staff->department?->name ?? '',
+                    'expires_at' => $staff->password_expires_at?->format('M j, Y g:i A'),
+                ]);
+        }
+
+        // Option B: welcome email with the temporary password + OTP.
         $staff->notify(new StaffWelcomeNotification($tempPassword));
         $otpSent = false;
 
@@ -982,6 +1148,28 @@ class AdminController extends Controller
                     ? 'Staff account created. Welcome email and verification code sent.'
                     : 'Staff account created. Welcome email sent, but the verification code could not be sent.',
             );
+    }
+
+    /**
+     * Strong temporary password: guaranteed upper, lower and digit,
+     * length clamped to the requested window (12–16 by default).
+     */
+    private function generateStrongPassword(int $length = 14): string
+    {
+        $length = max(12, min(16, $length));
+        $upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        $lower = 'abcdefghijkmnpqrstuvwxyz';
+        $digits = '23456789';
+        $all = $upper.$lower.$digits;
+
+        $pick = fn (string $chars) => $chars[random_int(0, strlen($chars) - 1)];
+
+        $password = $pick($upper).$pick($lower).$pick($digits);
+        for ($i = 3; $i < $length; $i++) {
+            $password .= $pick($all);
+        }
+
+        return substr(str_shuffle($password), 0, $length);
     }
 
     /**

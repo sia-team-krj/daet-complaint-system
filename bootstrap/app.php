@@ -79,11 +79,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             "role" => \App\Http\Middleware\RoleMiddleware::class,
             "admin" => \App\Http\Middleware\AdminMiddleware::class,
+            "force.password.change" => \App\Http\Middleware\ForcePasswordChange::class,
             "email.verified" => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
 
         // Resolve the resident's language after the session and cookies are
         // available, but before any controller or Blade view runs.
+        // ForcePasswordChange is NOT global: it needs the authenticated user,
+        // so it runs as route middleware on the authenticated groups, after
+        // `auth` in the pipeline.
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
         ]);

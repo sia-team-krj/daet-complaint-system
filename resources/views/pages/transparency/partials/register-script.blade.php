@@ -40,6 +40,15 @@
     let leafletReady = false;
     const waitingForLeaflet = [];
 
+    const TRANSPARENCY_STRINGS = {
+        mapUnavailable: "{{ __('transparency.map.unavailable') }}",
+        mapUnavailableLoad: "{{ __('transparency.map.unavailable_load') }}",
+        noAreas: "{{ __('transparency.map.no_areas') }}",
+        heatUnavailable: "{{ __('transparency.map.heat_unavailable') }}",
+        shown: "{{ __('transparency.map.shown_template') }}",
+        results: "{{ __('transparency.register.results') }}",
+    };
+
     // Leaflet is bundled rather than fetched from a CDN, but a bundled module is
     // deferred and this inline script is not, so the map is built from a
     // callback the bundle calls instead of by reaching for window.L and finding
@@ -62,7 +71,7 @@
         leafletReady = true;
         waitingForLeaflet.splice(0).forEach((run) => run());
     }, {
-        onUnavailable: () => setStatus('Interactive map unavailable. Use the complaint register below.'),
+        onUnavailable: () => setStatus(TRANSPARENCY_STRINGS.mapUnavailable),
     });
 
     const whenLeafletReady = (run) => {
@@ -137,7 +146,7 @@
         if (!mapElement) return;
 
         if (!payload) {
-            setStatus('Approximate public areas could not be loaded. Use the complaint register below.');
+            setStatus(TRANSPARENCY_STRINGS.mapUnavailableLoad);
             return;
         }
 
@@ -216,12 +225,12 @@
             }
 
             if (points.length === 0) {
-                setStatus('No approximate public areas are available yet.');
+                setStatus(TRANSPARENCY_STRINGS.noAreas);
             } else if (!heatLayerAvailable) {
-                setStatus('Heat layer unavailable. Use the complaint register below.');
+                setStatus(TRANSPARENCY_STRINGS.heatUnavailable);
             } else {
                 const reportTotal = points.reduce((total, point) => total + (Number(point.count) || 0), 0);
-                setStatus(`${reportTotal} public ${reportTotal === 1 ? 'report' : 'reports'} shown as approximate areas`);
+                setStatus(TRANSPARENCY_STRINGS.shown.replace(':count', reportTotal));
             }
         });
     };
@@ -328,7 +337,7 @@
             });
 
             const visible = Array.from(reportVisibility.values()).filter(Boolean).length;
-            results.textContent = `Showing ${visible} of ${total} public complaints`;
+            results.textContent = TRANSPARENCY_STRINGS.results.replace(':visible', visible).replace(':total', total);
             noResults.forEach((emptyState) => {
                 emptyState.hidden = visible !== 0;
             });

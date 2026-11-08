@@ -20,8 +20,14 @@ class StaffInvitationMail extends Mailable
 
     public function envelope(): Envelope
     {
+        // Recipient language: invitation is addressed to an email with no
+        // account yet, so fall back to the system default locale.
+        $locale = \App\Models\SystemSetting::getValue('default_locale', 'en');
+        app()->setLocale($locale);
+        \Illuminate\Support\Facades\Lang::setLocale($locale);
+
         return new Envelope(
-            subject: 'Your Daet Listens staff invitation',
+            subject: \App\Models\SystemSetting::getValue('subject_invitation') ?: __('mail.invitation_subject'),
         );
     }
 

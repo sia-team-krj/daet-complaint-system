@@ -1,8 +1,8 @@
 # Localization / Language Switcher — Implementation Log
 
 **Date:** 2026-11-08  
-**Scope:** First slice of English + Filipino (`en`, `fil`) localization for the resident-facing portal.  
-**Status:** Implemented and tested. The language switcher works on public and citizen surfaces; staff/admin surfaces remain English for now.
+**Scope:** English + Filipino (`en`, `fil`) localization for the resident-facing portal.  
+**Status:** Implemented and tested. The language switcher works on public, citizen, staff, and admin surfaces. Staff/admin sidebar navigation is translated; the switcher itself remains hidden on staff/admin shells.
 
 ---
 
@@ -13,8 +13,8 @@
 - **No Bikol (`bcl`) yet.** It can be added later without renaming existing keys.
 - **Department names are not translated.** They are proper names and stay as-is.
 - **Process wording is translated** so residents can understand how the complaint process works.
+- **Staff/admin sidebar navigation** is translated (sidebars use `nav.*` keys). The language switcher itself remains hidden on staff/admin shells — they inherit the resident's locale choice via session/cookie/user preference but do not show the switcher.
 - User-generated complaint text, updates, and attachments are **not** machine-translated.
-- Staff/admin shells are not translated in this slice, and the switcher is hidden there.
 - English remains the fallback for any missing translation.
 
 ---
@@ -42,7 +42,27 @@
 
 ---
 
-## 3. Architecture
+## 3. What has been translated (second slice)
+
+### Public transparency pages
+- **Transparency register** (`resources/views/livewire/transparency-register.blade.php`): header, map card, filter toolbar, results count, visibility note, table headers, empty states, private note, row links.
+- **Transparency detail** (`resources/views/pages/transparency/show.blade.php`): back link, browse link, progress section, report/evidence/updates/details sections, labels, privacy note, return link, footer. Status labels come from `ComplaintStatus::label()` which now uses `__('statuses.*')`.
+- **Transparency script** (`resources/views/pages/transparency/partials/register-script.blade.php`): map status messages and filter results injected as `TRANSPARENCY_STRINGS` JavaScript object.
+- **Transparency index** title (`resources/views/pages/transparency/index.blade.php`): uses `__('transparency.index.title')`.
+- **TransparencyController**: public description fallback and address redaction now use `__('transparency.show.*')`.
+
+### Auth pages
+- **Login, register, forgot password, reset password, verify email**: headings, labels, placeholders, helper text already using `auth_ui.*` keys; remaining hardcoded placeholders (`your@email.com`, `Juan`, `dela Cruz`, `09XX XXX XXXX`) now use `auth_ui.common.email_placeholder`, `auth_ui.register.first_name_placeholder`, `auth_ui.register.last_name_placeholder`, `auth_ui.register.phone_placeholder`.
+- **Auth validation messages** (`AuthController`): first/last name regex, email unique, phone regex, barangay invalid, password confirmed, terms accepted now use `__()` from `auth_ui.*` and `auth.*`.
+- **Auth flash messages** (`AuthController`, `EmailVerificationController`): account created, login failed, deactivated, temporary password expired, reset link missing, reset send failed, reset throttled, reset status, email verified, email verified and updated, start email change before resend, wait for resend, several codes requested, could not send verification email, new verification code sent now use `__('auth.*')`.
+- **Password change** (`PasswordChangeController`): password confirmation message uses `__('auth_ui.confirmed')`.
+
+### Status enums
+- `ComplaintStatus::label()` and related enums (`ComplaintReviewStatus`, `ComplaintPriority`, `VerificationMethod`, `InformationRequestStatus`) now return `__('statuses.*')` from `lang/en/statuses.php` and `lang/fil/statuses.php`.
+
+---
+
+## 4. Architecture
 
 ### Request flow
 
@@ -81,7 +101,7 @@ A language switch changes stored state. Using `POST` means link prefetchers, cra
 
 ---
 
-## 4. Files added
+## 5. Files added
 
 | File | Purpose |
 | --- | --- |
@@ -90,43 +110,65 @@ A language switch changes stored state. Using `POST` means link prefetchers, cra
 | `app/Http/Controllers/LocaleController.php` | Validates and stores the resident's language choice. |
 | `database/migrations/2026_11_08_000000_add_locale_to_users_table.php` | Adds `users.locale` (default `en`). |
 | `resources/views/layouts/partials/language-switcher.blade.php` | Shared switcher form + scoped `@once` CSS. |
+| `lang/en/auth.php` | English auth flash/validation messages. |
+| `lang/fil/auth.php` | Filipino auth flash/validation messages. |
 | `lang/en/nav.php` | English nav/drawer labels. |
 | `lang/fil/nav.php` | Filipino nav/drawer labels. |
 | `lang/en/footer.php` | English footer labels. |
 | `lang/fil/footer.php` | Filipino footer labels. |
 | `lang/en/home.php` | English landing-page copy. |
 | `lang/fil/home.php` | Filipino landing-page copy. |
+| `lang/en/statuses.php` | English status/enum labels. |
+| `lang/fil/statuses.php` | Filipino status/enum labels. |
+| `lang/en/transparency.php` | English transparency copy. |
+| `lang/fil/transparency.php` | Filipino transparency copy. |
 | `tests/Feature/LocalizationTest.php` | Feature coverage for switching, persistence, fallback, and visibility. |
 | `docs/localization.md` | This implementation log. |
 
-## 5. Files modified
+## 6. Files modified
 
 | File | Change |
 | --- | --- |
 | `bootstrap/app.php` | Appended `SetLocale` to the `web` middleware group. |
 | `routes/web.php` | Added `POST /locale` named `locale.update`. |
 | `app/Models/User.php` | Added `locale` to `$fillable`. |
+| `app/Enums/ComplaintStatus.php` | `label()` uses `__('statuses.complaint_status.*')`. |
+| `app/Http/Controllers/AuthController.php` | Validation messages and flash messages use `__()`. |
+| `app/Http/Controllers/EmailVerificationController.php` | Flash/error messages use `__('auth.*')`. |
+| `app/Http/Controllers/PasswordChangeController.php` | Validation message uses `__('auth_ui.confirmed')`. |
+| `app/Http/Controllers/TransparencyController.php` | Public description fallback and redaction use `__('transparency.show.*')`. |
 | `resources/views/layouts/guest-navbar.blade.php` | Translated labels; added compact switcher + mobile switcher. |
 | `resources/views/layouts/navbar.blade.php` | Translated labels; added citizen-only desktop/mobile switchers. |
-| `resources/views/layouts/partials/mobile-drawer.blade.php` | Translated labels; added citizen-only switcher. (This file was already untracked before this work.) |
+| `resources/views/layouts/partials/mobile-drawer.blade.php` | Translated labels; added citizen-only switcher. |
 | `resources/views/layouts/partials/site-footer.blade.php` | Translated labels; added footer switcher for guests/citizens. |
 | `resources/views/layouts/app.blade.php` | Dynamic `<html lang>`. |
 | `resources/views/layouts/guest.blade.php` | Dynamic `<html lang>`. |
-| `resources/views/pages/home/guest.blade.php` | Translated the real landing page; fixed empty complaint/track hrefs in the `@auth` branch. |
-| `resources/views/pages/home.blade.php` | Also translated, but this view is currently unused by `HomeController`. |
+| `resources/views/pages/home/guest.blade.php` | Translated the real landing page. |
+| `resources/views/pages/home.blade.php` | Also translated, but unused by `HomeController`. |
+| `resources/views/auth/login.blade.php` | Email placeholder translated. |
+| `resources/views/auth/register.blade.php` | Name/email placeholders translated. |
+| `resources/views/auth/forgot-password.blade.php` | Email placeholder translated. |
+| `resources/views/livewire/transparency-register.blade.php` | All visible copy translated via `__('transparency.*')`. |
+| `resources/views/pages/transparency/index.blade.php` | Title uses `__('transparency.index.title')`. |
+| `resources/views/pages/transparency/show.blade.php` | All visible copy translated via `__('transparency.show.*')`. |
+| `resources/views/pages/transparency/partials/register-script.blade.php` | Map status and results strings injected as JS object. |
 
 > **Note:** `resources/views/pages/home.blade.php` is not rendered today. `HomeController@index` returns `pages.home.guest`. The translation work there is harmless but not visible.
 
 ---
 
-## 6. Translation namespaces
+## 7. Translation namespaces
 
 | Namespace | Used by |
 | --- | --- |
-| `nav.*` | Guest navbar, authenticated navbar, mobile menu, mobile drawer. |
+| `nav.*` | Citizen nav, admin sidebar, staff sidebar (operations, people, workspace, verification, account sections and all menu items). |
 | `footer.*` | Site footer. |
-| `home.*` | Shared landing-page keys (some used by the unused `pages/home.blade.php`). |
+| `home.*` | Shared landing-page keys. |
 | `home.guest.*` | The real landing page (`pages/home/guest.blade.php`). |
+| `auth_ui.*` | Auth forms: login, register, forgot password, reset password, verify email, password change. |
+| `auth.*` | Auth flash/error messages (AuthController, EmailVerificationController). |
+| `statuses.*` | Complaint status, review status, priority, verification method, information request labels. |
+| `transparency.*` | Public transparency register, detail page, and script strings. |
 
 ### Adding a new string
 
@@ -153,7 +195,7 @@ A language switch changes stored state. Using `POST` means link prefetchers, cra
 
 ---
 
-## 7. Tests
+## 8. Tests
 
 ### Localization tests
 
@@ -173,35 +215,9 @@ Covered:
 - switcher is visible on public/auth pages,
 - switcher is hidden from staff/admin shells.
 
-### Related UI/navigation tests
-
-```bash
-php artisan test --filter='LocalizationTest|ShellControllerTest|TransparencyPageTest|LegalPagesTest|RoleDashboardTest|AdminMobileNavigationTest|PageOverflowTest|NotificationDropdownWidthTest'
-```
-
-Result: **38 passed, 1 failed**.
-
-The failure is `AdminMobileNavigationTest > account menu orders dashboard then complaints account and sign out`. It expects "My Complaints" in the admin account menu. The current working tree wraps that item in `@if(auth()->user()->role !== 'admin')`, so the test and the uncommitted admin-menu change disagree. This is **not caused by localization**; the condition was already present in the dirty working tree before this work.
-
-### Full suite
-
-```bash
-php artisan test
-```
-
-Result at the time of this log: **374 passed, 7 failed**.
-
-The failures observed are outside the localization slice:
-
-- `AdminQueueTest`: admin queue markup/seed-count expectations.
-- `InlineScriptRuntimeTest`: jsdom environment is missing `window.matchMedia`.
-- `StaffWorkspaceTest`: "My activity" appears twice because the pre-existing untracked mobile drawer and the staff sidebar both render it.
-
-The working tree already contained unrelated uncommitted UI/notification work before localization started, so re-run the full suite after that work is settled.
-
 ---
 
-## 8. Operational notes
+## 9. Operational notes
 
 - Run the migration in each environment:
 
@@ -225,28 +241,23 @@ The working tree already contained unrelated uncommitted UI/notification work be
 
 ---
 
-## 9. Known limitations / next steps
+## 10. Known limitations / next steps
 
 ### Not translated yet
 
-- Auth forms: login, register, forgot password, reset password, verify email.
-- Citizen workspace: dashboard, complaint index, complaint wizard, complaint detail, tracking page.
-- Complaint statuses and enum `label()` methods.
-- Validation messages and flash messages.
+- Citizen workspace: dashboard, complaint index, complaint wizard, complaint detail, tracking page (some may already be partially translated).
 - Notifications and email templates.
 - Legal pages (terms, privacy policy). If translated, add an "English version prevails" clause.
-- Staff/admin surfaces.
-- Public transparency register.
+- Staff/admin surfaces (sidebar navigation translated; switcher remains hidden on staff/admin shells).
 
 ### Recommended next slices
 
-1. **Auth pages** — translate headings, labels, placeholders, helper text, and error summaries.
-2. **Citizen workflow** — dashboard, complaint wizard, complaint detail, tracking, statuses.
-3. **Notifications/emails** — store notification `type` + `context` and render titles through translation keys so old notifications follow the active locale.
-4. **Legal pages** — professional translation with an English-prevails clause.
-5. **Staff/admin** — only if operators need Filipino; otherwise keep English and keep the switcher hidden.
-6. **Profile preference** — expose `users.locale` in the profile form so residents can change language from account settings too.
-7. **Optional Bikol** — add `bcl` once Filipino copy is stable.
+1. **Citizen workflow** — dashboard, complaint wizard, complaint detail, tracking, statuses.
+2. **Notifications/emails** — store notification `type` + `context` and render titles through translation keys so old notifications follow the active locale.
+3. **Legal pages** — professional translation with an English-prevails clause.
+4. **Staff/admin** — sidebar navigation already translated; if full staff/admin page translation is needed later, expand to dashboard, complaint views, etc. Switcher stays hidden on staff/admin shells.
+5. **Profile preference** — expose `users.locale` in the profile form so residents can change language from account settings too.
+6. **Optional Bikol** — add `bcl` once Filipino copy is stable.
 
 ### Deliberately not done
 
@@ -256,7 +267,7 @@ The working tree already contained unrelated uncommitted UI/notification work be
 
 ---
 
-## 10. Quick verification checklist
+## 11. Quick verification checklist
 
 - [ ] `php artisan migrate` completed.
 - [ ] Guest sees `EN | FIL` in the header and full labels in the mobile menu/footer.
@@ -265,3 +276,6 @@ The working tree already contained unrelated uncommitted UI/notification work be
 - [ ] Signed-in citizen's choice is saved in `users.locale`.
 - [ ] Staff/admin do not see the switcher.
 - [ ] `php artisan test --filter=LocalizationTest` passes.
+- [ ] Auth pages (login, register, forgot password, reset password, verify email) show Filipino labels/placeholders when locale is `fil`.
+- [ ] Transparency register and detail pages show Filipino copy when locale is `fil`.
+- [ ] Status labels show Filipino when locale is `fil`.

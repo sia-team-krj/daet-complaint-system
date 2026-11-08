@@ -80,15 +80,21 @@ class AuthController extends Controller
                 'terms' => ['accepted'],
             ],
             [
-                'first_name.regex' => 'First name may only contain letters, spaces, hyphens, and dots.',
-                'last_name.regex' => 'Last name may only contain letters, spaces, hyphens, and dots.',
-                'email.unique' => 'This email address is already registered.',
-                'phone.regex' => 'Enter a valid 11-digit PH mobile number starting with 09 (e.g. 09171234567).',
-                'barangay.in' => 'The selected barangay is not valid.',
-                'password.confirmed' => 'Password confirmation does not match.',
-                'terms.accepted' => 'You must agree to the Terms and Conditions and the Privacy Policy.',
+                'first_name.regex' => __('auth_ui.register.first_name_regex'),
+                'last_name.regex' => __('auth_ui.register.last_name_regex'),
+                'email.unique' => __('auth.email_unique'),
+                'phone.regex' => __('auth_ui.register.phone_regex'),
+                'barangay.in' => __('auth_ui.register.barangay_invalid'),
+                'password.confirmed' => __('auth_ui.register.password_confirmed'),
+                'terms.accepted' => __('auth_ui.register.terms_accepted'),
             ],
         );
+
+        $guestLocale = $request->session()->get('locale') ?? $request->cookie(config('localization.cookie', 'locale'));
+        $supportedLocales = array_keys(config('localization.supported', []));
+        if (!in_array($guestLocale, $supportedLocales, true)) {
+            $guestLocale = \App\Models\SystemSetting::getValue('default_locale', 'en');
+        }
 
         $user = User::create([
             'first_name' => $request->first_name,
@@ -97,10 +103,12 @@ class AuthController extends Controller
             'contact_number' => $request->phone, // form sends 'phone', column is 'contact_number'
             'barangay' => $request->barangay,
             'password' => Hash::make($request->password),
+            'locale' => $guestLocale,
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('locale', $guestLocale);
         $request->session()->put(
             'email_verification_purpose',
             EmailVerificationService::PURPOSE_REGISTRATION,
@@ -124,8 +132,8 @@ class AuthController extends Controller
             ->with(
                 $verificationSent ? 'status' : 'error',
                 $verificationSent
-                    ? 'Your account was created. Enter the verification code we sent to your email.'
-                    : 'Your account was created, but we could not send the verification email. Use the resend option to try again.',
+                    ? __('auth.registration_created')
+                    : __('auth.registration_created_error'),
             );
     }
 
@@ -178,7 +186,17 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
 
             throw ValidationException::withMessages([
-                'email' => 'This account has been deactivated. Contact your administrator.',
+                'email' => __('auth.deactivated'),
+            ]);
+        }
+
+        if (Auth::user()->temporaryPasswordExpired()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => __('auth.temporary_password_expired'),
             ]);
         }
 
@@ -186,6 +204,11 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         $user = Auth::user();
+        // Saved profile language wins on login; if none is saved, keep the
+        // language the user was already using (session/cookie).
+        if (in_array($user->locale, array_keys(config('localization.supported', [])), true)) {
+            $request->session()->put('locale', $user->locale);
+        }
         if (in_array($user->role, ['staff', 'admin'], true)) {
             $activityLogger->log(
                 'auth.login',
@@ -244,7 +267,7 @@ class AuthController extends Controller
             return redirect()
                 ->route('password.request')
                 ->withErrors([
-                    'email' => 'This reset link is missing a valid email address. Request a new link below.',
+                    'email' => __('auth.reset_link_missing'),
                 ]);
         }
 
@@ -296,18 +319,18 @@ class AuthController extends Controller
             report($exception);
 
             return back()->withErrors([
-                'email' => 'We could not send the reset email right now. Please try again shortly.',
+                'email' => __('auth.reset_send_failed'),
             ]);
         }
 
         if ($status === PasswordFacade::RESET_THROTTLED) {
             return back()->withErrors([
-                'email' => 'Please wait before requesting another reset email.',
+                'email' => __('auth.reset_throttled'),
             ]);
         }
 
         // Do not reveal whether an address belongs to an account.
-        return back()->with('status', 'If an account exists for that email, a password reset link is on its way.');
+        return back()->with('status', __('auth.reset_status'));
     }
 
     /**
@@ -326,6 +349,8 @@ class AuthController extends Controller
             function (User $user, string $password) use ($activityLogger) {
                 $user->forceFill([
                     'password' => Hash::make($password),
+                    'must_change_password' => false,
+                    'password_expires_at' => null,
                 ])->save();
 
                 if (in_array($user->role, ['staff', 'admin'], true)) {

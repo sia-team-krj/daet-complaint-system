@@ -120,7 +120,7 @@ class TransparencyController extends Controller
         $description = trim((string) $complaint->publicDescription());
 
         if ($description === '') {
-            return 'No public description was provided.';
+            return __('transparency.show.no_description');
         }
 
         $address = trim((string) $complaint->address_text);
@@ -131,7 +131,7 @@ class TransparencyController extends Controller
 
         $redacted = preg_replace(
             '/'.preg_quote($address, '/').'/iu',
-            'Exact location withheld',
+            __('transparency.show.location_withheld'),
             $description,
         );
 
