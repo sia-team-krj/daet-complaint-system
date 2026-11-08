@@ -44,6 +44,19 @@ Route::get('/terms', [LegalController::class, 'termsAndConditions'])->name('term
 Route::get('/transparency', [TransparencyController::class, 'index'])->name(
     'transparency',
 );
+
+// Living design reference. NOT public: "admin or local environment only".
+// It renders every token and component on real classes so the guide never
+// goes stale.
+Route::get('/design-system', function () {
+    abort_unless(
+        app()->environment('local', 'testing')
+            || (auth()->check() && auth()->user()->role === 'admin'),
+        403,
+    );
+
+    return view('pages.design-system');
+})->name('design-system');
 Route::get('/transparency/complaints/{complaint}', [TransparencyController::class, 'show'])
     ->name('transparency.complaints.show');
 Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'publicEvidence'])

@@ -1,0 +1,473 @@
+@extends($mainLayout)
+
+@section('title', 'Design System — Daet Listens')
+
+{{--
+    The living reference for docs/design-system.md.
+
+    Not public. The route in web.php aborts 403 unless this is the local
+    environment or the viewer is an admin. It renders the real component
+    stylesheet, so a token that stops working takes the whole page down
+    with it — which is the point.
+--}}
+
+@push('styles')
+    @include('pages.transparency.partials.component-styles')
+    <style>
+        .ds-root { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font-sans); padding-bottom: 48px; }
+        .ds-container { width: 100%; max-width: 1040px; margin: 0 auto; padding: 32px 24px 0; }
+        @media (max-width: 768px) { .ds-container { padding: 24px 16px 0; } }
+
+        .ds-h1 { margin: 0 0 4px; font-size: 34px; font-weight: 700; letter-spacing: var(--tracking-display); line-height: 1.15; }
+        .ds-kicker { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--navy-50); color: var(--navy-700); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+        .ds-sub { margin: 0 0 32px; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 640px; }
+        .ds-sub code { font-family: var(--font-mono); font-size: 12px; background: var(--navy-50); border-radius: 4px; padding: 1px 6px; color: var(--navy-700); }
+
+        .ds-section { margin-bottom: 48px; }
+        .ds-h2 { margin: 0 0 4px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+        .ds-h3 { margin: 16px 0 12px; font-size: 15px; font-weight: 600; color: var(--muted); }
+        .ds-note { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+        .ds-note code { font-family: var(--font-mono); font-size: 11px; background: var(--navy-50); border-radius: 4px; padding: 1px 5px; }
+
+        /* Swatches */
+        .ds-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .ds-swatch { border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+        .ds-swatch__chip { height: 64px; display: flex; align-items: flex-end; padding: 8px; gap: 6px; }
+        .ds-swatch__chip--light { background: var(--surface); border-bottom: 1px solid var(--line-soft); }
+        .ds-swatch__chip > span { font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(11, 26, 51, 0.55); color: #fff; }
+        .ds-swatch--light .ds-swatch__chip > span { background: var(--line-soft); color: var(--navy-800); }
+        .ds-swatch__body { padding: 8px 10px; }
+        .ds-swatch__name { display: block; font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--navy-800); }
+        .ds-swatch__hex { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--faint); margin-top: 2px; }
+        .ds-swatch__use { display: block; font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+        .ds-ramp { display: flex; height: 40px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line-soft); margin-bottom: 8px; }
+        .ds-ramp > div { flex: 1; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; color: rgba(11, 26, 51, 0.75); }
+
+        /* Frames and rows */
+        .ds-frame { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--bg); }
+        .ds-frame--mobile { max-width: 393px; }
+        .ds-frame iframe { display: block; width: 100%; height: 560px; border: 0; background: var(--bg); }
+        .ds-row-example { font-family: var(--font-mono); font-size: 11px; color: var(--faint); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+
+        .ds-grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
+        @media (max-width: 900px) { .ds-grid-2 { grid-template-columns: 1fr; } }
+
+        .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .ds-table th, .ds-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+        .ds-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: var(--navy-50); }
+        .ds-table code { font-family: var(--font-mono); font-size: 11px; background: var(--navy-50); padding: 1px 5px; border-radius: 4px; color: var(--navy-700); }
+
+        .ds-dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13px; }
+        .ds-dl dt { font-weight: 600; color: var(--navy-800); }
+        .ds-dl dd { margin: 0; color: var(--muted); }
+
+        .ds-kbd-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .ds-wireframe { font-family: var(--font-mono); font-size: 11px; line-height: 1.45; background: var(--navy-900); color: #dbe4f3; padding: 20px; border-radius: var(--radius-lg); overflow-x: auto; white-space: pre; }
+    </style>
+@endpush
+
+@php
+    $navyAndGold = [
+        ['--navy-950', '#071226', 'deepest backdrop'],
+        ['--navy-900', '#0b1a33', 'banner start · headings on navy'],
+        ['--navy-800', '#102545', 'sidebar/rail fills'],
+        ['--navy-700', '#17305a', 'selected chip · bar fill · banner mid'],
+        ['--navy-600', '#1e3f73', 'banner end (highlight)'],
+        ['--navy-100', '#dbe4f3', 'hairlines on navy'],
+        ['--navy-50', '#eef3fb', 'card headers · icon tint · row hover'],
+        ['--gold-300', '#e7c873', 'gold ON navy only (links, disclosure)'],
+        ['--gold-500', '#d4a947', 'accent: current segment · CTAs'],
+        ['--gold-700', '#8a6a12', 'gold text on light surfaces'],
+    ];
+    $neutrals = [
+        ['--bg', '#f4f6fa', 'page background'],
+        ['--surface', '#ffffff', 'cards · inputs'],
+        ['--line', '#d9e0ec', 'control borders'],
+        ['--line-soft', '#e8edf5', 'hairline dividers'],
+        ['--text', '#0f172a', 'body ink'],
+        ['--muted', '#475569', 'labels · secondary text'],
+        ['--faint', '#64748b', 'icons · de-emphasis'],
+        ['--map-loading-bg', '#eef1f6', 'map overlay (opaque)'],
+    ];
+    $statusSwatches = [
+        ['submitted', '#dbeafe', '#1e3a8a', '#3b82f6'],
+        ['under_review / verified / assigned', '#e8eef8', '#17305a', '#17305a'],
+        ['in_progress', '#fef3c7', '#92400e', '#f59e0b'],
+        ['resolved', '#dcfce7', '#166534', '#22c55e'],
+        ['rejected', '#fee2e2', '#991b1b', '#ef4444'],
+        ['closed', '#e2e8f0', '#334155', '#64748b'],
+    ];
+    $categorySwatches = [
+        ['road_damage → cone', '#fef3c7', '#b45309'],
+        ['noise_complaint → volume', '#ede9fe', '#6d28d9'],
+        ['flooding → droplet', '#e0f2fe', '#0369a1'],
+        ['garbage / sanitation → trash', '#dcfce7', '#15803d'],
+        ['streetlight → lightbulb', '#fef9c3', '#a16207'],
+        ['anything else → file', '#e2e8f0', '#475569'],
+    ];
+    $heatStops = [
+        ['--heat-1', '#e0f2e9', 'low'],
+        ['--heat-2', '#fde68a', ''],
+        ['--heat-3', '#fb923c', ''],
+        ['--heat-4', '#dc2626', 'high'],
+    ];
+    $deptSwatches = [
+        ['ENG', '#B45309', 'rgba(180,83,9,.16)'], ['HLTH', '#0F766E', 'rgba(15,118,110,.16)'],
+        ['GSO', '#475569', 'rgba(71,85,105,.16)'], ['MPDO', '#1D4ED8', 'rgba(29,78,216,.16)'],
+        ['WST', '#15803D', 'rgba(21,128,61,.16)'], ['SWDO', '#7C3AED', 'rgba(124,58,237,.16)'],
+        ['BPLO', '#0E7490', 'rgba(14,116,144,.16)'], ['OM', '#A16207', 'rgba(161,98,7,.16)'],
+        ['fallback', '#475569', 'rgba(71,85,105,.16)'],
+    ];
+@endphp
+
+@if(request('embed') === 'list')
+    {{-- iframe target: only the report-row examples, at the iframe's width.
+         The layout renders the navbar/drawer too, so those are hidden here. --}}
+    <style>
+        #navbar, .mobile-nav-drawer, .mobile-nav-overlay { display: none !important; }
+        main { padding-top: 0 !important; }
+    </style>
+    <div class="ds-embed" style="margin: 0;">
+    <div class="ds-frame" style="border: 0; border-radius: 0;">
+        @include('pages.design-system-rows')
+    </div>
+    </div>
+@else
+<div class="ds-root">
+<div class="ds-container">
+
+    <header>
+        <span class="ds-kicker">Internal reference · not public</span>
+        <h1 class="ds-h1">Daet Listens design system</h1>
+        <p class="ds-sub">The living companion to <code>docs/design-system.md</code>. Every swatch and every component on this page comes from the tokens in <code>resources/css/tokens.css</code> and the shared component partial — if you change a token, change this page, not the swatches. See the <a href="{{ route('transparency') }}">transparency page</a> for the reference implementation.</p>
+    </header>
+
+    {{-- ═══ TOKENS: brand + neutrals ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-colors">
+        <h2 class="ds-h2" id="ds-colors">Colour tokens</h2>
+        <p class="ds-note">Everything below is a CSS variable. Do not paste hex values into components.</p>
+
+        <h3 class="ds-h3">Navy authority + warm gold</h3>
+        <div class="ds-swatches">
+            @foreach($navyAndGold as [$name, $hex, $use])
+                <div class="ds-swatch {{ $name === '--navy-50' || $name === '--gold-300' ? 'ds-swatch--light' : '' }}">
+                    <div class="ds-swatch__chip" style="background: {{ $hex }};"><span>{{ $hex }}</span></div>
+                    <div class="ds-swatch__body"><span class="ds-swatch__name">{{ $name }}</span><span class="ds-swatch__hex">{{ $hex }}</span><span class="ds-swatch__use">{{ $use }}</span></div>
+                </div>
+            @endforeach
+        </div>
+
+        <h3 class="ds-h3">Neutrals</h3>
+        <div class="ds-swatches">
+            @foreach($neutrals as [$name, $hex, $use])
+                <div class="ds-swatch ds-swatch--light">
+                    <div class="ds-swatch__chip" style="background: {{ $hex }};"><span>{{ $hex }}</span></div>
+                    <div class="ds-swatch__body"><span class="ds-swatch__name">{{ $name }}</span><span class="ds-swatch__hex">{{ $hex }}</span><span class="ds-swatch__use">{{ $use }}</span></div>
+                </div>
+            @endforeach
+        </div>
+
+        <h3 class="ds-h3">Status (dot + text pills, 26px, radius-pill)</h3>
+        <div class="ds-swatches">
+            @foreach($statusSwatches as [$key, $bg, $text, $dot])
+                <div class="ds-swatch ds-swatch--light">
+                    <div class="ds-swatch__chip" style="background: {{ $bg }}; border-bottom: 1px solid var(--line-soft);"><span style="background: {{ $text }}; color: {{ $bg }};">{{ $text }}</span></div>
+                    <div class="ds-swatch__body"><span class="ds-swatch__name">{{ $key }}</span><span class="ds-swatch__hex">dot {{ $dot }}</span><span class="ds-swatch__use">bg {{ $bg }} · text {{ $text }}</span></div>
+                </div>
+            @endforeach
+        </div>
+
+        <h3 class="ds-h3">Category icon circles (36px)</h3>
+        <div class="ds-swatches">
+            @foreach($categorySwatches as [$key, $bg, $fg])
+                <div class="ds-swatch ds-swatch--light">
+                    <div class="ds-swatch__chip" style="background: {{ $bg }}; border-bottom: 1px solid var(--line-soft);"><span style="background: {{ $fg }}; color: {{ $bg }};">{{ $fg }}</span></div>
+                    <div class="ds-swatch__body"><span class="ds-swatch__name">{{ $key }}</span><span class="ds-swatch__hex">bg {{ $bg }} · fg {{ $fg }}</span><span class="ds-swatch__use">icon uses the file's own line SVG</span></div>
+                </div>
+            @endforeach
+        </div>
+
+        <h3 class="ds-h3">Department badges (11/700, radius 6)</h3>
+        <div class="ds-swatches">
+            @foreach($deptSwatches as [$code, $fg, $tint])
+                <div class="ds-swatch ds-swatch--light">
+                    <div class="ds-swatch__chip" style="background: {{ $tint }}; border-bottom: 1px solid var(--line-soft);"><span style="background: {{ $fg }}; color: #fff;">{{ $code }}</span></div>
+                    <div class="ds-swatch__body"><span class="ds-swatch__name">{{ $code }}</span><span class="ds-swatch__hex">{{ $fg }}</span><span class="ds-swatch__use">tint {{ $tint }}</span></div>
+                </div>
+            @endforeach
+        </div>
+
+        <h3 class="ds-h3">Heat ramp (map legend + <code>L.heatLayer</code> gradient)</h3>
+        <div class="ds-ramp" role="img" aria-label="Concentration of reports, from low to high">
+            @foreach($heatStops as [$name, $hex, $edge])
+                <div style="background: {{ $hex }}">{{ $name }}</div>
+            @endforeach
+        </div>
+        <p class="ds-note"><code>--heat-1</code> low · neutral below 3 reports · <code>--heat-4</code> high. Areas with under 3 reports never render a colour.</p>
+
+        <h3 class="ds-h3">Radius, shadow, ring</h3>
+        <table class="ds-table">
+            <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+            <tbody>
+                <tr><td><code>--radius-sm</code></td><td>8px</td><td>buttons, chips, inputs, selects</td></tr>
+                <tr><td><code>--radius</code></td><td>12px</td><td>disclosure popover, small cards</td></tr>
+                <tr><td><code>--radius-lg</code></td><td>16px</td><td>all cards</td></tr>
+                <tr><td><code>--radius-pill</code></td><td>999px</td><td>pills, chips, rank moves</td></tr>
+                <tr><td><code>--shadow-card</code></td><td>two soft navy-tinted</td><td>default card elevation</td></tr>
+                <tr><td><code>--shadow-lift</code></td><td>deeper two-layer</td><td>hover lift, popovers</td></tr>
+                <tr><td><code>--ring</code></td><td>3px rgba(212,169,71,.35)</td><td>focus ring, standard</td></tr>
+                <tr><td><code>--ring-inset</code></td><td>inset 3px same</td><td>focus on full-width rows</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    {{-- ═══ TYPOGRAPHY ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-type">
+        <h2 class="ds-h2" id="ds-type">Typography</h2>
+        <p class="ds-note">Inter everywhere. No serif, ever. Tabular numerals for IDs, counts and dates.</p>
+        <dl class="ds-dl">
+            <dt>h1 · 34px / 700 / −0.02em</dt><dd><span style="font-size:34px;font-weight:700;letter-spacing:-0.02em;line-height:1.15">Public transparency</span></dd>
+            <dt>h2 · 20px / 700 / −0.01em</dt><dd><span style="font-size:20px;font-weight:700;letter-spacing:-0.01em">Where reports are concentrated</span></dd>
+            <dt>Body · 15px / 400</dt><dd>Body text reads this size. Ticket IDs use tabular figures.</dd>
+            <dt>Small · 13px</dt><dd><span style="font-size:13px">Muted support text — counts, dates, meta rows.</span></dd>
+            <dt>Label · 12px / 600 / uppercase</dt><dd><span style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Department</span></dd>
+            <dt>Mono IDs</dt><dd><span style="font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--navy-700);font-variant-numeric:tabular-nums">COMP-2026-00022</span></dd>
+        </dl>
+    </section>
+
+    {{-- ═══ BANNER EXAMPLE ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-banner">
+        <h2 class="ds-h2" id="ds-banner">Banner / page header</h2>
+        <p class="ds-note">Component: <code>.tr-banner</code> — full-bleed, navy gradient + hairline pattern layer, 40×3 gold bar, privacy sentence, disclosure, updated line. No buttons.</p>
+        @include('pages.transparency.partials.banner-example')
+    </section>
+
+    {{-- ═══ STAT STRIP ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-stats">
+        <h2 class="ds-h2" id="ds-stats">Stat strip</h2>
+        <p class="ds-note"><code>.tr-stats</code> — margin-top −32px, 4 cards (2×2 on mobile). Values computed server-side from the same payload as the list.</p>
+        @include('pages.transparency.partials.component-styles')
+        <div style="background: var(--navy-900); border-radius: var(--radius-lg); padding: 32px 24px 64px; margin-bottom: 16px;">
+            <p style="margin: 0; color: rgba(255,255,255,.82); font-size: 13px;">(banner tail — stats overlap this surface)</p>
+        </div>
+        <div class="tr-stats" style="grid-template-columns: repeat(4, 1fr); margin-top: -32px;">
+            <div class="tr-stat"><span class="tr-stat__icon tr-stat__icon--navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span><span class="tr-stat__value">4</span><span class="tr-stat__label">Public reports</span></span></div>
+            <div class="tr-stat"><span class="tr-stat__icon tr-stat__icon--amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg></span><span><span class="tr-stat__value">1</span><span class="tr-stat__label">In progress</span></span></div>
+            <div class="tr-stat"><span class="tr-stat__icon tr-stat__icon--green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span><span class="tr-stat__value">1</span><span class="tr-stat__label">Resolved</span></span></div>
+            <div class="tr-stat"><span class="tr-stat__icon tr-stat__icon--sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><span><span class="tr-stat__value">25%</span><span class="tr-stat__label">Resolution rate</span></span></div>
+        </div>
+    </section>
+
+    {{-- ═══ BUTTONS ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-buttons">
+        <h2 class="ds-h2" id="ds-buttons">Buttons</h2>
+        <p class="ds-note">Primary = gold gradient + navy text (one per screen). Secondary = white + <code>--line</code> + navy text. Danger = destructive tint. Ghost = navy text + underline. 40px / 44px touch targets.</p>
+        <div class="ds-kbd-row">
+            <a class="btn-nav-cta" href="#ds-buttons" style="text-transform:none; letter-spacing:0; font-size:14px; border-radius: var(--radius-sm); padding: 10px 18px;">File a complaint</a>
+            <button class="tr-button" type="button">Secondary</button>
+            <button class="tr-button" type="button" style="color:#991b1b; border-color:#fecaca;">Danger</button>
+            <button class="tr-clear" type="button">Ghost · clear filters</button>
+        </div>
+        <p class="ds-note" style="margin-top:12px"><code>.btn-nav-cta</code> is the literal navbar component (gradient, bold navy, shadow) — mapping for the portal, not for every button on every page.</p>
+    </section>
+
+    {{-- ═══ FORM CONTROLS ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-forms">
+        <h2 class="ds-h2" id="ds-forms">Search, select, chips</h2>
+        <div class="ds-grid-2">
+            <div>
+                <label class="tr-search" for="ds-search">
+                    <span class="sr-only">Search</span>
+                    <svg class="tr-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="ds-search" type="search" placeholder="Ticket, title, department…" value="pothole">
+                </label>
+                <div style="height:16px"></div>
+                <div class="tr-selects" style="max-width: 520px;">
+                    <div class="tr-select">
+                        <select id="ds-department" aria-label="Department">
+                            <option>All departments</option><option>Engineering Office</option><option>Office of the Mayor</option>
+                        </select>
+                        <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="tr-select">
+                        <select id="ds-sort" aria-label="Sort">
+                            <option>Newest first</option><option>Oldest first</option><option>Status</option>
+                        </select>
+                        <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                </div>
+                <div style="height:16px"></div>
+                <div class="tr-chips">
+                    <button class="status-chip selected" type="button">All (4)</button>
+                    <button class="status-chip" type="button">Submitted</button>
+                    <button class="status-chip" type="button">In Progress</button>
+                    <button class="status-chip" type="button">Resolved</button>
+                </div>
+            </div>
+            <div>
+                <div class="tr-filters" style="padding:16px;">
+                    <p style="margin:0 0 12px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--muted);">Filter bar card</p>
+                    <p style="margin:0; font-size:13px; color:var(--muted); line-height:1.6;">Wireframe: search (flex 1.6) + three selects (flex 1) on row 1; status chips scrollable row + barangay chip + Clear filters on row 2. Mobile: search → department (full) → category/sort (50/50) → chips scroll.</p>
+                    <button class="tr-barangay-chip" type="button" style="margin-top: 12px;"><span class="tr-barangay-chip__label">Barangay VI (Centro)</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ═══ STATUS PILLS / DEPT BADGES / CATEGORY ICONS ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-meaning">
+        <h2 class="ds-h2" id="ds-meaning">Colours for meaning</h2>
+        <div class="ds-grid-2">
+            <div>
+                <h3 class="ds-h3">Status pills</h3>
+                <div class="ds-kbd-row">
+                    <span class="status-pill submitted"><span class="status-pill__dot"></span>Submitted</span>
+                    <span class="status-pill under_review"><span class="status-pill__dot"></span>Under review</span>
+                    <span class="status-pill in_progress"><span class="status-pill__dot"></span>In progress</span>
+                    <span class="status-pill resolved"><span class="status-pill__dot"></span>Resolved</span>
+                    <span class="status-pill rejected"><span class="status-pill__dot"></span>Rejected</span>
+                    <span class="status-pill closed"><span class="status-pill__dot"></span>Closed</span>
+                </div>
+                <p class="ds-note" style="margin-top:8px">verified / assigned reuse the <code>under_review</code> family. Adding a status = 3 tokens + one <code>.status-pill.key</code> rule.</p>
+
+                <h3 class="ds-h3">Verified pill (only when actually verified)</h3>
+                <span class="report-row__verified"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="11" height="11" aria-hidden="true"><polyline points="20 6 9 17 4 10"/></svg>Verified</span>
+
+                <h3 class="ds-h3">Department badges</h3>
+                <div class="ds-kbd-row">
+                    <span class="dept-badge" data-dept="ENG">ENG</span>
+                    <span class="dept-badge" data-dept="HLTH">HLTH</span>
+                    <span class="dept-badge" data-dept="GSO">GSO</span>
+                    <span class="dept-badge" data-dept="MPDO">MPDO</span>
+                    <span class="dept-badge" data-dept="WST">WST</span>
+                    <span class="dept-badge" data-dept="SWDO">SWDO</span>
+                    <span class="dept-badge" data-dept="BPLO">BPLO</span>
+                    <span class="dept-badge" data-dept="OM">OM</span>
+                    <span class="dept-badge" data-dept="UNKNOWN-XX">UNKNOWN</span>
+                </div>
+            </div>
+            <div>
+                <h3 class="ds-h3">Category icon circles</h3>
+                <div class="ds-kbd-row" style="gap: 8px 16px;">
+                    @include('pages.transparency.partials.category-icon', ['category' => 'road_damage'])
+                    @include('pages.transparency.partials.category-icon', ['category' => 'noise_complaint'])
+                    @include('pages.transparency.partials.category-icon', ['category' => 'flooding'])
+                    @include('pages.transparency.partials.category-icon', ['category' => 'garbage'])
+                    @include('pages.transparency.partials.category-icon', ['category' => 'streetlight'])
+                    @include('pages.transparency.partials.category-icon', ['category' => 'anything'])
+                </div>
+                <p class="ds-note" style="margin-top:8px">Mapped by category <em>key</em>, never by translated label.</p>
+            </div>
+        </div>
+    </section>
+
+    {{-- ═══ REPORT ROWS ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-rows">
+        <h2 class="ds-h2" id="ds-rows">Report row — one markup, two layouts</h2>
+        <p class="ds-note">Desktop: grid <code>minmax(0,2.6fr) minmax(0,1.4fr) 150px 110px 16px</code>. Mobile: flex-wrap cards via <code>display: contents</code>; order = icon(1) ticket(2) status(3) title(4) badge(5) pin(6) barangay(7) date(8) progressline(9).</p>
+
+        <h3 class="ds-h3">Desktop rendering</h3>
+        <div class="tr-card tr-list-card" style="margin-bottom: 24px;">
+            <div class="report-list__head" aria-hidden="true"><span>Complaint</span><span>Department</span><span>Status</span><span>Reported</span><span></span></div>
+            @include('pages.design-system-rows')
+        </div>
+
+        <h3 class="ds-h3">Mobile rendering (iframe at 393px)</h3>
+        <div class="ds-frame ds-frame--mobile">
+            <iframe src="{{ route('design-system', ['embed' => 'list']) }}" title="Report rows at 393 pixels wide" loading="lazy" width="393" height="560"></iframe>
+        </div>
+    </section>
+
+    {{-- ═══ STATES ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-states">
+        <h2 class="ds-h2" id="ds-states">Empty · no-results · error</h2>
+        <div class="ds-grid-2">
+            <div class="tr-card" style="padding: 32px 20px;">
+                <div class="empty-state">
+                    <span class="empty-state__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="28" height="28" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 6 8.38 8.38 0 0 1-3.8-.9L3 21l1.6-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 6-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+                    <strong>No public complaints yet.</strong>
+                    <p>Public reports appear here when residents choose to share them.</p>
+                </div>
+            </div>
+            <div class="tr-card" style="padding: 32px 20px;">
+                <div class="empty-state">
+                    <span class="empty-state__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="28" height="28" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>
+                    <strong>No complaints match your filters.</strong>
+                    <p>Try different filters or clear your selection.</p>
+                    <button class="tr-button" type="button">Clear filters</button>
+                </div>
+            </div>
+        </div>
+        <div class="tr-card" style="padding: 32px 20px; margin-top: 16px;">
+            <div class="empty-state">
+                <span class="empty-state__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="28" height="28" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+                <strong>Something went wrong</strong>
+                <p>The public complaint register could not be loaded. It may be a connection problem.</p>
+                <button class="tr-button" type="button" data-retry>Retry</button>
+            </div>
+        </div>
+    </section>
+
+    {{-- ═══ Z-INDEX CONTRACT ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-z">
+        <h2 class="ds-h2" id="ds-z">The z-index contract</h2>
+        <p class="ds-note">Why: Leaflet's panes reach z-index 1000 inside a map. Without <code>isolation:isolate</code> those numbers compete with the navbar and the map once covered the open mobile menu.</p>
+        <table class="ds-table">
+            <thead><tr><th>Layer</th><th>z-index</th><th>Rule</th></tr></thead>
+            <tbody>
+                <tr><td>any <code>.tr-map</code> wrapper</td><td><code>isolation: isolate; z-index: 0</code></td><td>Locks all Leaflet panes inside the map</td></tr>
+                <tr><td><code>#navbar</code></td><td><code>900</code></td><td>Below drawer, above page and maps</td></tr>
+                <tr><td><code>.mobile-nav-overlay</code></td><td><code>1000</code></td><td>Backdrop for the drawer</td></tr>
+                <tr><td><code>#mobile-nav-drawer</code></td><td><code>1010</code></td><td>The drawer itself</td></tr>
+                <tr><td>toast / modal</td><td><code>1100</code></td><td>Above everything, including drawers</td></tr>
+                <tr><td>map overlays (status/hint)</td><td><code>inside the map</code></td><td>Never escape the isolated context</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    {{-- ═══ Wireframes ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-wire">
+        <h2 class="ds-h2" id="ds-wire">Shells</h2>
+        <p class="ds-note">Three standard shells — see docs/design-system.md §4 for exact paddings and the banner grammar.</p>
+        <div class="ds-wireframe">Shell A — banner + stat strip + content (list pages)
+┌ banner ─────────────────────────────────────────────┐
+│ h1  ▬ (40×3 gold bar)                               │
+│ privacy sentence · How this data is shown ▾          │
+│ Updated Nov 8, 2026                                  │
+└──────────────────────────────┬───────────────────────┘
+      ┌ stat ┐ ┌ stat ┐ ┌ stat ┐ ┌ stat ┐   ← overlap −32px
+      └──────┘ └──────┘ └──────┘ └──────┘
+      ┌ [2/3 map card]  ┌ [1/3 side] ┐
+      │ h2      Low→High legend      │
+      └──────────────────────────────┘
+      Public complaints ……… Showing N of N
+      ┌ filter bar ───────────────────────┐
+      └───────────────────────────────────┘
+      ┌ list card ────────────────────────┐
+      └───────────────────────────────────┘</div>
+
+        <div class="ds-wireframe" style="margin-top:16px">Shell B — resident list (My complaints)
+┌ banner: h1 + one line + ONE CTA (suppressed when the navbar shows it) ┐
+│ stat strip: Total · Open · Resolved · Avg. resolution time           │
+└──────────────────────────────────────────────────────────────────────┘
+filter bar: search (icon) · dept/category/sort + status chips with counts
+list card: .report-row rows + resident pills (needs-response, visibility)
+pagination: Showing 1–10 of N</div>
+
+        <div class="ds-wireframe" style="margin-top:16px">Shell C — detail page
+back link                                      ← navy text, 44px
+h1 card: ticket id mono navy + status pill (+ verified pill)
+h1 = the report's title — never the description
+stepper: 5 segments, current = gold
+grid: [evidence] [timeline]                   ← single column on mobile
+side: department / category / alias / privacy</div>
+    </section>
+
+    <footer style="border-top: 1px solid var(--line-soft); padding-top: 16px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <p style="margin: 0; font-size: 13px; color: var(--muted);">Update <code>docs/design-system.md</code> §12 with every change to this page.</p>
+        <a href="{{ route('transparency') }}" style="font-size: 13px; color: var(--navy-700); font-weight: 600;">View the reference implementation →</a>
+    </footer>
+</div>
+</div>
+@endif
