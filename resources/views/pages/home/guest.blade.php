@@ -1,771 +1,917 @@
 @extends($mainLayout)
+@section('title', __('landing.meta_title'))
+
+@push('styles')
+    @include('partials.public-ui')
+@endpush
+
+@php
+    $dashboardRoute = match (auth()->user()?->role) {
+        'admin' => 'admin.dashboard',
+        'staff' => 'staff.dashboard',
+        default => 'dashboard',
+    };
+@endphp
+
 @section('content')
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  /* ══════════════════════════════════════════════════════════════
+     Guest landing page — “official but human”. Inter only, tokens
+     only, no cream, no serif, no eyebrow labels.
+     ══════════════════════════════════════════════════════════════ */
+  .lp-root { font-family: var(--font-sans); background: var(--bg); width: 100%; }
+  .lp-root *, .lp-root *::before, .lp-root *::after { box-sizing: border-box; }
 
-  :root {
-    --navy:        #142D4F;
-    --navy-mid:    #1B3A61;
-    --navy-light:  #244874;
-    --gold:        #C9A84C;
-    --gold-light:  #E2C06A;
-    --gold-pale:   rgba(201,168,76,0.12);
-    --cream:       #F5F0E8;
-    --cream-dark:  #EDE7D9;
-    --white:       #ffffff;
-    --text-body:   #4B5563;
-    --text-muted:  #6B7280;
-    --text-dim:    rgba(255,255,255,0.55);
-    --border-gold: rgba(201,168,76,0.2);
-    --border-navy: rgba(11,31,58,0.08);
+  /* ── Buttons ─────────────────────────────────────────────────── */
+  .lp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 12px 28px;
+    border-radius: 14px;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .lp-btn:focus-visible { outline: none; box-shadow: var(--ring); }
+  .lp-btn--primary {
+    background: var(--gold-500);
+    color: var(--navy-900);
+    box-shadow: 0 2px 4px rgba(11, 26, 51, 0.12), 0 12px 32px -12px rgba(212, 169, 71, 0.55);
+  }
+  .lp-btn--primary:hover { background: var(--gold-300); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(11, 26, 51, 0.14), 0 16px 36px -12px rgba(212, 169, 71, 0.6); }
+  .lp-btn--secondary {
+    background: transparent;
+    color: var(--surface);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+  }
+  .lp-btn--secondary:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--surface); }
+  @media (max-width: 767px) {
+    .lp-btn { min-height: 56px; width: 100%; font-size: 16px; }
   }
 
-  * { box-sizing: border-box; }
-  .home-root { font-family: 'DM Sans', sans-serif; width: 100%; overflow-x: hidden; }
-
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     HERO
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  .hero {
+  /* ── Hero ────────────────────────────────────────────────────── */
+  .lp-hero {
     position: relative;
-    background: var(--navy);
-    min-height: 100svh;
-    padding-top: 64px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 62%, var(--navy-600) 100%);
+    padding: var(--navbar-height, 64px) 0 32px;
+  }
+  .lp-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.035) 0 1px,
+      transparent 1px 14px
+    );
+    pointer-events: none;
+  }
+  .lp-hero__inner {
+    position: relative;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 56px 24px 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  @media (min-width: 1024px) {
+    .lp-hero__inner {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: 64px;
+      align-items: center;
+      padding: 48px 24px 0;
+      min-height: 440px;
+    }
+  }
+
+  .lp-hero__copy { max-width: 560px; padding-bottom: 32px; }
+  @media (min-width: 1024px) { .lp-hero__copy { padding-bottom: 0; } }
+
+  .lp-h1 {
+    margin: 0 0 20px;
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--surface);
+  }
+  @media (min-width: 1024px) { .lp-h1 { font-size: 52px; } }
+  .lp-h1__line, .lp-h1__gold { display: block; }
+  .lp-h1__gold { color: var(--gold-300); }
+
+  .lp-hero__sub {
+    margin: 0 0 28px;
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--navy-100);
+    max-width: 520px;
+  }
+
+  .lp-hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  .lp-hero__ctas .lp-btn--secondary { flex: 0 0 auto; }
+  @media (max-width: 767px) {
+    .lp-hero__ctas { flex-direction: column; }
+    .lp-hero__ctas .lp-btn--secondary { width: 100%; }
+  }
+
+  .lp-hero__reassurance {
     display: flex;
     align-items: center;
+    gap: 8px;
+    margin: 16px 0 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--navy-100);
+  }
+  .lp-hero__reassurance svg { flex: 0 0 auto; color: var(--gold-300); }
+
+  /* ── Phone mockup (HTML/CSS, hidden < 1024px) ────────────────── */
+  .lp-phone { display: none; }
+  @media (min-width: 1024px) {
+    .lp-phone {
+      display: block;
+      position: relative;
+      justify-self: center;
+      height: 430px;
+      width: auto;
+      aspect-ratio: 9 / 18.5;
+      margin-bottom: 0;
+      border: 10px solid var(--navy-950);
+      border-radius: 44px;
+      background: var(--navy-950);
+      box-shadow: 0 24px 64px -12px rgba(2, 6, 18, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+    .lp-phone::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96px;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--navy-700);
+    }
+  }
+  .lp-phone__screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 38px 12px 12px;
+    background: var(--bg);
+    border-radius: 34px;
     overflow: hidden;
   }
-
-  /* Subtle diagonal line texture */
-  .hero::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-      repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 40px,
-        rgba(201,168,76,0.025) 40px,
-        rgba(201,168,76,0.025) 41px
-      );
-    pointer-events: none;
-  }
-
-  .hero-glow {
-    position: absolute; top: -15%; right: -8%;
-    width: 55vw; height: 55vw;
-    max-width: 680px; max-height: 680px;
-    background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 68%);
-    pointer-events: none;
-  }
-
-  .hero-glow-left {
-    position: absolute; bottom: -20%; left: -10%;
-    width: 40vw; height: 40vw;
-    max-width: 500px; max-height: 500px;
-    background: radial-gradient(ellipse, rgba(26,53,96,0.5) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-
-
-  /* Watermark */
-  .hero-wm {
-    position: absolute; bottom: -8%; right: -2%;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(80px, 22vw, 260px);
-    font-weight: 700;
-    color: rgba(255,255,255,0.02);
-    line-height: 1; pointer-events: none; user-select: none; white-space: nowrap;
-    letter-spacing: -0.02em;
-  }
-
-  .hero-inner {
-    position: relative; z-index: 2;
-    width: 100%; max-width: 1280px; margin: 0 auto;
-    padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem) clamp(2.5rem, 5vw, 4.5rem);
-    display: grid;
-    grid-template-columns: 55fr 45fr;
-    gap: clamp(2rem, 5vw, 5rem);
+  .lp-phone__appbar {
+    display: flex;
     align-items: center;
-  }
-
-  /* Official badge */
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 10px;
-    border: 1px solid var(--border-gold);
-    border-radius: 3px;
-    padding: 7px 16px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.16em; text-transform: uppercase;
-    color: rgba(201,168,76,0.8);
-    margin-bottom: 28px;
-    background: rgba(201,168,76,0.06);
-  }
-
-  .badge-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: var(--gold); flex-shrink: 0;
-    animation: dot-pulse 2.4s infinite;
-  }
-  @keyframes dot-pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50%      { opacity:0.3; transform:scale(0.6); }
-  }
-
-  /* Title */
-  .hero-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(1.75rem, 5vw, 3.25rem);
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: var(--navy-800);
+    color: var(--surface);
+    font-size: 9px;
     font-weight: 700;
-    line-height: 1.08;
-    color: var(--white);
-    margin-bottom: 20px;
-    letter-spacing: -0.01em;
-  }
-  .hero-title .gold-line {
-    color: var(--gold);
-    font-style: italic;
-    display: block;
-  }
-
-  /* Divider */
-  .hero-divider {
-    width: 48px; height: 2px;
-    background: transparent;
-    margin-bottom: 24px;
-  }
-
-  /* Description */
-  .hero-desc {
-    font-size: 15px; line-height: 1.8;
-    color: var(--text-dim);
-    font-weight: 300;
-    max-width: 460px;
-    margin-bottom: 44px;
-  }
-
-  /* CTA row */
-  .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
-
-  .btn-primary {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
-    color: var(--navy);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 15px 32px; border-radius: 4px;
-    text-decoration: none; border: none; cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 24px rgba(201,168,76,0.32);
-  }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(201,168,76,0.48); }
-  .btn-primary svg { flex-shrink: 0; }
-
-  .btn-secondary {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: transparent;
-    color: rgba(255,255,255,0.7);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; font-weight: 500;
-    letter-spacing: 0.07em; text-transform: uppercase;
-    padding: 15px 28px; border-radius: 4px;
-    border: 1px solid rgba(255,255,255,0.15);
-    text-decoration: none;
-    transition: border-color 0.2s, color 0.2s, transform 0.2s;
-  }
-  .btn-secondary:hover { border-color: rgba(255,255,255,0.38); color: #fff; transform: translateY(-2px); }
-
-  /* Stats panel */
-  .stats-panel {
-    display: flex; flex-direction: column; gap: 1px;
-    border: 1px solid var(--border-gold);
-    border-radius: 6px;
-    overflow: hidden;
-    background: var(--border-gold);
-  }
-
-  .stats-row {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
-  }
-
-  .stat-cell {
-    background: rgba(9, 25, 48, 0.94);
-    padding: 26px 22px;
-    transition: background 0.2s;
-    position: relative;
-  }
-  .stat-cell::before {
-    content: '';
-    position: absolute; top: 0; left: 0;
-    width: 2px; height: 0;
-    background: var(--gold);
-    transition: height 0.35s ease;
-  }
-  .stat-cell:hover { background: rgba(18,41,77,0.96); }
-  .stat-cell:hover::before { height: 100%; }
-
-  .stat-num {
-    font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;
-    font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-    font-weight: 700; color: var(--gold);
-    line-height: 1; margin-bottom: 5px;
-    letter-spacing: -0.01em;
-  }
-  .stat-lbl {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.13em; text-transform: uppercase;
-    color: rgba(255,255,255,0.38);
-  }
-
-  .stats-footer {
-    background: rgba(6,17,35,0.97);
-    padding: 14px 22px;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px;
-  }
-  .stats-footer-text {
-    font-size: 10.5px; letter-spacing: 0.07em;
-    color: rgba(255,255,255,0.28);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
-  .stats-footer-text strong { color: rgba(201,168,76,0.5); }
-  .live-indicator {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 9.5px; letter-spacing: 0.1em;
-    text-transform: uppercase; color: rgba(255,255,255,0.25);
+  .lp-phone__appbar img { width: 16px; height: 16px; }
+  .lp-phone__skeleton { height: 8px; border-radius: 4px; background: var(--line-soft); }
+  .lp-phone__skeleton--w60 { width: 60%; }
+  .lp-phone__skeleton--w80 { width: 80%; }
+
+  /* ── Sample tracker card (shared markup) ─────────────────────── */
+  .lp-tracker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    box-shadow: var(--shadow-card);
   }
-  .live-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: #3FCB6F;
-    box-shadow: 0 0 0 0 rgba(63,203,111,0.5);
-    animation: live-pulse 2s infinite;
+  .lp-tracker__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .lp-tracker__chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--navy-50);
+    color: var(--navy-700);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  @keyframes live-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(63,203,111,0.5); }
-    70% { box-shadow: 0 0 0 6px rgba(63,203,111,0); }
-    100% { box-shadow: 0 0 0 0 rgba(63,203,111,0); }
+  .lp-tracker__complaint { display: flex; align-items: center; gap: 10px; }
+  .lp-tracker__title { margin: 0; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--text); }
+  .lp-tracker__status { display: flex; }
+  .lp-tracker .progress { width: 100%; }
+  .lp-phone__screen .ticket-id { font-size: 10px; }
+  @media (min-width: 1024px) {
+    .lp-tracker { gap: 14px; padding: 14px; }
   }
 
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     SECTION COMMONS
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  .section-wrap { max-width: 1280px; margin: 0 auto; }
+  /* ── Generic section layout ──────────────────────────────────── */
+  .lp-section { padding: 48px 0; background: var(--bg); }
+  @media (min-width: 1024px) { .lp-section { padding: 64px 0; } }
 
-  .section-eyebrow {
-    display: inline-flex; align-items: center; gap: 12px;
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--gold); margin-bottom: 14px;
+  .lp-h2 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--navy-900);
   }
-  .section-eyebrow::before {
-    content: '';
-    width: 24px; height: 1px; background: var(--gold);
-  }
+  @media (min-width: 1024px) { .lp-h2 { font-size: 32px; } }
 
-  .section-heading {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(1.375rem, 3.5vw, 2.25rem);
-    font-weight: 700; color: var(--navy);
-    line-height: 1.15; max-width: 540px;
-    margin-bottom: 12px; letter-spacing: -0.01em;
+  .lp-section__sub {
+    margin: 0 0 32px;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 560px;
   }
 
-  .section-sub {
-    font-size: clamp(0.9375rem, 1.5vw, 1rem); color: var(--text-muted);
-    max-width: 500px; line-height: 1.65;
-    margin-bottom: clamp(2rem, 5vw, 3.5rem); font-weight: 300;
-  }
-
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     PROCESS SECTION
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  .process {
-    background: var(--cream);
-    padding: clamp(3rem, 6vw, 6.5rem) clamp(1rem, 4vw, 2.5rem);
-    position: relative;
-  }
-  .process::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--navy) 0%, var(--gold) 50%, transparent 100%);
-  }
-
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    position: relative;
-  }
-
-  /* Connecting line */
-  .steps::after {
-    content: ''; position: absolute;
-    top: 33px; left: 12.5%; width: 75%;
-    height: 1px;
-    background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(201,168,76,0.3) 10%,
-      var(--gold) 50%,
-      rgba(201,168,76,0.3) 90%,
-      transparent 100%
-    );
-  }
-
-  .step {
-    position: relative; z-index: 1;
-    padding: 0 20px;
+  /* ── Proof strip (white cards overlapping the hero) ──────────── */
+  .lp-strip { background: transparent; }
+  .lp-strip .tr-stats { margin-top: -32px; }
+  .lp-strip__empty {
+    margin-top: -32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 28px 24px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    font-size: 16px;
+    color: var(--muted);
     text-align: center;
   }
+  .lp-strip__empty svg { flex: 0 0 auto; color: var(--faint); }
+  .lp-strip__stats-wrap { background: var(--bg); }
+  @media (min-width: 900px) {
+    .lp-strip .tr-stats { grid-template-columns: repeat(5, 1fr); }
+    .lp-strip .tr-stats.tr-stats--four { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 899px) {
+    .lp-strip .tr-stats { grid-template-columns: repeat(2, 1fr); }
+    .lp-strip .tr-stat--wide { grid-column: 1 / -1; }
+  }
+  .tr-stat__value--tnum { font-variant-numeric: tabular-nums lining-nums; }
 
-  .step-num {
-    width: 66px; height: 66px; border-radius: 50%;
-    background: var(--navy);
-    border: 1.5px solid var(--gold);
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 24px;
-    font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;
-    font-size: 22px; font-weight: 700; color: var(--gold);
-    letter-spacing: -0.01em;
-    transition: transform 0.28s, box-shadow 0.28s, background 0.28s;
-    position: relative;
-  }
-  .step:hover .step-num {
-    transform: scale(1.1);
-    background: var(--gold);
-    color: var(--navy);
-    box-shadow: 0 0 0 10px rgba(201,168,76,0.08), 0 8px 24px rgba(201,168,76,0.2);
-  }
-
-  .step-icon {
-    width: 36px; height: 36px; margin: 0 auto 14px;
-    color: var(--gold);
-    opacity: 0.7;
-    transition: opacity 0.2s;
-  }
-  .step:hover .step-icon { opacity: 1; }
-
-  .step-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 17px; font-weight: 700;
-    color: var(--navy); margin-bottom: 8px;
-  }
-  .step-desc {
-    font-size: 12.5px; color: var(--text-muted);
-    line-height: 1.7;
-  }
-
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     FEATURES SECTION
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  .features {
-    background: var(--cream-dark);
-    padding: clamp(3rem, 6vw, 6.5rem) clamp(1rem, 4vw, 2.5rem);
-    position: relative;
-  }
-  .features::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 1px; background: rgba(201,168,76,0.18);
-  }
-
-  .features-grid {
+  /* ── Category tiles ──────────────────────────────────────────── */
+  .lp-tiles {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: rgba(201,168,76,0.12);
-    border: 1px solid rgba(201,168,76,0.12);
-    border-radius: 8px; overflow: hidden;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
+  @media (min-width: 768px) { .lp-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
 
-  .feature-card {
-    background: var(--white);
-    padding: 36px 30px;
-    transition: background 0.22s;
+  .lp-tile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 96px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .lp-tile:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); border-color: var(--line); }
+  .lp-tile:focus-visible { outline: none; box-shadow: var(--ring); }
+  .lp-tile .cat-icon { width: 44px; height: 44px; }
+  .lp-tile .cat-icon svg { width: 22px; height: 22px; }
+  .lp-tile__label { font-size: 15px; font-weight: 600; line-height: 1.3; }
+
+  /* ── Process steps (id="process") ────────────────────────────── */
+  .lp-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     position: relative;
   }
-  .feature-card::after {
-    content: ''; position: absolute;
-    bottom: 0; left: 30px; right: 30px;
-    height: 2px;
-    background: linear-gradient(90deg, var(--gold), transparent);
-    transform: scaleX(0); transform-origin: left;
-    transition: transform 0.35s ease;
+  .lp-step {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 0 0 28px;
   }
-  .feature-card:hover { background: #fdfaf4; }
-  .feature-card:hover::after { transform: scaleX(1); }
+  .lp-step:last-child { padding-bottom: 8px; }
+  .lp-step::before {
+    content: '';
+    position: absolute;
+    top: 44px;
+    bottom: 0;
+    left: 21px;
+    width: 2px;
+    background: var(--line);
+  }
+  .lp-step:last-child::before { display: none; }
 
-  .feature-icon-wrap {
-    width: 44px; height: 44px;
-    border: 1px solid var(--border-gold);
+  .lp-step__marker {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--surface);
+    font-variant-numeric: tabular-nums;
+    position: relative;
+    z-index: 1;
+  }
+  .lp-step--submitted   .lp-step__marker { background: var(--status-submitted-dot); }
+  .lp-step--verified    .lp-step__marker { background: var(--status-review-dot); }
+  .lp-step--assigned    .lp-step__marker { background: var(--status-review-dot); }
+  .lp-step--in_progress .lp-step__marker { background: var(--status-progress-dot); }
+  .lp-step--resolved    .lp-step__marker { background: var(--status-resolved-dot); }
+
+  .lp-step__name {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy-900);
+    margin-bottom: 2px;
+  }
+  .lp-step__desc { margin: 0; font-size: 15px; line-height: 1.5; color: var(--muted); max-width: 460px; }
+
+  @media (min-width: 1024px) {
+    .lp-steps { flex-direction: row; align-items: stretch; gap: 0; }
+    .lp-step { flex: 1 1 0; flex-direction: column; align-items: center; text-align: center; gap: 0; padding: 0 8px; }
+    .lp-step::before {
+      top: 21px;
+      bottom: auto;
+      left: 0;
+      width: 100%;
+      height: 2px;
+    }
+    .lp-step:first-child::before { display: none; }
+    .lp-step__marker { margin-bottom: 14px; }
+    .lp-step__name { font-size: 16px; }
+    .lp-step__desc { font-size: 15px; }
+    .lp-step__body { display: flex; flex-direction: column; align-items: center; }
+  }
+
+  .lp-process-foot { margin-top: 28px; }
+  .lp-process-mobile { margin-top: 32px; max-width: 380px; margin-left: auto; margin-right: auto; }
+  @media (min-width: 1024px) { .lp-process-mobile { display: none; } }
+
+  /* ── Text links (navy, 44px target) ──────────────────────────── */
+  .lp-textlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 4px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy-700);
+    text-decoration: none;
+    text-underline-offset: 3px;
+  }
+  .lp-textlink:hover { text-decoration: underline; }
+  .lp-textlink:focus-visible { outline: none; box-shadow: var(--ring); border-radius: 4px; }
+
+  /* ── Happening in Daet (status bar + rows) ────────────────────── */
+  .lp-happening {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin-top: 8px;
+  }
+  @media (min-width: 1024px) { .lp-happening { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: start; } }
+
+  .lp-breakdown {
+    display: flex;
+    width: 100%;
+    height: 14px;
     border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 20px;
-    color: var(--gold);
-    background: var(--gold-pale);
-    transition: background 0.2s, border-color 0.2s;
+    overflow: hidden;
+    background: var(--line-soft);
+    margin: 24px 0 20px;
   }
-  .feature-card:hover .feature-icon-wrap {
-    background: rgba(201,168,76,0.18);
-    border-color: rgba(201,168,76,0.4);
+  .lp-breakdown__seg { display: block; height: 100%; }
+  .lp-breakdown__seg--submitted    { background: var(--status-submitted-dot); }
+  .lp-breakdown__seg--under_review { background: var(--status-review-dot); }
+  .lp-breakdown__seg--in_progress  { background: var(--status-progress-dot); }
+  .lp-breakdown__seg--resolved     { background: var(--status-resolved-dot); }
+  .lp-breakdown__seg--rejected     { background: var(--status-rejected-dot); }
+  .lp-breakdown__seg--closed       { background: var(--status-closed-dot); }
+
+  .lp-breakdown__legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 16px; }
+  .lp-breakdown__legend li { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .lp-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .lp-dot--submitted    { background: var(--status-submitted-dot); }
+  .lp-dot--under_review { background: var(--status-review-dot); }
+  .lp-dot--in_progress  { background: var(--status-progress-dot); }
+  .lp-dot--resolved     { background: var(--status-resolved-dot); }
+  .lp-dot--rejected     { background: var(--status-rejected-dot); }
+  .lp-dot--closed       { background: var(--status-closed-dot); }
+
+  .lp-report-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .lp-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 68px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .lp-row:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
+  .lp-row:focus-visible { outline: none; box-shadow: var(--ring); }
+  .lp-row__text { min-width: 0; flex: 1 1 auto; }
+  .lp-row__title { display: block; font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .lp-row__meta { display: block; margin-top: 3px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  @media (min-width: 768px) { .lp-row__title { font-size: 15px; } }
+
+  /* ── Why you can trust it (id="features") + FAQ ──────────────── */
+  .lp-trust { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 768px) { .lp-trust { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+
+  .lp-trust-card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+  }
+  .lp-trust-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--navy-50);
+    color: var(--navy-700);
+    margin-bottom: 14px;
+  }
+  .lp-trust-card__title { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: var(--navy-900); }
+  .lp-trust-card__body { margin: 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+
+  .lp-faq { margin-top: 40px; border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-card); overflow: hidden; }
+  .lp-faq__item + .lp-faq__item { border-top: 1px solid var(--line-soft); }
+  .lp-faq__question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 56px;
+    padding: 12px 18px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--navy-900);
+    cursor: pointer;
+    list-style: none;
+  }
+  .lp-faq__question::-webkit-details-marker { display: none; }
+  .lp-faq__question:hover { background: var(--navy-50); }
+  .lp-faq__question:focus-visible { outline: none; box-shadow: var(--ring-inset); }
+  .lp-faq__icon { flex: 0 0 auto; color: var(--muted); transition: transform 0.18s ease; }
+  .lp-faq__item[open] .lp-faq__icon { transform: rotate(45deg); }
+  .lp-faq__answer { padding: 0 18px 16px; font-size: 16px; line-height: 1.6; color: var(--muted); border-top: none; }
+  .lp-faq__answer p { margin: 0; }
+
+  /* ── Final CTA band ──────────────────────────────────────────── */
+  .lp-final {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 100%);
+    padding: 56px 0;
+  }
+  .lp-final::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 14px);
+    pointer-events: none;
+  }
+  .lp-final__inner { position: relative; max-width: 1040px; margin: 0 auto; padding: 0 24px; text-align: center; }
+  @media (max-width: 767px) { .lp-final__inner { padding: 0 16px; } }
+  .lp-final__title { margin: 0 0 8px; font-size: 26px; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; color: var(--surface); }
+  @media (min-width: 1024px) { .lp-final__title { font-size: 34px; } }
+  .lp-final__sub { margin: 0 auto 28px; font-size: 16px; color: var(--navy-100); max-width: 480px; }
+  .lp-final .lp-btn { min-width: 240px; }
+  @media (max-width: 767px) { .lp-final .lp-btn { width: 100%; min-width: 0; } }
+
+  /* ── Sticky mobile CTA bar (< 768px) ─────────────────────────── */
+  .lp-sticky-cta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-sticky-cta, 800);
+    display: none;
+    align-items: center;
+    padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--line-soft);
+    box-shadow: 0 -4px 24px -8px rgba(11, 26, 51, 0.22);
+    transition: transform 0.22s ease, visibility 0.22s ease;
+  }
+  @media (max-width: 767px) { .lp-sticky-cta { display: flex; } }
+  .lp-sticky-cta .lp-btn { width: 100%; min-height: 52px; }
+  .lp-sticky-cta--hidden {
+    transform: translateY(110%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+  body.mobile-menu-open .lp-sticky-cta {
+    transform: translateY(110%);
+    visibility: hidden;
+    pointer-events: none;
   }
 
-  .feature-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 18px; font-weight: 700;
-    color: var(--navy); margin-bottom: 8px;
-  }
-  .feature-desc {
-    font-size: 13px; color: var(--text-muted); line-height: 1.7;
-    font-weight: 300;
+  /* ── Bottom padding so the bar never covers the footer ───────── */
+  @media (max-width: 767px) {
+    .site-footer__inner { padding-bottom: calc(76px + env(safe-area-inset-bottom) + 12px); }
   }
 
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     CTA BANNER
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  .cta-banner {
-    background: var(--navy);
-    padding: clamp(2.5rem, 5vw, 5rem) clamp(1rem, 4vw, 2.5rem);
-    position: relative; overflow: hidden;
-  }
-  .cta-banner::before {
-    content: ''; position: absolute; inset: 0;
-    background:
-      repeating-linear-gradient(
-        -45deg,
-        transparent, transparent 40px,
-        rgba(201,168,76,0.025) 40px, rgba(201,168,76,0.025) 41px
-      );
-  }
-  .cta-inner {
-    position: relative; z-index: 1;
-    max-width: 1280px; margin: 0 auto;
-    display: flex; align-items: center;
-    justify-content: space-between; gap: 40px;
-    flex-wrap: wrap;
-  }
-  .cta-label {
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.18em; text-transform: uppercase;
-    color: var(--gold); margin-bottom: 12px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .cta-label::before { content: ''; width: 20px; height: 1px; background: var(--gold); }
-  .cta-text h3 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(1.25rem, 3vw, 2rem);
-    font-weight: 700; color: var(--white);
-    line-height: 1.15; margin-bottom: 10px;
-  }
-  .cta-text p {
-    font-size: 14px; color: rgba(255,255,255,0.46);
-    max-width: 460px; line-height: 1.7; font-weight: 300;
-  }
-
-
-
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     ANIMATIONS
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(22px); }
+  /* ── Motion ──────────────────────────────────────────────────── */
+  @keyframes lp-fade-up {
+    from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .fu   { animation: fadeUp 0.7s cubic-bezier(.22,.68,0,1.2) both; }
-  .d1   { animation-delay: 0.04s; }
-  .d2   { animation-delay: 0.16s; }
-  .d3   { animation-delay: 0.28s; }
-  .d4   { animation-delay: 0.40s; }
-  .d5   { animation-delay: 0.52s; }
-
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     RESPONSIVE
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  @media (max-width: 1100px) {
-    .hero-inner { grid-template-columns: 1fr; gap: 48px; padding: 48px 32px 64px; }
-    .hero-desc { max-width: 100%; }
-    .stats-panel { max-width: 520px; }
-    .process, .features { padding: 80px 32px; }
-    .steps { grid-template-columns: 1fr 1fr; gap: 48px; }
-    .steps::after { display: none; }
-    .features-grid { grid-template-columns: 1fr 1fr; }
-    .cta-banner { padding: 64px 32px; }
-  }
-
-  @media (max-width: 768px) {
-    .hero { min-height: auto; }
-    .hero-inner { padding: 40px 20px 56px; gap: 40px; }
-    .hero-ctas { flex-direction: column; }
-    .btn-primary, .btn-secondary { justify-content: center; width: 100%; }
-    .process, .features { padding: 64px 20px; }
-    .features-grid { grid-template-columns: 1fr; border-radius: 6px; }
-    .cta-banner { padding: 56px 20px; }
-    .cta-inner { flex-direction: column; }
-    .cta-inner .btn-primary { width: 100%; max-width: 360px; justify-content: center; }
-    .cta-text p { max-width: 100%; }
-  }
-
-  @media (max-width: 540px) {
-    .steps { grid-template-columns: 1fr; gap: 36px; }
-    .hero-title { font-size: clamp(1.625rem, 8vw, 2rem); }
-    .stats-row { grid-template-columns: 1fr 1fr; }
-    .stat-cell { padding: 20px 16px; }
-    .stat-num { font-size: clamp(1.375rem, 6vw, 1.75rem); }
+  .lp-fu { animation: lp-fade-up 0.2s ease both; }
+  @media (prefers-reduced-motion: reduce) {
+    .lp-fu, .lp-btn, .lp-tile, .lp-row, .lp-faq__icon, .lp-sticky-cta { animation: none !important; transition: none !important; }
+    .lp-tile:hover, .lp-row:hover, .lp-btn:hover { transform: none; }
   }
 </style>
 
-<div class="home-root">
+<div class="lp-root">
 
-  {{-- HERO --}}
-  <section class="hero">
-    <div class="hero-glow"></div>
-    <div class="hero-glow-left"></div>
-    
-    <div class="hero-wm">DAET</div>
-
-    <div class="hero-inner">
-
-      {{-- Left --}}
-      <div>
-        
-
-        <h1 class="hero-title fu d2">
-          {{ __('home.hero.title_line_1') }}<br>
-          <span class="gold-line">{{ __('home.hero.title_line_2') }}</span>
+  {{-- ════════════ HERO (navy gradient, no watermark, no serif) ════════════ --}}
+  <header class="lp-hero">
+    <div class="tr-container lp-hero__inner">
+      <div class="lp-hero__copy">
+        <h1 class="lp-h1 lp-fu">
+          <span class="lp-h1__line">{{ __('landing.h1_line_1') }}</span>
+          <span class="lp-h1__gold">{{ __('landing.h1_line_2') }}</span>
         </h1>
 
-        <div class="hero-divider fu d3"></div>
+        <p class="lp-hero__sub lp-fu">{{ __('landing.subtitle') }}</p>
 
-        <p class="hero-desc fu d3">
-          {{ __('home.guest.hero_description') }}
-        </p>
-
-        <div class="hero-ctas fu d4">
+        <div class="lp-hero__ctas lp-fu">
           @auth
-            <a href="{{ route('complaints.create') }}" class="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              {{ __('home.hero.file_complaint') }}
+            <a href="{{ route($dashboardRoute) }}" class="lp-btn lp-btn--primary" data-sticky-anchor>
+              {{ __('landing.go_to_dashboard') }}
             </a>
-            <a href="{{ route('complaints.track') }}" class="btn-secondary">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              {{ __('home.hero.track_complaint') }}
+            <a href="{{ route('transparency') }}" wire:navigate class="lp-btn lp-btn--secondary">
+              {{ __('landing.see_all_reports') }}
             </a>
           @else
-            <a href="{{ route('register') }}" wire:navigate  class="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              {{ __('home.guest.get_started') }}
+            <a href="{{ route('register') }}" wire:navigate class="lp-btn lp-btn--primary" data-sticky-anchor>
+              {{ __('landing.primary_cta') }}
             </a>
-            <a href="{{ route('login') }}"  wire:navigate  class="btn-secondary">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-              {{ __('home.guest.login_to_track') }}
+            <a href="{{ route('login') }}" wire:navigate class="lp-btn lp-btn--secondary">
+              {{ __('landing.secondary_cta') }}
             </a>
           @endauth
         </div>
-      </div>
 
-      {{-- Right: Stats --}}
-      <div class="fu d5">
-        <div class="stats-panel">
-          <div class="stats-row">
-            <div class="stat-cell">
-              <div class="stat-num">{{ $totalComplaints ?? '0' }}</div>
-              <div class="stat-lbl">{{ __('home.guest.stats.total_filed') }}</div>
-            </div>
-            <div class="stat-cell">
-              <div class="stat-num">{{ $resolvedComplaints ?? '0' }}</div>
-              <div class="stat-lbl">{{ __('home.guest.stats.resolved') }}</div>
-            </div>
-          </div>
-          <div class="stats-row">
-            <div class="stat-cell">
-              <div class="stat-num">{{ $pendingComplaints ?? '0' }}</div>
-              <div class="stat-lbl">{{ __('home.guest.stats.in_progress') }}</div>
-            </div>
-            <div class="stat-cell">
-              <div class="stat-num">{{ $avgDays ?? '-' }}</div>
-              <div class="stat-lbl">{{ __('home.guest.stats.avg_days') }}</div>
-            </div>
-          </div>
-          <div class="stats-footer">
-            <span class="stats-footer-text">FY <strong>{{ date('Y') }}</strong></span>
-            
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  {{-- PROCESS  --}}
-  <section class="process" id="process">
-    <div class="section-wrap">
-      <div class="section-eyebrow">{{ __('home.guest.process.eyebrow') }}</div>
-      <h2 class="section-heading">{{ __('home.guest.process.title') }}</h2>
-      <p class="section-sub">
-        {{ __('home.guest.process.subtitle') }}
-      </p>
-
-      <div class="steps">
-
-        <div class="step">
-          <div class="step-num">01</div>
-          <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          <div class="step-title">{{ __('home.guest.process.step1_title') }}</div>
-          <p class="step-desc">{{ __('home.guest.process.step1_body') }}</p>
-        </div>
-
-        <div class="step">
-          <div class="step-num">02</div>
-          <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-          </svg>
-          <div class="step-title">{{ __('home.guest.process.step2_title') }}</div>
-          <p class="step-desc">{{ __('home.guest.process.step2_body') }}</p>
-        </div>
-
-        <div class="step">
-          <div class="step-num">03</div>
-          <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
-            <path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 7.76a6 6 0 0 0 0 8.49"/>
-          </svg>
-          <div class="step-title">{{ __('home.guest.process.step3_title') }}</div>
-          <p class="step-desc">{{ __('home.guest.process.step3_body') }}</p>
-        </div>
-
-        <div class="step">
-          <div class="step-num">04</div>
-          <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          <div class="step-title">{{ __('home.guest.process.step4_title') }}</div>
-          <p class="step-desc">{{ __('home.guest.process.step4_body') }}</p>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  {{--  FEATURES --}}
-  <section class="features" id="features">
-    <div class="section-wrap">
-      <div class="section-eyebrow">{{ __('home.guest.features.eyebrow') }}</div>
-      <h2 class="section-heading">{{ __('home.guest.features.title') }}</h2>
-      <p class="section-sub">
-        {{ __('home.guest.features.subtitle') }}
-      </p>
-
-      <div class="features-grid">
-
-        <div class="feature-card">
-          <div class="feature-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </div>
-          <div class="feature-title">{{ __('home.guest.features.secure_title') }}</div>
-          <p class="feature-desc">{{ __('home.guest.features.secure_body') }}</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </div>
-          <div class="feature-title">{{ __('home.guest.features.tracking_title') }}</div>
-          <p class="feature-desc">{{ __('home.guest.features.tracking_body') }}</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          </div>
-          <div class="feature-title">{{ __('home.guest.features.routing_title') }}</div>
-          <p class="feature-desc">{{ __('home.guest.features.routing_body') }}</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/>
-              <line x1="12" y1="20" x2="12" y2="4"/>
-              <line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
-          </div>
-          <div class="feature-title">{{ __('home.guest.features.accountability_title') }}</div>
-          <p class="feature-desc">{{ __('home.guest.features.accountability_body') }}</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
-            </svg>
-          </div>
-          <div class="feature-title">{{ __('home.guest.features.device_title') }}</div>
-          <p class="feature-desc">{{ __('home.guest.features.device_body') }}</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-          </div>
-          <div class="feature-title">{{ __('home.guest.features.ra6713_title') }}</div>
-          <p class="feature-desc">{{ __('home.guest.features.ra6713_body') }}</p>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  {{-- CTA BANNER  --}}
-  <div class="cta-banner">
-    <div class="cta-inner">
-      <div class="cta-text">
-        <div class="cta-label">{{ __('home.guest.cta.label') }}</div>
-        <h3>{{ __('home.guest.cta.title') }}</h3>
-        <p>
-          {{ __('home.guest.cta.body') }}
+        <p class="lp-hero__reassurance lp-fu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-3.58 8-10V5l-8-3-8 3v7c0 6.42 8 10 8 10z"/><polyline points="9 12 11.5 14.5 15 11"/></svg>
+          {{ __('landing.reassurance') }}
         </p>
       </div>
-      @auth
-        <a href="{{ route('complaints.create') }}"  wire:navigate class="btn-primary" style="flex-shrink:0;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          {{ __('home.guest.cta.file_now') }}
-        </a>
+
+      {{-- Desktop only: HTML/CSS phone frame with the sample tracker card --}}
+      <div class="lp-phone" aria-hidden="true">
+        <div class="lp-phone__screen">
+          <div class="lp-phone__appbar">
+            <img src="/images/lgulogo.webp" alt="" width="16" height="16" aria-hidden="true">
+            <span>Daet Listens</span>
+          </div>
+          <div class="lp-phone__skeleton lp-phone__skeleton--w60"></div>
+          @include('pages.home.partials.sample-tracker')
+          <div class="lp-phone__skeleton lp-phone__skeleton--w80"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {{-- ════════════ LIVE PROOF STRIP ════════════ --}}
+  <div class="lp-strip lp-strip__stats-wrap">
+    <div class="tr-container">
+      @if($stats['total'] === 0)
+        <div class="lp-strip__empty" role="status">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          {{ __('landing.empty_public') }}
+        </div>
       @else
-        <a href="{{ route('register') }}" wire:navigate class="btn-primary" style="flex-shrink:0;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          {{ __('home.guest.cta.get_started_free') }}
-        </a>
-      @endauth
+        <div class="tr-stats{{ $stats['avgDays'] === null ? ' tr-stats--four' : '' }}" role="list" aria-label="{{ __('landing.stats_aria') }}">
+          <div class="tr-stat" role="listitem">
+            <span class="tr-stat__icon tr-stat__icon--navy">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </span>
+            <span>
+              <span class="tr-stat__value tr-stat__value--tnum">{{ $stats['total'] }}</span>
+              <span class="tr-stat__label">{{ __('landing.stat_filed') }}</span>
+            </span>
+          </div>
+          <div class="tr-stat" role="listitem">
+            <span class="tr-stat__icon tr-stat__icon--green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </span>
+            <span>
+              <span class="tr-stat__value tr-stat__value--tnum">{{ $stats['resolved'] }}</span>
+              <span class="tr-stat__label">{{ __('landing.stat_resolved') }}</span>
+            </span>
+          </div>
+          <div class="tr-stat" role="listitem">
+            <span class="tr-stat__icon tr-stat__icon--amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
+            </span>
+            <span>
+              <span class="tr-stat__value tr-stat__value--tnum">{{ $stats['in_progress'] }}</span>
+              <span class="tr-stat__label">{{ __('landing.stat_in_progress') }}</span>
+            </span>
+          </div>
+          <div class="tr-stat" role="listitem">
+            <span class="tr-stat__icon tr-stat__icon--sky">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M6 21V5l6-3 6 3v16"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/><path d="M9 17h1"/><path d="M14 17h1"/></svg>
+            </span>
+            <span>
+              <span class="tr-stat__value tr-stat__value--tnum">{{ $stats['offices'] }}</span>
+              <span class="tr-stat__label">{{ __('landing.stat_offices') }}</span>
+            </span>
+          </div>
+          @if($stats['avgDays'] !== null)
+            <div class="tr-stat tr-stat--wide" role="listitem">
+              <span class="tr-stat__icon tr-stat__icon--amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+              </span>
+              <span>
+                <span class="tr-stat__value tr-stat__value--tnum">{{ $stats['avgDays'] }}</span>
+                <span class="tr-stat__label">{{ __('landing.stat_avg') }}</span>
+              </span>
+            </div>
+          @endif
+        </div>
+      @endif
     </div>
   </div>
 
+  {{-- ════════════ WHAT CAN YOU REPORT? ════════════ --}}
+  <section class="lp-section" aria-labelledby="lp-categories-heading">
+    <div class="tr-container">
+      <h2 class="lp-h2" id="lp-categories-heading">{{ __('landing.categories_title') }}</h2>
+      <p class="lp-section__sub">{{ __('landing.categories_subtitle') }}</p>
 
+      @php
+        $tiles = [
+            ['category' => 'road_damage', 'label' => __('landing.tile_road_damage')],
+            ['category' => 'flooding', 'label' => __('landing.tile_flooding')],
+            ['category' => 'streetlight', 'label' => __('landing.tile_streetlight')],
+            ['category' => 'garbage', 'label' => __('landing.tile_garbage')],
+            ['category' => 'noise_complaint', 'label' => __('landing.tile_noise')],
+            ['category' => 'others', 'label' => __('landing.tile_others')],
+        ];
+        $tileHref = auth()->check() ? route('complaints.create') : route('register');
+      @endphp
+      <div class="lp-tiles">
+        @foreach($tiles as $tile)
+          <a class="lp-tile" href="{{ $tileHref }}" wire:navigate>
+            @include('pages.transparency.partials.category-icon', ['category' => $tile['category']])
+            <span class="lp-tile__label">{{ $tile['label'] }}</span>
+          </a>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  {{-- ════════════ WHAT HAPPENS AFTER YOU FILE (id="process") ════════════ --}}
+  <section class="lp-section" id="process" style="background: var(--surface); border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft);" aria-labelledby="lp-process-heading">
+    <div class="tr-container">
+      <h2 class="lp-h2" id="lp-process-heading">{{ __('landing.process_title') }}</h2>
+      <p class="lp-section__sub">{{ __('landing.process_subtitle') }}</p>
+
+      @php
+        $steps = [
+            ['key' => 'submitted',   'name' => __('dashboard.steps.0'), 'body' => __('landing.step_1_body')],
+            ['key' => 'verified',    'name' => __('dashboard.steps.1'), 'body' => __('landing.step_2_body')],
+            ['key' => 'assigned',    'name' => __('dashboard.steps.2'), 'body' => __('landing.step_3_body')],
+            ['key' => 'in_progress', 'name' => __('dashboard.steps.3'), 'body' => __('landing.step_4_body')],
+            ['key' => 'resolved',    'name' => __('dashboard.steps.4'), 'body' => __('landing.step_5_body')],
+        ];
+      @endphp
+      <ol class="lp-steps">
+        @foreach($steps as $index => $step)
+          <li class="lp-step lp-step--{{ $step['key'] }}">
+            <span class="lp-step__marker" aria-hidden="true">{{ $index + 1 }}</span>
+            <div class="lp-step__body">
+              <span class="lp-step__name">{{ $step['name'] }}</span>
+              <p class="lp-step__desc">{{ $step['body'] }}</p>
+            </div>
+          </li>
+        @endforeach
+      </ol>
+
+      {{-- Mobile only: the same sample card the desktop hero shows --}}
+      <div class="lp-process-mobile">
+        @include('pages.home.partials.sample-tracker')
+      </div>
+
+      <div class="lp-process-foot">
+        <a class="lp-textlink" href="{{ route('transparency') }}" wire:navigate>
+          {{ __('landing.transparency_link') }}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {{-- ════════════ HAPPENING IN DAET (live) ════════════ --}}
+  @if($stats['total'] > 0)
+    <section class="lp-section" aria-labelledby="lp-live-heading">
+      <div class="tr-container">
+        <h2 class="lp-h2" id="lp-live-heading">{{ __('landing.live_title') }}</h2>
+
+        <div class="lp-happening">
+          <div>
+            @if(count($statusBreakdown))
+              <div class="lp-breakdown" role="img" aria-label="{{ __('landing.status_breakdown_aria') }}">
+                @foreach($statusBreakdown as $segment)
+                  <span class="lp-breakdown__seg lp-breakdown__seg--{{ $segment['key'] }}" style="width: {{ $segment['share'] }}%" title="{{ $segment['label'] }} · {{ $segment['count'] }}"></span>
+                @endforeach
+              </div>
+              <ul class="lp-breakdown__legend">
+                @foreach($statusBreakdown as $segment)
+                  <li><span class="lp-dot lp-dot--{{ $segment['key'] }}" aria-hidden="true"></span>{{ $segment['label'] }} · {{ $segment['count'] }}</li>
+                @endforeach
+              </ul>
+            @endif
+          </div>
+
+          <div>
+            <ul class="lp-report-list">
+              @foreach($recentReports as $report)
+                <li>
+                  <a class="lp-row" href="{{ $report['url'] }}" wire:navigate>
+                    @include('pages.transparency.partials.category-icon', ['category' => $report['category']])
+                    <span class="lp-row__text">
+                      <span class="lp-row__title">{{ $report['title'] }}</span>
+                      <span class="lp-row__meta">{{ $report['barangay_label'] }}@if($report['relative_date']) · {{ $report['relative_date'] }}@endif</span>
+                    </span>
+                    <span class="status-pill {{ $report['status_key'] }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $report['status_label'] }}</span>
+                  </a>
+                </li>
+              @endforeach
+            </ul>
+
+            <div class="lp-process-foot">
+              <a class="lp-textlink" href="{{ route('transparency') }}" wire:navigate>
+                {{ __('landing.see_all_reports') }}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  @endif
+
+  {{-- ════════════ WHY YOU CAN TRUST IT (id="features") ════════════ --}}
+  <section class="lp-section" id="features" style="background: var(--surface); border-top: 1px solid var(--line-soft);" aria-labelledby="lp-trust-heading">
+    <div class="tr-container">
+      <h2 class="lp-h2" id="lp-trust-heading">{{ __('landing.trust_title') }}</h2>
+
+      <div class="lp-trust" style="margin-top: 24px;">
+        @foreach([
+            ['icon' => 'lock', 'title' => __('landing.private_title'), 'body' => __('landing.private_body')],
+            ['icon' => 'pulse', 'title' => __('landing.tracked_title'), 'body' => __('landing.tracked_body')],
+            ['icon' => 'megaphone', 'title' => __('landing.public_title'), 'body' => __('landing.public_body')],
+        ] as $card)
+          <div class="lp-trust-card">
+            <span class="lp-trust-card__icon">
+              @if($card['icon'] === 'lock')
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              @elseif($card['icon'] === 'pulse')
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              @else
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-5-5 18-2.5-7.5L3 11z"/></svg>
+              @endif
+            </span>
+            <h3 class="lp-trust-card__title">{{ $card['title'] }}</h3>
+            <p class="lp-trust-card__body">{{ $card['body'] }}</p>
+          </div>
+        @endforeach
+      </div>
+
+      {{-- FAQ — emergency question intentionally absent: no LGU-confirmed emergency number yet (see report). --}}
+      <div class="lp-faq">
+        @foreach([
+            ['q' => __('landing.faq_1_q'), 'a' => __('landing.faq_1_a')],
+            ['q' => __('landing.faq_2_q'), 'a' => __('landing.faq_2_a')],
+            ['q' => __('landing.faq_3_q'), 'a' => __('landing.faq_3_a')],
+            ['q' => __('landing.faq_5_q'), 'a' => __('landing.faq_5_a')],
+        ] as $item)
+          <details class="lp-faq__item">
+            <summary class="lp-faq__question">
+              {{ $item['q'] }}
+              <svg class="lp-faq__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </summary>
+            <div class="lp-faq__answer"><p>{{ $item['a'] }}</p></div>
+          </details>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  {{-- ════════════ FINAL CTA ════════════ --}}
+  <section class="lp-final" aria-labelledby="lp-final-heading">
+    <div class="lp-final__inner">
+      <h2 class="lp-final__title" id="lp-final-heading">{{ __('landing.final_title') }}</h2>
+      <p class="lp-final__sub">{{ __('landing.final_sub') }}</p>
+      @auth
+        <a href="{{ route($dashboardRoute) }}" class="lp-btn lp-btn--primary" data-sticky-anchor>{{ __('landing.go_to_dashboard') }}</a>
+      @else
+        <a href="{{ route('register') }}" wire:navigate class="lp-btn lp-btn--primary" data-sticky-anchor>{{ __('landing.primary_cta') }}</a>
+      @endauth
+    </div>
+  </section>
+
+  {{-- ════════════ STICKY MOBILE CTA (< 768px only) ════════════ --}}
+  @guest
+    <div class="lp-sticky-cta lp-sticky-cta--hidden">
+      <a href="{{ route('register') }}" wire:navigate class="lp-btn lp-btn--primary">{{ __('landing.primary_cta') }}</a>
+    </div>
+  @endguest
 
 </div>
 
-@endsection
 @push('scripts')
+<script>
+(function () {
+  var bar = document.querySelector('.lp-sticky-cta');
+  if (!bar || !('IntersectionObserver' in window)) {
+    if (bar) bar.classList.remove('lp-sticky-cta--hidden');
+    return;
+  }
+  var heroAnchor = document.querySelector('.lp-hero [data-sticky-anchor]');
+  var finalAnchor = document.querySelector('.lp-final [data-sticky-anchor]');
+  var heroVisible = true;
+  var finalVisible = false;
+  var update = function () {
+    bar.classList.toggle('lp-sticky-cta--hidden', heroVisible || finalVisible);
+  };
+  if (heroAnchor) {
+    new IntersectionObserver(function (entries) {
+      heroVisible = entries[0].isIntersecting;
+      update();
+    }, { threshold: 0 }).observe(heroAnchor);
+  } else {
+    heroVisible = false;
+  }
+  if (finalAnchor) {
+    new IntersectionObserver(function (entries) {
+      finalVisible = entries[0].isIntersecting;
+      update();
+    }, { threshold: 0 }).observe(finalAnchor);
+  }
+  update();
+})();
+</script>
 @endpush
+@endsection

@@ -75,21 +75,62 @@ class ComplaintController extends Controller
     public function index(Request $request)
     {
         $userId = Auth::id();
-        $base = Complaint::where('user_id', $userId)->with(['department', 'logs']);
+        $base = Complaint::where('user_id', $userId)->with(['department', 'logs', 'informationRequests', 'user']);
+
+        $byStatus = (clone $base)
+            ->select('status')
+            ->selectRaw('count(*) as c')
+            ->groupBy('status')
+            ->pluck('c', 'status');
+
         $counts = [
-            'all' => (clone $base)->count(),
-            'open' => (clone $base)->whereIn('status', [ComplaintStatus::Submitted->value, ComplaintStatus::UnderReview->value, ComplaintStatus::InProgress->value])->count(),
-            'resolved' => (clone $base)->where('status', ComplaintStatus::Resolved->value)->count(),
+            'all' => $byStatus->sum(),
+            'submitted' => (int) ($byStatus[ComplaintStatus::Submitted->value] ?? 0),
+            'under_review' => (int) ($byStatus[ComplaintStatus::UnderReview->value] ?? 0),
+            'in_progress' => (int) ($byStatus[ComplaintStatus::InProgress->value] ?? 0),
+            'resolved' => (int) ($byStatus[ComplaintStatus::Resolved->value] ?? 0) + (int) ($byStatus[ComplaintStatus::Closed->value] ?? 0),
+            'open' => (int) ($byStatus[ComplaintStatus::Submitted->value] ?? 0)
+                + (int) ($byStatus[ComplaintStatus::UnderReview->value] ?? 0)
+                + (int) ($byStatus[ComplaintStatus::InProgress->value] ?? 0),
         ];
 
+        // Average days to resolution, from the log that closed the report.
+        // Complaints already resolved but without a log fall back to the
+        // last-touched timestamp — a floor, not a fiction.
+        $resolvedDays = (clone $base)
+            ->whereIn('status', [ComplaintStatus::Resolved->value, ComplaintStatus::Closed->value])
+            ->get()
+            ->map(function (Complaint $complaint): int {
+                $closed = $complaint->logs
+                    ->where('new_status', ComplaintStatus::Resolved->value)
+                    ->sortBy('created_at')
+                    ->first();
+
+                $end = $closed?->created_at ?? $complaint->updated_at;
+
+                return (int) $complaint->created_at->diffInDays($end);
+            });
+
+        $avgDays = $resolvedDays->isNotEmpty() ? round($resolvedDays->average()) : null;
+
         $query = clone $base;
-        $status = $request->query('status', 'all');
+
+        $status = (string) $request->query('status', 'all');
+
         if ($status === 'open') {
             $query->whereIn('status', [ComplaintStatus::Submitted->value, ComplaintStatus::UnderReview->value, ComplaintStatus::InProgress->value]);
         } elseif ($status === 'resolved') {
-            $query->where('status', ComplaintStatus::Resolved->value);
-        } elseif ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $query->whereIn('status', [ComplaintStatus::Resolved->value, ComplaintStatus::Closed->value]);
+        } elseif (in_array($status, ['submitted', 'under_review', 'in_progress', 'rejected', 'closed'], true)) {
+            $statusValue = match ($status) {
+                'submitted' => ComplaintStatus::Submitted->value,
+                'under_review' => ComplaintStatus::UnderReview->value,
+                'in_progress' => ComplaintStatus::InProgress->value,
+                'rejected' => ComplaintStatus::Rejected->value,
+                'closed' => ComplaintStatus::Closed->value,
+            };
+
+            $query->where('status', $statusValue);
         }
 
         if ($request->filled('q')) {
@@ -101,17 +142,58 @@ class ComplaintController extends Controller
             $query->where('ticket_id', 'ILIKE', '%'.$request->search.'%');
         }
 
-        $sort = $request->query('sort', 'newest');
-        if ($sort === 'oldest') {
-            $query->oldest();
-        } else {
-            $query->latest();
+        if ($request->filled('department')) {
+            $query->whereHas('department', fn ($d) => $d->where('name', $request->query('department')));
         }
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->query('category'));
+        }
+
+        $sort = (string) $request->query('sort', 'reported_desc');
+        $sort = match ($sort) {
+            'newest' => 'reported_desc',
+            'oldest' => 'reported_asc',
+            default => $sort,
+        };
+
+        match ($sort) {
+            'reported_asc' => $query->oldest(),
+            'status_asc' => $query->orderBy('status')->orderBy('ticket_id'),
+            default => $query->latest(),
+        };
 
         $complaints = $query->paginate(10)->withQueryString();
         $statuses = ComplaintStatus::cases();
 
-        return view('complaints.index', compact('complaints', 'statuses', 'counts'));
+        $departmentOptions = (clone $base)
+            ->join('departments', 'departments.id', '=', 'complaints.department_id')
+            ->select('departments.name')
+            ->distinct()
+            ->orderBy('departments.name')
+            ->pluck('name');
+
+        $categoryLabels = collect(
+            \App\Services\DepartmentRouter::getCategoryOptions()
+        )->flatten(1)->pluck('label', 'value');
+
+        $categoryOptions = (clone $base)
+            ->select('category')
+            ->distinct()
+            ->pluck('category')
+            ->filter()
+            ->mapWithKeys(fn (string $category): array => [$category => $categoryLabels->get($category, $category)])
+            ->sort()
+            ->all();
+
+        return view('complaints.index', compact(
+            'complaints',
+            'statuses',
+            'counts',
+            'avgDays',
+            'departmentOptions',
+            'categoryOptions',
+        ));
     }
 
     /**

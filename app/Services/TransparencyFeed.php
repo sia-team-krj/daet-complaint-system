@@ -34,6 +34,21 @@ class TransparencyFeed
     public const DAET_CENTER = [14.1122, 122.9553];
 
     /**
+     * How many of the most recent public complaints the register renders as rows.
+     *
+     * The register filters and sorts in the browser (see register-script), which
+     * stays cheap and instant up to roughly this many rows. Beyond it the DOM
+     * and the per-poll morph become the bottleneck, and filters would silently
+     * operate on a partial view. So we render only the most recent N here and
+     * keep the full aggregation (map, top areas, stats) over every public
+     * complaint, which is bounded by barangay and therefore cheap.
+     *
+     * Above this threshold the next step is server-side pagination + filters
+     * (query string + Livewire), not a larger cap. See docs/transparency-redesign.md.
+     */
+    public const REGISTER_ROW_CAP = 200;
+
+    /**
      * Everything the public register renders, from one read of the database.
      *
      * @return array{reports: Collection, mapPoints: Collection, mapCenter: array, departmentOptions: Collection, categoryOptions: Collection, statusOptions: Collection, lastUpdated: string|null, stats: array{total: int, in_progress: int, resolved: int, resolution_rate: float|null}, topAreas: Collection}
@@ -55,13 +70,16 @@ class TransparencyFeed
             fn (Complaint $complaint): bool => $this->hasValidCoordinates($complaint),
         );
 
-        $reports = $publicComplaints
+        $allReports = $publicComplaints
             ->map(fn (Complaint $complaint): array => $this->publicReport($complaint, $barangays))
             ->values();
 
-        $inProgress = $reports->where('status_key', 'in_progress')->count();
-        $resolved = $reports->where('status_key', 'resolved')->count();
-        $total = $reports->count();
+        // Summary page shows only the 3 newest public complaints.
+        $reports = $allReports->take(3)->values();
+
+        $inProgress = $publicComplaints->where('status', ComplaintStatus::InProgress->value)->count();
+        $resolved = $publicComplaints->where('status', ComplaintStatus::Resolved->value)->count();
+        $total = $publicComplaints->count();
 
         $stats = [
             'total' => $total,
@@ -79,11 +97,13 @@ class TransparencyFeed
 
         return [
             'reports' => $reports,
+            'allReports' => $allReports,
+            'totalPublic' => $publicComplaints->count(),
             'mapPoints' => $mapPoints,
             'mapCenter' => self::DAET_CENTER,
-            'departmentOptions' => $reports->pluck('department')->filter()->unique()->sort()->values(),
-            'categoryOptions' => $this->categoryOptions($reports),
-            'statusOptions' => $this->statusOptions($reports),
+            'departmentOptions' => $allReports->pluck('department')->filter()->unique()->sort()->values(),
+            'categoryOptions' => $this->categoryOptions($allReports),
+            'statusOptions' => $this->statusOptions($allReports),
             'lastUpdated' => $lastUpdated !== null ? $this->publicDate($lastUpdated) : null,
             'stats' => $stats,
             'topAreas' => $this->topAreas($mapPoints),
@@ -343,7 +363,7 @@ class TransparencyFeed
     /**
      * Build a deliberately limited, public-safe representation of a report.
      */
-    private function publicReport(Complaint $complaint, BarangayLocator $barangays): array
+    public function publicReport(Complaint $complaint, BarangayLocator $barangays): array
     {
         $status = $complaint->statusEnum;
         $category = $complaint->category;
@@ -362,6 +382,7 @@ class TransparencyFeed
             'ticket_id' => $complaint->ticket_id,
             'url' => route('transparency.complaints.show', $complaint),
             'title' => $title,
+            'raw_title' => $rawTitle,
             'search_text' => trim($complaint->ticket_id.' '.$rawTitle.' '.$this->categoryLabel($category).' '.($complaint->department?->name ?? 'Department pending').' '.($display !== null ? "Barangay {$display}" : 'Daet').($barangayKey !== null ? ' '.$barangayKey : '')),
             'category' => $category,
             'category_label' => $this->categoryLabel($category),
@@ -423,9 +444,17 @@ class TransparencyFeed
     {
         $display = $this->barangayDisplay($complaint);
 
-        return $display !== null
-            ? "Barangay {$display}, Daet"
-            : 'Daet, Camarines Norte';
+        if ($display === null) {
+            return 'Daet, Camarines Norte';
+        }
+
+        $display = preg_replace('/^Barangay\s+/i', '', trim($display)) ?? $display;
+
+        if (strcasecmp(trim($display), 'Daet') === 0) {
+            return 'Daet, Camarines Norte';
+        }
+
+        return "Barangay {$display}, Daet";
     }
 
     /**

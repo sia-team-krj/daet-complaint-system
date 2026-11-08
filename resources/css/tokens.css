@@ -109,8 +109,11 @@
     /* Leaflet internal panes reach z-index 1000 inside a map. The portal
        traps that inside .tr-map's stacking context (isolation: isolate),
        keeps the navbar at 900, the mobile drawer backdrop at 1000 and the
-       drawer itself at 1010, and fixed overlays (toast/modal) at 1100. */
+       drawer itself at 1010, fixed overlays (toast/modal) at 1100, and the
+       landing page's sticky mobile CTA at 800 (it must yield to the navbar
+       and never touch the drawer). */
     --z-map: 0;
+    --z-sticky-cta: 800;
     --z-navbar: 900;
     --z-drawer-backdrop: 1000;
     --z-drawer: 1010;

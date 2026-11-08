@@ -1,45 +1,24 @@
 {{--
     The site footer, in one place.
 
-    This is where the standing legal documents live. They were briefly in the
-    navbar, which was wrong: the bar is the primary wayfinding surface and two
-    more items crowded the links a resident actually uses, on top of pushing the
-    account controls into the compact menu sooner. Legal notices belong in the
-    footer, where they are always present but never in the way.
+    Standing legal documents live here (Terms, Privacy, Transparency Register).
+    Self-contained markup and styles so every shell that renders it gets the same
+    look. A page that renders this itself declares `@section('site-footer')`.
 
-    Self-contained markup and styles on purpose. Four shells render it - the
-    public layout, the authenticated layout, and the pages that place it inside
-    their own full-height wrapper - and each of those pages has its own scoped
-    stylesheet, so relying on a class defined elsewhere would render unstyled in
-    one of them.
-
-    A page that renders this itself declares `@section('site-footer')` so the
-    shells know the page owns its footer and do not add a second. That section
-    must contain something - `@hasSection` compiles to a non-empty content
-    check, so an empty section is treated as absent.
-
-    The footer is full-bleed, but its inner container shares the standard
-    1040px max-width and 24px / 16px horizontal padding with the page content,
-    so header, content and footer edges line up at every width. Text colours
-    are kept at WCAG AA (4.5:1) or better against the #060f1e fill — the
-    previous rgba(255,255,255,0.16–0.45) values were near-invisible on navy.
-
-    Labels come from lang/{locale}/footer.php, so the footer follows the same
-    locale as the rest of the portal (English by default). It is never
-    hardcoded to a single language.
+    Content: brand + admin-editable footer_text/contact_text (SystemSetting) +
+    legal links + seal/copyright. Visual language: navy-950 fill, gold-500 top
+    accent, Inter type, tokens only.
 --}}
 <footer class="site-footer">
   <div class="site-footer__inner">
-    <p class="site-footer__id">
-        <strong>{{ __('footer.municipality') }}</strong> &nbsp;&middot;&nbsp; {{ __('footer.province') }}
-        &nbsp;&middot;&nbsp; {{ __('footer.portal') }}
-    </p>
+    <div class="site-footer__brand">
+      <img src="/images/lgulogo.webp" alt="" class="site-footer__logo" width="36" height="36" aria-hidden="true">
+      <div class="site-footer__brand-text">
+        <strong class="site-footer__name">{{ __('footer.municipality') }}</strong>
+        <span class="site-footer__tagline">{{ \App\Models\SystemSetting::getValue('footer_text', 'Municipality of Daet · Camarines Norte · Official Transparency Complaint Portal') }}</span>
+      </div>
+    </div>
 
-    {{-- The Transparency Register is withheld from administrators, matching the
-         navbar. They run the workspace rather than the public register, and
-         TransparencyPageTest asserts the link is absent from their shell. The
-         legal documents are shown to everyone - an operator is still bound by
-         them and needs to be able to read them. --}}
     <nav class="site-footer__legal" aria-label="{{ __('footer.legal_nav') }}">
         <a href="{{ route('terms') }}" wire:navigate>{{ __('footer.terms') }}</a>
         <a href="{{ route('privacy') }}" wire:navigate>{{ __('footer.privacy') }}</a>
@@ -48,86 +27,185 @@
         @endif
     </nav>
 
-    <span class="site-footer__seal">{{ __('footer.seal') }}</span>
+    <div class="site-footer__meta">
+      <p class="site-footer__contact">{{ \App\Models\SystemSetting::getValue('contact_text', 'For concerns, contact the Municipality of Daet through the Transparency Register or visit the municipal hall.') }}</p>
+    </div>
+
+    <div class="site-footer__bottom">
+      <span class="site-footer__seal">{{ __('footer.seal') }}</span>
+      <span class="site-footer__copy">&copy; {{ date('Y') }} {{ __('footer.municipality') }}</span>
+    </div>
   </div>
 </footer>
 
 <style>
-    .site-footer {
-        position: relative;
-        z-index: 1;
-        background: #060f1e;
-        border-top: 1px solid rgba(201, 168, 76, 0.14);
-    }
+  .site-footer {
+      position: relative;
+      z-index: 1;
+      background: var(--navy-950);
+      border-top: 2px solid var(--gold-500);
+  }
 
-    .site-footer__inner {
-        width: 100%;
-        max-width: 1040px;
-        margin: 0 auto;
-        padding: 18px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 10px 24px;
-        box-sizing: border-box;
-    }
+  .site-footer__inner {
+      width: 100%;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 24px 24px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+          "brand legal"
+          "meta meta"
+          "bottom bottom";
+      gap: 12px 24px;
+      box-sizing: border-box;
+      align-items: center;
+  }
 
-    .site-footer__id {
-        margin: 0;
-        font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.72);
-        letter-spacing: 0.06em;
-    }
+  .site-footer__brand {
+      grid-area: brand;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+  }
 
-    .site-footer__id strong {
-        color: #E2C06A;
-    }
+  .site-footer__logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: var(--radius-sm);
+  }
 
-    .site-footer__legal {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        flex-wrap: wrap;
-    }
+  .site-footer__brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+  }
 
-    .site-footer__legal a {
-        font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-        font-size: 11px;
-        letter-spacing: 0.06em;
-        color: rgba(255, 255, 255, 0.78);
-        text-decoration: none;
-        transition: color 0.18s ease;
-    }
+  .site-footer__name {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--surface);
+  }
 
-    .site-footer__legal a:hover,
-    .site-footer__legal a:focus-visible {
-        color: #E2C06A;
-    }
+  .site-footer__tagline {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.68);
+  }
 
-    .site-footer__legal a:focus-visible {
-        outline: 2px solid #E2C06A;
-        outline-offset: 3px;
-    }
+  .site-footer__legal {
+      grid-area: legal;
+      display: flex;
+      align-items: center;
+      gap: 4px 16px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+  }
 
-    .site-footer__seal {
-        font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-        font-size: 10px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.72);
-    }
+  .site-footer__legal a {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.78);
+      text-decoration: none;
+      padding: 8px 2px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      transition: color 0.18s ease;
+  }
 
-    @media (max-width: 768px) {
-        .site-footer__inner {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 20px 16px;
-        }
+  .site-footer__legal a:hover {
+      color: var(--gold-300);
+  }
 
-        .site-footer__legal {
-            gap: 6px 16px;
-        }
-    }</style>
+  .site-footer__legal a:focus-visible {
+      color: var(--gold-300);
+      outline: 2px solid var(--gold-300);
+      outline-offset: 3px;
+      border-radius: 2px;
+  }
+
+  .site-footer__meta {
+      grid-area: meta;
+      padding-top: 4px;
+  }
+
+  .site-footer__contact {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.6;
+      color: #9fb3d1;
+  }
+
+  .site-footer__bottom {
+      grid-area: bottom;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 16px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .site-footer__seal {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #9fb3d1;
+  }
+
+  .site-footer__copy {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: #9fb3d1;
+  }
+
+  @media (max-width: 768px) {
+      .site-footer__inner {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+              "brand"
+              "legal"
+              "meta"
+              "bottom";
+          padding: 20px 16px;
+          gap: 12px;
+      }
+
+      .site-footer__legal {
+          justify-content: flex-start;
+          gap: 2px 12px;
+      }
+
+      .site-footer__legal a {
+          min-height: 44px;
+      }
+
+      .site-footer__bottom {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+      }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+      .site-footer__legal a { transition: none; }
+  }
+</style>

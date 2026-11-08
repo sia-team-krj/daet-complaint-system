@@ -46,22 +46,4 @@
      which makes it a stacking context, so a panel inside it could never
      out-paint later page sections. The drawer is fixed at the root level
      (backdrop 1000, panel 1010) and the hamburger stays the open toggle. --}}
-<div class="mobile-menu-backdrop" data-mobile-menu-backdrop aria-hidden="true"></div>
-<div id="mobile-menu" data-mobile-menu aria-hidden="true" class="mobile-menu" inert>
-  <div class="mobile-menu-header">
-    <button type="button" class="mobile-menu-close" data-mobile-menu-toggle aria-controls="mobile-menu" aria-label="{{ __('nav.close_navigation') }}" aria-expanded="true">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-    </button>
-  </div>
-  <div class="mobile-menu-inner">
-      <a href="{{ url('/') }}" wire:navigate class="mobile-nav-link">{{ __('nav.home') }}</a>
-      <a href="{{ url('/') }}#process" class="mobile-nav-link">{{ __('nav.process') }}</a>
-      <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">{{ __('nav.transparency') }}</a>
-      <a href="{{ url('/') }}#features" class="mobile-nav-link">{{ __('nav.features') }}</a>
-      <div class="mobile-divider"></div>
-      @include('layouts.partials.language-switcher', ['variant' => 'mobile'])
-      <div class="mobile-divider"></div>
-      <a href="{{ route('login') }}" wire:navigate class="mobile-nav-link">{{ __('nav.login') }}</a>
-      <a href="{{ route('register') }}" wire:navigate class="mobile-nav-link mobile-nav-link--accent">{{ __('nav.get_started') }}</a>
-  </div>
-</div>
+@include('layouts.partials.guest-drawer')

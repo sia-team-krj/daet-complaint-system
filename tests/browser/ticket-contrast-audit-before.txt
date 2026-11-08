@@ -1,0 +1,145 @@
+
+===== 393x852 =====
+14.82:1  PASS  [text] <span.logo-name> :: DAET LISTENS
+12.08:1  PASS  [text] <a.pt-back> :: Back to public transparency
+14.06:1  PASS  [text] <span.pt-ticket-pill> :: COMP-2026-KPKG4
+13.63:1  PASS  [text] <h1> :: Barking dogs disturbing sleep
+ 8.40:1  PASS  [text] <span.pt-pill.pt-pill--closed> :: Closed
+14.25:1  PASS  [text] <span.pt-chip-neutral> :: Latest action: Site attended
+17.85:1  PASS  [text] <h2#pt-progress> :: Resolution progress
+17.85:1  PASS  [text] <strong> :: Submitted
+ 7.58:1  PASS  [text] <small> :: Nov 8, 2026
+17.85:1  PASS  [text] <strong> :: Under Review
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <strong> :: In Progress
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <strong> :: Resolved
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <strong> :: Closed
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <h2#pt-report> :: Complaint report
+17.85:1  PASS  [text] <p.pt-copy> :: Excessive noise is disturbing residents, espec
+17.85:1  PASS  [text] <h2#pt-updates> :: Public updates
+11.21:1  PASS  [text] <span.pt-pill.pt-pill--under-review> :: Under Review
+ 7.58:1  PASS  [text] <time> :: Oct 22, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Field inspection scheduled for this week.
+ 6.37:1  PASS  [text] <span.pt-pill.pt-pill--in-progress> :: In Progress
+ 7.58:1  PASS  [text] <time> :: Oct 23, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Field inspection scheduled for this week.
+ 8.40:1  PASS  [text] <span.pt-pill.pt-pill--closed> :: Closed
+ 7.58:1  PASS  [text] <time> :: Oct 28, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Repair work has been assigned to a contractor.
+ 8.49:1  PASS  [text] <span.pt-pill.pt-pill--submitted> :: Submitted
+ 7.58:1  PASS  [text] <time> :: Nov 3, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Complaint filed and routed to Office of the Ma
+17.85:1  PASS  [text] <h2#pt-details> :: Ticket details
+ 7.58:1  PASS  [text] <dt> :: Department
+17.85:1  PASS  [text] <dd> :: OM Office of the Mayor
+17.85:1  PASS  [text] <span.dept-badge> :: OM
+ 7.58:1  PASS  [text] <dt> :: Category
+17.85:1  PASS  [text] <dd> :: Noise Complaint
+ 7.58:1  PASS  [text] <dt> :: Broad area
+17.85:1  PASS  [text] <dd> :: Barangay IV (Mantagbac), Daet
+ 7.58:1  PASS  [text] <dt> :: Reported
+17.85:1  PASS  [text] <dd> :: Nov 8, 2026
+16.50:1  PASS  [text] <strong> :: Privacy protected
+ 7.00:1  PASS  [text] <p> :: This page shows only a complaint shared public
+18.69:1  PASS  [text] <strong.site-footer__name> :: Municipality of Daet
+18.69:1  PASS  [text] <span.site-footer__tagline> :: Municipality of Daet · Camarines Norte · Offic
+18.69:1  PASS  [text] <a> :: Terms & Conditions
+18.69:1  PASS  [text] <a> :: Privacy Policy
+18.69:1  PASS  [text] <a> :: Transparency Register
+ 8.76:1  PASS  [text] <p.site-footer__contact> :: For concerns, contact the Municipality of Daet
+ 8.76:1  PASS  [text] <span.site-footer__seal> :: Republic Act 6713 · FOI Compliant
+ 8.76:1  PASS  [text] <span.site-footer__copy> :: © 2026 Municipality of Daet
+14.06:1  PASS  [ui] <span.pt-ticket-pill> :: ticket pill border
+ 1.33:1  FAIL  [ui] <span.pt-update__dot> :: hollow update marker border
+ 1.33:1  FAIL  [ui] <span.pt-update__dot> :: hollow update marker border
+ 1.33:1  FAIL  [ui] <span.pt-update__dot> :: hollow update marker border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+ 8.51:1  PASS  [ui] .site-footer :: footer gold top border
+--- FAILING (3) ---
+1.33  <span.pt-update__dot> :: hollow update marker border (fg=217,224,236,1 bg=255,255,255,1 via card white)
+1.33  <span.pt-update__dot> :: hollow update marker border (fg=217,224,236,1 bg=255,255,255,1 via card white)
+1.33  <span.pt-update__dot> :: hollow update marker border (fg=217,224,236,1 bg=255,255,255,1 via card white)
+
+===== 1310x900 =====
+14.82:1  PASS  [text] <span.logo-name> :: DAET LISTENS
+ 6.75:1  PASS  [text] <span.logo-sub> :: LGU Daet · Camarines Norte
+14.82:1  PASS  [text] <a.nav-link> :: Home
+14.82:1  PASS  [text] <a.nav-link> :: Process
+14.82:1  PASS  [text] <a.nav-link> :: Features
+14.82:1  PASS  [text] <a.nav-link> :: Transparency
+ 6.97:1  PASS  [text] <span.lang-switch__code> :: EN
+14.82:1  PASS  [text] <span.lang-switch__code> :: FIL
+14.82:1  PASS  [text] <a.nav-link> :: Log in
+ 7.78:1  PASS  [text] <a.btn-nav-cta> :: Get started
+12.08:1  PASS  [text] <a.pt-back> :: Back to public transparency
+15.47:1  PASS  [text] <span.pt-ticket-pill> :: COMP-2026-KPKG4
+13.68:1  PASS  [text] <h1> :: Barking dogs disturbing sleep
+ 8.40:1  PASS  [text] <span.pt-pill.pt-pill--closed> :: Closed
+15.47:1  PASS  [text] <span.pt-chip-neutral> :: Latest action: Site attended
+17.85:1  PASS  [text] <h2#pt-progress> :: Resolution progress
+17.85:1  PASS  [text] <strong> :: Submitted
+ 7.58:1  PASS  [text] <small> :: Nov 8, 2026
+17.85:1  PASS  [text] <strong> :: Under Review
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <strong> :: In Progress
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <strong> :: Resolved
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <strong> :: Closed
+ 7.58:1  PASS  [text] <small> :: Done
+17.85:1  PASS  [text] <h2#pt-report> :: Complaint report
+17.85:1  PASS  [text] <p.pt-copy> :: Excessive noise is disturbing residents, espec
+17.85:1  PASS  [text] <h2#pt-updates> :: Public updates
+11.21:1  PASS  [text] <span.pt-pill.pt-pill--under-review> :: Under Review
+ 7.58:1  PASS  [text] <time> :: Oct 22, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Field inspection scheduled for this week.
+ 6.37:1  PASS  [text] <span.pt-pill.pt-pill--in-progress> :: In Progress
+ 7.58:1  PASS  [text] <time> :: Oct 23, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Field inspection scheduled for this week.
+ 8.40:1  PASS  [text] <span.pt-pill.pt-pill--closed> :: Closed
+ 7.58:1  PASS  [text] <time> :: Oct 28, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Repair work has been assigned to a contractor.
+ 8.49:1  PASS  [text] <span.pt-pill.pt-pill--submitted> :: Submitted
+ 7.58:1  PASS  [text] <time> :: Nov 3, 2026 7:00 AM
+17.85:1  PASS  [text] <p> :: Complaint filed and routed to Office of the Ma
+17.85:1  PASS  [text] <h2#pt-details> :: Ticket details
+ 7.58:1  PASS  [text] <dt> :: Department
+17.85:1  PASS  [text] <dd> :: OM Office of the Mayor
+17.85:1  PASS  [text] <span.dept-badge> :: OM
+ 7.58:1  PASS  [text] <dt> :: Category
+17.85:1  PASS  [text] <dd> :: Noise Complaint
+ 7.58:1  PASS  [text] <dt> :: Broad area
+17.85:1  PASS  [text] <dd> :: Barangay IV (Mantagbac), Daet
+ 7.58:1  PASS  [text] <dt> :: Reported
+17.85:1  PASS  [text] <dd> :: Nov 8, 2026
+16.50:1  PASS  [text] <strong> :: Privacy protected
+ 7.00:1  PASS  [text] <p> :: This page shows only a complaint shared public
+18.69:1  PASS  [text] <strong.site-footer__name> :: Municipality of Daet
+18.69:1  PASS  [text] <span.site-footer__tagline> :: Municipality of Daet · Camarines Norte · Offic
+18.69:1  PASS  [text] <a> :: Terms & Conditions
+18.69:1  PASS  [text] <a> :: Privacy Policy
+18.69:1  PASS  [text] <a> :: Transparency Register
+ 8.76:1  PASS  [text] <p.site-footer__contact> :: For concerns, contact the Municipality of Daet
+ 8.76:1  PASS  [text] <span.site-footer__seal> :: Republic Act 6713 · FOI Compliant
+ 8.76:1  PASS  [text] <span.site-footer__copy> :: © 2026 Municipality of Daet
+15.47:1  PASS  [ui] <span.pt-ticket-pill> :: ticket pill border
+ 1.33:1  FAIL  [ui] <span.pt-update__dot> :: hollow update marker border
+ 1.33:1  FAIL  [ui] <span.pt-update__dot> :: hollow update marker border
+ 1.33:1  FAIL  [ui] <span.pt-update__dot> :: hollow update marker border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+13.07:1  PASS  [ui] <span.pt-dot> :: upcoming dot border
+ 8.51:1  PASS  [ui] .site-footer :: footer gold top border
+--- FAILING (3) ---
+1.33  <span.pt-update__dot> :: hollow update marker border (fg=217,224,236,1 bg=255,255,255,1 via card white)
+1.33  <span.pt-update__dot> :: hollow update marker border (fg=217,224,236,1 bg=255,255,255,1 via card white)
+1.33  <span.pt-update__dot> :: hollow update marker border (fg=217,224,236,1 bg=255,255,255,1 via card white)

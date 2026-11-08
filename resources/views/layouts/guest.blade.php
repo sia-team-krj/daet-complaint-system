@@ -23,6 +23,7 @@
         }
     </style>
     @livewireStyles
+    @stack('head')
     @stack('styles')
 </head>
 <body class="w-full max-w-full bg-navy overflow-x-clip">

@@ -94,9 +94,9 @@ class TransparencyPageTest extends TestCase
             ->assertSee(route('transparency.complaints.show', $publicOne), false)
             // Single markup only: the register renders one row set that is
             // restyled per breakpoint, never a second mobile-only copy.
-            ->assertSee('id="complaint-table-body"', false)
-            ->assertSee('data-report-id="'.$publicOne->ticket_id.'"', false)
-            ->assertSee('Public complaints')
+            ->assertSee('class="complaint-list"', false)
+            ->assertSee($publicOne->ticket_id, false)
+            ->assertSee('Recent public complaints')
             ->assertSee('Barangay VI')
             // Reporter aliases are no longer rendered on the register at all —
             // the resident's name never reaches this page.

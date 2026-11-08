@@ -89,28 +89,53 @@ class Complaint extends Model
      * Do NOT use the old boot() method — it requires parent::boot()
      * and can conflict with trait-level boot methods.
      *
-     * Ticket ID format: COMP-2026-00001
+     * Ticket ID format: COMP-2026-A7K9P (random, 5 unambiguous chars)
      *
-     * WHY sequential and not Str::random()?
-     * Str::random(6) under concurrent submissions can produce duplicates
-     * (birthday problem). Sequential IDs are collision-free.
+     * WHY random and not sequential?
+     * Sequential ids (COMP-2026-00001, …) are enumerable: a resident can
+     * guess another resident's ticket by incrementing. Random ids resist that
+     * while staying short enough to read over the phone and type into
+     * /complaints/track.
      *
-     * withTrashed() includes soft-deleted records in the count so
-     * ticket IDs are never reused after a soft delete.
+     * Collisions are handled by a retry loop that checks ticket_id uniqueness
+     * (including soft-deleted rows, so ids are never reused after a soft
+     * delete) up to TICKET_MAX_ATTEMPTS times. The DB unique constraint is
+     * the final backstop.
+     *
+     * A manually supplied ticket_id (seeders, tests, admin tooling) is
+     * preserved via the filled() guard.
      */
+    public const TICKET_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    public const TICKET_RANDOM_LENGTH = 5;
+    public const TICKET_MAX_ATTEMPTS = 10;
+
     protected static function booted(): void
     {
         static::creating(function (Complaint $complaint) {
-            $year = date("Y");
-            $count = static::withTrashed()
-                ->whereYear("created_at", $year)
-                ->count();
+            if (filled($complaint->ticket_id)) {
+                return; // preserve explicitly supplied ids
+            }
 
-            $complaint->ticket_id =
-                "COMP-" .
-                $year .
-                "-" .
-                str_pad($count + 1, 5, "0", STR_PAD_LEFT);
+            $year = now()->format('Y');
+            $alphabet = self::TICKET_ALPHABET;
+            $maxIndex = strlen($alphabet) - 1;
+
+            for ($attempt = 1; $attempt <= self::TICKET_MAX_ATTEMPTS; $attempt++) {
+                $suffix = '';
+                for ($i = 0; $i < self::TICKET_RANDOM_LENGTH; $i++) {
+                    $suffix .= $alphabet[random_int(0, $maxIndex)];
+                }
+
+                $candidate = "COMP-{$year}-{$suffix}";
+
+                if (! static::withTrashed()->where('ticket_id', $candidate)->exists()) {
+                    $complaint->ticket_id = $candidate;
+
+                    return;
+                }
+            }
+
+            throw new \RuntimeException('Unable to generate a unique complaint ticket id.');
         });
     }
 

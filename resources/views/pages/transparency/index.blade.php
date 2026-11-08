@@ -12,5 +12,5 @@
 @endsection
 
 @push('scripts')
-    @include('pages.transparency.partials.register-script')
+    @include('pages.transparency.partials.map-script')
 @endpush

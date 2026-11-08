@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
+use App\Models\Department;
+use App\Services\BarangayLocator;
+use App\Services\DepartmentRouter;
 use App\Services\TransparencyFeed;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -22,6 +26,7 @@ use Illuminate\View\View;
  */
 class TransparencyController extends Controller
 {
+    public const PUBLIC_COMPLAINTS_PER_PAGE = 5;
     /**
      * The public register. The component does the reading; see TransparencyFeed
      * for the query and for why that logic is shared rather than duplicated.
@@ -31,6 +36,129 @@ class TransparencyController extends Controller
         return view('pages.transparency.index');
     }
 
+    public function complaints(Request $request, TransparencyFeed $feed, BarangayLocator $barangays): View
+    {
+        $validStatuses = collect(ComplaintStatus::cases())
+            ->mapWithKeys(fn (ComplaintStatus $s) => [\Illuminate\Support\Str::slug($s->value, '_') => $s->value])
+            ->all();
+
+        $categoryKeys = collect(DepartmentRouter::getCategoryOptions())
+            ->flatten(1)
+            ->pluck('value')
+            ->all();
+
+        $validDepartments = Department::query()->pluck('name')->all();
+
+        $validSorts = ['reported_desc', 'reported_asc'];
+
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) > 60) {
+            $q = mb_substr($q, 0, 60);
+        }
+
+        $department = (string) $request->query('department', '');
+        if (! in_array($department, $validDepartments, true)) {
+            $department = '';
+        }
+
+        $category = (string) $request->query('category', '');
+        if (! in_array($category, $categoryKeys, true)) {
+            $category = '';
+        }
+
+        $statusSlug = (string) $request->query('status', '');
+        $status = $validStatuses[$statusSlug] ?? '';
+        if ($statusSlug !== '' && $status === '') {
+            $statusSlug = '';
+        }
+
+        $sort = (string) $request->query('sort', 'reported_desc');
+        if (! in_array($sort, $validSorts, true)) {
+            $sort = 'reported_desc';
+        }
+
+        $page = max(1, (int) $request->query('page', 1));
+
+        $query = Complaint::query()
+            ->public()
+            ->where(function ($qb): void {
+                $qb->whereNull('spam_status')->orWhere('spam_status', '!=', 'spam');
+            })
+            ->with(['department:id,name,code']);
+
+        if (mb_strlen($q) >= 2) {
+            $escaped = str_replace("\\", "\\\\", $q);
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $escaped);
+            $like = '%'.$escaped.'%';
+            $query->where(function ($sub) use ($like): void {
+                $sub->where('ticket_id', 'like', $like)
+                    ->orWhere('title', 'like', $like)
+                    ->orWhereHas('department', fn ($d) => $d->where('name', 'like', $like));
+            });
+        }
+
+        if ($department !== '') {
+            $query->whereHas('department', fn ($d) => $d->where('name', $department));
+        }
+
+        if ($category !== '') {
+            $query->where('category', $category);
+        }
+
+        // Status counts reflect the other active filters (q, department, category)
+        // but NOT the status filter itself, so chips can show per-status totals.
+        $statusCounts = (clone $query)
+            ->select('status')
+            ->selectRaw('count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->all();
+
+        if ($status !== '') {
+            $query->where('status', $status);
+        }
+
+        if ($sort === 'reported_asc') {
+            $query->orderBy('created_at', 'asc')->orderBy('id', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
+        }
+
+        $paginator = $query->paginate(self::PUBLIC_COMPLAINTS_PER_PAGE, ['id', 'ticket_id', 'title', 'category', 'department_id', 'status', 'barangay', 'created_at', 'verification_method'], 'page', $page)
+            ->withQueryString();
+
+        if ($paginator->lastPage() > 0 && $page > $paginator->lastPage()) {
+            return redirect()->to($request->fullUrlWithQuery(['page' => $paginator->lastPage()]));
+        }
+
+        $reports = $paginator->getCollection()
+            ->map(fn (Complaint $complaint): array => $feed->publicReport($complaint, $barangays))
+            ->values();
+        $paginator->setCollection($reports);
+
+        $anyFilter = $q !== '' || $department !== '' || $category !== '' || $statusSlug !== '' || $sort !== 'reported_desc';
+
+        return view('pages.transparency.complaints', [
+            'paginator' => $paginator,
+            'reports' => $reports,
+            'departmentOptions' => collect($validDepartments)->sort()->values(),
+            'categoryOptions' => collect(DepartmentRouter::getCategoryOptions())->flatten(1)->map(fn ($c) => ['key' => $c['value'], 'label' => $c['label']])->values(),
+            'statusOptions' => collect(ComplaintStatus::cases())->map(fn (ComplaintStatus $s) => ['key' => \Illuminate\Support\Str::slug($s->value, '_'), 'label' => $s->label()])->values(),
+            'statusCounts' => collect($statusCounts)->mapWithKeys(function ($count, $statusValue) {
+                return [\Illuminate\Support\Str::slug($statusValue, '_') => (int) $count];
+            })->all(),
+            'filters' => [
+                'q' => $q,
+                'department' => $department,
+                'category' => $category,
+                'status' => $statusSlug,
+                'sort' => $sort,
+            ],
+            'anyFilter' => $anyFilter,
+            'total' => $paginator->total(),
+        ]);
+    }
+
     public function show(Complaint $complaint, TransparencyFeed $feed): View
     {
         $this->ensurePublicComplaint($complaint);
@@ -38,8 +166,9 @@ class TransparencyController extends Controller
         $complaint->load(['department', 'user']);
         $logs = $complaint->logs()
             ->where('is_internal', false)
-            ->reorder('created_at')
-            ->get();
+            ->get()
+            ->sortByDesc(fn (\App\Models\ComplaintLog $log): string => sprintf('%020d-%010d', $log->created_at?->getTimestamp() ?? 0, $log->id))
+            ->values();
         $reporter = trim((string) $complaint->user?->display_alias);
 
         return view('pages.transparency.show', [
@@ -76,16 +205,22 @@ class TransparencyController extends Controller
             ComplaintStatus::Closed,
         ];
         $current = $complaint->statusEnum;
-        $currentIndex = (int) array_search($current, $statuses, true);
         $rejected = $current === ComplaintStatus::Rejected;
+        $closed = $current === ComplaintStatus::Closed;
 
-        if ($rejected) {
+        if ($closed) {
+            $currentIndex = count($statuses); // all done, no current
+        } elseif ($rejected) {
             $lastProgressLog = $logs->reject(fn ($log): bool => $log->new_status === ComplaintStatus::Rejected->value)->last();
             $lastReached = $lastProgressLog?->new_status;
             $currentIndex = max(0, (int) array_search($lastReached, $statuses, true));
+        } else {
+            $currentIndex = (int) array_search($current, $statuses, true);
         }
 
-        return collect($statuses)->map(function (ComplaintStatus $status, int $index) use ($logs, $complaint, $currentIndex, $rejected): array {
+        $lastDate = null;
+
+        return collect($statuses)->map(function (ComplaintStatus $status, int $index) use ($logs, $complaint, $currentIndex, $rejected, &$lastDate): array {
             $log = $logs->first(fn ($entry): bool => $entry->new_status === $status->value);
             $state = match (true) {
                 $rejected && $index < $currentIndex => 'complete',
@@ -96,11 +231,24 @@ class TransparencyController extends Controller
                 default => 'upcoming',
             };
 
+            if ($status === ComplaintStatus::Submitted) {
+                $rawDate = $complaint->created_at;
+            } else {
+                $rawDate = $log?->created_at;
+            }
+
+            $formatted = null;
+            if ($rawDate !== null && ($lastDate === null || $rawDate->greaterThanOrEqualTo($lastDate))) {
+                $formatted = $rawDate->format('M j, Y');
+                $lastDate = $rawDate;
+            } elseif ($state === 'complete') {
+                $formatted = null; // will render "Done"
+            }
+
             return [
                 'status' => $status->value,
                 'label' => $status->label(),
-                'date' => $log?->created_at?->format('M j, Y')
-                    ?? ($status === ComplaintStatus::Submitted ? $complaint->created_at?->format('M j, Y') : null),
+                'date' => $formatted,
                 'state' => $state,
             ];
         })->all();

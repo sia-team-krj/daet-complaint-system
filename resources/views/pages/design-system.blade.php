@@ -12,6 +12,7 @@
 --}}
 
 @push('styles')
+    @include('partials.public-ui')
     @include('pages.transparency.partials.component-styles')
     <style>
         .ds-root { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font-sans); padding-bottom: 48px; }
@@ -247,6 +248,7 @@
     <section class="ds-section" aria-labelledby="ds-stats">
         <h2 class="ds-h2" id="ds-stats">Stat strip</h2>
         <p class="ds-note"><code>.tr-stats</code> — margin-top −32px, 4 cards (2×2 on mobile). Values computed server-side from the same payload as the list.</p>
+        @include('partials.public-ui')
         @include('pages.transparency.partials.component-styles')
         <div style="background: var(--navy-900); border-radius: var(--radius-lg); padding: 32px 24px 64px; margin-bottom: 16px;">
             <p style="margin: 0; color: rgba(255,255,255,.82); font-size: 13px;">(banner tail — stats overlap this surface)</p>

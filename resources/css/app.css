@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "./tokens.css";
 
+/* Inter — self-hosted (public/fonts/inter). font-display: swap. */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/inter/inter-latin-400-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/inter/inter-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/inter/inter-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/inter/inter-latin-700-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; font-display: swap; src: url('/fonts/inter/inter-latin-800-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
+
 /* Numeric font (digits only) — IBM Plex Mono, chosen for clear, professional numerals in a government system context */
 @font-face {
   font-family: 'Numeric';
@@ -106,6 +113,7 @@
    RUNTIME TOKENS — single fixed set of values (no themes).
    ═══════════════════════════════════════════════════════════ */
 :root {
+    --navbar-h: 64px;
     --surface-page: #f6f8fb;
     --surface-card: #ffffff;
     --surface-input: #ffffff;
@@ -1973,6 +1981,11 @@ body:has(.settings-page) > main {
     border-radius: 6px;
     display: flex;
     align-items: center;
+    /* The panel is anchored to the right edge of the screen; right-aligning
+       the item content keeps the tap targets' labels visually tied to the
+       screen edge instead of stranded on the panel's inner left. */
+    justify-content: flex-end;
+    text-align: right;
     transition: background 0.18s, color 0.18s;
     background: none;
     border: none;
@@ -9371,3 +9384,7 @@ tr.admin-audit-mobile-only { display: none !important; }
 @media (max-width: 359px) {
   body.admin-layout .admin-audit-filters-collapsible__body { grid-template-columns: 1fr !important; }
 }
+
+/* Single mechanism for the fixed navbar offset (see AGENTS.md). */
+html { scroll-padding-top: calc(var(--navbar-h) + 16px); }
+body { padding-top: var(--navbar-h); }

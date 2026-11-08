@@ -415,12 +415,25 @@ class AdminController extends Controller
         $reviewStatusOptions = ComplaintReviewStatus::cases();
         $priorityOptions = ComplaintPriority::cases();
 
+        // Queue-wide metrics for the banner strip. Cheap aggregates; kept
+        // in the controller so the view stays a renderer, not a shop.
+        $stats = [
+            'total' => Complaint::count(),
+            'pending_review' => Complaint::where('review_status', ComplaintReviewStatus::Pending->value)->count(),
+            'in_progress' => Complaint::where('status', ComplaintStatus::InProgress->value)->count(),
+            'resolved_this_month' => Complaint::where('status', ComplaintStatus::Resolved->value)
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->count(),
+        ];
+
         return view('admin.complaints.index', compact(
             'complaints',
             'departments',
             'statuses',
             'reviewStatusOptions',
-            'priorityOptions'
+            'priorityOptions',
+            'stats'
         ));
     }
 

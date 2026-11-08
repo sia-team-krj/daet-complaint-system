@@ -91,13 +91,11 @@ class StaffWorkspaceTest extends TestCase
         $response = $this->actingAs($staff)
             ->get(route('staff.complaints.index'))
             ->assertOk()
-            ->assertSee('Complaint queue table')
             ->assertSee('5 per page')
-            ->assertSee('staff-queue-table', false)
             ->assertSee('page=2', false)
             ->assertDontSee($complaints->last()->ticket_id);
 
-        $this->assertSame(5, substr_count($response->getContent(), '<tr class="staff-queue-row'));
+        $this->assertSame(5, substr_count($response->getContent(), '<li class="staff-queue-item'));
     }
 
     public function test_staff_queue_formats_ticket_age_in_compact_units(): void

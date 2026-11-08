@@ -57,6 +57,9 @@ Route::get('/design-system', function () {
 
     return view('pages.design-system');
 })->name('design-system');
+Route::get('/transparency/complaints', [TransparencyController::class, 'complaints'])
+    ->name('transparency.complaints')
+    ->middleware('throttle:60,1');
 Route::get('/transparency/complaints/{complaint}', [TransparencyController::class, 'show'])
     ->name('transparency.complaints.show');
 Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'publicEvidence'])

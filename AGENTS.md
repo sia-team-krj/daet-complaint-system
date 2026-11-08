@@ -29,6 +29,13 @@ Also applicable: the repository runs a guard (`scripts/design-system-guard.php`)
 that fails on NEW hard-coded hex colors, serif declarations, or map wrappers
 without `isolation`. CI runs it; so should you when touching UI.
 
+## Design changelog (MANDATORY)
+
+Every change to `resources/views`, `resources/css`, `resources/js` or `lang` that
+alters how the UI looks or behaves MUST add an entry to `docs/design-changelog.md`
+in the same commit, with before/after screenshots in `docs/design-log/`. See the
+template at the top of that file. "Done" without a changelog entry is rejected.
+
 ## Everything else
 
 - See `AGENT_GUIDE.md` for setup, architecture and operational notes.

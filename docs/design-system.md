@@ -409,7 +409,60 @@ title attribute — never open a raw image URL with no chrome.
 - The mobile nav drawer is the reference implementation — same z-contract, same
   language switch placement.
 
+### 5.23 Site footer — `.site-footer`
+Purpose: one standing footer on every shell, carrying the legal documents and the
+municipality's identity. Never duplicated (single-footer contract, §7).
+Anatomy: `.site-footer` (navy-950 fill, 2px gold-500 top accent) →
+`.site-footer__inner` (1040px grid) with four areas:
+`brand` (LGU logo + municipality name + admin-editable `footer_text`) ·
+`legal` (Terms · Privacy · Transparency Register, withheld from admins) ·
+`meta` (admin-editable `contact_text`) ·
+`bottom` (seal left, copyright right, hairline-separated).
+States: default only; links hover/focus to gold-300.
+Mobile (≤768px): single column, brand → legal → meta → bottom; links 44px targets.
+Why: legal notices belong where they are always present but never in the way;
+admin-editable text reuses SystemSetting so the municipality can update copy
+without a deploy; one footer per page so the links never appear twice.
+
 ---
+
+### 5.23 Complaint card (public list) — `.complaint-card` / `.complaint-list`
+Purpose: one public complaint as a self-contained, tappable card on every
+breakpoint. Replaces the old table + mobile-card duplication with a single
+`<ul class="complaint-list">` of `<li class="complaint-card">`.
+
+Anatomy (mobile, < 768px, ~135px tall):
+- Row 1: 36px category icon circle + column (title Inter 600 15px, clamped
+  to 2 lines; meta line: ticket in mono 12px muted · barangay 13px muted).
+- 1px `--line-soft` divider (12px above/below).
+- Row 2 (flex, nowrap, gap 8px): status pill (24px) + 16px verified check
+  (same line) · department CODE badge only · `margin-left: auto` short date
+  · 14px chevron. Department badge hidden before anything wraps at 360px.
+
+Anatomy (desktop, >= 768px, ~72-84px tall): CSS grid
+`40px | minmax(0,1fr) | 176px | 150px | 64px | 16px` — icon | title + meta |
+department (code badge + name) | status (pill + verified check) | short date |
+chevron. No header row.
+
+States: default (white, 1px `--line-soft`, radius 14px, soft shadow);
+hover (border `--line`, stronger shadow); focus-visible (gold ring via
+`--ring`). Whole card is clickable through a stretched link on the title
+(`a::after { inset: 0 }`) — exactly one focusable link per card. NO colored
+left borders or side stripes.
+
+Tokens: `--surface`, `--line-soft`, `--line`, `--text`, `--muted`, `--faint`,
+`--navy-700`, `--gold-500`, `--radius-sm`, `--radius-pill`, `--shadow-card`,
+`--ring`. Category icon circles and status pills reuse §3.2/§3.3/§5.10.
+
+Data rules (presentation only): barangay has a leading "Barangay " stripped
+before re-prefixing (no doubling); unresolved barangay shows "Daet" with no
+prefix; long barangay names truncate with ellipsis (full name in `title`);
+title empty or > 70 chars shows the category label. Ticket number is mono
+12px in `--muted` (never gold). No progress bar in the list.
+
+Why: a table with stretched pills and a progress bar made rows ~120px tall
+and forced horizontal scroll on phones; cards give a uniform 12px gap and
+predictable heights that fit the scroll budget.
 
 ## 6. The z-index contract — **LOCKED**
 
@@ -418,9 +471,11 @@ title attribute — never open a raw image URL with no chrome.
 | In-map Leaflet panes (tiles … controls … attribution) | 200 … 1000 … 1200 |
 | Any `.tr-map` wrapper | `isolation: isolate; z-index: 0` |
 | Navbar (`#navbar`) | **900** |
-| Mobile drawer backdrop (`.mobile-nav-overlay`) | **1000** |
-| Mobile drawer (`#mobile-nav-drawer`) | **1010** |
+| Mobile drawer backdrop (`.mobile-menu-backdrop`, was `.mobile-nav-overlay`) | **1000** |
+| Mobile drawer (`.mobile-menu`, was `#mobile-nav-drawer`) | **1010** |
+| Mobile drawer close `X` (`.mobile-menu-close`) | inside the panel, not a new layer |
 | Toast / modal / full overlays | **1100** |
+| Landing page sticky mobile CTA (`.lp-sticky-cta`) | **800** |
 | In-map overlays (`#map-status`, hint, attribution) | **inside** the map only |
 
 **Why:** Leaflet assigns tile panes z 200 … markers 600 … controls 800–1000. Without
@@ -430,7 +485,48 @@ open mobile menu. A map overlay (loading skeleton, legend, hint) that escapes
 `.tr-map` repeats it — every overlay that belongs to the map lives **inside** the map.
 
 **Locking scroll while a drawer is open** is required too: `html.mobile-drawer-open`
-→ `overflow: hidden`.
+→ `overflow: hidden`. The portal drawers also toggle `mobile-menu-open` on
+`<html>`/`<body>`; both classes must set `overflow: hidden` and restore on close.
+
+**Drawer anatomy — LOCKED (2026-11-08, after the "drawer won't tap" incident):**
+
+1. **The panel and the backdrop are direct children of `<body>`, never inside
+   `<nav>`/`<header>`.** The navbar has `backdrop-blur`, which makes it a stacking
+   context — and a containing block for `position: fixed` descendants — so a panel
+   inside it can never out-paint later page sections no matter how high its
+   `z-index` is. (We shipped exactly that: the fixed
+   `body.mobile-menu-open::before` scrim @ z 950 painted above the whole navbar
+   context @ 900 and swallowed every tap on the panel. `elementFromPoint` at a
+   drawer item returned `body`, i.e. the pseudo-element's originating element.)
+2. **Backdrop:** `position: fixed; inset: 0` @ z 1000, `rgba(7,18,38,.6)`,
+   `pointer-events: none; visibility: hidden` when closed, `.is-open` → auto/visible.
+   Tapping it closes the drawer.
+3. **Panel:** `position: fixed; top: 0; right: 0; bottom: 0; width: min(85vw, 320px)`
+   @ z 1010, `overflow-y: auto`. It deliberately covers the navbar, so the panel
+   carries its own close `X` in `.mobile-menu-header`; it is aligned over the
+   navbar hamburger's footprint, so even a tap aimed at the hamburger reaches it.
+   Item labels right-align (`justify-content: flex-end; text-align: right`) —
+   the panel is anchored to the right edge and left-aligned labels looked stranded.
+4. **Closed state is inert, always:** `pointer-events: none; visibility: hidden`;
+   open state restores `auto`/`visible`. A drawer that is merely transparent or
+   `transform: translateX(100%)` but still `pointer-events: auto` eats taps
+   (`opacity: 0` is not a hit-test exemption).
+5. **Out-of-panel toggles get `inert` while the drawer is open** (they sit under
+   the opaque panel — keeping them focusable creates an invisible tab stop); the
+   in-panel close button stays reachable. All toggles sharing `aria-controls`
+   keep `aria-expanded`/`aria-label` in sync.
+6. **JS contract:** `public/js/shell.js` finds surfaces via `aria-controls`
+   (`document.getElementById`), never via `navbar.querySelector` — the drawer no
+   longer lives in the navbar. Close paths: Esc, backdrop tap, the in-panel `X`,
+   and any `.mobile-menu a` tap; plus `html/body.mobile-menu-open` scroll lock.
+
+**Prove it, don't trust it.** Before claiming a layering fix, run it in a real
+browser (Playwright) at 393px: open the surface, then
+`document.elementFromPoint(x, y)` at the center of **every** item and assert the
+hit is the item or a descendant — plus a click-through of every item, plus
+backdrop/Esc/scroll-lock/closed-state-interception assertions, at 393px and
+360px, in `en` and `fil`, with screenshots. A green elementFromPoint sweep is
+the regression test this bug never had.
 
 Note: `#navbar` also got `z-[900]` as a markup-level belt to the CSS suspenders.
 
@@ -586,3 +682,49 @@ Every UI task appends here: **(date · page · what changed).**
   and bulk reassign.
 - 2026-11-08 · Resident complaint detail · cream/Cormorant removed; guide tokens,
   stepper, timeline, evidence grid, privacy alias handling.
+- 2026-11-08 · All public complaints (/transparency/complaints) · redesigned as
+  compact cards (5/page), collapsible filter panel, status chips with counts,
+  data-display fixes (barangay de-dup, title fallback).
+- 2026-11-08 · Site footer · redesigned to tokens: navy-950 fill, gold-500 top
+  accent, Inter type, brand block + legal nav + admin-editable footer/contact text
+  + seal/copyright; mobile stacks; hex/DM Sans removed from allowlist.
+- 2026-11-08 · Guest mobile menu · dedicated guest-only drawer partial
+  (`layouts/partials/guest-drawer.blade.php`) with guest-scoped `.guest-drawer*`
+  classes: navy-900 panel, 64px brand header, 52px icon-led rows, segmented
+  EN|FIL control, pinned 52px Log in / Get started buttons (no wrap). Shared
+  `.mobile-menu`/`.mobile-nav-link` classes restored so authenticated menus are
+  untouched. Root cause of giant icons: unsized SVGs without width/height + no
+  stroke color; Language label unstyled due to default color on navy.
+- 2026-11-08 · Guest + app navbar (mobile) · drawer de-trapped after "panel
+  opens but every tap lands on the scrim": panel + backdrop moved out of
+  `<nav>` (its `backdrop-blur` made a stacking context; the fixed
+  `body.mobile-menu-open::before` scrim @ z 950 painted above it and ate the
+  taps) into `<body>`; drawer now `position: fixed; top: 0; bottom: 0;
+  width: min(85vw, 320px)` @ z 1010 with an in-panel close `X` (aligned over
+  the hamburger's footprint); backdrop @ z 1000 `rgba(7,18,38,.6)` closes on
+  tap; closed state inert (`pointer-events:none` + `visibility:hidden`);
+  scroll lock on `html/body.mobile-menu-open` kept; Esc / backdrop / X /
+  link-tap all close; drawer items right-aligned, `min-height: 44px`, full
+  tap width; out-of-panel toggles `inert` while open; one `aria-controls`
+  family keeps `aria-expanded` in sync; z-contract anatomy + verification
+  recipe locked in §6. Verified in Playwright at 393x852 + 360x740, `en` +
+  `fil` (elementFromPoint per item, full click-through, screenshots).
+- 2026-11-08 · Guest landing page (`/`) · redesigned for the 5-second
+  resident test: H1 states the task, one filled gold CTA ("File a complaint")
+  reused verbatim in hero/sticky bar/final band; navy gradient hero with an
+  HTML/CSS phone mockup (Sample chip, COMP-2026-00000 tracker card, step-4
+  progress bar) shown ≥1024px and re-rendered below id="process" <1024px;
+  live proof strip reuses TransparencyFeed payload (filed/resolved/in
+  progress/active offices, avg only at ≥5 resolved) with friendly empty
+  state at 0; 6 category tiles → /register; 5-step "What happens after you
+  file" (same `dashboard.steps.*` names and pill colors); status breakdown
+  bar + 3 latest public rows (bar only ≥5 reports); 3 reassurance cards +
+  native FAQ (4 items — emergency number withheld until the LGU provides
+  one); sticky mobile CTA ≤767px @ z 800 (IO-driven hide at hero/final CTA,
+  inert under the drawer); Inter self-hosted (`public/fonts/inter`); all
+  strings in a new `landing` lang group (en/fil, Filipino pending LGU
+  review); shared public-ui partial extracted from the Transparency register
+  (`.tr-container`, `.tr-stats`, `.cat-icon`, `.status-pill`, `.progress`,
+  `.ticket-id`) — the register consumes it too, no forked rows. Verified in
+  Playwright at 393/360/768/1024/1310, en+fil, plus synthetic 0/4/17-report
+  data states and a click-through of every drawer item.

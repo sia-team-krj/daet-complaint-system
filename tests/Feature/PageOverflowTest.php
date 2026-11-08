@@ -56,7 +56,7 @@ class PageOverflowTest extends TestCase
         // The working reference: a static, auto-height wrapper that never becomes
         // a scroll container of its own.
         $this->assertMatchesRegularExpression(
-            '/\.home-root\s*\{[^}]*width:\s*100%/s',
+            '/\.lp-root\s*\{[^}]*width:\s*100%/s',
             $home,
             'The home page root wrapper is the scrolling reference for this fix.',
         );

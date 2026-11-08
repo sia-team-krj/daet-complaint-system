@@ -20,9 +20,9 @@ class LocalizationTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Ang Iyong Tinig.')
-            ->assertSee('Paano Ito Gumagana')
-            ->assertSee('Apat na Hakbang')
+            ->assertSee('Mag-ulat ng problema sa Daet.')
+            ->assertSee('Subaybayan hanggang malutas.')
+            ->assertSee('Ano ang mangyayari pagkatapos mong maghain')
             ->assertSee('Bayan ng Daet')
             ->assertSee('lang="fil"', false);
     }
@@ -34,7 +34,7 @@ class LocalizationTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Your Voice.')
+            ->assertSee('Report a problem in Daet.')
             ->assertSee('lang="en"', false);
     }
 
@@ -81,7 +81,7 @@ class LocalizationTest extends TestCase
         $this->withSession(['locale' => 'bcl'])
             ->get('/')
             ->assertOk()
-            ->assertSee('Your Voice.')
+            ->assertSee('Report a problem in Daet.')
             ->assertSee('lang="en"', false);
     }
 
