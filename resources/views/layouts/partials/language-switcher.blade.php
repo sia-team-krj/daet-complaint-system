@@ -175,7 +175,7 @@
     .lang-switch--mobile .lang-switch__option,
     .lang-switch--footer .lang-switch__option {
         flex: 1;
-        min-height: 40px;
+        min-height: 44px;
         padding: 8px 10px;
         font-size: 12px;
         letter-spacing: 0.02em;

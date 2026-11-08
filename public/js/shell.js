@@ -13,8 +13,25 @@
         menu.classList.toggle('is-open', isOpen);
         menu.setAttribute('aria-hidden', String(!isOpen));
         menu.toggleAttribute('inert', !isOpen);
-        button.setAttribute('aria-expanded', String(isOpen));
-        button.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+
+        // The navbar hamburger and the drawer's own close button both carry
+        // data-mobile-menu-toggle with the same aria-controls; keep every
+        // toggle in sync instead of only the one that was clicked.
+        document.querySelectorAll(`[data-mobile-menu-toggle][aria-controls="${menu.id}"]`).forEach((toggle) => {
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+            // The panel is full-height and opaque, so a toggle that lives
+            // outside it is not visible while the drawer is open; keep it
+            // out of the tab order too. The in-drawer close button stays reachable.
+            if (!menu.contains(toggle)) {
+                toggle.toggleAttribute('inert', isOpen);
+            }
+        });
+
+        // Backdrop lives outside the navbar, right before the drawer.
+        document.querySelectorAll('[data-mobile-menu-backdrop]').forEach((backdrop) => {
+            backdrop.classList.toggle('is-open', isOpen);
+        });
 
         const hasOpenMobileMenu = [...document.querySelectorAll('[data-mobile-menu].is-open')].length > 0;
         document.documentElement.classList.toggle('mobile-menu-open', hasOpenMobileMenu);
@@ -234,13 +251,16 @@
         });
     };
 
-    const closeGlobalMenus = (target = null) => {
-        document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
-            const mobileButton = navbar.querySelector('[data-mobile-menu-toggle]');
-            const menu = navbar.querySelector('[data-mobile-menu]');
+    // The drawer is rendered outside the navbar (it used to sit inside it,
+    // where the navbar's backdrop-blur confined its z-index), so the menu is
+    // resolved through its id instead of navbar.querySelector.
+    const findToggleFor = (menu) => document.querySelector(`[data-mobile-menu-toggle][aria-controls="${menu.id}"]`);
 
-            if (mobileButton && menu && menu.classList.contains('is-open') && !menu.contains(target)) {
-                setMobileMenu(mobileButton, false);
+    const closeGlobalMenus = (target = null) => {
+        document.querySelectorAll('[data-mobile-menu].is-open').forEach((menu) => {
+            const button = findToggleFor(menu);
+            if (button && !menu.contains(target)) {
+                setMobileMenu(button, false);
             }
         });
 
@@ -266,11 +286,11 @@
     };
 
     const resetShell = () => {
+        document.querySelectorAll('[data-mobile-menu]').forEach((menu) => {
+            const button = findToggleFor(menu);
+            if (button) setMobileMenu(button, false);
+        });
         document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
-            const mobileButton = navbar.querySelector('[data-mobile-menu-toggle]');
-            const menu = navbar.querySelector('[data-mobile-menu]');
-
-            if (mobileButton && menu) setMobileMenu(mobileButton, false);
             navbar.querySelectorAll('[data-user-menu-toggle]').forEach((userButton) => {
                 setUserMenu(userButton, false);
             });
@@ -291,6 +311,17 @@
     const handleClick = (event) => {
         const target = event.target instanceof Element ? event.target : null;
         if (!target) return;
+
+        const backdrop = target.closest('[data-mobile-menu-backdrop]');
+        if (backdrop) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.querySelectorAll('[data-mobile-menu].is-open').forEach((menu) => {
+                const button = findToggleFor(menu);
+                if (button) setMobileMenu(button, false);
+            });
+            return;
+        }
 
         const mobileButton = target.closest('[data-mobile-menu-toggle]');
         if (mobileButton) {
@@ -388,7 +419,8 @@
 
         const mobileLink = target.closest('[data-mobile-menu] a');
         if (mobileLink) {
-            const button = mobileLink.closest('[data-site-navbar]')?.querySelector('[data-mobile-menu-toggle]');
+            const menu = mobileLink.closest('[data-mobile-menu]');
+            const button = menu ? findToggleFor(menu) : null;
             if (button) setMobileMenu(button, false);
         }
 
@@ -428,12 +460,9 @@
         closeNotificationMenus();
 
         if (window.innerWidth > 768) {
-            document.querySelectorAll('[data-site-navbar]').forEach((navbar) => {
-                const mobileButton = navbar.querySelector('[data-mobile-menu-toggle]');
-                const menu = navbar.querySelector('[data-mobile-menu]');
-                if (mobileButton && menu && menu.classList.contains('is-open')) {
-                    setMobileMenu(mobileButton, false);
-                }
+            document.querySelectorAll('[data-mobile-menu].is-open').forEach((menu) => {
+                const button = findToggleFor(menu);
+                if (button) setMobileMenu(button, false);
             });
         }
 
