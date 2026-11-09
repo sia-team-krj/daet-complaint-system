@@ -8,21 +8,21 @@
 <div class="transparency-page">
     {{-- ════════════ BANNER (workspace chrome stays dark; content goes family-light) ════════════ --}}
     <header class="tr-banner">
-        <div class="tr-container" style="max-width: none; padding: 0 24px;">
+        <div class="tr-container">
             <div class="tr-admin-banner-row">
                 <div>
                     <h1 class="tr-h1">Complaints</h1>
                     <p class="tr-privacy">Filter the municipal queue, reassign ownership, and review every service request.</p>
                 </div>
-                <a href="{{ route('admin.complaints.export', request()->query()) }}" class="btn-nav-cta" style="text-transform:none; letter-spacing:0; font-size:14px; border-radius: var(--radius-sm); padding: 11px 18px; white-space: nowrap;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px; margin-right:8px;"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Export CSV
+                <a href="{{ route('admin.complaints.export', request()->query()) }}" class="admin-button admin-button--primary admin-export-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Export CSV
                 </a>
             </div>
         </div>
     </header>
 
     {{-- ════════════ STAT STRIP ════════════ --}}
-    <div class="tr-container" style="max-width: none; padding: 0 24px;">
+    <div class="tr-container">
         @php
             $adminStats = [
                 ['navy', 'Total in queue', $stats['total']],
@@ -72,9 +72,9 @@
         ])->filter();
     @endphp
 
-    <section aria-labelledby="queue-filters-title" class="tr-container queue-section" style="max-width: none; padding: 0 24px;">
+    <section aria-labelledby="queue-filters-title" class="tr-container queue-section">
         <span id="queue-filters-title" class="sr-only">Complaint filters</span>
-        <form data-loading-submit method="GET" action="{{ route('admin.complaints.index') }}" class="tr-card tr-filters" id="filter-bar" role="search" data-filter-form style="margin-top: 24px;">
+        <form data-loading-submit method="GET" action="{{ route('admin.complaints.index') }}" class="tr-card tr-filters" id="filter-bar" role="search" data-filter-form>
             <div class="tr-filters__row1">
                 <label class="tr-search" for="complaint-search">
                     <svg class="tr-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -115,7 +115,7 @@
 
             <div class="tr-filters__row2">
                 <details class="admin-queue-filters-collapsible" data-queue-filters-mobile @if($activeFilters->except(['search'])->isNotEmpty()) open @endif>
-                    <summary class="tr-clear" style="text-decoration:none">More filters</summary>
+                    <summary class="tr-clear">More filters</summary>
                     <div class="admin-queue-filters-collapsible__body">
                         <div class="tr-select tr-select--sort">
                             <select name="priority" aria-label="Priority" data-filter-auto>
@@ -133,16 +133,16 @@
                             </select>
                             <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <label class="tr-search" for="date-from" style="flex: 1; min-width: 140px;">
+                        <label class="tr-search admin-date-field" for="date-from">
                             <input type="date" id="date-from" name="date_from" class="tr-filter-input tr-filter-input--date" value="{{ request('date_from') }}" aria-label="From date">
                         </label>
-                        <label class="tr-search" for="date-to" style="flex: 1; min-width: 140px;">
+                        <label class="tr-search admin-date-field" for="date-to">
                             <input type="date" id="date-to" name="date_to" class="tr-filter-input tr-filter-input--date" value="{{ request('date_to') }}" aria-label="To date">
                         </label>
                     </div>
                 </details>
 
-                <button type="submit" class="tr-button" style="margin: 0;">Apply</button>
+                <button type="submit" class="tr-button">Apply</button>
                 @if($activeFilters->isNotEmpty())
                     <a href="{{ route('admin.complaints.index') }}" class="tr-clear">Clear</a>
                 @endif
@@ -162,7 +162,7 @@
     </section>
 
     {{-- ════════════ QUEUE LIST ════════════ --}}
-    <form data-loading-submit method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" data-bulk-form class="tr-container" style="max-width: none; padding: 0 24px 48px;">
+    <form data-loading-submit method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" data-bulk-form class="tr-container admin-queue-bulk">
         @csrf
         <section class="queue-list" aria-labelledby="complaint-queue-title">
             <div class="tr-register-head">
@@ -271,7 +271,7 @@
                 <span data-bulk-noun>selected</span>
             </div>
 
-            <label class="admin-field admin-field--compact" style="margin: 0;">
+            <label class="admin-field admin-field--compact">
                 <span class="sr-only">Reassign selected complaints to</span>
                 <select name="department_id" class="tr-select__native" data-bulk-department aria-label="Reassign selected complaints to">
                     <option value="">Unassigned</option>
@@ -281,14 +281,14 @@
                 </select>
             </label>
 
-            <button type="submit" class="tr-button" style="margin: 0;" data-bulk-submit>Reassign selected</button>
-            <button type="button" class="tr-button" style="margin: 0;" data-bulk-clear>Clear selection</button>
+            <button type="submit" class="tr-button" data-bulk-submit>Reassign selected</button>
+            <button type="button" class="tr-button" data-bulk-clear>Clear selection</button>
             <p class="admin-bulk-bar__note" data-bulk-note>Ownership moves to the chosen office. The resident sees the update; the change is logged.</p>
         </div>
     </form>
 
     @if($complaints->hasPages())
-        <div class="tr-container tr-pagination" style="max-width: none; padding: 0 24px 48px;">
+        <div class="tr-container tr-pagination">
             <p class="tr-showing">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }} · 5 per page</p>
             <div class="tr-pagination-nav">{{ $complaints->links() }}</div>
         </div>
@@ -502,38 +502,135 @@
         left: 50%;
         bottom: 24px;
         transform: translateX(-50%);
-        z-index: var(--z-overlay, 1100);
+        z-index: var(--z-overlay);
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 16px;
+        width: min(1040px, calc(100vw - 32px));
+        max-width: calc(100vw - 32px);
+        padding: 14px 16px;
         background: var(--navy-900);
         color: var(--surface);
+        border: 1px solid color-mix(in srgb, var(--gold-500) 22%, var(--navy-800));
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-lift);
-        max-width: min(1040px, calc(100vw - 32px));
         flex-wrap: wrap;
     }
 
     .admin-bulk-bar[hidden] { display: none; }
-    .admin-bulk-bar__count { display: flex; align-items: baseline; gap: 6px; }
-    .admin-bulk-bar__number { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .admin-bulk-bar .tr-button { background: var(--navy-700); border-color: var(--navy-600); color: var(--surface); }
-    .admin-bulk-bar .tr-button:hover { background: var(--navy-800); }
+    .admin-bulk-bar__count { display: flex; align-items: baseline; gap: 6px; flex: 0 0 auto; }
+    .admin-bulk-bar__number { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--gold-300); }
+    .admin-bulk-bar [data-bulk-noun] { font-size: 13px; font-weight: 600; color: var(--surface); }
+
+    .admin-bulk-bar .admin-field--compact { flex: 1 1 220px; min-width: min(220px, 100%); margin: 0; }
     .admin-bulk-bar select[data-bulk-department] {
+        width: 100%;
         height: 44px;
-        min-width: 200px;
+        min-width: 0;
         padding: 0 36px 0 12px;
-        border: 1px solid var(--navy-700);
+        border: 1px solid color-mix(in srgb, var(--surface) 18%, var(--navy-800));
         border-radius: var(--radius-sm);
-        background: var(--navy-800);
+        background-color: var(--navy-800);
         color: var(--surface);
         font-family: var(--font-sans);
         font-size: 14px;
         appearance: none;
         cursor: pointer;
     }
-    .admin-bulk-bar__note { margin: 0; flex-basis: 100%; font-size: 12px; color: rgba(255, 255, 255, 0.72); }
+    .admin-bulk-bar select[data-bulk-department]:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 35%, transparent);
+        border-color: var(--gold-500);
+    }
+
+    .admin-bulk-bar .tr-button {
+        margin: 0;
+        min-height: 44px;
+        border-radius: var(--radius-sm);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .admin-bulk-bar [data-bulk-submit] {
+        color: var(--navy-950);
+        background: var(--gold-500);
+        border-color: var(--gold-500);
+    }
+    .admin-bulk-bar [data-bulk-submit]:hover:not(:disabled) {
+        color: var(--navy-950);
+        background: var(--gold-300);
+        border-color: var(--gold-300);
+    }
+    .admin-bulk-bar [data-bulk-submit]:disabled {
+        color: color-mix(in srgb, var(--surface) 55%, transparent);
+        background: var(--navy-800);
+        border-color: color-mix(in srgb, var(--surface) 14%, var(--navy-800));
+        cursor: not-allowed;
+    }
+    .admin-bulk-bar [data-bulk-clear] {
+        color: var(--surface);
+        background: transparent;
+        border-color: color-mix(in srgb, var(--surface) 24%, transparent);
+    }
+    .admin-bulk-bar [data-bulk-clear]:hover {
+        color: var(--surface);
+        background: color-mix(in srgb, var(--surface) 10%, transparent);
+        border-color: color-mix(in srgb, var(--surface) 34%, transparent);
+    }
+
+    .admin-bulk-bar__note {
+        margin: 0;
+        flex-basis: 100%;
+        font-size: 12px;
+        line-height: 1.45;
+        color: color-mix(in srgb, var(--surface) 78%, transparent);
+    }
+
+    @media (max-width: 700px) {
+        .admin-bulk-bar {
+            left: 10px;
+            right: 10px;
+            bottom: max(10px, env(safe-area-inset-bottom));
+            width: auto;
+            max-width: none;
+            transform: none;
+            align-items: stretch;
+            gap: 10px;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+        }
+        .admin-bulk-bar__count {
+            flex: 1 1 100%;
+            align-items: center;
+            gap: 8px;
+        }
+        .admin-bulk-bar__number { font-size: 18px; }
+        .admin-bulk-bar [data-bulk-noun] { font-size: 13px; }
+        .admin-bulk-bar .admin-field--compact,
+        .admin-bulk-bar select[data-bulk-department] {
+            width: 100%;
+            min-width: 0;
+            flex: 1 1 100%;
+        }
+        .admin-bulk-bar [data-bulk-submit],
+        .admin-bulk-bar [data-bulk-clear] {
+            flex: 1 1 calc(50% - 5px);
+            min-width: 0;
+            min-height: 42px;
+            padding: 8px 8px;
+            font-size: 12px;
+            white-space: normal;
+            line-height: 1.2;
+        }
+        .admin-bulk-bar__note {
+            font-size: 11px;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    }
 
     @media (max-width: 1100px) {
         .admin-list-head { display: none; }

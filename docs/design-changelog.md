@@ -7,13 +7,71 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
-## 2026-11-09: Admin Dashboard (`/admin/dashboard`) — redesigned with transparency & staff dashboard UI system (navy banner header, horizontal stat strip cards, clean white cards, responsive department grid & tables)
+## 2026-11-09: Auth pages — remove divider and eyebrow elements
 
-- Page / component: `resources/views/admin/dashboard/index.blade.php` (Admin Dashboard).
-- Why (the problem found): admin dashboard used an older style and lacked visual consistency with the transparency and staff dashboards.
-- What changed: redesigned admin dashboard layout to reuse the established Daet Listens dashboard UI language (`tr-banner`, `tr-container`, `tr-stats`/`tr-stat` with rounded icon containers, `tr-card` wrappers, clean section titles, department cards grid, and responsive unassigned/recent complaint tables), maintaining navy and gold identity, white surfaces, and light gray-blue background.
+- Page / component: `resources/views/auth/register.blade.php`, `resources/views/auth/login.blade.php`.
+- Why (the problem found): user requested removal of brand divider and form eyebrow elements from register and login pages.
+- What changed: removed `<div class="auth-brand-divider fu d2"></div>` from both register and login brand sections; removed `<div class="auth-form-eyebrow fu d1">` with "Gumawa ng Account" from register and "Ligtas na Pag-access" from login.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
-- Definition of Done checklist: passed.
+- Definition of Done checklist: passed (targeted markup removal; no new hard-coded hex/serif/map-isolation issues introduced).
+
+## 2026-11-09: Transparency complaint cards — responsive layout/spacing fix
+
+- Page / component: `resources/views/pages/transparency/partials/complaints-styles.blade.php` (shared complaint card/list styles used by the transparency register/complaints pages).
+- Why (the problem found): some complaint cards (`.complaint-card__link` / `cc-*`) became cramped or misaligned depending on text length (long titles/barangays, translated status labels) and variable badges (verified/department). The desktop layout used a fragile fixed-column `display: contents` grid that did not map reliably to conditional row2 items, and mobile row2 used `flex-wrap: nowrap`.
+- What changed: rebuilt card layout to be content-aware. Mobile keeps the stacked structure but allows `cc-row2` to wrap cleanly, improves meta/title wrapping (`overflow-wrap: anywhere`, safer barangay truncation), and uses token divider color. Desktop (`>=768px`) uses a stable 3-column grid (`icon | content | status/meta`) with `cc-row1`/`cc-title-col` as `display: contents` and `cc-row2` as a flexible end-aligned container, so conditional badges/date/chevron no longer break column alignment.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted shared CSS fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
+## 2026-11-09: Transparency register — spacing before footer after “View all” button
+
+- Page / component: `resources/views/pages/transparency/partials/component-styles.blade.php` (`.tr-view-all`, used by `resources/views/livewire/transparency-register.blade.php`).
+- Why (the problem found): the “Tingnan ang lahat ng … pampublikong reklamo” / view-all button sat too close to the footer on the transparency page.
+- What changed: added `padding-bottom: 48px` to `.tr-view-all` to create clear spacing between the button and the footer.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted spacing fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
+## 2026-11-09: Landing hero — reassurance text no longer overlapped by stats strip
+
+- Page / component: `resources/views/pages/home/guest.blade.php` (landing hero).
+- Why (the problem found): `.lp-hero__reassurance` (“Libre. Hindi ipinapakita sa publiko ang iyong pangalan.”) was overlapped by the `.tr-stats` strip, which uses `margin-top: -32px` to overlap the hero.
+- What changed: increased `.lp-hero` bottom padding (`56px` base, `64px` at `>=1024px`) to reserve space for the overlapping stats strip; added small bottom padding and `position: relative; z-index: 1` to `.lp-hero__reassurance` as a safety guard.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted CSS fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
+## 2026-11-09: Transparency complaints register — heading alignment fix; logo name remains untranslated
+
+- Page / component: `resources/views/pages/transparency/complaints.blade.php`, `resources/views/pages/transparency/partials/complaints-styles.blade.php`.
+- Why (the problem found): the “All public complaints” page heading (`tr-h1`, translated) used inline `padding: 0 16px` outside the shared container, causing horizontal misalignment with the back link/content. User also requested that the logo name never be translated.
+- What changed: moved the heading into `.tr-container` and removed the ad-hoc inline padding; added `.complaints-page-title` (navy text on light page, consistent spacing) so it aligns with the register layout. Confirmed the visible logo mark remains hardcoded as `DAET LISTENS` in navbar/drawer templates (no translation key used for the logo name).
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted markup/CSS fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
+## 2026-11-09: Admin panel — full light redesign aligned to the staff workspace (dashboard, sidebar, all admin pages)
+
+- Page / component: `/admin` workspace shell and all admin subpages — dashboard, complaint queue/detail, staff accounts/create/created, users list/detail, departments, audit trail, settings, invitations. Navbar and footer unchanged.
+  - Views: `resources/views/admin/layouts/app.blade.php`, `resources/views/admin/partials/sidebar.blade.php`, `resources/views/admin/dashboard/index.blade.php`, `resources/views/admin/complaints/index.blade.php`.
+  - CSS: `resources/css/pages/admin-workspace.css` (new), `resources/css/pages/admin-dashboard.css` (scoped/fixed), `resources/css/app.css` (imports + removed duplicated dashboard block).
+- Why (the problem found): the admin panel mixed a legacy dark shell (`.admin-shell`/`.admin-sidebar` navy + gold on dark surfaces, dark tables/forms, dark mobile table cards and audit timeline) with newer light/shared markup. The dashboard also used staff-style markup whose CSS was scoped to `body.page-staff-dashboard`; `admin-dashboard.css` was not imported and its content had been duplicated at the end of `app.css`, leaving the dashboard unstyled/inconsistent and creating duplicate/conflicting rules.
+- What changed:
+  - **Shell & sidebar (staff-matched):** admin now uses the same light workspace treatment as staff — `--bg` page, white card sidebar with `--line-soft`/`--shadow-card`, navy text, `--navy-50` hover, gold active rail (`--gold-500`), tokenized language switcher, and the same responsive strategy. Desktop `>=768px` keeps a persistent sticky sidebar (`240px` tablet, `248px` desktop); `641–767px` uses the admin mobile toolbar + drawer via existing `data-admin-sidebar-toggle`/`shell.js` with `--z-drawer`/`--z-drawer-backdrop`; `<=640px` defers to the existing shared authenticated mobile drawer. Body/navbar offset normalized so the admin workspace sits below the fixed navbar without the legacy double-padding.
+  - **Dashboard repaired & aligned:** dashboard body class includes `admin-layout page-admin-dashboard`; dashboard CSS is properly imported (duplicate EOF block removed from `app.css`) and scoped to `body.role-admin.admin-layout.page-admin-dashboard`. Hero now matches staff treatment (navy band + repeating pattern, `dept-hero-card__bg/__inner`), with gold primary / light secondary actions and the existing stat/department/complaint/activity sections using the shared tokenized `dept-*`/`tr-*`/status components.
+  - **All admin pages light-themed:** `admin-workspace.css` provides high-specificity light overrides for legacy `admin-*` components — page headers, metrics, panels, filters, inputs/selects/textareas/checkboxes, buttons, table wraps/headers/rows, status/role pills (mapped to design-system `--status-*`/`--error-*` tokens), flashes, empty states, breadcrumbs, pagination, detail/timeline/evidence, department directory/editor/archive, invitations, staff create/created method cards, moderation panel, settings/category lists, and user directory/profile controls.
+  - **Responsive/mobile parity:** legacy dark mobile table-card rules are overridden to white cards on `--line-soft`; audit trail mobile timeline/cards/filters/chips are overridden to light token colors at `<=640px` while preserving the existing timeline behavior; metrics/forms/filter grids collapse cleanly; no horizontal overflow introduced.
+  - **Complaint queue cleanup:** removed inline layout style attributes from `admin/complaints/index.blade.php` (container padding/spacing, export button/date fields, bulk bar spacing) and moved the admin-specific queue spacing/export styling into `admin-workspace.css`; kept the existing light transparency/queue component structure and behavior.
+  - **Design-system compliance:** all new styling uses existing tokens from `resources/css/tokens.css`/workspace token system; no new hard-coded hex colors, serif declarations, or map-wrapper isolation regressions in admin files. Preserved existing admin routes, controllers, data bindings, and Livewire/public component contracts.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09). Captured local Playwright evidence in `/tmp/opencode/admin-shots/` (model cannot display image input):
+  - Desktop 1440: `/admin/dashboard`, `/admin/complaints`, `/admin/departments`, `/admin/staff`, `/admin/users`, `/admin/audit-trail`, `/admin/invitations`, `/admin/settings`, `/admin/staff/create` all render with `body` background `rgb(244,246,250)`, `body` padding-top `64px`, `.admin-shell` CSS grid (`248px` sidebar + content), sticky sidebar, white `.admin-sidebar-card`, and light navy headings where present; no horizontal overflow.
+  - Dashboard responsive: 1024px grid `248px/704px`, toolbar hidden; 820px grid `240px/528px`, toolbar hidden; 700px block shell with fixed drawer (hidden off-canvas transform) and toolbar `flex`; 640px/390px block shell with toolbar hidden (shared mobile drawer range); no horizontal overflow.
+  - Users responsive: table wrap white at desktop/tablet, mobile rows render as white cards; no horizontal overflow at 1024/820/700/640/390.
+  - Audit 390 and complaints 390 full-page captures taken; Playwright run reported no console/page errors.
+- Definition of Done checklist:
+  - [x] Uses design-system tokens/components only for new admin styling (no new hard-coded hex/serif introduced by this change).
+  - [x] Existing admin routes/behavior/data preserved; no navbar/footer changes.
+  - [x] Responsive evidence recorded (desktop/tablet/mobile widths) and no horizontal overflow detected in automated checks.
+  - [x] `php scripts/design-system-guard.php`: 52 pre-existing NEW violations remain in unrelated files; **0 NEW violations in files changed by this admin redesign**.
+  - [x] `npm run build` succeeded.
+  - [x] Local visual verification run completed with Playwright (`/tmp/opencode/admin-shots/*`); screenshots optional/waived for chat display by owner policy.
 
 
 ## 2026-11-09: Staff Activity History page (`/staff/activity`) — redesigned complaint list layout, information hierarchy, and responsive behavior matching Daet Listens Complaint Queue card design

@@ -1,0 +1,608 @@
+/*
+ * /admin/dashboard — admin dashboard layout.
+ * Mirrors the staff dashboard's visual language (hero band, stat strip,
+ * department cards, complaint cards, activity timeline) scoped to the admin
+ * page so the same design system renders for administrators.
+ * Scoped to body.role-admin.admin-layout.page-admin-dashboard; loaded once via app.css @import.
+ */
+
+/* ─── Page root ───────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard {
+    font-family: var(--font-sans);
+    color: var(--text);
+}
+
+/* Shell: give the dashboard full-width breathing room inside admin-content */
+body.role-admin.admin-layout.page-admin-dashboard .admin-content {
+    max-width: none;
+    padding: 24px 0 48px;
+}
+@media (max-width: 767px) {
+    body.role-admin.admin-layout.page-admin-dashboard .admin-content {
+        padding: 20px 0 40px;
+    }
+}
+
+/* ─── Dashboard shell / grid ─────────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__shell {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__grid {
+    display: grid;
+    gap: 24px;
+    align-items: start;
+}
+/* ≥1024px: main content + sticky activity aside */
+@media (min-width: 1024px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__grid {
+        grid-template-columns: minmax(0, 1fr) 320px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__side {
+        position: sticky;
+        top: calc(var(--navbar-height) + 16px);
+        align-self: start;
+    }
+}
+/* <1024px: single column, activity below main */
+@media (max-width: 1023px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__grid {
+        grid-template-columns: 1fr;
+    }
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__main,
+body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__side {
+    min-width: 0;
+}
+
+/* ─── Hero card — navy overview band matching the staff dashboard ────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--text);
+    color: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__bg {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 14px),
+        linear-gradient(135deg, var(--text) 0%, var(--navy-800) 100%);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__inner {
+    position: relative;
+    padding: 20px;
+}
+@media (min-width: 768px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__inner {
+        padding: 28px 28px 52px;
+    }
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__top {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__subtitle {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.15;
+    color: var(--surface);
+}
+@media (min-width: 768px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__subtitle {
+        font-size: 32px;
+    }
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-identity-card {
+    margin-top: 10px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    display: grid;
+    gap: 2px;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-identity-card__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-identity-card__icon {
+    display: inline-flex;
+    color: rgba(255, 255, 255, 0.75);
+    flex-shrink: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-identity-card__icon svg {
+    width: 16px;
+    height: 16px;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-identity-card__name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--surface);
+    line-height: 1.2;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+@media (max-width: 767px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-hero-card__actions .admin-button {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}
+
+/* ─── Stat strip ─────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: -24px;
+    position: relative;
+    z-index: 1;
+}
+@media (max-width: 767px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat .tr-stat__icon,
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat .dept-si {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat .tr-stat__icon svg,
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat .dept-si svg {
+        width: 16px;
+        height: 16px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat__value {
+        font-size: 24px;
+        line-height: 1.1;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-stat__label {
+        font-size: 10.5px;
+        letter-spacing: 0.02em;
+        margin-top: 2px;
+    }
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--dept-card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--dept-card-shadow);
+    color: inherit;
+    text-decoration: none;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat--link:hover {
+    border-color: var(--dept-active-border);
+    box-shadow: var(--shadow-lift);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat--link:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat .tr-stat__icon,
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat .dept-si {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat .tr-stat__icon svg,
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat .dept-si svg {
+    width: 18px;
+    height: 18px;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat__value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--dept-ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-stat__label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--dept-muted);
+    line-height: 1.25;
+    margin-top: 4px;
+    display: block;
+}
+
+/* ─── Section headings ───────────────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 24px 0 12px;
+    flex-wrap: wrap;
+    background: none;
+}
+@media (max-width: 767px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-section-head {
+        margin: 16px 0 8px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-section-sub {
+        display: none;
+    }
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-section-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dept-ink);
+    letter-spacing: -0.01em;
+    background: none;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-section-sub {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--dept-muted);
+}
+
+body.role-admin.admin-layout.page-admin-dashboard .dept-text-link {
+    color: var(--dept-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-text-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-text-link:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+    border-radius: var(--radius-sm);
+}
+
+/* ─── Department cards ───────────────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+@media (max-width: 767px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
+        grid-template-columns: 1fr;
+    }
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--dept-card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--dept-card-shadow);
+    width: 100%;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card:hover {
+    border-color: var(--dept-active-border);
+    box-shadow: var(--shadow-lift);
+    border-radius: var(--radius-lg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-inset);
+    border-radius: var(--radius-lg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__row {
+    display: contents;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dept-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    line-height: 1.2;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__meta {
+    font-size: 12px;
+    color: var(--dept-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    line-height: 1.4;
+}
+
+/* ─── Complaint cards (unassigned + recent) ──────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-priority-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    width: 100%;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    width: 100%;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__link {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, auto);
+    gap: 12px;
+    align-items: center;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__link:hover {
+    background: var(--navy-50);
+    border-radius: var(--radius-lg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__link:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-inset);
+    border-radius: var(--radius-lg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__complaint {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__text {
+    min-width: 0;
+    flex: 1 1 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__meta {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__age {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    min-width: 0;
+    flex-shrink: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-age {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--navy-700);
+    color: var(--surface);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+}
+@media (max-width: 639px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__link {
+        grid-template-columns: 1fr;
+        padding: 14px;
+        row-gap: 10px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__title {
+        white-space: normal;
+        -webkit-line-clamp: 2;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__cell {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+    body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__age {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+/* ─── System activity (aside) ────────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity {
+    padding: 0;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity__head {
+    padding: 16px 20px 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity__feed {
+    position: relative;
+    padding: 8px 20px 8px;
+    display: grid;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity__feed::before {
+    content: "";
+    position: absolute;
+    left: 24px;
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--dept-card-border);
+    z-index: -1;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--dept-card-border);
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item:first-child {
+    border-top: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--dept-primary);
+    position: relative;
+    z-index: 2;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.35;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__note {
+    margin: 0;
+    font-size: 13px;
+    color: var(--dept-muted);
+    line-height: 1.4;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__copy time {
+    font-size: 12px;
+    color: var(--dept-muted);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity__empty {
+    margin: 0;
+    padding: 12px 0;
+    font-size: 14px;
+    color: var(--dept-muted);
+}
+
+/* Mobile: collapse extra activity items; no show-more JS on admin (first 5) */
+body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item--extra {
+    display: grid;
+}
+@media (max-width: 1023px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item--extra {
+        display: none;
+    }
+}
+
+/* ─── Stat icon tints under admin ────────────────────────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .dept-si--amber {
+    background: var(--dept-icon-amber-bg);
+    color: var(--dept-icon-amber-fg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-si--navy {
+    background: var(--dept-icon-blue-bg);
+    color: var(--dept-icon-blue-fg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-si--green {
+    background: var(--dept-icon-green-bg);
+    color: var(--dept-icon-green-fg);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-si--sky {
+    background: var(--dept-icon-sky-bg);
+    color: var(--dept-icon-sky-fg);
+}
+
+/* ─── Status pill + shared card alignment under admin ────────────────────── */
+body.role-admin.admin-layout.page-admin-dashboard .status-pill.submitted {
+    background: var(--dept-status-submitted-bg);
+    color: var(--dept-status-submitted-text);
+}
+body.role-admin.admin-layout.page-admin-dashboard .status-pill.submitted .status-pill__dot {
+    background: var(--dept-status-submitted-dot);
+}
+body.role-admin.admin-layout.page-admin-dashboard .tr-card {
+    box-shadow: var(--dept-card-shadow);
+    border-color: var(--dept-card-border);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-empty {
+    padding: 32px 16px;
+}

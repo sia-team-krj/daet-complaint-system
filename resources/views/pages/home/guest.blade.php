@@ -61,7 +61,11 @@
     overflow: hidden;
     background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 62%, var(--navy-600) 100%);
     /* Design-system §4 banner: navbar offset inside the navy, 16px visible gap */
-    padding: calc(var(--navbar-height, 64px) + 16px) 0 24px;
+    /* Extra bottom padding reserves space for the overlapping .tr-stats strip (-32px). */
+    padding: calc(var(--navbar-height, 64px) + 16px) 0 56px;
+  }
+  @media (min-width: 1024px) {
+    .lp-hero { padding-bottom: 64px; }
   }
   .lp-hero::before {
     content: '';
@@ -129,9 +133,12 @@
     align-items: center;
     gap: 8px;
     margin: 16px 0 0;
+    padding-bottom: 8px;
     font-size: 14px;
     line-height: 1.4;
     color: var(--navy-100);
+    position: relative;
+    z-index: 1;
   }
   .lp-hero__reassurance svg { flex: 0 0 auto; color: var(--gold-300); }
 

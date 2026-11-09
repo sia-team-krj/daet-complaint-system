@@ -497,6 +497,7 @@
             display: flex;
             justify-content: center;
             margin-top: 24px;
+            padding-bottom: 48px;
         }
 
         .tr-view-all__btn {

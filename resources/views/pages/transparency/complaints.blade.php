@@ -13,7 +13,9 @@
         <a href="{{ route('transparency') }}" class="tr-back">{{ __('transparency.register.back_to_transparency') }}</a>
     </div>
 
-    <h1 class="tr-h1" style="margin: 0 0 16px; padding: 0 16px;">{{ __('transparency.register.all_heading') }}</h1>
+    <div class="tr-container">
+        <h1 class="tr-h1 complaints-page-title">{{ __('transparency.register.all_heading') }}</h1>
+    </div>
 
     <div class="tr-container complaints-wrap">
         <div class="tr-card tr-filters-card">

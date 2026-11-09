@@ -1,0 +1,1869 @@
+/*
+ * /admin — light workspace shell and page components.
+ * Mirrors the staff workspace: warm-neutral page, one white card sidebar,
+ * navy typography, gold as the only accent. Scoped to body.role-admin so
+ * resident, staff and public pages are untouched.
+ */
+
+/* ─── Page shell ─────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    /* body:has(.transparency-page) zeroes this for the public banner pages;
+       the admin workspace still sits below the fixed navbar. */
+    padding-top: var(--navbar-h);
+    background: var(--bg);
+    color: var(--text);
+}
+
+body.role-admin.admin-layout > main {
+    flex: 1 0 auto;
+    background: var(--bg);
+}
+
+body.role-admin.admin-layout .site-footer {
+    flex-shrink: 0;
+}
+
+body.role-admin.admin-layout .admin-shell {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+    width: 100%;
+    max-width: 1440px;
+    min-height: calc(100dvh - var(--navbar-h));
+    margin: 0 auto;
+    padding: 0 24px;
+    background: var(--bg);
+    color: var(--text);
+}
+
+body.role-admin.admin-layout .admin-workspace {
+    min-width: 0;
+    margin-left: 0;
+}
+
+body.role-admin.admin-layout .admin-content {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 16px 0 48px;
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-sidebar {
+    position: sticky;
+    top: calc(var(--navbar-h) + 16px);
+    left: auto;
+    right: auto;
+    bottom: auto;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    max-height: calc(100dvh - var(--navbar-h) - 32px);
+    margin: 0;
+    padding: 16px 12px 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    z-index: 1;
+}
+
+body.role-admin.admin-layout .admin-sidebar-header {
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 0 12px;
+    border: 0;
+}
+
+body.role-admin.admin-layout .admin-sidebar-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: var(--surface);
+    color: var(--navy-700);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+body.role-admin.admin-layout .admin-sidebar-card {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-height: calc(100dvh - var(--navbar-h) - 72px);
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav__main {
+    flex: 0 0 auto;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav__bottom {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav ul {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section-label {
+    margin: 16px 8px 6px;
+    color: var(--muted);
+    font: 700 11px/1 var(--font-sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav__main > .admin-sidebar-section-label:first-child {
+    margin-top: 4px;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav a {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px;
+    color: var(--text);
+    background: transparent;
+    border-left: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    font: 500 14px/1.3 var(--font-sans);
+    text-decoration: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav a:hover {
+    color: var(--navy-800);
+    background: var(--navy-50);
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav a.is-active {
+    color: var(--navy-800);
+    background: var(--navy-50);
+    border-left-color: var(--gold-500);
+    font-weight: 700;
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav a:focus-visible,
+body.role-admin.admin-layout .admin-sidebar-close:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-sidebar-nav a:hover svg,
+body.role-admin.admin-layout .admin-sidebar-nav a.is-active svg {
+    color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-sidebar-language {
+    padding: 2px 8px 8px;
+}
+
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch {
+    width: 100%;
+    justify-content: center;
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch__globe {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option {
+    color: var(--navy-700);
+    background: transparent;
+}
+
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option:hover,
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option:focus-visible {
+    color: var(--navy-800);
+    background: var(--navy-50);
+}
+
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option.is-active,
+body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option.is-active:hover {
+    color: var(--navy-950);
+    background: var(--gold-500);
+}
+
+/* Mobile toolbar is only used in the 641–767px gap; the shared authenticated
+   drawer owns ≤640px and the persistent sidebar starts at 768px. */
+body.role-admin.admin-layout .admin-mobile-toolbar {
+    display: none;
+}
+
+body.role-admin.admin-layout .admin-sidebar-overlay {
+    display: none;
+}
+
+/* ─── Page header and typography ─────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-page,
+body.role-admin.admin-layout .admin-user-management {
+    gap: 24px;
+    color: var(--text);
+}
+
+body.role-admin.admin-layout .admin-page-header {
+    align-items: flex-end;
+    gap: 20px;
+}
+
+body.role-admin.admin-layout .admin-page-title,
+body.role-admin.admin-layout .admin-section-title,
+body.role-admin.admin-layout .admin-panel-title {
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: var(--tracking-display);
+}
+
+body.role-admin.admin-layout .admin-page-title {
+    font-size: clamp(28px, 2.6vw, 34px);
+    line-height: 1.12;
+}
+
+body.role-admin.admin-layout .admin-section-title {
+    font-size: 22px;
+}
+
+body.role-admin.admin-layout .admin-panel-title {
+    font-size: 18px;
+}
+
+body.role-admin.admin-layout .admin-page-description,
+body.role-admin.admin-layout .admin-section-description {
+    max-width: 680px;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+body.role-admin.admin-layout .admin-header-actions,
+body.role-admin.admin-layout .admin-filter-actions,
+body.role-admin.admin-layout .admin-form-actions {
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+body.role-admin.admin-layout .admin-text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--navy-700);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+body.role-admin.admin-layout .admin-text-link:hover {
+    color: var(--navy-900);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+body.role-admin.admin-layout .admin-directory-count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    color: var(--gold-700);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+body.role-admin.admin-layout .admin-breadcrumb {
+    color: var(--faint);
+    font-size: 12px;
+}
+
+body.role-admin.admin-layout .admin-breadcrumb a {
+    color: var(--navy-700);
+    font-weight: 600;
+}
+
+body.role-admin.admin-layout .admin-breadcrumb a:hover {
+    color: var(--navy-900);
+}
+
+/* ─── Actions ────────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-button {
+    min-height: 42px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+body.role-admin.admin-layout .admin-button--primary {
+    color: var(--navy-950);
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-button--primary:hover {
+    color: var(--navy-950);
+    background: var(--gold-300);
+    border-color: var(--gold-300);
+}
+
+body.role-admin.admin-layout .admin-button--secondary {
+    color: var(--navy-800);
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-button--secondary:hover {
+    color: var(--navy-900);
+    background: var(--navy-50);
+    border-color: var(--navy-100);
+}
+
+body.role-admin.admin-layout .admin-button--danger,
+body.role-admin.admin-layout .admin-button--danger-ghost {
+    color: var(--error-text);
+    background: var(--surface);
+    border-color: var(--error-line);
+}
+
+body.role-admin.admin-layout .admin-button--danger:hover,
+body.role-admin.admin-layout .admin-button--danger-ghost:hover {
+    color: var(--error-text);
+    background: var(--error-bg);
+    border-color: var(--error-text);
+}
+
+body.role-admin.admin-layout .admin-button--ghost {
+    color: var(--navy-700);
+    background: transparent;
+    border-color: transparent;
+}
+
+body.role-admin.admin-layout .admin-button--ghost:hover {
+    background: var(--navy-50);
+}
+
+body.role-admin.admin-layout .admin-button--compact {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-button:disabled,
+body.role-admin.admin-layout .admin-button[aria-disabled="true"] {
+    color: var(--faint);
+    background: var(--surface-soft);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-button:focus-visible,
+body.role-admin.admin-layout .admin-input:focus-visible,
+body.role-admin.admin-layout .admin-mobile-menu-button:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+/* ─── Metrics ────────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-metric-grid {
+    gap: 12px;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+body.role-admin.admin-layout .admin-metric {
+    min-height: 112px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+body.role-admin.admin-layout .admin-metric-label,
+body.role-admin.admin-layout .admin-field > span,
+body.role-admin.admin-layout .admin-inline-stats dt,
+body.role-admin.admin-layout .admin-detail-list dt {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+body.role-admin.admin-layout .admin-metric-value {
+    margin-top: 10px;
+    color: var(--navy-800);
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 700;
+}
+
+body.role-admin.admin-layout .admin-metric-value small {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-user-metric-grid .admin-metric small {
+    color: var(--faint);
+    font-size: 11px;
+}
+
+/* ─── Surfaces ───────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-panel,
+body.role-admin.admin-layout .admin-filter-panel,
+body.role-admin.admin-layout .admin-table-wrap,
+body.role-admin.admin-layout .admin-invitation-review {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+body.role-admin.admin-layout .admin-panel,
+body.role-admin.admin-layout .admin-table-wrap {
+    overflow: hidden;
+}
+
+body.role-admin.admin-layout .admin-panel-heading {
+    min-height: 62px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--surface);
+}
+
+body.role-admin.admin-layout .admin-panel-body {
+    padding: 20px;
+}
+
+body.role-admin.admin-layout .admin-panel-body > p,
+body.role-admin.admin-layout .admin-info-panel {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-filter-panel {
+    padding: 18px 20px;
+}
+
+body.role-admin.admin-layout .admin-info-panel {
+    margin-top: 0;
+    padding: 18px 20px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+}
+
+body.role-admin.admin-layout .admin-info-panel h2 {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-info-panel li {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-two-column-layout--invitation {
+    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.7fr);
+}
+
+body.role-admin.admin-layout .admin-detail-layout {
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+}
+
+/* ─── Forms ──────────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-field {
+    gap: 7px;
+}
+
+body.role-admin.admin-layout .admin-field > span,
+body.role-admin.admin-layout .admin-field > label > span {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-field > .admin-field-hint,
+body.role-admin.admin-layout .admin-field-hint,
+body.role-admin.admin-layout .admin-field-help {
+    color: var(--faint);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    text-transform: none;
+}
+
+body.role-admin.admin-layout .admin-input,
+body.role-admin.admin-layout .admin-textarea {
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+body.role-admin.admin-layout .admin-textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+body.role-admin.admin-layout .admin-input::placeholder,
+body.role-admin.admin-layout .admin-textarea::placeholder {
+    color: var(--faint);
+    opacity: 1;
+}
+
+body.role-admin.admin-layout .admin-input:hover,
+body.role-admin.admin-layout .admin-textarea:hover {
+    border-color: var(--border-strong);
+}
+
+body.role-admin.admin-layout .admin-input:focus,
+body.role-admin.admin-layout .admin-textarea:focus {
+    border-color: var(--gold-500);
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .admin-input[aria-invalid="true"],
+body.role-admin.admin-layout .admin-textarea[aria-invalid="true"] {
+    border-color: var(--error-text);
+    box-shadow: 0 0 0 3px var(--error-line);
+}
+
+body.role-admin.admin-layout select.admin-input option {
+    color: var(--text);
+    background: var(--surface);
+}
+
+body.role-admin.admin-layout .admin-input:disabled,
+body.role-admin.admin-layout .admin-input[disabled] {
+    color: var(--faint);
+    background: var(--surface-soft);
+    border-style: dashed;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+body.role-admin.admin-layout .admin-field-error,
+body.role-admin.admin-layout .form-error {
+    color: var(--error-text);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+body.role-admin.admin-layout .admin-checkbox-field {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    color: var(--muted);
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+body.role-admin.admin-layout .admin-checkbox-field strong {
+    color: var(--navy-800);
+    font-size: 13px;
+}
+
+body.role-admin.admin-layout input[type="checkbox"],
+body.role-admin.admin-layout input[type="radio"] {
+    accent-color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-invitation-form .admin-input {
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-invitation-form .admin-input:hover {
+    border-color: var(--border-strong);
+}
+
+body.role-admin.admin-layout .admin-invitation-form .admin-input:focus {
+    border-color: var(--gold-500);
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .admin-invitation-form .admin-input::placeholder {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .admin-invitation-textarea {
+    min-height: 168px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+body.role-admin.admin-layout .admin-table {
+    font-size: 13px;
+}
+
+body.role-admin.admin-layout .admin-table thead {
+    background: var(--navy-50);
+}
+
+body.role-admin.admin-layout .admin-table th {
+    padding: 12px 16px;
+    color: var(--muted);
+    background: var(--navy-50);
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+body.role-admin.admin-layout .admin-table td {
+    padding: 14px 16px;
+    color: var(--text);
+    border-bottom: 1px solid var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+body.role-admin.admin-layout .admin-table tbody tr:hover td {
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-ticket-id {
+    color: var(--navy-700);
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+body.role-admin.admin-layout .admin-muted-cell {
+    color: var(--muted) !important;
+}
+
+body.role-admin.admin-layout .admin-table-subtext,
+body.role-admin.admin-layout .admin-department-cell,
+body.role-admin.admin-layout .admin-date-cell,
+body.role-admin.admin-layout .admin-activity-count {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .admin-empty-cell {
+    color: var(--muted) !important;
+    background: var(--surface);
+}
+
+body.role-admin.admin-layout .admin-copy-code {
+    min-height: 34px;
+    color: var(--navy-700);
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-copy-code:hover {
+    color: var(--navy-900);
+    background: var(--navy-50);
+    border-color: var(--navy-100);
+}
+
+/* ─── Status and role pills ──────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-status,
+body.role-admin.admin-layout .admin-role-badge {
+    min-height: 24px;
+    border-radius: var(--radius-pill);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+body.role-admin.admin-layout .admin-status {
+    color: var(--status-review-text);
+    background: var(--status-review-bg);
+    border-color: color-mix(in srgb, var(--status-review-dot) 26%, transparent);
+}
+
+body.role-admin.admin-layout .admin-status--submitted {
+    color: var(--status-submitted-text);
+    background: var(--status-submitted-bg);
+    border-color: color-mix(in srgb, var(--status-submitted-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-status--under-review,
+body.role-admin.admin-layout .admin-status--in-progress,
+body.role-admin.admin-layout .admin-status--warning,
+body.role-admin.admin-layout .admin-status--pending,
+body.role-admin.admin-layout .admin-status--needs-information {
+    color: var(--status-progress-text);
+    background: var(--status-progress-bg);
+    border-color: color-mix(in srgb, var(--status-progress-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-status--resolved,
+body.role-admin.admin-layout .admin-status--active,
+body.role-admin.admin-layout .admin-status--redeemed,
+body.role-admin.admin-layout .admin-status--ready,
+body.role-admin.admin-layout .admin-status--verified {
+    color: var(--status-resolved-text);
+    background: var(--status-resolved-bg);
+    border-color: color-mix(in srgb, var(--status-resolved-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-status--rejected,
+body.role-admin.admin-layout .admin-status--invalid,
+body.role-admin.admin-layout .admin-status--escalated,
+body.role-admin.admin-layout .admin-status--expired,
+body.role-admin.admin-layout .admin-status--duplicate {
+    color: var(--status-rejected-text);
+    background: var(--status-rejected-bg);
+    border-color: color-mix(in srgb, var(--status-rejected-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-status--closed,
+body.role-admin.admin-layout .admin-status--revoked,
+body.role-admin.admin-layout .admin-status--skipped {
+    color: var(--status-closed-text);
+    background: var(--status-closed-bg);
+    border-color: color-mix(in srgb, var(--status-closed-dot) 28%, transparent);
+}
+
+body.role-admin.admin-layout .admin-role-badge--admin {
+    color: var(--navy-950);
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-role-badge--staff {
+    color: var(--navy-700);
+    background: var(--navy-50);
+    border-color: var(--navy-100);
+}
+
+body.role-admin.admin-layout .admin-role-badge--citizen {
+    color: var(--muted);
+    background: var(--surface-soft);
+    border-color: var(--line);
+}
+
+/* ─── Flashes and empty states ───────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-flash {
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+body.role-admin.admin-layout .admin-flash--success {
+    color: var(--status-resolved-text);
+    background: var(--status-resolved-bg);
+    border-color: color-mix(in srgb, var(--status-resolved-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-flash--error {
+    color: var(--error-text);
+    background: var(--error-bg);
+    border-color: var(--error-line);
+}
+
+body.role-admin.admin-layout .admin-empty-state,
+body.role-admin.admin-layout .admin-user-empty-state {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    padding: 48px 24px !important;
+    color: var(--muted) !important;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+body.role-admin.admin-layout .admin-user-empty-icon {
+    color: var(--gold-700);
+    background: var(--gold-300);
+    border-color: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-user-empty-state h3 {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-user-empty-state p,
+body.role-admin.admin-layout .admin-privacy-note,
+body.role-admin.admin-layout .admin-activity-empty {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-privacy-note svg {
+    color: var(--gold-700);
+}
+
+/* ─── Pagination ─────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-pagination a,
+body.role-admin.admin-layout .admin-pagination span,
+body.role-admin.admin-layout .admin-pager-step,
+body.role-admin.admin-layout .admin-pager-page {
+    color: var(--navy-700);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-pagination a:hover,
+body.role-admin.admin-layout .admin-pagination .active span,
+body.role-admin.admin-layout .admin-pager-step:hover,
+body.role-admin.admin-layout .admin-pager-page:hover,
+body.role-admin.admin-layout .admin-pager-page.is-current {
+    color: var(--navy-950);
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-pager-step.is-disabled {
+    color: var(--faint);
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-pager-gap {
+    color: var(--faint);
+}
+
+/* ─── User directory ─────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-user-avatar {
+    color: var(--navy-950);
+    background: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-user-copy strong {
+    color: var(--navy-900);
+}
+
+body.role-admin.admin-layout .admin-user-copy small,
+body.role-admin.admin-layout .admin-table-subtext {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .admin-profile-department {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-user-profile-head {
+    border-bottom-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-user-profile-copy h2 {
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+}
+
+body.role-admin.admin-layout .admin-user-profile-copy p {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-access-state strong {
+    color: var(--navy-900);
+}
+
+body.role-admin.admin-layout .admin-access-state span:not(.admin-access-state-icon) {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-access-state-icon.is-active {
+    color: var(--status-resolved-text);
+    background: var(--status-resolved-bg);
+    border-color: color-mix(in srgb, var(--status-resolved-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-access-state-icon.is-inactive {
+    color: var(--status-rejected-text);
+    background: var(--status-rejected-bg);
+    border-color: color-mix(in srgb, var(--status-rejected-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-control-note {
+    color: var(--status-progress-text);
+    background: var(--status-progress-bg);
+    border-color: color-mix(in srgb, var(--status-progress-dot) 30%, transparent);
+    border-radius: var(--radius-sm);
+}
+
+/* ─── Detail page, timeline and evidence ─────────────────────────────────── */
+body.role-admin.admin-layout .admin-detail-list dd {
+    color: var(--text);
+    font-size: 13px;
+}
+
+body.role-admin.admin-layout .admin-prose-block {
+    border-top-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-prose-block h2 {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-prose-block p,
+body.role-admin.admin-layout .admin-audit-comment {
+    color: var(--text);
+}
+
+body.role-admin.admin-layout .admin-timeline-item:not(:last-child)::before {
+    background: var(--line);
+}
+
+body.role-admin.admin-layout .admin-timeline-marker {
+    background: var(--navy-700);
+    border-color: var(--surface);
+}
+
+body.role-admin.admin-layout .admin-timeline-status {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-timeline-comment {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-timeline-meta {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .admin-evidence-card {
+    color: var(--navy-700);
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-evidence-card:hover,
+body.role-admin.admin-layout .admin-evidence-card:focus-visible {
+    color: var(--navy-900);
+    background: var(--navy-50);
+    border-color: var(--navy-100);
+}
+
+body.role-admin.admin-layout .admin-moderation-panel {
+    color: var(--status-progress-text);
+    background: var(--status-progress-bg);
+    border-color: color-mix(in srgb, var(--status-progress-dot) 32%, transparent);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-moderation-panel p,
+body.role-admin.admin-layout .admin-moderation-panel li {
+    color: var(--muted);
+}
+
+/* Moderation panel rendered below the detail grid, still inside admin-content. */
+body.role-admin.admin-layout .admin-content > .moderation-panel {
+    margin-top: 24px;
+    padding: 20px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__title {
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__lede {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__consent {
+    color: var(--muted);
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__consent strong {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field label {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field textarea,
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field input[type="text"] {
+    color: var(--text);
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field textarea:focus,
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field input[type="text"]:focus {
+    border-color: var(--gold-500);
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-photo {
+    color: var(--muted);
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__submit {
+    color: var(--navy-950);
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__submit:hover {
+    color: var(--navy-950);
+    background: var(--gold-300);
+    border-color: var(--gold-300);
+}
+
+/* ─── Departments ────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-department-filters {
+    margin-bottom: 4px;
+}
+
+body.role-admin.admin-layout .admin-filter-chip {
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+}
+
+body.role-admin.admin-layout .admin-filter-chip:hover {
+    color: var(--navy-900);
+    background: var(--navy-50);
+    border-color: var(--navy-100);
+}
+
+body.role-admin.admin-layout .admin-filter-chip.is-active {
+    color: var(--navy-950);
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-filter-chip__count {
+    color: var(--muted);
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-filter-chip.is-active .admin-filter-chip__count {
+    color: var(--navy-950);
+    background: color-mix(in srgb, var(--navy-950) 14%, transparent);
+}
+
+body.role-admin.admin-layout .admin-dept,
+body.role-admin.admin-layout .admin-department-list-item {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+body.role-admin.admin-layout .admin-dept:hover,
+body.role-admin.admin-layout .admin-dept[open] {
+    background: var(--surface);
+    border-color: var(--navy-100);
+}
+
+body.role-admin.admin-layout .admin-dept > summary {
+    min-height: 56px;
+}
+
+body.role-admin.admin-layout .admin-dept > summary:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-inset);
+    border-radius: var(--radius-lg);
+}
+
+body.role-admin.admin-layout .admin-dept__name,
+body.role-admin.admin-layout .admin-department-list-heading h3 {
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+}
+
+body.role-admin.admin-layout .admin-dept__open {
+    color: var(--status-progress-text);
+    background: var(--status-progress-bg);
+    border-color: color-mix(in srgb, var(--status-progress-dot) 30%, transparent);
+    border-radius: var(--radius-pill);
+}
+
+body.role-admin.admin-layout .admin-dept__chevron {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .admin-dept[open] > summary .admin-dept__chevron {
+    color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-dept__body {
+    border-top-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-dept__description,
+body.role-admin.admin-layout .admin-department-list-item > p,
+body.role-admin.admin-layout .admin-department-routing-note p {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-inline-stats dd {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-department-list-actions {
+    border-top-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-department-editor > form {
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-archive__confirm {
+    background: var(--error-bg);
+    border-color: var(--error-line);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-archive__confirm p {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-archive__confirm strong,
+body.role-admin.admin-layout .admin-department-routing-note strong {
+    color: var(--navy-900);
+}
+
+body.role-admin.admin-layout .admin-dept.is-archived,
+body.role-admin.admin-layout .admin-department-list-item.is-archived {
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+    box-shadow: none;
+}
+
+body.role-admin.admin-layout .admin-dept.is-archived .admin-dept__name {
+    color: var(--muted);
+}
+
+/* ─── Invitations ────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-invitation-review {
+    margin-top: 20px;
+    padding: 18px 20px;
+    border-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-invitation-review-title {
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+}
+
+body.role-admin.admin-layout .admin-invitation-tally {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-invitation-tally strong {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-invitation-bulk {
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-invitation-confirm .admin-button {
+    width: 100%;
+}
+
+/* ─── Audit trail ────────────────────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-audit-actor {
+    color: var(--text);
+}
+
+body.role-admin.admin-layout .admin-audit-role {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .admin-audit-metadata summary {
+    color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-audit-metadata pre {
+    color: var(--text);
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-audit-filters .admin-field > span {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-audit-filters-toggle {
+    color: var(--text);
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-audit-filters-toggle__icon,
+body.role-admin.admin-layout .admin-audit-filters-toggle__chevron {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-audit-filters-badge {
+    color: var(--navy-950);
+    background: var(--gold-500);
+}
+
+body.role-admin.admin-layout .admin-audit-day-heading__label {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .admin-audit-chip {
+    color: var(--status-closed-text);
+    background: var(--status-closed-bg);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-audit-chip--auth,
+body.role-admin.admin-layout .admin-audit-chip--neutral {
+    color: var(--muted);
+    background: var(--surface-soft);
+    border-color: var(--line);
+}
+
+body.role-admin.admin-layout .admin-audit-chip--success,
+body.role-admin.admin-layout .admin-audit-chip--resolved {
+    color: var(--status-resolved-text);
+    background: var(--status-resolved-bg);
+    border-color: color-mix(in srgb, var(--status-resolved-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-audit-chip--info {
+    color: var(--status-submitted-text);
+    background: var(--status-submitted-bg);
+    border-color: color-mix(in srgb, var(--status-submitted-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-audit-chip--warning {
+    color: var(--status-progress-text);
+    background: var(--status-progress-bg);
+    border-color: color-mix(in srgb, var(--status-progress-dot) 30%, transparent);
+}
+
+body.role-admin.admin-layout .admin-audit-chip--danger {
+    color: var(--status-rejected-text);
+    background: var(--status-rejected-bg);
+    border-color: color-mix(in srgb, var(--status-rejected-dot) 30%, transparent);
+}
+
+/* ─── Settings + category list ───────────────────────────────────────────── */
+body.role-admin.admin-layout .admin-panel-body > ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+body.role-admin.admin-layout .admin-panel-body > ul > li {
+    padding: 14px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .admin-panel-body > ul > li > form {
+    align-items: end;
+}
+
+/* ─── Complaint queue (uses the shared transparency family) ──────────────── */
+body.role-admin.admin-layout .admin-content .transparency-page > .tr-container {
+    max-width: none;
+    padding-right: 0;
+    padding-left: 0;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .queue-section {
+    margin-bottom: 16px;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .tr-filters {
+    margin-top: 24px;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .admin-queue-bulk,
+body.role-admin.admin-layout .admin-content .transparency-page .tr-pagination {
+    padding-bottom: 48px;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .admin-export-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .admin-export-button svg {
+    flex: 0 0 auto;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .admin-date-field {
+    flex: 1 1 0;
+    min-width: 140px;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .tr-filters .tr-button,
+body.role-admin.admin-layout .admin-content .transparency-page .admin-bulk-bar .tr-button {
+    margin: 0;
+}
+
+body.role-admin.admin-layout .admin-content .transparency-page .admin-queue-bulk .admin-field {
+    margin: 0;
+}
+
+/* ─── Create-staff method cards ──────────────────────────────────────────── */
+body.role-admin.admin-layout .staff-required-note,
+body.role-admin.admin-layout .optional-mark {
+    color: var(--faint);
+}
+
+body.role-admin.admin-layout .required-mark {
+    color: var(--error-text);
+}
+
+body.role-admin.admin-layout .staff-method-fieldset {
+    border-color: var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .staff-method-fieldset legend {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .staff-method-card {
+    background: var(--surface);
+    border-color: var(--line);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .staff-method-card:hover {
+    background: var(--surface-soft);
+    border-color: var(--border-strong);
+}
+
+body.role-admin.admin-layout .staff-method-card:has(input:checked) {
+    background: var(--navy-50);
+    border-color: var(--gold-500);
+    box-shadow: 0 0 0 1px var(--gold-500);
+}
+
+body.role-admin.admin-layout .staff-method-card:has(input:focus-visible) {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .staff-method-card__check {
+    color: var(--navy-950);
+    background: var(--gold-500);
+}
+
+body.role-admin.admin-layout .staff-method-card__title {
+    color: var(--navy-900);
+}
+
+body.role-admin.admin-layout .staff-method-card__helper {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .staff-method-panel {
+    background: var(--surface-soft);
+    border-color: var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .staff-manual-notice {
+    color: var(--status-progress-text);
+    background: var(--status-progress-bg);
+    border-color: color-mix(in srgb, var(--status-progress-dot) 32%, transparent);
+    border-radius: var(--radius-sm);
+}
+
+body.role-admin.admin-layout .staff-created-summary {
+    color: var(--muted);
+}
+
+body.role-admin.admin-layout .staff-created-summary strong {
+    color: var(--navy-900);
+}
+
+body.role-admin.admin-layout .staff-created-password {
+    color: var(--gold-300);
+    background: var(--navy-900);
+    border-color: var(--navy-700);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+}
+
+body.role-admin.admin-layout .staff-password-row .admin-button {
+    min-height: 42px;
+}
+
+/* ─── Tablet: persistent sidebar, matching the staff breakpoint ──────────── */
+@media (min-width: 768px) {
+    body.role-admin.admin-layout .admin-shell {
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 20px;
+        padding: 0 16px;
+    }
+
+    body.role-admin.admin-layout .admin-sidebar {
+        width: 240px;
+    }
+
+    body.role-admin.admin-layout .admin-mobile-toolbar,
+    body.role-admin.admin-layout .admin-sidebar-overlay {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    body.role-admin.admin-layout .admin-shell {
+        grid-template-columns: 248px minmax(0, 1fr);
+        gap: 24px;
+        padding: 0 24px;
+    }
+
+    body.role-admin.admin-layout .admin-sidebar {
+        width: 248px;
+    }
+}
+
+/* ─── Compact drawer: 641–767px (≤640 uses the shared auth drawer) ───────── */
+@media (min-width: 641px) and (max-width: 767px) {
+    body.role-admin.admin-layout .admin-shell {
+        display: block;
+        padding: 0;
+    }
+
+    body.role-admin.admin-layout .admin-content {
+        padding: 16px 16px 40px;
+    }
+
+    body.role-admin.admin-layout .admin-mobile-toolbar {
+        position: sticky;
+        top: var(--navbar-h);
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 52px;
+        padding: 8px 16px;
+        background: var(--navy-900);
+        border-bottom: 1px solid var(--gold-500);
+    }
+
+    body.role-admin.admin-layout .admin-mobile-menu-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 8px 12px;
+        color: var(--navy-950);
+        background: var(--gold-500);
+        border: 1px solid var(--gold-500);
+        border-radius: var(--radius-sm);
+        font: 700 12px/1 var(--font-sans);
+        cursor: pointer;
+    }
+
+    body.role-admin.admin-layout .admin-mobile-menu-button[aria-expanded="true"] {
+        color: var(--gold-300);
+        background: var(--navy-800);
+        border-color: var(--gold-500);
+    }
+
+    body.role-admin.admin-layout .admin-mobile-toolbar-title {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--surface);
+        font-size: 12px;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.role-admin.admin-layout .admin-sidebar {
+        position: fixed;
+        top: var(--navbar-h);
+        left: 0;
+        bottom: 0;
+        width: min(320px, 88vw);
+        max-height: none;
+        padding: 12px;
+        overflow-y: auto;
+        background: var(--bg);
+        border-right: 1px solid var(--line-soft);
+        box-shadow: var(--shadow-lift);
+        transform: translateX(-102%);
+        transition: transform 180ms ease;
+        z-index: var(--z-drawer);
+    }
+
+    body.role-admin.admin-layout .admin-sidebar.is-open,
+    html.admin-sidebar-open body.role-admin.admin-layout .admin-sidebar {
+        transform: translateX(0);
+    }
+
+    body.role-admin.admin-layout .admin-sidebar-header {
+        display: flex;
+    }
+
+    body.role-admin.admin-layout .admin-sidebar-card {
+        min-height: 0;
+    }
+
+    body.role-admin.admin-layout .admin-sidebar-overlay {
+        position: fixed;
+        inset: var(--navbar-h) 0 0;
+        display: block;
+        padding: 0;
+        background: color-mix(in srgb, var(--navy-950) 48%, transparent);
+        border: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+        z-index: var(--z-drawer-backdrop);
+    }
+
+    html.admin-sidebar-open body.role-admin.admin-layout .admin-sidebar-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+/* ─── Phone: shared drawer + single-column admin pages ───────────────────── */
+@media (max-width: 767px) {
+    body.role-admin.admin-layout .admin-shell {
+        display: block;
+        min-height: 0;
+        padding: 0;
+    }
+
+    body.role-admin.admin-layout .admin-content {
+        padding: 16px 16px 32px;
+    }
+
+    body.role-admin.admin-layout .admin-page-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    body.role-admin.admin-layout .admin-header-actions {
+        width: 100%;
+    }
+
+    body.role-admin.admin-layout .admin-header-actions .admin-button {
+        flex: 1 1 100%;
+        justify-content: center;
+    }
+
+    body.role-admin.admin-layout .admin-page-title {
+        font-size: 26px;
+    }
+
+    body.role-admin.admin-layout .admin-metric-grid,
+    body.role-admin.admin-layout .admin-user-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.role-admin.admin-layout .admin-metric {
+        min-height: 96px;
+        padding: 14px;
+    }
+
+    body.role-admin.admin-layout .admin-metric-value {
+        font-size: 26px;
+    }
+
+    body.role-admin.admin-layout .admin-filter-grid,
+    body.role-admin.admin-layout .admin-user-filter-grid,
+    body.role-admin.admin-layout .admin-form-grid,
+    body.role-admin.admin-layout .admin-invitation-bulk-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.role-admin.admin-layout .admin-field--wide {
+        grid-column: auto;
+    }
+
+    body.role-admin.admin-layout .admin-filter-actions,
+    body.role-admin.admin-layout .admin-form-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    body.role-admin.admin-layout .admin-filter-actions .admin-button,
+    body.role-admin.admin-layout .admin-form-actions .admin-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    body.role-admin.admin-layout .admin-two-column-layout,
+    body.role-admin.admin-layout .admin-detail-layout,
+    body.role-admin.admin-layout .admin-two-column-layout--invitation {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.role-admin.admin-layout .admin-detail-list {
+        grid-template-columns: 1fr;
+    }
+
+    body.role-admin.admin-layout .admin-panel-heading {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    body.role-admin.admin-layout .admin-page--narrow,
+    body.role-admin.admin-layout .admin-page--directory {
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    body.role-admin.admin-layout .admin-metric-grid,
+    body.role-admin.admin-layout .admin-user-metric-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Phone table cards (shared markup turns rows into cards at ≤700px). */
+@media (max-width: 700px) {
+    body.role-admin.admin-layout .admin-table tbody tr {
+        background: var(--surface) !important;
+        border: 1px solid var(--line-soft) !important;
+        border-radius: var(--radius-lg) !important;
+        box-shadow: var(--shadow-card);
+    }
+
+    body.role-admin.admin-layout .admin-table td {
+        color: var(--text);
+    }
+
+    body.role-admin.admin-layout .admin-table td::before {
+        color: var(--muted);
+    }
+
+    body.role-admin.admin-layout .admin-table td:last-child {
+        border-top: 1px solid var(--line-soft) !important;
+    }
+
+    body.role-admin.admin-layout .admin-table-wrap::after {
+        color: var(--muted);
+        background: var(--surface-soft);
+        border-top: 1px solid var(--line-soft);
+    }
+
+    body.role-admin.admin-layout .admin-empty-cell {
+        border: 1px dashed var(--line) !important;
+        border-radius: var(--radius-lg);
+    }
+}
+
+/* ─── Phone audit timeline: light parity with the desktop table ──────────── */
+@media (max-width: 640px) {
+    body.role-admin.admin-layout .admin-page-header--audit .admin-page-description--audit,
+    body.role-admin.admin-layout .admin-page--audit .admin-page-description {
+        color: var(--muted);
+    }
+
+    body.role-admin.admin-layout .admin-audit-filters .admin-input,
+    body.role-admin.admin-layout .admin-audit-filter-search .admin-input,
+    body.role-admin.admin-layout .admin-audit-filters select.admin-input {
+        color: var(--text);
+        background: var(--surface);
+        border-color: var(--line);
+    }
+
+    body.role-admin.admin-layout .admin-audit-filters-toggle {
+        color: var(--text);
+        background: var(--surface);
+        border-color: var(--line);
+    }
+
+    body.role-admin.admin-layout .admin-audit-filters-toggle__icon,
+    body.role-admin.admin-layout .admin-audit-filters-toggle__chevron {
+        color: var(--muted);
+    }
+
+    body.role-admin.admin-layout .admin-audit-timeline-wrap {
+        overflow: visible !important;
+        border: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile {
+        background: transparent !important;
+        border: 0 !important;
+    }
+
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-entry,
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-empty {
+        background: var(--surface) !important;
+        border-color: var(--line-soft) !important;
+    }
+
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-day-heading + tr.admin-audit-entry,
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-entry:first-child {
+        border-top-color: var(--line-soft) !important;
+    }
+
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-entry + tr.admin-audit-entry {
+        border-top-color: var(--line-soft) !important;
+    }
+
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-entry.admin-audit-entry--last-in-group,
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-entry:last-child {
+        border-bottom-color: var(--line-soft) !important;
+    }
+
+    body.role-admin.admin-layout .admin-audit-day-heading__label {
+        color: var(--muted);
+    }
+
+    body.role-admin.admin-layout .admin-audit-chip {
+        color: var(--status-closed-text);
+        background: var(--status-closed-bg);
+        border-color: var(--line);
+    }
+
+    body.role-admin.admin-layout .admin-audit-chip--auth,
+    body.role-admin.admin-layout .admin-audit-chip--neutral {
+        color: var(--muted);
+        background: var(--surface-soft);
+        border-color: var(--line);
+    }
+
+    body.role-admin.admin-layout .admin-audit-chip--success,
+    body.role-admin.admin-layout .admin-audit-chip--resolved {
+        color: var(--status-resolved-text);
+        background: var(--status-resolved-bg);
+        border-color: color-mix(in srgb, var(--status-resolved-dot) 30%, transparent);
+    }
+
+    body.role-admin.admin-layout .admin-audit-chip--info {
+        color: var(--status-submitted-text);
+        background: var(--status-submitted-bg);
+        border-color: color-mix(in srgb, var(--status-submitted-dot) 30%, transparent);
+    }
+
+    body.role-admin.admin-layout .admin-audit-chip--warning {
+        color: var(--status-progress-text);
+        background: var(--status-progress-bg);
+        border-color: color-mix(in srgb, var(--status-progress-dot) 30%, transparent);
+    }
+
+    body.role-admin.admin-layout .admin-audit-chip--danger {
+        color: var(--status-rejected-text);
+        background: var(--status-rejected-bg);
+        border-color: color-mix(in srgb, var(--status-rejected-dot) 30%, transparent);
+    }
+
+    body.role-admin.admin-layout .admin-audit-entry__time,
+    body.role-admin.admin-layout .admin-audit-entry__meta,
+    body.role-admin.admin-layout .admin-audit-entry__subject-muted {
+        color: var(--muted);
+    }
+
+    body.role-admin.admin-layout .admin-audit-entry__subject-chip {
+        color: var(--navy-700);
+    }
+
+    body.role-admin.admin-layout .admin-audit-entry__details {
+        color: var(--text);
+    }
+
+    body.role-admin.admin-layout .admin-audit-entry__card .admin-audit-metadata--mobile summary {
+        color: var(--muted);
+    }
+
+    body.role-admin.admin-layout .admin-table.admin-table--audit.admin-table--audit-mobile tbody tr.admin-audit-empty {
+        border-color: var(--line) !important;
+    }
+
+    body.role-admin.admin-layout .admin-audit-empty__title {
+        color: var(--navy-900);
+    }
+
+    body.role-admin.admin-layout .admin-audit-empty__hint {
+        color: var(--muted);
+    }
+}

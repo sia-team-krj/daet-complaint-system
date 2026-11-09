@@ -5,6 +5,8 @@
 @import "./pages/complaint-show.css";
 @import "./pages/error.css";
 @import "./pages/staff-dashboard.css";
+@import "./pages/admin-workspace.css";
+@import "./pages/admin-dashboard.css";
 
 /* Inter — self-hosted (public/fonts/inter). font-display: swap. */
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/inter/inter-latin-400-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
