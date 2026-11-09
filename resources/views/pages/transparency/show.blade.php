@@ -6,10 +6,10 @@
 @push('styles')
     <style>
         /* Cancel global body navbar offset once; .pt provides the page offset. */
-        body.page-transparency-show { padding-top: 0; }
+        body.page-transparency-show { padding-top: 0 !important; }
         .pt {
             /* The navbar is fixed; offset like every other shell. */
-            padding-top: var(--navbar-height, 64px);
+            padding-top: var(--navbar-h, var(--navbar-height, 64px));
             background: var(--bg);
             color: var(--text);
             font-family: var(--font-sans);
@@ -24,8 +24,8 @@
         @media (max-width: 767px) { .pt-container { padding: 0 16px; } }
 
         /* ── Back link: light background, navy text, 44px target ── */
-        .pt-back-row { background: var(--bg); padding: 12px 0; }
-        @media (max-width: 767px) { .pt-back-row { padding: 8px 0; } }
+        .pt-back-row { background: var(--bg); padding: 4px 0 8px; }
+        @media (max-width: 767px) { .pt-back-row { padding: 2px 0 8px; } }
         .pt-back {
             display: inline-flex;
             align-items: center;

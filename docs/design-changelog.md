@@ -15,6 +15,14 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
 - Definition of Done checklist: passed (targeted markup removal; no new hard-coded hex/serif/map-isolation issues introduced).
 
+## 2026-11-09: Transparency complaint detail — reduce gap above back link
+
+- Page / component: `resources/views/pages/transparency/show.blade.php` (`.pt`, `.pt-back-row`).
+- Why (the problem found): an unusually large gap appeared between the fixed navbar and the back link (`a.pt-back`) on complaint detail pages (e.g. `/transparency/complaints/68`).
+- What changed: made the body padding-top cancellation explicit (`!important`) for `body.page-transparency-show`, used the canonical `--navbar-h` fallback for `.pt` offset, and tightened `.pt-back-row` vertical padding (`4px 0 8px`, `2px 0 8px` on mobile) to remove excess space while preserving navbar clearance.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted spacing fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
 ## 2026-11-09: Transparency complaint cards — responsive layout/spacing fix
 
 - Page / component: `resources/views/pages/transparency/partials/complaints-styles.blade.php` (shared complaint card/list styles used by the transparency register/complaints pages).
