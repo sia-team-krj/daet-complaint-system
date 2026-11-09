@@ -505,18 +505,29 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            height: 52px;
-            padding: 0 32px;
+            width: auto;
+            max-width: 100%;
+            min-height: 52px;
+            padding: 14px 24px;
             border-radius: 14px;
             background: #d4a947;
             color: #0b1a33;
             font-family: var(--font-sans);
             font-size: 15px;
             font-weight: 700;
+            line-height: 1.3;
+            text-align: center;
             text-decoration: none;
-            white-space: nowrap;
+            white-space: normal;
             box-shadow: 0 4px 24px rgba(201, 168, 76, 0.32);
             transition: transform 160ms ease, box-shadow 160ms ease;
+        }
+
+        @media (min-width: 768px) {
+            .tr-view-all__btn {
+                padding: 0 32px;
+                white-space: nowrap;
+            }
         }
 
         .tr-view-all__btn:hover {

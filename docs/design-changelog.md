@@ -28,8 +28,9 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 - Page / component: `resources/views/pages/transparency/partials/component-styles.blade.php` (`.tr-view-all`, used by `resources/views/livewire/transparency-register.blade.php`).
 - Why (the problem found): the “Tingnan ang lahat ng … pampublikong reklamo” / view-all button sat too close to the footer on the transparency page.
 - What changed: added `padding-bottom: 48px` to `.tr-view-all` to create clear spacing between the button and the footer.
+- Follow-up: sized `.tr-view-all__btn` to content (`width: auto`, `max-width: 100%`, `min-height`) and allowed wrapping on mobile so long translated labels don’t render as a full-width bar; desktop keeps nowrap padding.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
-- Definition of Done checklist: passed (targeted spacing fix; no new hard-coded hex/serif/map-isolation issues introduced).
+- Definition of Done checklist: passed (targeted spacing/sizing fix; no new hard-coded hex/serif/map-isolation issues introduced).
 
 ## 2026-11-09: Landing hero — reassurance text no longer overlapped by stats strip
 
