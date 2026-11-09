@@ -24,8 +24,8 @@
         @media (max-width: 767px) { .pt-container { padding: 0 16px; } }
 
         /* ── Back link: light background, navy text, 44px target ── */
-        .pt-back-row { background: var(--bg); padding: 4px 0 8px; }
-        @media (max-width: 767px) { .pt-back-row { padding: 2px 0 8px; } }
+        .pt-back-row { background: var(--bg); padding: 0 0 8px; }
+        @media (max-width: 767px) { .pt-back-row { padding: 0 0 8px; } }
         .pt-back {
             display: inline-flex;
             align-items: center;
