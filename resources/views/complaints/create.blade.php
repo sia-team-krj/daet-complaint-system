@@ -1,1515 +1,93 @@
 @extends($mainLayout)
 
-@section('title', 'File a Complaint - Daet Listens')
+@section('title', __('complaint_create.page.title').' - Daet Listens')
 
-@push('styles')
-    <style>
-        .filing-page {
-            --filing-navy: #0b1f3a;
-            --filing-navy-mid: #1B3A61;
-            --filing-gold: #c9a84c;
-            --filing-gold-light: #e2c06a;
-            --filing-gold-pale: rgba(201, 168, 76, 0.12);
-            --filing-cream: #f5f0e8;
-            --filing-cream-dark: #ede7d9;
-            --filing-white: #fff;
-            --filing-ink: #172b49;
-            --filing-muted: #64748b;
-            --filing-border: rgba(11, 31, 58, 0.1);
-            min-height: 100vh;
-            overflow: hidden;
-            background: var(--filing-cream);
-            color: var(--filing-ink);
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-        }
-
-        .filing-page *,
-        .filing-page *::before,
-        .filing-page *::after {
-            box-sizing: border-box;
-        }
-
-        .filing-page h1,
-        .filing-page h2,
-        .filing-page h3,
-        .filing-page p {
-            margin-top: 0;
-        }
-
-        .filing-header {
-            position: relative;
-            overflow: hidden;
-            padding: 116px 40px 46px;
-            background: var(--filing-navy);
-            color: #fff;
-        }
-
-        .filing-header::before {
-            position: absolute;
-            inset: 0;
-            background-image: repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 42px,
-                rgba(201, 168, 76, 0.035) 42px,
-                rgba(201, 168, 76, 0.035) 43px
-            );
-            content: "";
-            pointer-events: none;
-        }
-
-        .filing-header::after {
-            position: absolute;
-            top: -250px;
-            right: -120px;
-            width: 580px;
-            height: 580px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(201, 168, 76, 0.11), transparent 68%);
-            content: "";
-            pointer-events: none;
-        }
-
-        .filing-header__inner,
-        .filing-main {
-            position: relative;
-            z-index: 1;
-            width: min(1180px, calc(100% - 80px));
-            margin: 0 auto;
-        }
-
-        .filing-header__inner {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 42px;
-        }
-
-        .filing-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 28px;
-            color: rgba(255, 255, 255, 0.58);
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-decoration: none;
-            text-transform: uppercase;
-            transition: color 0.2s ease;
-        }
-
-        .filing-back:hover {
-            color: var(--filing-gold-light);
-        }
-
-        .filing-header h1 {
-            max-width: 720px;
-            margin-bottom: 14px;
-            color: #fff;
-            font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: clamp(46px, 6vw, 74px);
-            font-weight: 700;
-            letter-spacing: -0.025em;
-            line-height: 0.96;
-        }
-
-        .filing-header h1 em {
-            color: var(--filing-gold-light);
-            font-style: italic;
-        }
-
-        .filing-header__lede {
-            max-width: 620px;
-            margin-bottom: 0;
-            color: rgba(255, 255, 255, 0.68);
-            font-size: 15px;
-            font-weight: 300;
-            line-height: 1.75;
-        }
-
-        .filing-header__aside {
-            display: flex;
-            max-width: 280px;
-            align-items: flex-start;
-            gap: 11px;
-            padding: 15px 16px;
-            border: 1px solid rgba(201, 168, 76, 0.32);
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.045);
-            color: rgba(255, 255, 255, 0.68);
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        .filing-header__aside svg {
-            flex: 0 0 auto;
-            margin-top: 2px;
-            color: var(--filing-gold-light);
-        }
-
-        .filing-header__aside strong {
-            display: block;
-            margin-bottom: 3px;
-            color: #fff;
-            font-size: 12px;
-        }
-
-        .filing-main {
-            padding: 38px 0 80px;
-        }
-
-        .filing-stepper {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            margin-bottom: 28px;
-            border: 1px solid var(--filing-border);
-            border-radius: 8px;
-            background: var(--filing-white);
-            box-shadow: 0 10px 26px rgba(11, 31, 58, 0.05);
-            overflow: hidden;
-        }
-
-        .filing-step {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-height: 76px;
-            padding: 14px 20px;
-            border-right: 1px solid var(--filing-border);
-        }
-
-        .filing-step:last-child {
-            border-right: 0;
-        }
-
-        .filing-step__number {
-            display: inline-flex;
-            width: 30px;
-            height: 30px;
-            flex: 0 0 auto;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(201, 168, 76, 0.35);
-            border-radius: 50%;
-            background: var(--filing-gold-pale);
-            color: #8b6719;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .filing-step strong {
-            display: block;
-            margin-bottom: 3px;
-            color: var(--filing-ink);
-            font-size: 12px;
-        }
-
-        .filing-step small {
-            display: block;
-            color: var(--filing-muted);
-            font-size: 10px;
-            line-height: 1.4;
-        }
-
-        .filing-step--active {
-            background: linear-gradient(90deg, rgba(201, 168, 76, 0.1), rgba(201, 168, 76, 0.02));
-        }
-
-        .filing-step--active::after {
-            position: absolute;
-            right: 20px;
-            bottom: 0;
-            left: 20px;
-            height: 2px;
-            background: var(--filing-gold);
-            content: "";
-        }
-
-        .filing-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 290px;
-            gap: 24px;
-            align-items: start;
-        }
-
-        .filing-form {
-            display: flex;
-            min-width: 0;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .filing-card {
-            border: 1px solid var(--filing-border);
-            border-radius: 8px;
-            background: var(--filing-white);
-            box-shadow: 0 10px 26px rgba(11, 31, 58, 0.045);
-            overflow: hidden;
-        }
-
-        .filing-card__header {
-            display: flex;
-            align-items: flex-start;
-            gap: 13px;
-            padding: 22px 26px 18px;
-            border-bottom: 1px solid var(--filing-border);
-        }
-
-        .filing-card__icon {
-            display: inline-flex;
-            width: 36px;
-            height: 36px;
-            flex: 0 0 auto;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(201, 168, 76, 0.35);
-            border-radius: 6px;
-            background: var(--filing-gold-pale);
-            color: #8b6719;
-        }
-
-        .filing-card__header h2 {
-            margin-bottom: 4px;
-            color: var(--filing-navy);
-            font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: 25px;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .filing-card__header p {
-            margin-bottom: 0;
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.5;
-        }
-
-        .filing-card__body {
-            padding: 26px;
-        }
-
-        .filing-field {
-            margin-bottom: 22px;
-        }
-
-        .filing-field:last-child {
-            margin-bottom: 0;
-        }
-
-        .filing-field label {
-            display: block;
-            margin-bottom: 7px;
-            color: var(--filing-navy);
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .filing-field label span {
-            color: #b45309;
-        }
-
-        .filing-field__hint {
-            margin: -2px 0 9px;
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.55;
-        }
-
-        .filing-input,
-        .filing-select,
-        .filing-textarea {
-            width: 100%;
-            border: 1px solid rgba(11, 31, 58, 0.16);
-            border-radius: 5px;
-            outline: none;
-            background: #fcfbf8;
-            color: var(--filing-ink);
-            font: inherit;
-            font-size: 13px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-        }
-
-        .filing-input,
-        .filing-select {
-            min-height: 46px;
-            padding: 11px 13px;
-        }
-
-        .filing-textarea {
-            min-height: 150px;
-            padding: 13px;
-            line-height: 1.65;
-            resize: vertical;
-        }
-
-        .filing-input::placeholder,
-        .filing-textarea::placeholder {
-            color: rgba(100, 116, 139, 0.62);
-        }
-
-        .filing-input:focus,
-        .filing-select:focus,
-        .filing-textarea:focus {
-            border-color: var(--filing-gold);
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.13);
-        }
-
-        .filing-select {
-            appearance: none;
-            padding-right: 38px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-        }
-
-        .filing-error {
-            margin-top: 6px;
-            color: #b91c1c;
-            font-size: 11px;
-        }
-
-        /* ─── Visibility choice ───
-           A fieldset of radios rather than a switch: the two outcomes carry equal
-           weight, so both have to be readable before one is chosen. */
-        .visibility-choice {
-            display: grid;
-            gap: 10px;
-            margin: 0;
-            padding: 0;
-            border: 0;
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-        }
-
-        .visibility-option {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 16px;
-            background: #fcfbf8;
-            border: 1px solid rgba(11, 31, 58, 0.16);
-            border-radius: 5px;
-            cursor: pointer;
-            transition: border-color 0.18s ease, background 0.18s ease;
-        }
-
-        .visibility-option:hover {
-            border-color: var(--filing-gold);
-            background: var(--filing-gold-pale);
-        }
-
-        .visibility-option input {
-            margin: 2px 0 0;
-            accent-color: var(--filing-gold);
-            flex-shrink: 0;
-        }
-
-        .visibility-option:has(input:checked) {
-            background: var(--filing-gold-pale);
-            border-color: var(--filing-gold);
-        }
-
-        .visibility-option:has(input:focus-visible) {
-            outline: 2px solid var(--filing-gold);
-            outline-offset: 2px;
-        }
-
-        .visibility-option__body {
-            display: grid;
-            gap: 3px;
-            min-width: 0;
-        }
-
-        .visibility-option__title {
-            color: var(--filing-navy);
-            font-size: 13px;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .visibility-option__note {
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.55;
-        }
-
-        .visibility-footnote {
-            margin: 14px 0 0;
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.55;
-        }
-
-        .filing-route {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-top: 14px;
-            padding: 13px 14px;
-            border: 1px solid rgba(201, 168, 76, 0.3);
-            border-radius: 5px;
-            background: rgba(201, 168, 76, 0.08);
-            color: var(--filing-ink);
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .filing-route[hidden] {
-            display: none;
-        }
-
-        .filing-route svg {
-            flex: 0 0 auto;
-            margin-top: 1px;
-            color: #8b6719;
-        }
-
-        .filing-route strong {
-            color: var(--filing-navy);
-        }
-
-        .filing-review-notice {
-            display: flex;
-            align-items: flex-start;
-            gap: 11px;
-            margin: 0 0 24px;
-            padding: 14px 16px;
-            border: 1px solid rgba(201, 168, 76, 0.3);
-            border-radius: 5px;
-            background: rgba(201, 168, 76, 0.08);
-            color: var(--filing-ink);
-            font-size: 12px;
-            line-height: 1.6;
-        }
-
-        .filing-review-notice svg {
-            flex: 0 0 auto;
-            margin-top: 2px;
-            color: #8b6719;
-        }
-
-        .filing-review-notice strong {
-            color: var(--filing-navy);
-        }
-
-        .filing-upload {
-            position: relative;
-            padding: 25px 18px;
-            border: 1px dashed rgba(11, 31, 58, 0.25);
-            border-radius: 6px;
-            background: #fcfbf8;
-            cursor: pointer;
-            text-align: center;
-            transition: border-color 0.2s ease, background 0.2s ease;
-        }
-
-        .filing-upload:hover,
-        .filing-upload.is-dragging {
-            border-color: var(--filing-gold);
-            background: rgba(201, 168, 76, 0.08);
-        }
-
-        .filing-upload__input {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            clip-path: inset(50%);
-            white-space: nowrap;
-        }
-
-        .filing-upload__icon {
-            margin-bottom: 9px;
-            color: #8b6719;
-        }
-
-        .filing-upload strong {
-            display: block;
-            margin-bottom: 4px;
-            color: var(--filing-navy);
-            font-size: 13px;
-        }
-
-        .filing-upload > span {
-            color: var(--filing-muted);
-            font-size: 11px;
-        }
-
-        .filing-upload__actions {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .filing-upload__action {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 38px;
-            padding: 8px 13px;
-            border: 1px solid rgba(201, 168, 76, 0.5);
-            border-radius: 4px;
-            color: #8b6719;
-            background: #fff;
-            font: inherit;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-        }
-
-        .filing-upload__action:hover,
-        .filing-upload__action:focus-visible {
-            color: var(--filing-navy);
-            background: var(--filing-gold-pale);
-            border-color: var(--filing-gold);
-        }
-
-        .filing-upload__action--camera {
-            color: var(--filing-navy);
-            background: var(--filing-gold-pale);
-        }
-
-        .filing-upload__counter {
-            margin-top: 13px;
-            color: var(--filing-muted);
-            font-size: 10px;
-        }
-
-        .filing-upload__counter strong {
-            display: inline;
-            margin: 0;
-            color: var(--filing-navy);
-            font-size: 10px;
-        }
-
-        .filing-upload__previews {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
-            gap: 9px;
-            margin-top: 15px;
-        }
-
-        .filing-upload__preview {
-            position: relative;
-            min-width: 0;
-            aspect-ratio: 1;
-            overflow: hidden;
-            border: 1px solid var(--filing-border);
-            border-radius: 4px;
-            background: var(--filing-cream-dark);
-        }
-
-        .filing-upload__preview img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .filing-upload__remove {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            padding: 0;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            color: #fff;
-            background: rgba(11, 31, 58, 0.78);
-            font: inherit;
-            font-size: 16px;
-            line-height: 1;
-            cursor: pointer;
-        }
-
-        .filing-upload__remove:hover,
-        .filing-upload__remove:focus-visible {
-            background: var(--filing-navy);
-            border-color: var(--filing-gold-light);
-        }
-
-        .filing-upload__error {
-            margin-top: 10px;
-            color: #b91c1c;
-            font-size: 11px;
-            line-height: 1.45;
-        }
-
-        .filing-map {
-            height: 330px;
-            margin-top: 15px;
-            overflow: hidden;
-            border: 1px solid var(--filing-border);
-            border-radius: 6px;
-            background: #dce8e7;
-        }
-
-        .filing-locate {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-            padding: 9px 14px;
-            color: var(--filing-navy);
-            background: #fcfbf8;
-            border: 1px solid rgba(11, 31, 58, 0.16);
-            border-radius: 5px;
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
-        }
-
-        .filing-locate:hover:not(:disabled) {
-            border-color: var(--filing-gold);
-            background: var(--filing-gold-pale);
-        }
-
-        .filing-locate:disabled {
-            color: var(--filing-muted);
-            cursor: progress;
-            opacity: 0.7;
-        }
-
-        .filing-locate svg {
-            flex: 0 0 auto;
-            color: #8b6719;
-        }
-
-        .filing-locate-status {
-            margin: 7px 0 0;
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.5;
-        }
-
-        .filing-locate-status[hidden] {
-            display: none;
-        }
-
-        .location-choice {
-            margin-top: 15px;
-            padding: 16px;
-            background: #fdf6e4;
-            border: 1px solid rgba(201, 168, 76, 0.5);
-            border-radius: 6px;
-        }
-
-        .location-choice__title {
-            margin: 0 0 4px;
-            color: var(--filing-navy);
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .location-choice__note {
-            margin: 0 0 13px;
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.55;
-        }
-
-        .location-choice__options {
-            display: grid;
-            gap: 9px;
-            margin: 0;
-            padding: 0;
-            border: 0;
-        }
-
-        .location-choice__option {
-            display: flex;
-            align-items: flex-start;
-            gap: 11px;
-            padding: 12px 14px;
-            background: #fcfbf8;
-            border: 1px solid rgba(11, 31, 58, 0.14);
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .location-choice__option:hover {
-            border-color: var(--filing-gold);
-        }
-
-        .location-choice__option:has(input:checked) {
-            background: var(--filing-gold-pale);
-            border-color: var(--filing-gold);
-        }
-
-        .location-choice__option input {
-            margin: 2px 0 0;
-            accent-color: var(--filing-gold);
-            flex: 0 0 auto;
-        }
-
-        .location-choice__label {
-            display: block;
-            color: var(--filing-navy);
-            font-size: 12.5px;
-            font-weight: 600;
-        }
-
-        .location-choice__coords {
-            display: block;
-            margin-top: 2px;
-            color: var(--filing-muted);
-            font-size: 11px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .location-choice__error {
-            margin: 11px 0 0;
-            color: #b91c1c;
-            font-size: 11px;
-            line-height: 1.5;
-        }
-
-        .filing-map-note {
-            display: flex;
-            align-items: flex-start;
-            gap: 7px;
-            margin: 8px 0 0;
-            color: var(--filing-muted);
-            font-size: 10px;
-            line-height: 1.5;
-        }
-
-        .filing-map-note svg {
-            flex: 0 0 auto;
-            margin-top: 1px;
-            color: #8b6719;
-        }
-
-        .filing-summary {
-            margin: 25px 0 0;
-            padding: 17px 18px;
-            border: 1px solid rgba(201, 168, 76, 0.28);
-            border-radius: 6px;
-            background: #fffdf8;
-        }
-
-        .filing-summary h3 {
-            margin-bottom: 13px;
-            color: var(--filing-navy);
-            font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: 20px;
-            line-height: 1;
-        }
-
-        .filing-summary__row {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 9px 0;
-            border-top: 1px solid rgba(11, 31, 58, 0.08);
-            font-size: 11px;
-        }
-
-        .filing-summary__row span {
-            color: var(--filing-muted);
-        }
-
-        .filing-summary__row strong {
-            max-width: 65%;
-            color: var(--filing-navy);
-            font-size: 11px;
-            text-align: right;
-        }
-
-        .filing-terms {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-top: 22px;
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        .filing-terms input {
-            width: 16px;
-            height: 16px;
-            flex: 0 0 auto;
-            margin-top: 1px;
-            accent-color: var(--filing-gold);
-        }
-
-        .filing-terms a {
-            color: #8b6719;
-            font-weight: 700;
-        }
-
-        .filing-submit {
-            display: flex;
-            width: 100%;
-            min-height: 50px;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 23px;
-            padding: 13px 22px;
-            border: 0;
-            border-radius: 5px;
-            background: linear-gradient(135deg, var(--filing-gold), var(--filing-gold-light));
-            box-shadow: 0 8px 22px rgba(201, 168, 76, 0.22);
-            color: var(--filing-navy);
-            cursor: pointer;
-            font: inherit;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-        }
-
-        .filing-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(201, 168, 76, 0.3);
-        }
-
-        .filing-submit:disabled {
-            cursor: wait;
-            opacity: 0.65;
-            transform: none;
-        }
-
-        .filing-aside {
-            position: sticky;
-            top: 84px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .filing-aside-card {
-            padding: 21px;
-            border: 1px solid rgba(201, 168, 76, 0.24);
-            border-radius: 7px;
-            background: rgba(255, 255, 255, 0.72);
-        }
-
-        .filing-aside-card h2 {
-            margin-bottom: 14px;
-            color: var(--filing-navy);
-            font-family: "Cormorant Garamond", Georgia, serif;
-            font-size: 23px;
-            line-height: 1;
-        }
-
-        .filing-aside-card p,
-        .filing-aside-card li {
-            color: var(--filing-muted);
-            font-size: 11px;
-            line-height: 1.65;
-        }
-
-        .filing-aside-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .filing-aside-list li {
-            display: grid;
-            grid-template-columns: 22px 1fr;
-            gap: 9px;
-        }
-
-        .filing-aside-list li svg {
-            width: 22px;
-            height: 22px;
-            padding: 4px;
-            border: 1px solid rgba(201, 168, 76, 0.3);
-            border-radius: 50%;
-            color: #8b6719;
-        }
-
-        .filing-next {
-            display: flex;
-            flex-direction: column;
-            gap: 13px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .filing-next li {
-            display: grid;
-            grid-template-columns: 25px 1fr;
-            gap: 9px;
-        }
-
-        .filing-next strong {
-            display: block;
-            margin-bottom: 2px;
-            color: var(--filing-navy);
-            font-size: 11px;
-        }
-
-        .filing-next__number {
-            display: inline-flex;
-            width: 24px;
-            height: 24px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: var(--filing-navy);
-            color: var(--filing-gold-light);
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .filing-error-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 11px;
-            padding: 14px 17px;
-            border: 1px solid rgba(220, 38, 38, 0.2);
-            border-radius: 6px;
-            background: rgba(239, 68, 68, 0.06);
-            color: #991b1b;
-            font-size: 12px;
-            line-height: 1.6;
-        }
-
-        .filing-error-banner svg {
-            flex: 0 0 auto;
-            margin-top: 2px;
-        }
-
-        .filing-error-banner ul {
-            margin: 5px 0 0;
-            padding-left: 17px;
-        }
-
-        /* Leaflet marker */
-        .gold-pin-marker {
-            position: relative;
-            width: 30px;
-            height: 42px;
-        }
-
-        .gold-pin-marker .pin-head {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            transform: translateX(-50%);
-            border: 3px solid #fff;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #c9a84c, #e2c06a);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            z-index: 2;
-        }
-
-        .gold-pin-marker .pin-head::after {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 6px;
-            height: 6px;
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            background: #0b1f3a;
-            content: "";
-        }
-
-        .gold-pin-marker .pin-pulse {
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            transform: translateX(-50%);
-            border-radius: 50%;
-            background: rgba(201, 168, 76, 0.35);
-            animation: filing-pin-pulse 1.5s ease-out infinite;
-        }
-
-        @keyframes filing-pin-pulse {
-            0% { opacity: 1; transform: translateX(-50%) scale(0.5); }
-            100% { opacity: 0; transform: translateX(-50%) scale(1.5); }
-        }
-
-        .leaflet-marker-icon.gold-pin-marker {
-            border: 0 !important;
-            background: transparent !important;
-        }
-
-        @media (max-width: 900px) {
-            .filing-header,
-            .filing-main {
-                width: 100%;
-            }
-
-            .filing-header {
-                padding-right: 24px;
-                padding-left: 24px;
-            }
-
-            .filing-header__inner {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-            .filing-header__aside {
-                max-width: 420px;
-            }
-
-            .filing-main {
-                padding: 28px 24px 64px;
-            }
-
-            .filing-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .filing-aside {
-                position: static;
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 640px) {
-            .filing-header {
-                padding-top: 104px;
-                padding-bottom: 38px;
-            }
-
-            .filing-header h1 {
-                font-size: 48px;
-            }
-
-            .filing-main {
-                padding: 20px 16px 52px;
-            }
-
-            .filing-stepper {
-                grid-template-columns: 1fr;
-            }
-
-            .filing-step {
-                min-height: 62px;
-                border-right: 0;
-                border-bottom: 1px solid var(--filing-border);
-            }
-
-            .filing-step:last-child {
-                border-bottom: 0;
-            }
-
-            .filing-step--active::after {
-                right: 16px;
-                bottom: 0;
-                left: 16px;
-            }
-
-            .filing-card__header,
-            .filing-card__body {
-                padding-right: 18px;
-                padding-left: 18px;
-            }
-
-            .filing-card__header h2 {
-                font-size: 23px;
-            }
-
-            .filing-aside {
-                display: flex;
-            }
-
-            .filing-map {
-                height: 280px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .gold-pin-marker .pin-pulse {
-                animation: none;
-            }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-           MOBILE WIZARD
-           Everything wizard-related is scoped to `.filing-page.wizard-on`,
-           a class the script adds ONLY while the viewport is ≤640px.
-           Desktop never gets it, and if the script fails the plain form
-           still shows.
-           ═══════════════════════════════════════════════════════════════ */
-
-        .filing-page [hidden] {
-            display: none !important;
-        }
-
-        @keyframes wizardFadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: none; }
-        }
-
-        /* Step headings: screen-reader only on desktop, visible in the wizard */
-        .wizard-step-title {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            margin: -1px;
-            padding: 0;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        /* Hidden by default (desktop) */
-        .wizard-progress-header,
-        .wizard-action-bar,
-        .wizard-draft-banner {
-            display: none;
-        }
-
-        @media (max-width: 640px) {
-            /* Compact hero */
-            .filing-header {
-                padding: 76px 16px 16px;
-            }
-
-            .filing-header h1 {
-                margin-bottom: 0;
-                font-size: 28px;
-                line-height: 1.15;
-            }
-
-            .filing-header__lede,
-            .filing-header__aside {
-                display: none;
-            }
-
-            .filing-back {
-                margin-bottom: 10px;
-            }
-
-            /* Page chrome */
-            .filing-stepper {
-                display: none;
-            }
-
-            .filing-main {
-                padding: 16px 16px calc(104px + env(safe-area-inset-bottom));
-            }
-
-            .filing-layout {
-                display: block;
-            }
-
-            .filing-aside {
-                display: none !important;
-            }
-
-            .page-complaint-create footer {
-                display: none !important;
-            }
-
-            /* Progress header */
-            .filing-page.wizard-on .wizard-progress-header {
-                display: block;
-                margin-bottom: 16px;
-                padding: 16px;
-                border: 1px solid var(--filing-border);
-                border-radius: 12px;
-                background: #fff;
-                box-shadow: 0 4px 16px rgba(11, 31, 58, 0.06);
-            }
-
-            .wizard-progress-meta {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 8px;
-                color: var(--filing-muted);
-                font-size: 13px;
-                font-weight: 600;
-            }
-
-            .wizard-progress-title {
-                color: var(--filing-navy);
-                font-size: 15px;
-                font-weight: 700;
-            }
-
-            .wizard-progress-track {
-                width: 100%;
-                height: 6px;
-                overflow: hidden;
-                border-radius: 3px;
-                background: var(--filing-cream-dark);
-            }
-
-            .wizard-progress-fill {
-                height: 100%;
-                background: linear-gradient(90deg, var(--filing-gold), var(--filing-gold-light));
-                transition: width 0.25s ease;
-            }
-
-            /* Draft banner */
-            .filing-page.wizard-on .wizard-draft-banner {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-                margin-bottom: 16px;
-                padding: 12px 16px;
-                border: 1px solid rgba(201, 168, 76, 0.4);
-                border-radius: 8px;
-                background: #fdf6e4;
-                color: var(--filing-navy);
-                font-size: 12px;
-            }
-
-            .wizard-draft-actions {
-                display: flex;
-                gap: 6px;
-            }
-
-            .wizard-draft-banner button {
-                padding: 8px 12px;
-                border: 0;
-                border-radius: 6px;
-                background: var(--filing-gold);
-                color: var(--filing-navy);
-                font-size: 11px;
-                font-weight: 700;
-                cursor: pointer;
-            }
-
-            .wizard-draft-banner .wizard-draft-reset {
-                background: transparent;
-                border: 1px solid rgba(11, 31, 58, 0.25);
-            }
-
-            /* Wrapper cards vanish; only the active step shows */
-            .filing-page.wizard-on .filing-form {
-                gap: 0;
-            }
-
-            .filing-page.wizard-on #filing-details,
-            .filing-page.wizard-on #filing-location,
-            .filing-page.wizard-on #filing-details > .filing-card__body,
-            .filing-page.wizard-on #filing-location > .filing-card__body {
-                display: contents;
-            }
-
-            .filing-page.wizard-on #filing-details > .filing-card__header,
-            .filing-page.wizard-on #filing-location > .filing-card__header {
-                display: none;
-            }
-
-            .filing-page.wizard-on [data-wizard-step] {
-                display: none;
-            }
-
-            .filing-page.wizard-on [data-wizard-step].wizard-step-active {
-                display: block;
-                animation: wizardFadeIn 0.2s ease both;
-            }
-
-            /* Steps that are plain <div>s get their own card look */
-            .filing-page.wizard-on div[data-wizard-step].wizard-step-active {
-                padding: 18px;
-                border: 1px solid var(--filing-border);
-                border-radius: 12px;
-                background: var(--filing-white);
-                box-shadow: 0 4px 16px rgba(11, 31, 58, 0.06);
-            }
-
-            .filing-page.wizard-on section.filing-card[data-wizard-step].wizard-step-active {
-                border-radius: 12px;
-            }
-
-            .filing-page.wizard-on section.filing-card[data-wizard-step] .filing-card__body {
-                padding: 18px;
-            }
-
-            .filing-page.wizard-on .wizard-step-title {
-                position: static;
-                width: auto;
-                height: auto;
-                margin: 0 0 14px;
-                overflow: visible;
-                clip: auto;
-                white-space: normal;
-                color: var(--filing-navy);
-                font-family: "Cormorant Garamond", Georgia, serif;
-                font-size: 24px;
-                font-weight: 700;
-                line-height: 1.1;
-            }
-
-            /* The action bar's last button submits, so hide the in-page one */
-            .filing-page.wizard-on .filing-submit {
-                display: none;
-            }
-
-            /* Action bar */
-            .filing-page.wizard-on .wizard-action-bar {
-                position: fixed;
-                right: 0;
-                bottom: 0;
-                left: 0;
-                z-index: 1000;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
-                border-top: 1px solid var(--filing-border);
-                background: #fff;
-                box-shadow: 0 -4px 20px rgba(11, 31, 58, 0.1);
-            }
-
-            .wizard-btn-back,
-            .wizard-btn-next {
-                display: inline-flex;
-                flex: 1;
-                min-height: 48px;
-                align-items: center;
-                justify-content: center;
-                border-radius: 8px;
-                font: inherit;
-                font-size: 14px;
-                font-weight: 700;
-                cursor: pointer;
-                transition: opacity 0.2s ease;
-            }
-
-            .wizard-btn-back {
-                border: 1px solid var(--filing-border);
-                background: #fcfbf8;
-                color: var(--filing-navy);
-            }
-
-            .wizard-btn-next {
-                border: 0;
-                background: linear-gradient(135deg, var(--filing-gold), var(--filing-gold-light));
-                color: var(--filing-navy);
-                box-shadow: 0 6px 16px rgba(201, 168, 76, 0.3);
-            }
-
-            .wizard-btn-next:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-                box-shadow: none;
-            }
-
-            .wizard-step-hint {
-                position: absolute;
-                top: -44px;
-                right: 16px;
-                left: 16px;
-                padding: 8px 12px;
-                border: 1px solid rgba(220, 38, 38, 0.3);
-                border-radius: 6px;
-                background: #fff;
-                color: #b91c1c;
-                font-size: 12px;
-                text-align: center;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .filing-page.wizard-on [data-wizard-step].wizard-step-active {
-                animation: none;
-            }
-
-            .wizard-progress-fill {
-                transition: none;
-            }
-        }
-    </style>
-@endpush
+@section('body-class', 'page-complaint-create')
 
 @section('content')
-    <div class="filing-page">
-        <header class="filing-header">
-            <div class="filing-header__inner">
-                <div>
-                    <a href="{{ route('complaints.index') }}" class="filing-back">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
-                        Back to my complaints
-                    </a>
-                    <h1>Tell us what needs <em>attention.</em></h1>
-                    <p class="filing-header__lede">
-                        Share the facts once. We will route your report to the right department, verify it, and keep you updated.
-                    </p>
-                </div>
-                <div class="filing-header__aside">
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
-                    <span><strong>Reviewed before action</strong>The department checks each report and confirms its priority.</span>
-                </div>
+    <script>document.documentElement.classList.add('js');</script>
+    <div class="fc-page">
+        <div class="fc-back-row">
+            <div class="fc-container">
+                <a href="{{ route('complaints.index') }}" class="fc-back" aria-label="{{ __('complaint_create.back') }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+                    <span class="fc-back__text">{{ __('complaint_create.back') }}</span>
+                </a>
+            </div>
+        </div>
+
+        <header class="fc-banner">
+            <div class="fc-container">
+                <h1>{{ __('complaint_create.page.title') }}</h1>
+                <p class="fc-lede">{{ __('complaint_create.page.lede') }}</p>
             </div>
         </header>
 
-        <main class="filing-main">
-            <nav class="filing-stepper" aria-label="Complaint filing steps">
-                <div class="filing-step filing-step--active">
-                    <span class="filing-step__number">01</span>
-                    <span><strong>Category</strong><small>Choose the concern</small></span>
-                </div>
-                <div class="filing-step">
-                    <span class="filing-step__number">02</span>
-                    <span><strong>Details</strong><small>Explain what happened</small></span>
-                </div>
-                <div class="filing-step">
-                    <span class="filing-step__number">03</span>
-                    <span><strong>Location & review</strong><small>Confirm and submit</small></span>
-                </div>
-            </nav>
+        @php
+            $selectedValue = old('category');
+            $selectedGroup = null;
+            $selectedLeaf = null;
+            if ($selectedValue && isset($categoryGroups)) {
+                foreach ($categoryGroups as $group) {
+                    foreach ($group['children'] as $leaf) {
+                        if ($leaf['value'] === $selectedValue) {
+                            $selectedGroup = $group;
+                            $selectedLeaf = $leaf;
+                            break 2;
+                        }
+                    }
+                }
+            }
+        @endphp
 
-            <div class="wizard-progress-header" aria-hidden="true">
-                <div class="wizard-progress-meta">
-                    <span id="wizard-step-counter">Step 1 of 7</span>
-                    <span class="wizard-progress-title" id="wizard-step-label">Category</span>
+        <main class="fc-container fc-stack">
+            <div class="fc-progress wizard-progress-header" id="wizard-progress-header">
+                <div class="fc-progress__meta">
+                    <span class="fc-progress__step" id="wizard-step-counter">{{ __('complaint_create.progress.step', ['n' => 1, 'total' => 8]) }}</span>
+                    <span class="fc-progress__name" id="wizard-step-label">{{ __('complaint_create.steps.group') }}</span>
                 </div>
-                <div class="wizard-progress-track">
-                    <div class="wizard-progress-fill" id="wizard-progress-fill" style="width: 14.28%;"></div>
+                <div class="fc-progress__segments" id="wizard-segments" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="1" aria-label="{{ __('complaint_create.steps.group') }}">
+                    @for ($i = 1; $i <= 8; $i++)
+                        <span class="fc-progress__seg @if($i === 1) fc-progress__seg--current @endif"></span>
+                    @endfor
                 </div>
             </div>
 
-            <div class="wizard-draft-banner" id="wizard-draft-banner" hidden>
-                <span>Resume your previous draft?</span>
-                <div class="wizard-draft-actions">
-                    <button type="button" id="wizard-draft-resume">Resume</button>
-                    <button type="button" id="wizard-draft-reset" class="wizard-draft-reset">Start over</button>
+            <div id="department-hint" class="fc-chip" role="status" aria-live="polite" @if(!$selectedLeaf) hidden @else data-visible="true" @endif>
+                <div class="fc-chip__row">
+                    <span class="fc-chip__icon tile__icon--{{ $selectedGroup['color'] ?? 'other' }}" id="chip-icon" aria-hidden="true">
+                        @if($selectedGroup)
+                            @include('complaints.partials.tile-icon', ['icon' => $selectedGroup['icon']])
+                        @else
+                            @include('complaints.partials.tile-icon', ['icon' => 'circle-help'])
+                        @endif
+                    </span>
+                    <span class="fc-chip__text">
+                        <span class="fc-chip__pair"><span id="chip-group">{{ $selectedGroup['label'] ?? '' }}</span> › <span id="chip-leaf">{{ $selectedLeaf['label'] ?? '' }}</span></span>
+                        <span class="fc-chip__office">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M2 22h20"></path><path d="M9 6h1"></path><path d="M14 6h1"></path><path d="M9 10h1"></path><path d="M14 10h1"></path><path d="M9 14h1"></path><path d="M14 14h1"></path></svg>
+                            <span id="chip-prefix"></span><span id="department-name">{{ $selectedLeaf['department'] ?? '' }}</span>
+                        </span>
+                    </span>
+                    <button type="button" class="fc-chip__change" id="chip-change">{{ __('complaint_create.buttons.change') }}</button>
                 </div>
             </div>
 
-            <div class="filing-layout">
-                <form method="POST" action="{{ route('complaints.store') }}" enctype="multipart/form-data" id="complaint-form" class="filing-form">
+            <div class="fc-draft wizard-draft-banner" id="wizard-draft-banner" hidden>
+                <span>{{ __('complaint_create.draft.banner') }}</span>
+                <div class="fc-draft__actions">
+                    <button type="button" class="fc-draft__resume" id="wizard-draft-resume">{{ __('complaint_create.draft.resume') }}</button>
+                    <button type="button" class="fc-draft__reset" id="wizard-draft-reset">{{ __('complaint_create.draft.reset') }}</button>
+                </div>
+            </div>
+
+            <div class="fc-layout">
+                <form data-loading-submit method="POST" action="{{ route('complaints.store') }}" enctype="multipart/form-data" id="complaint-form" class="fc-form">
                     @csrf
 
                     @if($errors->any())
-                        <div class="filing-error-banner" role="alert">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                        <div class="fc-error-banner" role="alert">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
                             <div>
                                 <strong>Check the highlighted fields.</strong>
                                 <ul>
@@ -1521,21 +99,17 @@
                         </div>
                     @endif
 
-                    <section class="filing-card" id="filing-category" data-wizard-step="1" role="group" aria-labelledby="step1-heading">
-                        <div class="filing-card__header">
-                            <span class="filing-card__icon" aria-hidden="true">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
-                            </span>
-                            <div>
-                                <h2 id="step1-heading">What are you reporting?</h2>
-                                <p>Choose the closest category so we can route it correctly.</p>
-                            </div>
+                    <section class="fc-card" id="filing-category" aria-labelledby="category-card-heading">
+                        <div class="fc-card__head">
+                            <span class="fc-section-eyebrow">{{ __('complaint_create.sections.step', ['number' => '01']) }}</span>
+                            <h2 id="category-card-heading">What are you reporting?</h2>
+                            <p>Choose the closest category so we can route it correctly.</p>
                         </div>
-                        <div class="filing-card__body">
-                            <div class="filing-field">
-                                <label for="category">Complaint category <span>*</span></label>
-                                <p class="filing-field__hint">Pick the main issue. You can add more context in the description.</p>
-                                <select id="category" name="category" class="filing-select" required>
+                        <div class="fc-card__body">
+                            <div class="fc-field fc-field--category-source">
+                                <label class="fc-field__source-label" for="category">{{ __('complaint_create.labels.category') }} <span aria-hidden="true">*</span></label>
+                                <p class="fc-field__hint fc-field__source-hint">Pick the main issue. You can add more context in the description.</p>
+                                <select id="category" name="category" class="fc-select fc-select--source" required>
                                     <option value="">- Select a category -</option>
                                     @foreach($categoryOptions as $department => $options)
                                         <optgroup label="{{ $department }}">
@@ -1545,202 +119,183 @@
                                         </optgroup>
                                     @endforeach
                                 </select>
-                                @error('category') <div class="filing-error">{{ $message }}</div> @enderror
+                                @error('category') <div class="fc-error">{{ $message }}</div> @enderror
                             </div>
-                            <div id="department-hint" class="filing-route" role="status" aria-live="polite" hidden>
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
-                                <span>This report will be routed to <strong id="department-name">the responsible department</strong>.</span>
+
+                            <div data-wizard-step="group" role="group" aria-labelledby="step-group-heading">
+                                <h2 class="fc-step-title" id="step-group-heading" tabindex="-1">{{ __('complaint_create.screens.group.title') }}</h2>
+                                <p class="fc-step-help">{{ __('complaint_create.screens.group.help') }}</p>
+                                <div class="tile-grid tile-grid--groups" role="radiogroup" aria-labelledby="step-group-heading">
+                                    @foreach($categoryGroups as $group)
+                                        <label class="tile tile--group" data-group="{{ $group['key'] }}">
+                                            <input type="radio" name="category_group" value="{{ $group['key'] }}" class="fc-sr-only" @checked($selectedGroup && $selectedGroup['key'] === $group['key'])>
+                                            <span class="tile__icon tile__icon--{{ $group['color'] }}" aria-hidden="true">@include('complaints.partials.tile-icon', ['icon' => $group['icon']])</span>
+                                            <span class="tile__label">{{ $group['label'] }}</span>
+                                            <span class="tile__helper">{{ $group['helper'] }}</span>
+                                            <span class="tile__check tile__check--hidden" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div data-wizard-step="category" role="group" aria-labelledby="step-category-heading">
+                                <h2 class="fc-step-title" id="step-category-heading" tabindex="-1">{{ __('complaint_create.screens.category.title') }}</h2>
+                                <p class="fc-step-help">{{ __('complaint_create.screens.category.help') }}</p>
+                                @foreach($categoryGroups as $group)
+                                    <div class="tile-panel" data-group-panel="{{ $group['key'] }}" @if(!$selectedGroup || $selectedGroup['key'] !== $group['key']) hidden @endif>
+                                        <div class="fc-category-group-label">
+                                            <span class="fc-category-group-name">{{ $group['label'] }}</span>
+                                            <button type="button" class="fc-category-group-change" data-category-group-change>{{ __('complaint_create.buttons.change') }}</button>
+                                        </div>
+                                        <div class="tile-grid tile-grid--leaves" role="radiogroup" aria-labelledby="step-category-heading">
+                                            @foreach($group['children'] as $leaf)
+                                                <label class="tile tile--leaf" data-value="{{ $leaf['value'] }}">
+                                                    <input type="radio" name="category_choice" value="{{ $leaf['value'] }}" class="fc-sr-only" @checked(old('category') === $leaf['value'])>
+                                                    <span class="tile__icon tile__icon--{{ $leaf['color'] }}" aria-hidden="true">@include('complaints.partials.tile-icon', ['icon' => $leaf['icon']])</span>
+                                                    <span class="tile__body">
+                                                        <span class="tile__label">{{ $leaf['label'] }}</span>
+                                                        <span class="tile__helper">{{ $leaf['helper'] }}</span>
+                                                    </span>
+                                                    <span class="tile__radio" aria-hidden="true"></span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <div class="tile-error" id="category-tile-error" role="alert" hidden></div>
                             </div>
                         </div>
                     </section>
 
-                    {{--
-                        Public visibility is the resident's decision, and private
-                        is the default. Real radio inputs rather than a switch,
-                        because the choice is between two equally weighted
-                        outcomes and both need to be readable before one is
-                        picked.
-
-                        Nothing in the staff or admin interface can change this
-                        afterwards.
-                    --}}
-                    <section class="filing-card" id="filing-visibility" data-wizard-step="6" role="group" aria-labelledby="step6-heading">
-                        <div class="filing-card__header">
-                            <span class="filing-card__icon" aria-hidden="true">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path><path d="M4 4l16 16"></path></svg>
-                            </span>
-                            <div>
-                                <h2 id="step6-heading">Who can see this</h2>
-                                <p>You decide this. No member of staff can change it later.</p>
-                            </div>
+                    <section class="fc-card" id="filing-details" aria-labelledby="details-card-heading">
+                        <div class="fc-card__head">
+                            <span class="fc-section-eyebrow">{{ __('complaint_create.sections.step', ['number' => '02']) }}</span>
+                            <h2 id="details-card-heading">Give us the useful details.</h2>
+                            <p>Clear facts help the department verify and act faster.</p>
                         </div>
-
-                        <div class="filing-card__body">
-                            <fieldset class="visibility-choice" @disabled(old('visibility', 'private') === 'public')>
-                                <legend class="sr-only">Who can see this complaint</legend>
-
-                                <label class="visibility-option">
-                                    <input type="radio" name="visibility" value="private" @checked(old('visibility', 'private') === 'private')>
-                                    <span class="visibility-option__body">
-                                        <span class="visibility-option__title">Just me</span>
-                                        <span class="visibility-option__note">Only you and the staff handling your report can see it. It will not appear on the public page.</span>
-                                    </span>
-                                </label>
-
-                                <label class="visibility-option">
-                                    <input type="radio" name="visibility" value="public" @checked(old('visibility') === 'public')>
-                                    <span class="visibility-option__body">
-                                        <span class="visibility-option__title">Publish on the transparency page</span>
-                                        <span class="visibility-option__note">Anyone can read it there under your display alias, never your real name. You can make it private again at any time.</span>
-                                    </span>
-                                </label>
-                            </fieldset>
-
-                            @error('visibility') <div class="filing-error">{{ $message }}</div> @enderror
-
-                            <p class="visibility-footnote">
-                                Reports that turn out to be spam or unrelated to municipal services are held back automatically. Staff may also
-                                remove sensitive details from the public page, but they cannot change this choice - and you will always see your
-                                own report exactly as you filed it.
-                            </p>
-                        </div>
-                    </section>
-
-                    <section class="filing-card" id="filing-details">
-                        <div class="filing-card__header">
-                            <span class="filing-card__icon" aria-hidden="true">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
-                            </span>
-                            <div>
-                                <h2>Give us the useful details.</h2>
-                                <p>Clear facts help the department verify and act faster.</p>
-                            </div>
-                        </div>
-                        <div class="filing-card__body">
-                            <div data-wizard-step="2" role="group" aria-labelledby="step2-heading">
-                                <h3 id="step2-heading" class="wizard-step-title">Give your report a short title</h3>
-                                <div class="filing-field">
-                                    <label for="title">Short title <span>*</span></label>
-                                    <p class="filing-field__hint">Summarize the problem in one sentence.</p>
-                                    <input id="title" name="title" class="filing-input" type="text" maxlength="255" placeholder="e.g. Fallen tree blocking the road" value="{{ old('title') }}" required>
-                                    @error('title') <div class="filing-error">{{ $message }}</div> @enderror
+                        <div class="fc-card__body">
+                            <div data-wizard-step="describe" role="group" aria-labelledby="step-describe-heading">
+                                <h2 class="fc-step-title" id="step-describe-heading" tabindex="-1">Give your report a short title</h2>
+                                <p class="fc-step-help">Summarize the problem in one sentence.</p>
+                                <div class="fc-field">
+                                    <label for="title">Short title <span aria-hidden="true">*</span></label>
+                                    <p class="fc-field__hint">Summarize the problem in one sentence.</p>
+                                    <input id="title" name="title" class="fc-input" type="text" maxlength="255" placeholder="e.g. Fallen tree blocking the road" value="{{ old('title') }}" required>
+                                    <p class="fc-counter" id="title-counter" aria-live="polite"></p>
+                                    @error('title') <div class="fc-error">{{ $message }}</div> @enderror
                                 </div>
-                            </div>
-
-                            <div data-wizard-step="3" role="group" aria-labelledby="step3-heading">
-                                <h3 id="step3-heading" class="wizard-step-title">What happened?</h3>
-                                <div class="filing-field">
-                                    <label for="description">What happened? <span>*</span></label>
-                                    <p class="filing-field__hint">Include when it started, who is affected, and any immediate risk. Minimum 20 characters.</p>
-                                    <textarea id="description" name="description" class="filing-textarea" minlength="20" placeholder="Describe what you observed and how it affects the community..." required>{{ old('description') }}</textarea>
-                                    @error('description') <div class="filing-error">{{ $message }}</div> @enderror
+                                <div class="fc-field">
+                                    <label for="description">What happened? <span aria-hidden="true">*</span></label>
+                                    <p class="fc-field__hint">Include when it started, who is affected, and any immediate risk. Minimum 20 characters.</p>
+                                    <textarea id="description" name="description" class="fc-textarea" minlength="20" placeholder="Describe what you observed and how it affects the community..." required>{{ old('description') }}</textarea>
+                                    <p class="fc-counter" id="description-counter" aria-live="polite"></p>
+                                    @error('description') <div class="fc-error">{{ $message }}</div> @enderror
                                 </div>
-                                <div class="filing-review-notice">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
+                                <button type="button" class="fc-toggle" id="priority-toggle" aria-expanded="false" aria-controls="priority-notice">{{ __('complaint_create.wizard.priority_toggle') }}</button>
+                                <div class="fc-notice" id="priority-notice">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
                                     <span><strong>No urgency selection is needed.</strong> The system will suggest a priority from your category and description. The responsible department verifies the report and confirms the final priority.</span>
                                 </div>
                             </div>
 
-                            <div data-wizard-step="4" role="group" aria-labelledby="step4-heading">
-                                <h3 id="step4-heading" class="wizard-step-title">Add photo evidence</h3>
-                                <div class="filing-field">
-                                    <label for="images-input">Photo evidence <span>*</span></label>
-                                    <p class="filing-field__hint">Required. Add up to five clear photos taken at the issue location. GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
-                                    <div class="filing-upload" id="upload-zone">
-                                        <input class="filing-upload__input" type="file" name="images[]" id="images-input" accept="image/jpeg,image/png,image/webp" multiple>
-                                        <input class="filing-upload__input" type="file" name="camera_photo" id="camera-input" accept="image/jpeg,image/png,image/webp" capture="environment">
-                                        <div class="filing-upload__icon">
-                                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
+                            <div data-wizard-step="photos" role="group" aria-labelledby="step-photos-heading">
+                                <h2 class="fc-step-title" id="step-photos-heading" tabindex="-1">Add photo evidence</h2>
+                                <p class="fc-step-help" id="photos-step-help">Required. Add up to five clear photos taken at the issue location.</p>
+                                <div class="fc-field">
+                                    <label for="images-input" id="photos-field-label">Photo evidence <span aria-hidden="true" id="photos-required-mark">*</span></label>
+                                    <p class="fc-field__hint" id="photo-tips-hint">Required. Add up to five clear photos taken at the issue location. GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
+                                    <button type="button" class="fc-toggle" id="photo-tips-toggle" aria-expanded="false" aria-controls="photo-tips-hint">{{ __('complaint_create.wizard.photo_tips') }}</button>
+                                    <div class="upload-zone" id="upload-zone">
+                                        <input type="file" name="images[]" id="images-input" accept="image/jpeg,image/png,image/webp" multiple>
+                                        <input type="file" name="camera_photo" id="camera-input" accept="image/jpeg,image/png,image/webp" capture="environment">
+                                        <div class="upload-zone__icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
                                         </div>
                                         <strong>Add up to five photos</strong>
                                         <span>Choose from your device or use your phone’s camera.</span>
-                                        <div class="filing-upload__actions">
-                                            <button type="button" class="filing-upload__action" data-upload-trigger="images-input">Choose photos</button>
-                                            <button type="button" class="filing-upload__action filing-upload__action--camera" data-upload-trigger="camera-input">Use camera</button>
+                                        <div class="upload-zone__actions">
+                                            <button type="button" class="upload-zone__action" data-upload-trigger="images-input">Choose photos</button>
+                                            <button type="button" class="upload-zone__action upload-zone__action--camera" data-upload-trigger="camera-input">Use camera</button>
                                         </div>
-                                        <div class="filing-upload__counter"><strong id="photo-count">0 / 5</strong> photos attached</div>
-                                        <div class="filing-upload__previews" id="upload-previews" aria-live="polite"></div>
-                                        <div class="filing-upload__error" id="upload-client-error" role="alert" hidden></div>
+                                        <div class="upload-zone__counter"><strong id="photo-count">0 / 5</strong> photos attached</div>
+                                        <div class="upload-zone__previews" id="upload-previews" aria-live="polite"></div>
+                                        <div class="upload-error" id="upload-client-error" role="alert" hidden></div>
                                     </div>
-                                    @error('images') <div class="filing-error">{{ $message }}</div> @enderror
-                                    @error('camera_photo') <div class="filing-error">{{ $message }}</div> @enderror
-                                    @error('image') <div class="filing-error">{{ $message }}</div> @enderror
+                                    @error('images') <div class="fc-error">{{ $message }}</div> @enderror
+                                    @error('camera_photo') <div class="fc-error">{{ $message }}</div> @enderror
+                                    @error('image') <div class="fc-error">{{ $message }}</div> @enderror
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    <section class="filing-card" id="filing-location">
-                        <div class="filing-card__header">
-                            <span class="filing-card__icon" aria-hidden="true">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
-                            </span>
-                            <div>
-                                <h2>Where is the issue?</h2>
-                                <p>Photo GPS is used when available. Add a landmark or map point as a fallback.</p>
-                            </div>
+                    <section class="fc-card" id="filing-location" aria-labelledby="location-card-heading">
+                        <div class="fc-card__head">
+                            <span class="fc-section-eyebrow">{{ __('complaint_create.sections.step', ['number' => '03']) }}</span>
+                            <h2 id="location-card-heading">Where is the issue?</h2>
+                            <p>Photo GPS is used when available. Add a landmark or map point as a fallback.</p>
                         </div>
-                        <div class="filing-card__body">
-                            <div data-wizard-step="5" role="group" aria-labelledby="step5-heading">
-                                <h3 id="step5-heading" class="wizard-step-title">Where is the issue?</h3>
-                                <div class="filing-field">
-                                    <label for="barangay">Which barangay <span>(required)</span></label>
-                                    <p class="filing-field__hint">Prefilled from your account. Change it if the problem is somewhere else.</p>
+                        <div class="fc-card__body">
+                            <div data-wizard-step="where" role="group" aria-labelledby="step-where-heading">
+                                <h2 class="fc-step-title" id="step-where-heading" tabindex="-1">Where is the issue?</h2>
+                                <p class="fc-step-help">Prefilled from your account. Change it if the problem is somewhere else.</p>
+                                <div class="fc-field">
+                                    <label for="barangay">Which barangay <span aria-hidden="true">*</span></label>
+                                    <p class="fc-field__hint">Prefilled from your account. Change it if the problem is somewhere else.</p>
                                     <input
                                         id="barangay"
                                         name="barangay"
-                                        class="filing-input"
+                                        class="fc-input"
                                         type="search"
                                         list="complaint-barangay-options"
                                         autocomplete="off"
                                         value="{{ old('barangay', auth()->user()?->barangay ?? '') }}"
-                                        required
                                     >
-                                    {{--
-                                        A native list alongside the field, so the form
-                                        still completes without JavaScript and a phone
-                                        gets its own picker.
-                                    --}}
                                     <datalist id="complaint-barangay-options">
                                         @foreach (\App\Models\User::BARANGAYS as $barangayOption)
                                             <option value="{{ $barangayOption }}"></option>
                                         @endforeach
                                     </datalist>
-                                    @error('barangay') <div class="filing-error">{{ $message }}</div> @enderror
+                                    @error('barangay') <div class="fc-error">{{ $message }}</div> @enderror
                                 </div>
 
-                                <div class="filing-field">
-                                    <label for="address_text">Address or nearest landmark <span>(optional)</span></label>
-                                    <p class="filing-field__hint">Example: in front of Daet Public Market, Barangay VI.</p>
-                                    <input id="address_text" name="address_text" class="filing-input" type="text" maxlength="500" placeholder="Describe the location..." value="{{ old('address_text') }}">
-                                    @error('address_text') <div class="filing-error">{{ $message }}</div> @enderror
+                                <button type="button" class="fc-toggle" id="landmark-toggle" aria-expanded="false" aria-controls="landmark-field">{{ __('complaint_create.wizard.landmark_toggle') }}</button>
+                                <div class="fc-field" id="landmark-field">
+                                    <label for="address_text" id="address-text-label">Address or nearest landmark <span id="address-text-required-mark">({{ __('complaint_create.labels.optional') }})</span></label>
+                                    <p class="fc-field__hint">Example: in front of Daet Public Market, Barangay VI.</p>
+                                    <input id="address_text" name="address_text" class="fc-input" type="text" maxlength="500" placeholder="Describe the location..." value="{{ old('address_text') }}">
+                                    @error('address_text') <div class="fc-error">{{ $message }}</div> @enderror
                                 </div>
+                            </div>
+
+                            <div data-wizard-step="pin" role="group" aria-labelledby="step-pin-heading">
+                                <h2 class="fc-step-title" id="step-pin-heading" tabindex="-1">Drop a map pin</h2>
+                                <p class="fc-step-help">{{ __('complaint_create.map.help') }}</p>
                                 <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
                                 <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
-                                <div id="complaint-map" class="filing-map" aria-label="Map for selecting the complaint location"></div>
-                                <p class="filing-map-note">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
-                                    Click the map to place a marker, or enter a nearby landmark above.
+                                <div id="complaint-map" class="filing-map fc-map" aria-label="Map for selecting the complaint location"></div>
+                                <p class="fc-map-note">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
+                                    {{ __('complaint_create.map.help') }}
                                 </p>
 
-                                <button type="button" class="filing-locate" id="locate-me" data-locate-button>
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path></svg>
+                                <button type="button" class="fc-locate" id="locate-me" data-locate-button>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path></svg>
                                     Use my current location
                                 </button>
-                                <p class="filing-locate-status" id="locate-status" role="status" aria-live="polite" hidden></p>
+                                <button type="button" class="fc-locate fc-locate--remove" id="remove-pin" data-remove-pin hidden>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                    Remove pin
+                                </button>
+                                <p class="fc-locate-status" id="locate-status" role="status" aria-live="polite" hidden></p>
 
-                                {{--
-                                    Only present when a photo's own GPS and the pin the
-                                    resident placed disagree by more than the rounding
-                                    threshold.
-                                --}}
                                 @if ($locationConflict)
                                     <div class="location-choice">
                                         <h3 class="location-choice__title">Where is the problem?</h3>
                                         <p class="location-choice__note">One of your photos was taken in a different area from the point you marked on the map. Pick the place the problem is actually at.</p>
 
                                         <fieldset class="location-choice__options">
-                                            <legend class="sr-only">Which location is the problem at?</legend>
+                                            <legend class="fc-sr-only">Which location is the problem at?</legend>
 
                                             <label class="location-choice__option">
                                                 <input type="radio" name="location_choice" value="map"
@@ -1766,77 +321,154 @@
                                         </fieldset>
 
                                         @error('location_choice')
-                                            <p class="location-choice__error">{{ $message }}</p>
+                                            <p class="fc-error">{{ $message }}</p>
                                         @enderror
                                     </div>
                                 @endif
-                                @error('latitude') <div class="filing-error">{{ $message }}</div> @enderror
-                                @error('longitude') <div class="filing-error">{{ $message }}</div> @enderror
+                                @error('latitude') <div class="fc-error">{{ $message }}</div> @enderror
+                                @error('longitude') <div class="fc-error">{{ $message }}</div> @enderror
                             </div>
+                        </div>
+                    </section>
 
-                            <div data-wizard-step="7" role="group" aria-labelledby="step7-heading">
-                                <h3 id="step7-heading" class="wizard-step-title">Review &amp; submit</h3>
-                                <div class="filing-summary" aria-live="polite">
+                    {{--
+                        Public visibility is the resident's decision, and private
+                        is the default. Real radio inputs rather than a switch,
+                        because the choice is between two equally weighted
+                        outcomes and both need to be readable before one is
+                        picked.
+                    --}}
+                    <section class="fc-card" id="filing-visibility" aria-labelledby="visibility-card-heading">
+                        <div class="fc-card__head">
+                            <span class="fc-section-eyebrow">{{ __('complaint_create.sections.step', ['number' => '04']) }}</span>
+                            <h2 id="visibility-card-heading">Who can see this</h2>
+                            <p>You decide this. No member of staff can change it later.</p>
+                        </div>
+                        <div class="fc-card__body">
+                            <div data-wizard-step="visibility" role="group" aria-labelledby="step-visibility-heading">
+                                <h2 class="fc-step-title" id="step-visibility-heading" tabindex="-1">Who can see this</h2>
+                                <p class="fc-step-help">You decide this. No member of staff can change it later.</p>
+                                <fieldset class="visibility-choice" @disabled(old('visibility', 'private') === 'public')>
+                                    <legend class="fc-sr-only">Who can see this complaint</legend>
+
+                                    <label class="visibility-option">
+                                        <input type="radio" name="visibility" value="private" @checked(old('visibility', 'private') === 'private')>
+                                        <span class="visibility-option__body">
+                                            <span class="visibility-option__title">Just me</span>
+                                            <span class="visibility-option__note">Only you and the staff handling your report can see it. It will not appear on the public page.</span>
+                                        </span>
+                                    </label>
+
+                                    <label class="visibility-option">
+                                        <input type="radio" name="visibility" value="public" @checked(old('visibility') === 'public')>
+                                        <span class="visibility-option__body">
+                                            <span class="visibility-option__title">Publish on the transparency page</span>
+                                            <span class="visibility-option__note">Anyone can read it there under your display alias, never your real name. You can make it private again at any time.</span>
+                                        </span>
+                                    </label>
+                                </fieldset>
+
+                                @error('visibility') <div class="fc-error">{{ $message }}</div> @enderror
+
+                                <button type="button" class="fc-toggle" id="visibility-why-toggle" aria-expanded="false" aria-controls="visibility-footnote">{{ __('complaint_create.wizard.why_toggle') }}</button>
+                                <p class="visibility-footnote" id="visibility-footnote">
+                                    Reports that turn out to be spam or unrelated to municipal services are held back automatically. Staff may also
+                                    remove sensitive details from the public page, but they cannot change this choice - and you will always see your
+                                    own report exactly as you filed it.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="fc-card" id="filing-review" aria-labelledby="review-card-heading">
+                        <div class="fc-card__head">
+                            <span class="fc-section-eyebrow">{{ __('complaint_create.sections.step', ['number' => '05']) }}</span>
+                            <h2 id="review-card-heading">Review and submit</h2>
+                            <p>Check the details before sending.</p>
+                        </div>
+                        <div class="fc-card__body">
+                            <div data-wizard-step="review" role="group" aria-labelledby="step-review-heading">
+                                <h2 class="fc-step-title" id="step-review-heading" tabindex="-1">Review &amp; submit</h2>
+                                <div class="fc-summary" aria-live="polite">
                                     <h3>Ready to submit?</h3>
-                                    <div class="filing-summary__row"><span>Category</span><strong id="review-category">Not selected</strong></div>
-                                    <div class="filing-summary__row"><span>Department</span><strong id="review-department">Not routed yet</strong></div>
-                                    <div class="filing-summary__row"><span>Location</span><strong id="review-location">No location added</strong></div>
+                                    <div class="fc-summary__row"><span>Category</span><strong id="review-category">Not selected</strong><button type="button" class="fc-summary__edit fc-summary__edit--wizard" data-edit-step="category">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row"><span>Department</span><strong id="review-department">Not routed yet</strong><button type="button" class="fc-summary__edit fc-summary__edit--wizard" data-edit-step="category">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row"><span>Location</span><strong id="review-location">No location added</strong><button type="button" class="fc-summary__edit fc-summary__edit--wizard" data-edit-step="where">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.title_label') }}</span><strong id="review-title">Not provided</strong><button type="button" class="fc-summary__edit" data-edit-step="describe">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.description_label') }}</span><strong id="review-description" class="fc-review-desc">Not provided</strong><button type="button" class="fc-summary__edit" data-edit-step="describe">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row fc-summary__row--wizard fc-summary__row--photos"><span>{{ __('complaint_create.wizard.photos_label') }}</span><div class="fc-review-photos"><strong id="review-photos-count">0 / 5</strong><div class="fc-review-thumbs" id="review-photos-thumbs"></div></div><button type="button" class="fc-summary__edit" data-edit-step="photos">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.visibility_label') }}</span><strong id="review-visibility">Just me</strong><button type="button" class="fc-summary__edit" data-edit-step="visibility">{{ __('complaint_create.wizard.edit') }}</button></div>
                                 </div>
 
-                                <div class="filing-terms">
+                                <div class="fc-next-steps fc-next-steps--wizard">
+                                    <h3>{{ __('complaint_create.wizard.what_next') }}</h3>
+                                    <ul>
+                                        <li>{{ __('complaint_create.wizard.next_1') }}</li>
+                                        <li>{{ __('complaint_create.wizard.next_2') }}</li>
+                                        <li>{{ __('complaint_create.wizard.next_3') }}</li>
+                                    </ul>
+                                </div>
+
+                                <div class="fc-terms">
                                     <input type="checkbox" name="terms" id="terms" value="1" @checked(old('terms')) required>
                                     <label for="terms">I confirm that the information provided is accurate. I understand that the department will verify this report before deciding its priority and next action. <a href="#" target="_blank" rel="noopener">Read the complaint policy.</a></label>
                                 </div>
-                                @error('terms') <div class="filing-error">{{ $message }}</div> @enderror
+                                @error('terms') <div class="fc-error">{{ $message }}</div> @enderror
 
-                                <button type="submit" class="filing-submit" id="submit-btn">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                                <button type="submit" class="fc-submit" id="submit-btn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
                                     Submit for department review
                                 </button>
                             </div>
                         </div>
                     </section>
 
-                    <div class="wizard-action-bar">
-                        <div class="wizard-step-hint" id="wizard-step-hint" role="status" aria-live="polite" hidden></div>
-                        <button type="button" class="wizard-btn-back" id="wizard-btn-back">Back</button>
-                        <button type="button" class="wizard-btn-next" id="wizard-btn-next">Next</button>
+                    <div class="wizard-action-bar" id="wizard-action-bar">
+                        <button type="button" class="wizard-btn-back" id="wizard-btn-back">{{ __('complaint_create.buttons.back') }}</button>
+                        <button type="button" class="wizard-btn-next" id="wizard-btn-next">{{ __('complaint_create.buttons.next') }}</button>
+                        <button type="submit" class="wizard-btn-next wizard-btn-submit" id="wizard-btn-submit" hidden>{{ __('complaint_create.buttons.submit') }}</button>
+                    </div>
+                    <div class="wizard-hint-pill" id="wizard-hint" role="alert" hidden>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                        <span id="wizard-hint-text"></span>
                     </div>
                 </form>
 
-                <aside class="filing-aside" aria-label="Filing guidance">
-                    <div class="filing-aside-card">
+                <aside class="fc-aside" aria-label="Filing guidance">
+                    <div class="fc-aside__card">
                         <h2>Before you submit</h2>
-                        <ul class="filing-aside-list">
+                        <ul class="fc-aside__list">
                             <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="8" cy="9" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="8" cy="9" r="1.5"></circle><path d="m21 15-4.5-4.5L7 20"></path></svg>
                                 <span>Take one or more clear photos at the issue location; keep location services enabled when possible.</span>
                             </li>
                             <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
                                 <span>Describe what you observed, not what you assume caused it.</span>
                             </li>
                             <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
                                 <span>Add a nearby landmark or map pin when possible.</span>
                             </li>
                             <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"></path><path d="M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"></path><path d="M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
                                 <span>For immediate danger, contact local emergency services first.</span>
                             </li>
                         </ul>
                     </div>
-                    <div class="filing-aside-card">
+                    <div class="fc-aside__card">
                         <h2>What happens next</h2>
-                        <ol class="filing-next">
-                            <li><span class="filing-next__number">1</span><span><strong>Department review</strong><span>Your report is checked for legitimacy and scope.</span></span></li>
-                            <li><span class="filing-next__number">2</span><span><strong>Priority confirmed</strong><span>The assigned office confirms the suggested priority.</span></span></li>
-                            <li><span class="filing-next__number">3</span><span><strong>Status updates</strong><span>You can follow progress from My Complaints.</span></span></li>
+                        <ol class="fc-aside__next">
+                            <li><span class="fc-aside__num">1</span><span><strong>Department review</strong><span>Your report is checked for legitimacy and scope.</span></span></li>
+                            <li><span class="fc-aside__num">2</span><span><strong>Priority confirmed</strong><span>The assigned office confirms the suggested priority.</span></span></li>
+                            <li><span class="fc-aside__num">3</span><span><strong>Status updates</strong><span>You can follow progress from My Complaints.</span></span></li>
                         </ol>
                     </div>
                 </aside>
             </div>
         </main>
+
+        <span id="wizard-live" class="fc-sr-only" aria-live="polite"></span>
     </div>
 
     <script id="category-department-data" type="application/json">{!! json_encode(
@@ -1845,6 +477,56 @@
             ->all(),
         JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT,
     ) !!}</script>
+    <script id="intake-policy-data" type="application/json">{!! json_encode($intakePoliciesByCategory ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+    <script id="complaint-create-i18n" type="application/json">{!! json_encode([
+        'steps' => [
+            'group' => __('complaint_create.steps.group'),
+            'category' => __('complaint_create.steps.category'),
+            'describe' => __('complaint_create.steps.describe'),
+            'photos' => __('complaint_create.steps.photos'),
+            'where' => __('complaint_create.steps.where'),
+            'pin' => __('complaint_create.steps.pin'),
+            'visibility' => __('complaint_create.steps.visibility'),
+            'review' => __('complaint_create.steps.review'),
+        ],
+        'buttons' => [
+            'back' => __('complaint_create.buttons.back'),
+            'next' => __('complaint_create.buttons.next'),
+            'skip' => __('complaint_create.buttons.skip'),
+            'continue' => __('complaint_create.buttons.continue'),
+            'submit' => __('complaint_create.buttons.submit'),
+            'change' => __('complaint_create.buttons.change'),
+        ],
+        'hints' => [
+            'group' => __('complaint_create.hints.group'),
+            'category' => __('complaint_create.hints.category'),
+            'describe' => __('complaint_create.hints.describe'),
+            'photos' => __('complaint_create.hints.photos'),
+            'where' => __('complaint_create.hints.where'),
+            'where_landmark' => __('complaint_create.hints.where_landmark'),
+            'review' => __('complaint_create.hints.review'),
+        ],
+        'map' => [
+            'outside' => __('complaint_create.map.outside'),
+            'previousOutside' => __('complaint_create.map.previous_outside'),
+        ],
+        'progressStep' => __('complaint_create.progress.step'),
+        'liveStep' => __('complaint_create.live.step'),
+        'chipGoesTo' => __('complaint_create.chip.goes_to'),
+        'descMore' => __('complaint_create.wizard.desc_more'),
+        'descGood' => __('complaint_create.wizard.desc_good'),
+        'takePhoto' => __('complaint_create.wizard.take_photo'),
+        'chooseGallery' => __('complaint_create.wizard.choose_gallery'),
+        'photosRequiredHelp' => __('complaint_create.wizard.photos_required_help'),
+        'photosOptionalHelp' => __('complaint_create.wizard.photos_optional_help'),
+        'optionalMark' => ' ('.__('complaint_create.labels.optional').')',
+        'justMe' => 'Just me',
+        'publishPage' => 'Publish on the transparency page',
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+    <script id="daet-boundary-data" type="application/json">{!! json_encode([
+        'geojson' => $daetBoundary,
+        'toleranceMetres' => $daetBoundaryTolerance,
+    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
 @endsection
 
 @push('scripts')
@@ -1854,8 +536,9 @@
                 const form = document.getElementById('complaint-form');
                 if (!form || form.dataset.filingInitialized === 'true') return;
                 form.dataset.filingInitialized = 'true';
+                document.body.classList.add('page-complaint-create');
 
-                const page = document.querySelector('.filing-page');
+                const page = document.querySelector('.fc-page');
                 const imagesInput = document.getElementById('images-input');
                 const cameraInput = document.getElementById('camera-input');
                 const uploadZone = document.getElementById('upload-zone');
@@ -1871,95 +554,334 @@
                 const reviewLocation = document.getElementById('review-location');
                 const submitButton = document.getElementById('submit-btn');
                 const categoryDataElement = document.getElementById('category-department-data');
+                const intakePolicyDataElement = document.getElementById('intake-policy-data');
+                const i18nElement = document.getElementById('complaint-create-i18n');
 
                 const latitudeInput = document.getElementById('latitude');
                 const longitudeInput = document.getElementById('longitude');
                 const mapElement = document.getElementById('complaint-map');
                 const barangayInput = document.getElementById('barangay');
 
-                // Wizard shell elements
                 const stepCounter = document.getElementById('wizard-step-counter');
                 const stepLabel = document.getElementById('wizard-step-label');
-                const progressFill = document.getElementById('wizard-progress-fill');
+                const segmentsEl = document.getElementById('wizard-segments');
                 const draftBanner = document.getElementById('wizard-draft-banner');
                 const draftResumeBtn = document.getElementById('wizard-draft-resume');
                 const btnBack = document.getElementById('wizard-btn-back');
                 const btnNext = document.getElementById('wizard-btn-next');
-                const stepHint = document.getElementById('wizard-step-hint');
+                const btnSubmitBar = document.getElementById('wizard-btn-submit');
+                const hintPill = document.getElementById('wizard-hint');
+                const hintText = document.getElementById('wizard-hint-text');
+                const actionBar = document.getElementById('wizard-action-bar');
+                const liveRegion = document.getElementById('wizard-live');
+                const chipGroup = document.getElementById('chip-group');
+                const chipLeaf = document.getElementById('chip-leaf');
+                const chipIcon = document.getElementById('chip-icon');
+                const chipPrefix = document.getElementById('chip-prefix');
+                const chipChangeBtn = document.getElementById('chip-change');
+                const categoryTileError = document.getElementById('category-tile-error');
 
-                // The wizard only exists on phones. Desktop keeps the normal form.
-                // jsdom has no matchMedia (the script-runtime audit runs this page
-                // there); a desktop-shaped stub is the honest fallback.
+                let i18n = {
+                    steps: { group: 'Problem type', category: 'Category', describe: 'Details', photos: 'Photos', where: 'Location', pin: 'Map pin', visibility: 'Privacy', review: 'Review' },
+                    buttons: { back: 'Back', next: 'Next', skip: 'Skip', continue: 'Continue', submit: 'Submit complaint', change: 'Change' },
+                    hints: { group: 'Please choose a problem type.', category: 'Please choose what fits best.', describe: 'Add a short title and at least 20 characters of detail.', photos: 'Add at least one photo.', where: 'Choose your barangay.', review: 'Please tick the box to confirm.' },
+                    map: { outside: 'That point is outside Daet. Place the pin inside the city.', previousOutside: 'Your previous pin was outside Daet and was removed. Place a new pin, or skip this step.' },
+                    progressStep: 'Step {n} of {total}',
+                    liveStep: 'Step {n} of {total}: {name}',
+                    chipGoesTo: 'Goes to {office}',
+                };
+
+                try {
+                    const parsed = JSON.parse(i18nElement?.textContent || '{}');
+                    if (parsed && typeof parsed === 'object') {
+                        i18n = Object.assign({}, i18n, parsed);
+                    }
+                } catch (e) { /* keep defaults */ }
+
+                const t = (template, vars) => {
+                    let out = template;
+                    Object.entries(vars || {}).forEach(([k, v]) => {
+                        out = out.split(`{${k}}`).join(String(v));
+                    });
+                    return out;
+                };
+
+                const cssEscape = (s) => {
+                    if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(String(s));
+                    return String(s).replace(/["\\]/g, '\\$&');
+                };
+
+                // ── Daet municipal boundary (map pin jurisdiction) ──
+                // The polygon is shipped as GeoJSON in the page so the map can
+                // reject an out-of-town click before submit. The server repeats
+                // the check with the same tolerance, so this is guidance, not the
+                // security boundary.
+                const boundaryConfig = (() => {
+                    try {
+                        const raw = document.getElementById('daet-boundary-data')?.textContent || 'null';
+                        const parsed = JSON.parse(raw);
+                        return parsed && typeof parsed === 'object' ? parsed : null;
+                    } catch (e) {
+                        return null;
+                    }
+                })();
+
+                const boundaryFeature = (() => {
+                    const feature = boundaryConfig?.geojson;
+                    if (!feature) return null;
+                    if (feature.type === 'FeatureCollection') return feature.features?.[0] || null;
+                    if (feature.type === 'Feature') return feature;
+                    return feature.geometry ? feature : { type: 'Feature', geometry: feature, properties: {} };
+                })();
+
+                const boundaryToleranceMetres = Number(boundaryConfig?.toleranceMetres ?? 0);
+
+                const boundaryPolygons = (() => {
+                    const geometry = boundaryFeature?.geometry;
+                    if (!geometry) return [];
+                    if (geometry.type === 'Polygon') return [geometry.coordinates];
+                    if (geometry.type === 'MultiPolygon') return geometry.coordinates;
+                    return [];
+                })();
+
+                const pointInBoundaryRing = (latitude, longitude, ring) => {
+                    if (!Array.isArray(ring) || ring.length < 3) return false;
+
+                    let inside = false;
+
+                    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                        const xi = Number(ring[i][0]);
+                        const yi = Number(ring[i][1]);
+                        const xj = Number(ring[j][0]);
+                        const yj = Number(ring[j][1]);
+
+                        if (((yi > latitude) !== (yj > latitude))
+                            && (longitude < ((xj - xi) * (latitude - yi)) / (yj - yi) + xi)) {
+                            inside = !inside;
+                        }
+                    }
+
+                    return inside;
+                };
+
+                const isInsideDaetBoundary = (latitude, longitude) => {
+                    if (boundaryPolygons.length === 0) return true;
+
+                    return boundaryPolygons.some((rings) => {
+                        if (!pointInBoundaryRing(latitude, longitude, rings[0] || [])) return false;
+
+                        return !rings.slice(1).some((hole) => pointInBoundaryRing(latitude, longitude, hole));
+                    });
+                };
+
+                const distanceToBoundaryRingMetres = (latitude, longitude, ring) => {
+                    if (!Array.isArray(ring) || ring.length === 0) return Infinity;
+
+                    const earthRadius = 6378100;
+                    const cosLatitude = Math.cos(latitude * Math.PI / 180);
+                    let minimum = Infinity;
+
+                    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                        const ax = (Number(ring[j][0]) - longitude) * Math.PI / 180 * earthRadius * cosLatitude;
+                        const ay = (Number(ring[j][1]) - latitude) * Math.PI / 180 * earthRadius;
+                        const bx = (Number(ring[i][0]) - longitude) * Math.PI / 180 * earthRadius * cosLatitude;
+                        const by = (Number(ring[i][1]) - latitude) * Math.PI / 180 * earthRadius;
+                        const dx = bx - ax;
+                        const dy = by - ay;
+                        const lengthSquared = (dx * dx) + (dy * dy);
+                        const t = lengthSquared > 0
+                            ? Math.max(0, Math.min(1, -((ax * dx) + (ay * dy)) / lengthSquared))
+                            : 0;
+
+                        minimum = Math.min(minimum, Math.hypot(ax + (t * dx), ay + (t * dy)));
+                    }
+
+                    return minimum;
+                };
+
+                const distanceToDaetBoundaryMetres = (latitude, longitude) => {
+                    let minimum = Infinity;
+
+                    boundaryPolygons.forEach((rings) => {
+                        rings.forEach((ring) => {
+                            minimum = Math.min(minimum, distanceToBoundaryRingMetres(latitude, longitude, ring));
+                        });
+                    });
+
+                    return minimum;
+                };
+
+                const isLocationAllowed = (latitude, longitude) => {
+                    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+                    if (boundaryPolygons.length === 0) return true;
+                    if (isInsideDaetBoundary(latitude, longitude)) return true;
+
+                    const distance = distanceToDaetBoundaryMetres(latitude, longitude);
+
+                    return Number.isFinite(distance) && distance <= boundaryToleranceMetres;
+                };
+
+                const daetBoundaryBounds = (() => {
+                    let south = Infinity;
+                    let west = Infinity;
+                    let north = -Infinity;
+                    let east = -Infinity;
+
+                    boundaryPolygons.forEach((rings) => {
+                        rings.forEach((ring) => {
+                            ring.forEach((point) => {
+                                const longitude = Number(point[0]);
+                                const latitude = Number(point[1]);
+
+                                if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+                                south = Math.min(south, latitude);
+                                north = Math.max(north, latitude);
+                                west = Math.min(west, longitude);
+                                east = Math.max(east, longitude);
+                            });
+                        });
+                    });
+
+                    return Number.isFinite(south) ? [[south, west], [north, east]] : null;
+                })();
+
+                const WIZARD_BREAKPOINT = '(max-width: 767px)';
+                // WIZARD_BREAKPOINT must match the CSS media query in
+                // resources/css/pages/complaint-create.css.
+                const WIZARD_STEPS = ['group', 'category', 'describe', 'photos', 'where', 'pin', 'visibility', 'review'];
+
                 const mobileQuery = typeof window.matchMedia === 'function'
-                    ? window.matchMedia('(max-width: 640px)')
+                    ? window.matchMedia(WIZARD_BREAKPOINT)
                     : { matches: false };
-                const isWizardMode = () => mobileQuery.matches;
-
-                // Scope hook so CSS can hide the site footer on this page only.
-                document.body.classList.add('page-complaint-create');
-                document.addEventListener('livewire:navigating', () => {
-                    document.body.classList.remove('page-complaint-create');
-                }, { once: true });
+                const isWizardMode = () => Boolean(mobileQuery.matches);
 
                 const currentUserId = '{{ auth()->id() ?? 'guest' }}';
                 const draftKey = `wizard:v1:${currentUserId}`;
-                const totalSteps = 7;
-                let currentStep = 1;
-                let touchedBack = {};
-                let touchedNext = {};
+                let currentKey = 'group';
+                let submitting = false;
 
-                const stepNames = {
-                    1: 'Category',
-                    2: 'Title',
-                    3: 'What happened',
-                    4: 'Photos',
-                    5: 'Location',
-                    6: 'Visibility',
-                    7: 'Review & submit'
-                };
+                let categoryToDepartment = {};
+                try {
+                    categoryToDepartment = JSON.parse(categoryDataElement?.textContent || '{}');
+                } catch (error) {
+                    categoryToDepartment = {};
+                }
 
-                const stepConfigs = {
-                    1: {
-                        validate: () => {
-                            const val = categorySelect?.value;
-                            return { valid: Boolean(val), hint: 'Please select a complaint category.' };
-                        }
-                    },
-                    2: {
-                        validate: () => {
-                            const val = document.getElementById('title')?.value?.trim();
-                            return { valid: Boolean(val), hint: 'Enter a short title for the problem.' };
-                        }
-                    },
-                    3: {
-                        validate: () => {
-                            const val = document.getElementById('description')?.value?.trim();
-                            const len = val?.length || 0;
-                            return { valid: len >= 20, hint: `Enter at least 20 characters (${Math.max(0, 20 - len)} more needed).` };
-                        }
-                    },
-                    4: {
-                        validate: () => {
-                            const count = selectedPhotos.length;
-                            return { valid: count >= 1, hint: 'Add at least one clear photo.' };
-                        }
-                    },
-                    5: {
-                        validate: () => {
-                            const barangay = barangayInput?.value?.trim();
-                            return { valid: Boolean(barangay), hint: 'Please enter or select a barangay.' };
-                        }
-                    },
-                    6: {
-                        validate: () => ({ valid: true, hint: '' })
-                    },
-                    7: {
-                        validate: () => {
-                            const terms = document.getElementById('terms')?.checked;
-                            return { valid: Boolean(terms), hint: 'You must confirm policy and accuracy.' };
+                let intakePoliciesByCategory = {};
+                try {
+                    intakePoliciesByCategory = JSON.parse(intakePolicyDataElement?.textContent || '{}');
+                } catch (error) {
+                    intakePoliciesByCategory = {};
+                }
+
+                const intakePolicyForCategory = (value) => intakePoliciesByCategory[value] || intakePoliciesByCategory['others'] || { mode: 'physical_required', photos_required: true, photos_allowed: true, barangay_required: true, address_text_required: false, show_photos_step: true, show_location_steps: true };
+                const currentIntakePolicy = () => intakePolicyForCategory(categorySelect?.value || '');
+
+                // ── Tile data: read from DOM so server-rendered panels are truth ──
+                const groupTiles = () => Array.from(document.querySelectorAll('.tile--group'));
+                const leafTiles = () => Array.from(document.querySelectorAll('.tile--leaf'));
+                const panels = () => Array.from(document.querySelectorAll('[data-group-panel]'));
+
+                const getSelectedGroupKey = () => {
+                    const checked = document.querySelector('input[name="category_group"]:checked');
+                    if (checked && checked.value) return checked.value;
+                    const val = categorySelect?.value || '';
+                    if (!val) return '';
+                    for (const panel of panels()) {
+                        if (panel.querySelector(`input[name="category_choice"][value="${cssEscape(val)}"]`)) {
+                            return panel.getAttribute('data-group-panel') || '';
                         }
                     }
+                    return '';
                 };
+
+                const getSelectedGroupLeaves = (groupKey) => {
+                    const panel = document.querySelector(`[data-group-panel="${cssEscape(groupKey)}"]`);
+                    if (!panel) return [];
+                    return Array.from(panel.querySelectorAll('input[name="category_choice"]'));
+                };
+
+                const visibleSteps = () => {
+                    const policy = currentIntakePolicy();
+                    let steps = WIZARD_STEPS.slice();
+                    const groupKey = getSelectedGroupKey();
+                    if (groupKey) {
+                        const leaves = getSelectedGroupLeaves(groupKey);
+                        if (leaves.length === 1 && categorySelect?.value) {
+                            steps = steps.filter((k) => k !== 'category');
+                        }
+                    }
+                    if (!policy.show_photos_step) steps = steps.filter((k) => k !== 'photos');
+                    if (!policy.show_location_steps) steps = steps.filter((k) => k !== 'where' && k !== 'pin');
+                    return steps.filter((k) => Boolean(document.querySelector(`[data-wizard-step="${k}"]`)));
+                };
+
+                const stepName = (key) => i18n.steps[key] || key;
+
+                // ── Validation (client side) ──
+                const validate = (key) => {
+                    switch (key) {
+                        case 'group':
+                            return { valid: Boolean(getSelectedGroupKey()), hint: i18n.hints.group, focus: () => document.querySelector('.tile--group input')?.focus() };
+                        case 'category':
+                            return { valid: Boolean(categorySelect?.value), hint: i18n.hints.category, focus: () => { const gk = getSelectedGroupKey(); const el = (gk && document.querySelector(`[data-group-panel="${cssEscape(gk)}"] input`)) || document.querySelector('.tile--leaf input'); el?.focus(); } };
+                        case 'describe': {
+                            const title = document.getElementById('title')?.value?.trim() || '';
+                            const desc = document.getElementById('description')?.value?.trim() || '';
+                            const valid = title.length > 0 && desc.length >= 20;
+                            return { valid, hint: i18n.hints.describe, focus: () => (title.length === 0 ? document.getElementById('title') : document.getElementById('description'))?.focus() };
+                        }
+                        case 'photos': {
+                            const policy = currentIntakePolicy();
+                            if (!policy.photos_required) return { valid: true, hint: '' };
+                            return { valid: selectedPhotos.length >= 1, hint: i18n.hints.photos, focus: () => imagesInput?.focus() };
+                        }
+                        case 'where': {
+                            const policy = currentIntakePolicy();
+                            const b = barangayInput?.value?.trim() || '';
+                            const a = addressInput?.value?.trim() || '';
+                            if (policy.address_text_required) {
+                                return { valid: Boolean(b) && Boolean(a), hint: i18n.hints.where_landmark || i18n.hints.where, focus: () => (!b ? barangayInput : addressInput)?.focus() };
+                            }
+                            return { valid: Boolean(b), hint: i18n.hints.where, focus: () => barangayInput?.focus() };
+                        }
+                        case 'pin':
+                            return { valid: true, hint: '' };
+                        case 'visibility':
+                            return { valid: true, hint: '' };
+                        case 'review': {
+                            const ok = Boolean(document.getElementById('terms')?.checked);
+                            return { valid: ok, hint: i18n.hints.review, focus: () => document.getElementById('terms')?.focus() };
+                        }
+                        default:
+                            return { valid: true, hint: '' };
+                    }
+                };
+
+                const firstIncompleteStep = () => {
+                    for (const key of visibleSteps()) {
+                        if (!validate(key).valid) return key;
+                    }
+                    const vis = visibleSteps();
+                    return vis[vis.length - 1] || 'review';
+                };
+
+                const getServerErrorStep = () => {
+                    const errors = window.__FILING_ERRORS__ || null;
+                    if (errors) {
+                        for (const key of WIZARD_STEPS) {
+                            if (errors[key]) return key;
+                        }
+                    }
+                    return null;
+                };
+
+                // Server error map (Blade injects booleans via __FILING_ERRORS__)
+                // category -> category (or group if no value)
+                // title/description -> describe, images/camera_photo/image -> photos,
+                // barangay/address_text -> where, latitude/longitude/location_choice -> pin,
+                // visibility -> visibility, terms -> review. First in wizard order wins.
 
                 const saveDraft = () => {
                     try {
@@ -1973,7 +895,7 @@
                             longitude: longitudeInput?.value || '',
                             visibility: document.querySelector('input[name="visibility"]:checked')?.value || 'private',
                             location_choice: document.querySelector('input[name="location_choice"]:checked')?.value || '',
-                            terms: document.getElementById('terms')?.checked || false
+                            terms: document.getElementById('terms')?.checked || false,
                         };
                         sessionStorage.setItem(draftKey, JSON.stringify(data));
                     } catch (e) {}
@@ -1993,7 +915,8 @@
                     if (!draft) return;
                     if (categorySelect && draft.category) {
                         categorySelect.value = draft.category;
-                        categorySelect.dispatchEvent(new Event('change'));
+                        syncTilesFromCategory();
+                        categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                     const titleEl = document.getElementById('title');
                     if (titleEl && draft.title) titleEl.value = draft.title;
@@ -2001,134 +924,28 @@
                     if (descEl && draft.description) descEl.value = draft.description;
                     if (barangayInput && draft.barangay) barangayInput.value = draft.barangay;
                     if (addressInput && draft.address_text) addressInput.value = draft.address_text;
-                    if (latitudeInput && draft.latitude) latitudeInput.value = draft.latitude;
-                    if (longitudeInput && draft.longitude) longitudeInput.value = draft.longitude;
+                    if (latitudeInput && longitudeInput
+                        && isLocationAllowed(Number.parseFloat(draft.latitude), Number.parseFloat(draft.longitude))) {
+                        latitudeInput.value = draft.latitude;
+                        longitudeInput.value = draft.longitude;
+                    }
                     if (draft.visibility) {
-                        const vis = document.querySelector(`input[name="visibility"][value="${draft.visibility}"]`);
+                        const vis = document.querySelector(`input[name="visibility"][value="${cssEscape(draft.visibility)}"]`);
                         if (vis) vis.checked = true;
                     }
                     if (draft.location_choice) {
-                        const loc = document.querySelector(`input[name="location_choice"][value="${draft.location_choice}"]`);
+                        const loc = document.querySelector(`input[name="location_choice"][value="${cssEscape(draft.location_choice)}"]`);
                         if (loc) loc.checked = true;
                     }
                     const termsEl = document.getElementById('terms');
                     if (termsEl && draft.terms) termsEl.checked = true;
                     updateSummary();
-                    updateWizardUI();
+                    updateWizardUI(false);
+                    updatePinLabel();
                 };
-
-                const getErrorStep = () => {
-                    @if($errors->has('category'))
-                        return 1;
-                    @endif
-                    @if($errors->has('title'))
-                        return 2;
-                    @endif
-                    @if($errors->has('description'))
-                        return 3;
-                    @endif
-                    @if($errors->has('images') || $errors->has('camera_photo') || $errors->has('image'))
-                        return 4;
-                    @endif
-                    @if($errors->has('barangay') || $errors->has('address_text') || $errors->has('latitude') || $errors->has('longitude') || $errors->has('location_choice'))
-                        return 5;
-                    @endif
-                    @if($errors->has('visibility'))
-                        return 6;
-                    @endif
-                    @if($errors->has('terms'))
-                        return 7;
-                    @endif
-                    return 0;
-                };
-
-                const updateWizardUI = () => {
-                    const wizardOn = isWizardMode();
-                    page?.classList.toggle('wizard-on', wizardOn);
-
-                    // Hidden required fields would silently block submit on mobile.
-                    // The server validates everything again, so skip native checks there.
-                    form.noValidate = wizardOn;
-
-                    if (!wizardOn) {
-                        // Desktop: show everything, exactly like the original form.
-                        document.querySelectorAll('[data-wizard-step]').forEach((el) => {
-                            el.classList.remove('wizard-step-active');
-                            el.removeAttribute('hidden');
-                        });
-                        return;
-                    }
-
-                    document.querySelectorAll('[data-wizard-step]').forEach((el) => {
-                        const stepNum = Number.parseInt(el.getAttribute('data-wizard-step'), 10);
-                        if (stepNum === currentStep) {
-                            el.classList.add('wizard-step-active');
-                            el.removeAttribute('hidden');
-                        } else {
-                            el.classList.remove('wizard-step-active');
-                            el.setAttribute('hidden', 'true');
-                        }
-                    });
-
-                    if (stepCounter) stepCounter.textContent = `Step ${currentStep} of ${totalSteps}`;
-                    if (stepLabel) stepLabel.textContent = stepNames[currentStep] || '';
-                    if (progressFill) progressFill.style.width = `${(currentStep / totalSteps) * 100}%`;
-
-                    if (btnBack) {
-                        btnBack.style.display = currentStep === 1 ? 'none' : 'inline-flex';
-                    }
-
-                    if (btnNext) {
-                        if (currentStep === totalSteps) {
-                            btnNext.textContent = 'Submit for department review';
-                            btnNext.type = 'submit';
-                        } else {
-                            btnNext.textContent = 'Next';
-                            btnNext.type = 'button';
-                        }
-                    }
-
-                    const config = stepConfigs[currentStep];
-                    if (config) {
-                        const res = config.validate();
-                        if (btnNext) {
-                            btnNext.disabled = currentStep < totalSteps ? !res.valid : false;
-                        }
-                        if (stepHint) {
-                            if (!res.valid && res.hint && touchedNext[currentStep]) {
-                                stepHint.textContent = res.hint;
-                                stepHint.hidden = false;
-                            } else {
-                                stepHint.hidden = true;
-                            }
-                        }
-                    }
-
-                    if (currentStep === 5 && window.invalidateComplaintMap) {
-                        window.invalidateComplaintMap();
-                    }
-                };
-
-                const goToStep = (step, updateHash = true) => {
-                    if (!isWizardMode()) return;
-                    if (step < 1 || step > totalSteps) return;
-                    currentStep = step;
-                    updateWizardUI();
-                    if (updateHash) {
-                        window.location.hash = `#step-${currentStep}`;
-                    }
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                };
-
-                let categoryToDepartment = {};
-
-                try {
-                    categoryToDepartment = JSON.parse(categoryDataElement?.textContent || '{}');
-                } catch (error) {
-                    categoryToDepartment = {};
-                }
 
                 const updateSummary = () => {
+                    if (!reviewCategory) return;
                     const categoryLabel = categorySelect?.selectedOptions?.[0]?.textContent?.trim();
                     const department = categoryToDepartment[categorySelect?.value || ''];
                     reviewCategory.textContent = categoryLabel && categoryLabel !== '- Select a category -' ? categoryLabel : 'Not selected';
@@ -2140,18 +957,217 @@
                     reviewLocation.textContent = [barangay, description]
                         .filter(Boolean)
                         .join(' · ') || 'No location added';
+
+                    const titleEl = document.getElementById('review-title');
+                    if (titleEl) {
+                        const v = document.getElementById('title')?.value?.trim() || '';
+                        titleEl.textContent = v || 'Not provided';
+                    }
+                    const descEl = document.getElementById('review-description');
+                    if (descEl) {
+                        const v = document.getElementById('description')?.value?.trim() || '';
+                        descEl.textContent = v || 'Not provided';
+                    }
+                    const photosCountEl = document.getElementById('review-photos-count');
+                    const thumbsEl = document.getElementById('review-photos-thumbs');
+                    if (photosCountEl || thumbsEl) {
+                        const imgs = uploadPreviews ? Array.from(uploadPreviews.querySelectorAll('img')) : [];
+                        const count = imgs.length;
+                        if (photosCountEl) photosCountEl.textContent = count + ' / 5';
+                        if (thumbsEl) {
+                            thumbsEl.textContent = '';
+                            const previewImgs = uploadPreviews ? uploadPreviews.querySelectorAll('img') : [];
+                            Array.from(previewImgs).slice(0, 5).forEach((srcImg) => {
+                                const thumb = document.createElement('img');
+                                thumb.className = 'fc-review-thumb';
+                                thumb.src = srcImg.src;
+                                thumb.alt = '';
+                                thumbsEl.appendChild(thumb);
+                            });
+                        }
+                    }
+                    const visEl = document.getElementById('review-visibility');
+                    if (visEl) {
+                        const visVal = document.querySelector('input[name="visibility"]:checked')?.value || 'private';
+                        visEl.textContent = visVal === 'public' ? (i18n.publishPage || 'Publish on the transparency page') : (i18n.justMe || 'Just me');
+                    }
                 };
 
-                if (categorySelect) {
-                    categorySelect.addEventListener('change', () => {
-                        const department = categoryToDepartment[categorySelect.value];
-                        if (department) {
-                            departmentName.textContent = department;
-                            departmentHint.hidden = false;
-                        } else {
-                            departmentHint.hidden = true;
+                // ── Tiles ⇄ select sync ──
+                const syncTilesFromCategory = () => {
+                    const value = categorySelect?.value || '';
+                    for (const panel of panels()) {
+                        const key = panel.getAttribute('data-group-panel');
+                        const hasValue = Boolean(value && panel.querySelector(`input[name="category_choice"][value="${cssEscape(value)}"]`));
+                        if (hasValue) {
+                            const groupRadio = document.querySelector(`input[name="category_group"][value="${cssEscape(key)}"]`);
+                            if (groupRadio) groupRadio.checked = true;
+                            const leafRadio = panel.querySelector(`input[name="category_choice"][value="${cssEscape(value)}"]`);
+                            if (leafRadio) leafRadio.checked = true;
                         }
+                    }
+                    syncTileStates();
+                };
+
+                const syncTileStates = () => {
+                    const groupKey = getSelectedGroupKey();
+                    for (const tile of groupTiles()) {
+                        const input = tile.querySelector('input');
+                        const isSel = Boolean(input && input.checked);
+                        tile.classList.toggle('is-selected', isSel);
+                        tile.querySelector('.tile__check')?.classList.toggle('tile__check--hidden', !isSel);
+                    }
+                    for (const tile of leafTiles()) {
+                        const input = tile.querySelector('input');
+                        tile.classList.toggle('is-selected', Boolean(input && input.checked));
+                    }
+                    for (const panel of panels()) {
+                        const key = panel.getAttribute('data-group-panel');
+                        panel.hidden = !(groupKey && key === groupKey);
+                    }
+                };
+
+                const updateChip = () => {
+                    if (!departmentHint) return;
+                    const value = categorySelect?.value || '';
+                    const department = categoryToDepartment[value] || '';
+                    if (!value || !department) {
+                        departmentHint.classList.remove('is-visible');
+                        departmentHint.hidden = true;
+                        departmentHint.removeAttribute('data-visible');
+                        return;
+                    }
+                    const groupKey = getSelectedGroupKey();
+                    const groupRadio = groupKey ? document.querySelector(`input[name="category_group"][value="${cssEscape(groupKey)}"]`) : null;
+                    const groupLabel = groupRadio ? groupRadio.closest('.tile')?.querySelector('.tile__label')?.textContent?.trim() || '' : '';
+                    const leafRadio = document.querySelector(`input[name="category_choice"][value="${cssEscape(value)}"]`);
+                    const leafLabel = leafRadio ? leafRadio.closest('.tile')?.querySelector('.tile__label')?.textContent?.trim() || (categorySelect?.selectedOptions?.[0]?.textContent?.trim() || '') : '';
+                    const iconEl = leafRadio ? leafRadio.closest('.tile')?.querySelector('.tile__icon') : (groupRadio ? groupRadio.closest('.tile')?.querySelector('.tile__icon') : null);
+                    if (chipGroup) chipGroup.textContent = groupLabel;
+                    if (chipLeaf) chipLeaf.textContent = leafLabel;
+                    if (chipIcon && iconEl) {
+                        chipIcon.className = iconEl.className.replace('tile__icon', 'fc-chip__icon');
+                        chipIcon.innerHTML = iconEl.innerHTML;
+                    }
+                    if (departmentName) departmentName.textContent = department;
+                    if (chipPrefix) chipPrefix.textContent = String(i18n.chipGoesTo).split('{office}')[0] || '';
+                    // Chip shows on every screen after category (not review) in wizard;
+                    // on desktop whenever a category is chosen.
+                    const show = isWizardMode()
+                        ? !['group', 'category', 'review'].includes(currentKey)
+                        : true;
+                    departmentHint.hidden = !show;
+                    departmentHint.classList.toggle('is-visible', show);
+                    if (show) departmentHint.setAttribute('data-visible', 'true');
+                    else departmentHint.removeAttribute('data-visible');
+                };
+
+                const setCategory = (value) => {
+                    if (!categorySelect) return;
+                    categorySelect.value = value;
+                    syncTilesFromCategory();
+                    categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                };
+
+                const onGroupChosen = (groupKey) => {
+                    syncTileStates();
+                    const leaves = getSelectedGroupLeaves(groupKey);
+                    if (leaves.length === 1) {
+                        setCategory(leaves[0].value);
+                        if (isWizardMode()) {
+                            window.setTimeout(() => {
+                                if (currentKey === 'group' || currentKey === 'category') goToStep('describe');
+                            }, 200);
+                        }
+                    } else if (leaves.length === 0) {
+                        setCategory('');
+                    } else {
+                        // Multi-child: keep previous leaf only if it belongs to this group.
+                        const current = categorySelect?.value || '';
+                        const stillHere = leaves.some((r) => r.value === current);
+                        if (!stillHere) {
+                            setCategory('');
+                        }
+                        if (isWizardMode() && currentKey === 'group') {
+                            window.setTimeout(() => {
+                                if (currentKey === 'group') goToStep('category');
+                            }, 200);
+                        }
+                    }
+                    updateWizardUI(false);
+                };
+
+                const onLeafChosen = (value) => {
+                    setCategory(value);
+                    if (isWizardMode()) {
+                        window.setTimeout(() => {
+                            if (currentKey === 'category') goToStep('describe');
+                        }, 200);
+                    }
+                    updateWizardUI(false);
+                };
+
+                groupTiles().forEach((tile) => {
+                    const input = tile.querySelector('input');
+                    let changeFired = false;
+                    input?.addEventListener('change', () => {
+                        changeFired = true;
+                        onGroupChosen(input.value);
+                    });
+                    // Re-clicking an already-selected radio doesn't fire `change`; still proceed.
+                    tile.addEventListener('click', () => {
+                        const wasAlreadyChecked = Boolean(input?.checked);
+                        changeFired = false;
+                        window.setTimeout(() => {
+                            if (wasAlreadyChecked && !changeFired && input?.checked) {
+                                onGroupChosen(input.value);
+                            }
+                        }, 0);
+                    });
+                });
+
+                leafTiles().forEach((tile) => {
+                    const input = tile.querySelector('input');
+                    let changeFired = false;
+                    input?.addEventListener('change', () => {
+                        changeFired = true;
+                        onLeafChosen(input.value);
+                    });
+                    tile.addEventListener('click', () => {
+                        const wasAlreadyChecked = Boolean(input?.checked);
+                        changeFired = false;
+                        window.setTimeout(() => {
+                            if (wasAlreadyChecked && !changeFired && input?.checked) {
+                                onLeafChosen(input.value);
+                            }
+                        }, 0);
+                    });
+                });
+
+                if (chipChangeBtn) {
+                    chipChangeBtn.addEventListener('click', () => {
+                        hideHint();
+                        if (isWizardMode()) {
+                            goToStep('group');
+                        } else {
+                            document.getElementById('filing-category')?.scrollIntoView?.({ block: 'start' });
+                            document.querySelector('.tile--group input')?.focus();
+                        }
+                    });
+                }
+
+                if (categorySelect) {
+                    // With JS the select is visually hidden; it must not keep
+                    // native required (hidden required blocks submit with
+                    // "not focusable"). Client validation + server replace it.
+                    categorySelect.removeAttribute('required');
+                    categorySelect.setAttribute('tabindex', '-1');
+                    categorySelect.setAttribute('aria-hidden', 'true');
+                    categorySelect.addEventListener('change', () => {
+                        syncTilesFromCategory();
                         updateSummary();
+                        updateChip();
+                        updateWizardUI(false);
                     });
                     updateSummary();
                 }
@@ -2159,6 +1175,7 @@
                 addressInput?.addEventListener('input', updateSummary);
                 barangayInput?.addEventListener('input', updateSummary);
 
+                // ── Photos (ported from the original wizard) ──
                 const maxPhotos = 5;
                 const maxPhotoBytes = 5 * 1024 * 1024;
                 let selectedPhotos = [];
@@ -2178,7 +1195,6 @@
 
                 const syncGalleryInput = () => {
                     if (!imagesInput || typeof DataTransfer === 'undefined') return false;
-
                     try {
                         const transfer = new DataTransfer();
                         selectedPhotos.forEach(({ file }) => transfer.items.add(file));
@@ -2191,28 +1207,24 @@
 
                 const renderPhotoPreviews = () => {
                     if (!uploadPreviews || !photoCount) return;
-
                     previewUrls.forEach((url) => URL.revokeObjectURL(url));
                     previewUrls = [];
                     uploadPreviews.replaceChildren();
                     photoCount.textContent = `${selectedPhotos.length} / ${maxPhotos}`;
-
                     selectedPhotos.forEach(({ id, file }) => {
                         const preview = document.createElement('div');
-                        preview.className = 'filing-upload__preview';
-
+                        preview.className = 'upload-preview';
                         const image = document.createElement('img');
                         const objectUrl = URL.createObjectURL(file);
                         previewUrls.push(objectUrl);
                         image.src = objectUrl;
                         image.alt = `Selected evidence photo ${file.name}`;
                         preview.appendChild(image);
-
                         const remove = document.createElement('button');
                         remove.type = 'button';
-                        remove.className = 'filing-upload__remove';
+                        remove.className = 'upload-preview__remove';
                         remove.setAttribute('aria-label', `Remove ${file.name}`);
-                        remove.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
+                        remove.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
                         remove.addEventListener('click', () => {
                             selectedPhotos = selectedPhotos.filter((photo) => photo.id !== id);
                             syncGalleryInput();
@@ -2222,18 +1234,16 @@
                         preview.appendChild(remove);
                         uploadPreviews.appendChild(preview);
                     });
-                    updateWizardUI();
+                    updateWizardUI(false);
                 };
 
                 const addPhotos = (files) => {
                     const incoming = Array.from(files || []);
                     const invalid = incoming.find((file) => !isAllowedPhoto(file));
-
                     if (invalid) {
                         showUploadError('Use JPG, PNG, or WEBP photos no larger than 5 MB each.');
                         return;
                     }
-
                     const existingKeys = new Set(selectedPhotos.map(({ file }) => `${file.name}-${file.size}-${file.lastModified}`));
                     const unique = incoming.filter((file) => {
                         const key = `${file.name}-${file.size}-${file.lastModified}`;
@@ -2242,20 +1252,14 @@
                         return true;
                     });
                     const availableSlots = maxPhotos - selectedPhotos.length;
-
                     if (unique.length > availableSlots) {
                         showUploadError(`You can attach a maximum of ${maxPhotos} photos.`);
                     } else {
                         showUploadError('');
                     }
-
                     unique.slice(0, Math.max(availableSlots, 0)).forEach((file, index) => {
-                        selectedPhotos.push({
-                            id: `${Date.now()}-${index}-${file.name}-${file.size}`,
-                            file,
-                        });
+                        selectedPhotos.push({ id: `${Date.now()}-${index}-${file.name}-${file.size}`, file });
                     });
-
                     syncGalleryInput();
                     renderPhotoPreviews();
                 };
@@ -2267,16 +1271,11 @@
                     });
                 });
 
-                imagesInput?.addEventListener('change', () => {
-                    addPhotos(imagesInput.files);
-                });
-
+                imagesInput?.addEventListener('change', () => addPhotos(imagesInput.files));
                 cameraInput?.addEventListener('change', () => {
                     if (!cameraInput.files?.length) return;
                     addPhotos(cameraInput.files);
-                    if (syncGalleryInput()) {
-                        cameraInput.value = '';
-                    }
+                    if (syncGalleryInput()) cameraInput.value = '';
                 });
 
                 if (uploadZone) {
@@ -2284,7 +1283,6 @@
                         if (event.target === imagesInput || event.target === cameraInput || event.target.closest('button')) return;
                         imagesInput?.click();
                     });
-
                     uploadZone.addEventListener('dragover', (event) => {
                         event.preventDefault();
                         uploadZone.classList.add('is-dragging');
@@ -2297,49 +1295,142 @@
                     });
                 }
 
+                // ── Map (ported; keep window.* working) ──
                 let map = null;
                 let marker = null;
+                let lastValidPin = null;
 
                 const updateCoordinates = (latitude, longitude) => {
                     if (latitudeInput) latitudeInput.value = latitude.toFixed(8);
                     if (longitudeInput) longitudeInput.value = longitude.toFixed(8);
                     updateSummary();
+                    updatePinLabel();
+                };
+
+                const removePinButton = document.getElementById('remove-pin');
+                const updatePinLabel = () => {
+                    const hasPin = Boolean(latitudeInput?.value && longitudeInput?.value);
+                    if (removePinButton) removePinButton.hidden = !hasPin;
+                    if (!btnNext || currentKey !== 'pin') return;
+                    btnNext.textContent = hasPin ? i18n.buttons.continue : i18n.buttons.skip;
+                };
+
+                removePinButton?.addEventListener('click', () => {
+                    clearPin();
+                    const locateStatus = document.getElementById('locate-status');
+                    if (locateStatus) {
+                        locateStatus.hidden = false;
+                        locateStatus.classList.remove('is-error');
+                        locateStatus.setAttribute('role', 'status');
+                        locateStatus.setAttribute('aria-live', 'polite');
+                        locateStatus.textContent = 'Pin removed.';
+                    }
+                    saveDraft && saveDraft();
+                });
+
+                const clearPin = () => {
+                    if (marker && map) {
+                        try { map.removeLayer(marker); } catch (e) {}
+                    }
+                    marker = null;
+                    lastValidPin = null;
+                    if (latitudeInput) latitudeInput.value = '';
+                    if (longitudeInput) longitudeInput.value = '';
+                    updateSummary();
+                    updatePinLabel();
                 };
 
                 const showMapUnavailable = () => {
                     if (!mapElement) return;
-                    mapElement.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;font-size:12px">Map unavailable. You can still submit using the address or landmark field.</div>';
+                    mapElement.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:14px">Map unavailable. You can still submit using the address or landmark field.</div>';
                 };
 
                 const initializeMap = () => {
                     if (!mapElement) return;
-
                     if (map) {
                         map.remove();
                         map = null;
                         marker = null;
                     }
-
                     const keepMapSized = (target) => {
                         if (!target) return;
-
                         const refresh = () => target.invalidateSize({ animate: false });
-
                         window.requestAnimationFrame(refresh);
                         window.setTimeout(refresh, 300);
                         window.addEventListener('resize', refresh);
-                        window.addEventListener('orientationchange', () => {
-                            window.setTimeout(refresh, 150);
-                        });
+                        window.addEventListener('orientationchange', () => window.setTimeout(refresh, 150));
                     };
-                    map = window.L.map(mapElement).setView([14.1153, 122.9553], 14);
+                    const boundaryLatLngBounds = daetBoundaryBounds
+                        ? window.L.latLngBounds(daetBoundaryBounds)
+                        : null;
+                    const mapOptions = { maxZoom: 18 };
+                    if (boundaryLatLngBounds) {
+                        mapOptions.maxBounds = boundaryLatLngBounds.pad(0.12);
+                        mapOptions.maxBoundsViscosity = 1;
+                    }
+                    map = window.L.map(mapElement, mapOptions).setView(
+                        boundaryLatLngBounds ? boundaryLatLngBounds.getCenter() : [14.1153, 122.9553],
+                        14,
+                    );
                     window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; OpenStreetMap contributors',
                         maxZoom: 18,
                     }).addTo(map);
-
                     window.invalidateComplaintMap = () => {
                         if (map) map.invalidateSize({ animate: false });
+                    };
+
+                    const locateButton = document.getElementById('locate-me');
+                    const locateStatus = document.getElementById('locate-status');
+                    const mapBoundaryNotice = (() => {
+                        const existing = mapElement.querySelector('#map-boundary-notice');
+                        if (existing) return existing;
+                        const notice = document.createElement('div');
+                        notice.id = 'map-boundary-notice';
+                        notice.className = 'fc-map-notice';
+                        notice.setAttribute('role', 'alert');
+                        notice.setAttribute('aria-live', 'assertive');
+                        notice.hidden = true;
+                        mapElement.appendChild(notice);
+                        return notice;
+                    })();
+                    const clearMapBoundaryNotice = () => {
+                        if (!mapBoundaryNotice) return;
+                        mapBoundaryNotice.hidden = true;
+                        mapBoundaryNotice.textContent = '';
+                    };
+                    const clearLocateStatus = () => {
+                        clearMapBoundaryNotice();
+                        if (!locateStatus) return;
+                        locateStatus.hidden = true;
+                        locateStatus.textContent = '';
+                        locateStatus.classList.remove('is-error');
+                        locateStatus.setAttribute('role', 'status');
+                        locateStatus.setAttribute('aria-live', 'polite');
+                    };
+                    const sayLocating = (message, isError = false) => {
+                        if (isError) {
+                            clearMapBoundaryNotice();
+                            if (locateStatus) {
+                                locateStatus.hidden = true;
+                                locateStatus.textContent = '';
+                                locateStatus.classList.remove('is-error');
+                                locateStatus.setAttribute('role', 'status');
+                                locateStatus.setAttribute('aria-live', 'polite');
+                            }
+                            if (mapBoundaryNotice) {
+                                mapBoundaryNotice.textContent = message;
+                                mapBoundaryNotice.hidden = false;
+                            }
+                            return;
+                        }
+                        clearMapBoundaryNotice();
+                        if (!locateStatus) return;
+                        locateStatus.textContent = message;
+                        locateStatus.hidden = false;
+                        locateStatus.classList.remove('is-error');
+                        locateStatus.setAttribute('role', 'status');
+                        locateStatus.setAttribute('aria-live', 'polite');
                     };
 
                     const pinIcon = window.L.divIcon({
@@ -2348,87 +1439,96 @@
                         iconSize: [30, 42],
                         iconAnchor: [15, 42],
                     });
-
                     const placeMarker = (latitude, longitude, recenter = false) => {
+                        if (!isLocationAllowed(latitude, longitude)) {
+                            sayLocating(
+                                i18n.map?.outside || 'That point is outside Daet. Place the pin inside the city.',
+                                true,
+                            );
+                            return false;
+                        }
                         if (marker) {
                             marker.setLatLng([latitude, longitude]);
                         } else {
                             marker = window.L.marker([latitude, longitude], { icon: pinIcon, draggable: true }).addTo(map);
                             marker.on('dragend', () => {
                                 const position = marker.getLatLng();
+                                if (!isLocationAllowed(position.lat, position.lng)) {
+                                    sayLocating(
+                                        i18n.map?.outside || 'That point is outside Daet. Place the pin inside the city.',
+                                        true,
+                                    );
+                                    if (lastValidPin) {
+                                        marker.setLatLng([lastValidPin.latitude, lastValidPin.longitude]);
+                                    }
+                                    return;
+                                }
+                                lastValidPin = { latitude: position.lat, longitude: position.lng };
+                                clearLocateStatus();
                                 updateCoordinates(position.lat, position.lng);
                             });
                         }
+                        lastValidPin = { latitude, longitude };
                         if (recenter) map.setView([latitude, longitude], 16);
+                        clearLocateStatus();
                         updateCoordinates(latitude, longitude);
+                        return true;
                     };
 
                     const savedLatitude = Number.parseFloat(latitudeInput?.value);
                     const savedLongitude = Number.parseFloat(longitudeInput?.value);
                     if (Number.isFinite(savedLatitude) && Number.isFinite(savedLongitude)) {
-                        placeMarker(savedLatitude, savedLongitude, true);
+                        if (isLocationAllowed(savedLatitude, savedLongitude)) {
+                            placeMarker(savedLatitude, savedLongitude, true);
+                        } else {
+                            // An old submission or draft can carry a pin from
+                            // before the boundary existed. Do not show it as if
+                            // it were valid; ask for a new one instead.
+                            if (latitudeInput) latitudeInput.value = '';
+                            if (longitudeInput) longitudeInput.value = '';
+                            updateSummary();
+                            updatePinLabel();
+                            sayLocating(
+                                i18n.map?.previousOutside || 'Your previous pin was outside Daet and was removed. Place a new pin, or skip this step.',
+                                true,
+                            );
+                            if (boundaryLatLngBounds) {
+                                map.setView(boundaryLatLngBounds.getCenter(), 14);
+                            }
+                        }
                     }
-
                     map.on('click', (event) => placeMarker(event.latlng.lat, event.latlng.lng));
-
                     keepMapSized(map);
-
-                    const locateButton = document.getElementById('locate-me');
-                    const locateStatus = document.getElementById('locate-status');
-
-                    const sayLocating = (message) => {
-                        if (!locateStatus) return;
-                        locateStatus.textContent = message;
-                        locateStatus.hidden = false;
-                    };
 
                     const locateFailures = {
                         1: 'Location permission was declined. You can still place the pin on the map.',
                         2: 'Your location is unavailable right now. Please place the pin on the map.',
                         3: 'Finding your location took too long. Please place the pin on the map.',
                     };
-
                     if (locateButton) {
                         locateButton.addEventListener('click', () => {
                             if (!navigator.geolocation) {
                                 sayLocating('This browser cannot share your location. Please place the pin on the map.');
                                 return;
                             }
-
                             locateButton.disabled = true;
                             sayLocating('Finding your location...');
-
                             navigator.geolocation.getCurrentPosition(
                                 (position) => {
                                     locateButton.disabled = false;
-
                                     const { latitude, longitude, accuracy } = position.coords;
-                                    placeMarker(latitude, longitude, true);
-
-                                    const within = Number.isFinite(accuracy)
-                                        ? ` It is accurate to about ${Math.round(accuracy)} m.`
-                                        : '';
-
-                                    sayLocating(
-                                        `Pin moved to where you are.${within} `
-                                        + 'Drag the pin if the problem is a little way from you.',
-                                    );
+                                    if (placeMarker(latitude, longitude, true)) {
+                                        const within = Number.isFinite(accuracy) ? ` It is accurate to about ${Math.round(accuracy)} m.` : '';
+                                        sayLocating(`Pin moved to where you are.${within} Drag the pin if the problem is a little way from you.`);
+                                    }
                                 },
                                 (error) => {
                                     locateButton.disabled = false;
-
                                     if (error.code === 1 && !window.isSecureContext) {
-                                        sayLocating(
-                                            'Your browser only shares a location over a secure (https) connection. '
-                                            + 'Please place the pin on the map.',
-                                        );
+                                        sayLocating('Your browser only shares a location over a secure (https) connection. Please place the pin on the map.');
                                         return;
                                     }
-
-                                    sayLocating(
-                                        locateFailures[error.code]
-                                        ?? 'Your location could not be read. Please place the pin on the map.',
-                                    );
+                                    sayLocating(locateFailures[error.code] ?? 'Your location could not be read. Please place the pin on the map.');
                                 },
                                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
                             );
@@ -2436,32 +1536,358 @@
                     }
                 };
 
-                window.whenLeafletReady(initializeMap, { onUnavailable: showMapUnavailable });
-
-                // Initial step: server errors win, then the URL hash (mobile only)
-                const serverErrStep = getErrorStep();
-                const initialHashMatch = window.location.hash.match(/^#step-(\d+)$/);
-                const hashStep = initialHashMatch ? Number.parseInt(initialHashMatch[1], 10) : null;
-
-                if (serverErrStep > 0) {
-                    currentStep = serverErrStep;
-                } else if (isWizardMode() && hashStep && hashStep >= 1 && hashStep <= totalSteps) {
-                    currentStep = hashStep;
+                if (typeof window.whenLeafletReady === 'function') {
+                    window.whenLeafletReady(initializeMap, { onUnavailable: showMapUnavailable });
                 } else {
-                    currentStep = 1;
+                    showMapUnavailable();
                 }
 
-                // Draft banner: only when the draft has real content
-                const existingDraft = loadDraft();
-                @if(!$errors->any())
-                if (existingDraft && draftBanner) {
-                    const meaningful = ['category', 'title', 'description', 'address_text']
-                        .filter((key) => existingDraft[key]).length;
-                    if (meaningful >= 2) {
-                        draftBanner.hidden = false;
+                // ── Wizard UI ──
+                const hideHint = () => {
+                    if (hintPill) hintPill.hidden = true;
+                };
+
+                const showHint = (key) => {
+                    const message = i18n.hints[key] || '';
+                    if (!message || !hintPill || !hintText) return;
+                    hintText.textContent = message;
+                    hintPill.hidden = false;
+                };
+
+                const updateWizardUI = (announce = true) => {
+                    const wizardOn = isWizardMode();
+                    page?.classList.toggle('wizard-on', wizardOn);
+                    // With JS the hidden category select has no native required
+                    // (hidden required blocks submit with "not focusable") and
+                    // wizard steps hide required fields, so native checks are
+                    // replaced by client + server validation. Without JS the
+                    // form keeps native required (see no-JS fallback).
+                    form.noValidate = true;
+
+                    const policy = currentIntakePolicy();
+                    const policyHidden = (key) => (key === 'photos' && !policy.show_photos_step) || ((key === 'where' || key === 'pin') && !policy.show_location_steps);
+
+                    // Landmark/address_text: required for proof_optional (1a) — expand so it is fillable.
+                    const landmarkToggle = document.getElementById('landmark-toggle');
+                    const landmarkField = document.getElementById('landmark-field');
+                    const addressReqMark = document.getElementById('address-text-required-mark');
+                    if (landmarkField && policy.show_location_steps) {
+                        if (policy.address_text_required) {
+                            landmarkField.hidden = false;
+                            landmarkField.classList.add('is-open');
+                            landmarkToggle?.setAttribute('aria-expanded', 'true');
+                            addressInput?.setAttribute('required', 'required');
+                            if (addressReqMark) addressReqMark.textContent = ' *';
+                        } else {
+                            addressInput?.removeAttribute('required');
+                            if (addressReqMark && i18n.optionalMark) addressReqMark.textContent = i18n.optionalMark;
+                        }
                     }
+                    // Barangay native required only when location is collected; JS validation is authoritative.
+                    if (policy.barangay_required) barangayInput?.setAttribute('required', 'required');
+                    else barangayInput?.removeAttribute('required');
+
+                    // Photos step text: required vs optional-but-encouraged (proof_optional). No redesign.
+                    const photosHelp = document.getElementById('photos-step-help');
+                    const photosReqMark = document.getElementById('photos-required-mark');
+                    if (photosHelp && photosReqMark) {
+                        if (policy.photos_required) {
+                            photosReqMark.style.display = '';
+                            if (i18n.photosRequiredHelp) photosHelp.textContent = i18n.photosRequiredHelp;
+                        } else if (policy.show_photos_step) {
+                            photosReqMark.style.display = 'none';
+                            if (i18n.photosOptionalHelp) photosHelp.textContent = i18n.photosOptionalHelp;
+                        }
+                    }
+
+                    if (!wizardOn) {
+                        document.querySelectorAll('[data-wizard-step]').forEach((el) => {
+                            const key = el.getAttribute('data-wizard-step');
+                            const hidden = policyHidden(key);
+                            el.classList.remove('wizard-step-active');
+                            el.toggleAttribute('hidden', hidden);
+                        });
+                        document.querySelectorAll('.fc-card').forEach((card) => {
+                            const steps = Array.from(card.querySelectorAll('[data-wizard-step]'));
+                            const anyVisible = steps.length === 0 || steps.some((el) => !el.hasAttribute('hidden'));
+                            card.toggleAttribute('hidden', !anyVisible);
+                        });
+                        page?.classList.remove('wizard-at-start');
+                        document.querySelectorAll('[data-upload-trigger="camera-input"]').forEach((btn) => {
+                            if (btn.dataset.origText) btn.textContent = btn.dataset.origText;
+                        });
+                        document.querySelectorAll('[data-upload-trigger="images-input"]').forEach((btn) => {
+                            if (btn.dataset.origText) btn.textContent = btn.dataset.origText;
+                        });
+                        if (actionBar) actionBar.style.display = 'none';
+                        hideHint();
+                        syncTileStates();
+                        updateChip();
+                        updatePinLabel();
+                        return;
+                    }
+
+                    if (actionBar) actionBar.style.display = '';
+                    updateChip();
+
+                    const vis = visibleSteps();
+                    if (!vis.includes(currentKey)) currentKey = vis[0] || 'group';
+
+                    document.querySelectorAll('[data-wizard-step]').forEach((el) => {
+                        const key = el.getAttribute('data-wizard-step');
+                        if (key === currentKey) {
+                            el.classList.add('wizard-step-active');
+                            el.removeAttribute('hidden');
+                        } else {
+                            el.classList.remove('wizard-step-active');
+                            el.setAttribute('hidden', 'true');
+                        }
+                    });
+
+                    document.querySelectorAll('.fc-card').forEach((card) => {
+                        const hasActive = Boolean(card.querySelector('[data-wizard-step].wizard-step-active'));
+                        card.hidden = !hasActive;
+                    });
+                    page?.classList.toggle('wizard-at-start', currentKey === 'group');
+                    document.querySelectorAll('[data-upload-trigger="camera-input"]').forEach((btn) => {
+                        if (!btn.dataset.origText) btn.dataset.origText = btn.textContent;
+                        if (i18n.takePhoto) btn.textContent = i18n.takePhoto;
+                    });
+                    document.querySelectorAll('[data-upload-trigger="images-input"]').forEach((btn) => {
+                        if (!btn.dataset.origText) btn.dataset.origText = btn.textContent;
+                        if (i18n.chooseGallery) btn.textContent = i18n.chooseGallery;
+                    });
+                    if (currentKey === 'review') updateSummary();
+
+                    const idx = vis.indexOf(currentKey);
+                    const n = idx + 1;
+                    const total = vis.length;
+                    if (stepCounter) stepCounter.textContent = t(i18n.progressStep, { n, total });
+                    if (stepLabel) stepLabel.textContent = stepName(currentKey);
+                    if (segmentsEl) {
+                        segmentsEl.setAttribute('aria-valuenow', String(n));
+                        segmentsEl.setAttribute('aria-valuemax', String(total));
+                        segmentsEl.setAttribute('aria-label', t(i18n.liveStep, { n, total, name: stepName(currentKey) }));
+                        // Rebuild to match visible count (7 vs 8).
+                        while (segmentsEl.children.length < total) {
+                            const s = document.createElement('span');
+                            s.className = 'fc-progress__seg';
+                            segmentsEl.appendChild(s);
+                        }
+                        const segs = Array.from(segmentsEl.children);
+                        segs.forEach((seg, i) => {
+                            if (i >= total) {
+                                seg.style.display = 'none';
+                                return;
+                            }
+                            seg.style.display = '';
+                            seg.classList.remove('fc-progress__seg--done', 'fc-progress__seg--current');
+                            if (i < idx) seg.classList.add('fc-progress__seg--done');
+                            else if (i === idx) seg.classList.add('fc-progress__seg--current');
+                        });
+                    }
+
+                    // Action bar per step: Next stays type=button; the dedicated
+                    // bar submit (type=submit) replaces it on review. Mutating
+                    // Next's own type inside its click handler would submit the
+                    // same click (visibility → review must not submit).
+                    if (actionBar) {
+                        if (currentKey === 'group') {
+                            actionBar.style.display = 'none';
+                        } else {
+                            actionBar.style.display = '';
+                            if (btnBack) {
+                                btnBack.style.display = 'inline-flex';
+                                btnBack.classList.toggle('wizard-btn-back--full', currentKey === 'category');
+                            }
+                            if (btnNext) {
+                                btnNext.style.display = (currentKey === 'category' || currentKey === 'review') ? 'none' : 'inline-flex';
+                                if (currentKey === 'pin') {
+                                    const hasPin = Boolean(latitudeInput?.value && longitudeInput?.value);
+                                    btnNext.textContent = hasPin ? i18n.buttons.continue : i18n.buttons.skip;
+                                } else {
+                                    btnNext.textContent = i18n.buttons.next;
+                                }
+                                const res = validate(currentKey);
+                                btnNext.removeAttribute('disabled');
+                                btnNext.setAttribute('aria-disabled', res.valid ? 'false' : 'true');
+                            }
+                            if (btnSubmitBar) {
+                                const isReview = currentKey === 'review';
+                                btnSubmitBar.hidden = !isReview;
+                                btnSubmitBar.style.display = isReview ? 'inline-flex' : 'none';
+                                btnSubmitBar.textContent = i18n.buttons.submit;
+                                const resR = validate('review');
+                                btnSubmitBar.removeAttribute('disabled');
+                                btnSubmitBar.setAttribute('aria-disabled', resR.valid ? 'false' : 'true');
+                            }
+                            if (btnBack) btnBack.textContent = i18n.buttons.back;
+                        }
+                    }
+
+                    if (currentKey === 'pin' && window.invalidateComplaintMap) {
+                        window.invalidateComplaintMap();
+                    }
+                    if (announce) {
+                        const message = t(i18n.liveStep, { n, total, name: stepName(currentKey) });
+                        if (liveRegion) liveRegion.textContent = message;
+                        const heading = document.querySelector(`[data-wizard-step="${cssEscape(currentKey)}"] .fc-step-title`);
+                        try {
+                            heading?.focus({ preventScroll: true });
+                        } catch (err) {}
+                        try {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } catch (err) {}
+                    }
+                };
+
+                const goToStep = (key, push = true) => {
+                    if (!isWizardMode()) return;
+                    if (!WIZARD_STEPS.includes(key)) return;
+                    const vis = visibleSteps();
+                    if (vis.length === 0) return;
+
+                    // If the requested step is hidden by intake policy, pick the
+                    // nearest earlier visible step instead of jumping to the start.
+                    let targetKey = key;
+                    if (!vis.includes(targetKey)) {
+                        const requestedIdx = WIZARD_STEPS.indexOf(targetKey);
+                        for (let i = requestedIdx - 1; i >= 0; i--) {
+                            if (vis.includes(WIZARD_STEPS[i])) {
+                                targetKey = WIZARD_STEPS[i];
+                                break;
+                            }
+                        }
+                        if (!vis.includes(targetKey)) targetKey = vis[0];
+                    }
+
+                    // Only guard forward jumps. Review/Edit actions move backward
+                    // and must not be blocked by re-validating earlier steps.
+                    const currentIdx = vis.indexOf(currentKey);
+                    const targetIdx = vis.indexOf(targetKey);
+                    if (targetIdx > currentIdx && targetIdx > 0) {
+                        for (let i = 0; i < targetIdx; i++) {
+                            if (!validate(vis[i]).valid) {
+                                targetKey = vis[i];
+                                break;
+                            }
+                        }
+                    }
+
+                    currentKey = targetKey;
+                    hideHint();
+                    updateWizardUI(true);
+                    if (push) {
+                        try {
+                            history.pushState(null, '', `#step-${currentKey}`);
+                        } catch (e) {
+                            window.location.hash = `#step-${currentKey}`;
+                        }
+                    }
+                };
+
+                const nextStep = () => {
+                    const vis = visibleSteps();
+                    const idx = vis.indexOf(currentKey);
+                    if (idx >= 0 && idx < vis.length - 1) goToStep(vis[idx + 1]);
+                };
+
+                const prevStep = () => {
+                    const vis = visibleSteps();
+                    const idx = vis.indexOf(currentKey);
+                    if (idx > 0) goToStep(vis[idx - 1]);
+                };
+
+                btnBack?.addEventListener('click', () => {
+                    hideHint();
+                    prevStep();
+                });
+
+                btnNext?.addEventListener('click', (e) => {
+                    if (submitting) return;
+                    const res = validate(currentKey);
+                    if (!res.valid) {
+                        e.preventDefault();
+                        showHint(currentKey);
+                        res.focus?.();
+                        return;
+                    }
+                    hideHint();
+                    nextStep();
+                });
+
+                btnSubmitBar?.addEventListener('click', (e) => {
+                    if (submitting) return;
+                    const res = validate('review');
+                    if (!res.valid) {
+                        e.preventDefault();
+                        showHint('review');
+                        res.focus?.();
+                    }
+                });
+
+                window.addEventListener('popstate', () => {
+                    if (!isWizardMode()) return;
+                    const match = window.location.hash.match(/^#step-([a-z]+)$/);
+                    if (match && WIZARD_STEPS.includes(match[1])) {
+                        const requested = match[1];
+                        const vis = visibleSteps();
+                        if (vis.includes(requested)) {
+                            // Apply hash guard without pushing again.
+                            const targetIdx = vis.indexOf(requested);
+                            let key = requested;
+                            for (let i = 0; i < targetIdx; i++) {
+                                if (!validate(vis[i]).valid) { key = vis[i]; break; }
+                            }
+                            currentKey = key;
+                            hideHint();
+                            updateWizardUI(true);
+                            return;
+                        }
+                    }
+                    currentKey = firstIncompleteStep();
+                    updateWizardUI(true);
+                });
+
+                // Keyboard scrolls the focused field into view above the bar.
+                form.addEventListener('focusin', (e) => {
+                    if (!isWizardMode()) return;
+                    const target = e.target;
+                    if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+                        try {
+                            target.scrollIntoView?.({ block: 'center' });
+                        } catch (err) {}
+                    }
+                });
+
+                latitudeInput?.addEventListener('input', updatePinLabel);
+                longitudeInput?.addEventListener('input', updatePinLabel);
+
+                const serverErrKey = getServerErrorStep();
+                const hashMatch = window.location.hash.match(/^#step-([a-z]+)$/);
+                const hashKey = hashMatch && WIZARD_STEPS.includes(hashMatch[1]) ? hashMatch[1] : null;
+
+                if (serverErrKey) {
+                    currentKey = serverErrKey;
+                } else if (isWizardMode() && hashKey && visibleSteps().includes(hashKey)) {
+                    const vis = visibleSteps();
+                    const idx = vis.indexOf(hashKey);
+                    let key = hashKey;
+                    for (let i = 0; i < idx; i++) {
+                        if (!validate(vis[i]).valid) { key = vis[i]; break; }
+                    }
+                    currentKey = key;
+                } else {
+                    currentKey = isWizardMode() ? firstIncompleteStep() : 'group';
+                    if (!isWizardMode()) currentKey = 'group';
                 }
-                @endif
+
+                const existingDraft = loadDraft();
+                if (!window.__FILING_HAS_ERRORS__ && existingDraft && draftBanner) {
+                    const meaningful = ['category', 'title', 'description', 'address_text']
+                        .filter((key) => existingDraft[key] && String(existingDraft[key]).trim()).length;
+                    if (meaningful >= 2) draftBanner.hidden = false;
+                }
 
                 draftResumeBtn?.addEventListener('click', () => {
                     applyDraft(existingDraft);
@@ -2476,87 +1902,126 @@
                     if (draftBanner) draftBanner.hidden = true;
                 });
 
-                // Auto-save on inputs
                 form.addEventListener('input', () => {
                     saveDraft();
-                    updateWizardUI();
+                    updateWizardUI(false);
+                    updatePinLabel();
                 });
                 form.addEventListener('change', () => {
                     saveDraft();
-                    updateWizardUI();
+                    updateWizardUI(false);
+                    updatePinLabel();
                 });
 
-                btnNext?.addEventListener('click', (e) => {
-                    touchedNext[currentStep] = true;
-                    const config = stepConfigs[currentStep];
-                    if (config) {
-                        const res = config.validate();
-                        if (!res.valid) {
-                            e.preventDefault();
-                            if (stepHint) {
-                                stepHint.textContent = res.hint;
-                                stepHint.hidden = false;
-                            }
-                            return;
+                const bindToggle = (btnId, panelId) => {
+                    const btn = document.getElementById(btnId);
+                    const panel = document.getElementById(panelId);
+                    if (!btn || !panel) return;
+                    btn.addEventListener('click', () => {
+                        const open = panel.classList.toggle('is-open');
+                        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    });
+                };
+                bindToggle('priority-toggle', 'priority-notice');
+                bindToggle('photo-tips-toggle', 'photo-tips-hint');
+                bindToggle('visibility-why-toggle', 'visibility-footnote');
+
+                const landmarkToggle = document.getElementById('landmark-toggle');
+                const landmarkField = document.getElementById('landmark-field');
+                const syncLandmark = () => {
+                    if (!landmarkToggle || !landmarkField) return;
+                    const hasValue = Boolean(addressInput?.value?.trim());
+                    if (hasValue) {
+                        landmarkField.classList.add('is-open');
+                        landmarkToggle.setAttribute('aria-expanded', 'true');
+                    }
+                };
+                if (landmarkToggle && landmarkField) {
+                    landmarkToggle.addEventListener('click', () => {
+                        const open = landmarkField.classList.toggle('is-open');
+                        landmarkToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                        if (open) addressInput?.focus();
+                    });
+                    syncLandmark();
+                }
+
+                const updateCounters = () => {
+                    const titleEl = document.getElementById('title');
+                    const titleCounter = document.getElementById('title-counter');
+                    if (titleEl && titleCounter) {
+                        const max = Number(titleEl.getAttribute('maxlength') || 255);
+                        const len = titleEl.value.length;
+                        titleCounter.textContent = titleEl.maxLength === 255 || titleEl.getAttribute('maxlength') ? len + ' / ' + max : String(len);
+                    }
+                    const descEl = document.getElementById('description');
+                    const descCounter = document.getElementById('description-counter');
+                    if (descEl && descCounter) {
+                        const len = descEl.value.trim().length;
+                        if (len < 20) {
+                            const need = 20 - len;
+                            descCounter.textContent = i18n.descMore ? t(i18n.descMore, { count: need }) : need + ' more characters';
+                        } else {
+                            descCounter.textContent = i18n.descGood || 'Looks good';
+                        }
+                        if (isWizardMode()) {
+                            descEl.style.height = 'auto';
+                            descEl.style.height = Math.max(140, descEl.scrollHeight) + 'px';
                         }
                     }
-                    if (currentStep < totalSteps) {
-                        goToStep(currentStep + 1);
-                    }
-                });
+                };
+                document.getElementById('title')?.addEventListener('input', updateCounters);
+                document.getElementById('description')?.addEventListener('input', updateCounters);
+                updateCounters();
 
-                btnBack?.addEventListener('click', () => {
-                    touchedBack[currentStep] = true;
-                    if (currentStep > 1) {
-                        goToStep(currentStep - 1);
-                    }
+                document.querySelectorAll('[data-category-group-change]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        hideHint();
+                        goToStep('group');
+                    });
                 });
-
-                window.addEventListener('hashchange', () => {
-                    if (!isWizardMode()) return;
-                    const match = window.location.hash.match(/^#step-(\d+)$/);
-                    if (match) {
-                        const s = Number.parseInt(match[1], 10);
-                        if (s >= 1 && s <= totalSteps && s !== currentStep) {
-                            currentStep = s;
-                            updateWizardUI();
-                        }
-                    }
-                });
-
-                // Auto-advance for tile-like steps (category and visibility), phone only
-                categorySelect?.addEventListener('change', () => {
-                    if (isWizardMode() && currentStep === 1 && !touchedBack[1] && categorySelect.value) {
-                        window.setTimeout(() => {
-                            if (currentStep === 1) goToStep(2);
-                        }, 250);
-                    }
-                });
-
-                document.querySelectorAll('input[name="visibility"]').forEach((radio) => {
-                    radio.addEventListener('change', () => {
-                        if (isWizardMode() && currentStep === 6 && !touchedBack[6] && radio.checked) {
-                            window.setTimeout(() => {
-                                if (currentStep === 6) goToStep(7);
-                            }, 250);
-                        }
+                document.querySelectorAll('[data-edit-step]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const key = btn.getAttribute('data-edit-step');
+                        if (key) goToStep(key);
                     });
                 });
 
-                // Rotate / resize between phone and desktop without losing anything
                 if (mobileQuery.addEventListener) {
-                    mobileQuery.addEventListener('change', updateWizardUI);
+                    mobileQuery.addEventListener('change', () => updateWizardUI(false));
                 } else if (mobileQuery.addListener) {
-                    mobileQuery.addListener(updateWizardUI);
+                    mobileQuery.addListener(() => updateWizardUI(false));
                 }
 
-                updateWizardUI();
+                updateWizardUI(false);
+                syncTilesFromCategory();
+                updateChip();
+                updatePinLabel();
 
                 form.addEventListener('submit', (event) => {
-                    if (selectedPhotos.length === 0) {
+                    if (!isWizardMode() && !categorySelect?.value) {
+                        event.preventDefault();
+                        if (categoryTileError) {
+                            categoryTileError.textContent = i18n.hints.category;
+                            categoryTileError.hidden = false;
+                        }
+                        document.getElementById('filing-category')?.scrollIntoView?.({ block: 'start' });
+                        document.querySelector('.tile--group input')?.focus();
+                        return;
+                    }
+                    if (categoryTileError) categoryTileError.hidden = true;
+
+                    if (selectedPhotos.length === 0 && !window.__HAS_LOCATION_CONFLICT__) {
                         event.preventDefault();
                         showUploadError('Add at least one clear photo before submitting.');
-                        goToStep(4);
+                        if (isWizardMode()) {
+                            currentKey = 'photos';
+                            updateWizardUI(true);
+                            try {
+                                history.pushState(null, '', `#step-photos`);
+                            } catch (e) {}
+                        } else {
+                            document.getElementById('filing-details')?.scrollIntoView?.({ block: 'start' });
+                        }
                         return;
                     }
 
@@ -2564,15 +2029,38 @@
                         sessionStorage.removeItem(draftKey);
                     } catch (e) {}
 
-                    if (btnNext) btnNext.disabled = true;
-
-                    if (!submitButton) return;
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path></svg> Sending for review...';
+                    submitting = true;
+                    const busy = (el) => {
+                        if (!el) return;
+                        el.disabled = true;
+                        el.setAttribute('aria-disabled', 'true');
+                        el.setAttribute('aria-busy', 'true');
+                        el.classList.add('is-loading');
+                    };
+                    if (btnNext) busy(btnNext);
+                    if (btnSubmitBar) busy(btnSubmitBar);
+                    if (submitButton) busy(submitButton);
                 });
             };
 
+            // Server-error mapping: first matching step in wizard order wins.
+            window.__FILING_ERRORS__ = {
+                group: @json($errors->has('category') && !old('category')),
+                category: @json($errors->has('category') && (bool) old('category')),
+                describe: @json($errors->has('title') || $errors->has('description')),
+                photos: @json($errors->has('images') || $errors->has('camera_photo') || $errors->has('image')),
+                where: @json($errors->has('barangay') || $errors->has('address_text')),
+                pin: @json($errors->has('latitude') || $errors->has('longitude') || $errors->has('location_choice')),
+                visibility: @json($errors->has('visibility')),
+                review: @json($errors->has('terms')),
+            };
+            window.__FILING_HAS_ERRORS__ = @json($errors->any());
+            window.__HAS_LOCATION_CONFLICT__ = @json((bool) $locationConflict);
+
             const scheduleInitialize = () => window.setTimeout(initializeFilingPage, 80);
+            document.addEventListener('livewire:navigating', () => {
+                document.body.classList.remove('page-complaint-create');
+            });
             document.addEventListener('livewire:navigated', scheduleInitialize);
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', scheduleInitialize);

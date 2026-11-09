@@ -33,7 +33,7 @@
           <div class="auth-alert alert-success fu">{{ session('status') }}</div>
         @endif
 
-        <form method="POST" action="{{ route('password.email') }}">
+        <form data-loading-submit method="POST" action="{{ route('password.email') }}">
           @csrf
 
           <div class="field-group fu d3">

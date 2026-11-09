@@ -10,9 +10,10 @@
 @php
     $role = auth()->user()->role;
     $name = auth()->user()->full_name;
+    $department = $role === 'staff' ? auth()->user()->department : null;
     $roleLabel = match ($role) {
         'admin' => __('nav.administrator'),
-        'staff' => __('nav.staff') . (auth()->user()->department?->name ? ' · ' . auth()->user()->department->name : ''),
+        'staff' => $department?->name ?? __('nav.department_pending'),
         default => __('nav.citizen'),
     };
     $displayName = trim((string) $name) === trim((string) $roleLabel) ? (auth()->user()->email ?? $name) : $name;
@@ -25,7 +26,19 @@
         <div class="mobile-nav-drawer__avatar" aria-hidden="true">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</div>
         <div class="mobile-nav-drawer__account-copy">
             <span class="mobile-nav-drawer__name">{{ $displayName }}</span>
-            <span class="mobile-nav-drawer__role">{{ $roleLabel }}</span>
+            <span class="mobile-nav-drawer__role nav-identity nav-identity--on-dark">
+                @if($role === 'admin')
+                    <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                @elseif($role === 'staff')
+                    @if($department)
+                        <span class="mobile-nav-drawer__role-label">{{ __('nav.department_account') }} · {{ $department->code }}</span>
+                    @else
+                        <span class="mobile-nav-drawer__role-label">{{ __('nav.department_pending') }}</span>
+                    @endif
+                @else
+                    {{ $roleLabel }}
+                @endif
+            </span>
         </div>
     </div>
 
@@ -49,7 +62,7 @@
             <ul class="mobile-nav-drawer__list">
                 <li><a href="{{ route('staff.dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('staff.dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
                 <li><a href="{{ route('staff.complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ __('nav.complaint_queue') }}</span></a></li>
-                <li><a href="{{ route('staff.activity.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.activity.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.activity.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('nav.my_activity') }}</span></a></li>
+                <li><a href="{{ route('staff.activity.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.activity.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.activity.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('staff.bottom_nav.activity') }}</span></a></li>
             </ul>
             @if(auth()->user()->canVerifyComplaints())
                 <p class="mobile-nav-drawer__group">{{ __('nav.verification') }}</p>
@@ -58,13 +71,16 @@
                     <li><a href="{{ route('staff.complaints.index', ['review' => 'needs_information']) }}" class="mobile-nav-drawer__item {{ request()->query('review') === 'needs_information' ? 'is-active' : '' }}" @if(request()->query('review') === 'needs_information') aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg><span>{{ __('nav.waiting_on_resident') }}</span></a></li>
                 </ul>
             @endif
+            <p class="mobile-nav-drawer__group">{{ __('nav.legal') }}</p>
+            <ul class="mobile-nav-drawer__list">
+                <li><a href="{{ url('/transparency') }}" class="mobile-nav-drawer__item {{ request()->is('transparency*') ? 'is-active' : '' }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 14 3-3 3 3 5-6"></path></svg><span>{{ __('nav.transparency') }}</span></a></li>
+            </ul>
         @else
             <p class="mobile-nav-drawer__group">{{ __('nav.menu') }}</p>
             <ul class="mobile-nav-drawer__list">
-                <li><a href="{{ route('dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
-                <li><a href="{{ route('complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg><span>{{ __('nav.my_complaints') }}</span></a></li>
+                <li><a href="{{ route('complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('complaints.index', 'complaints.show', 'complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index', 'complaints.show', 'complaints.create')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg><span>{{ __('nav.my_complaints') }}</span></a></li>
                 <li><a href="{{ url('/transparency') }}" class="mobile-nav-drawer__item {{ request()->is('transparency*') ? 'is-active' : '' }}" @if(request()->is('transparency*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 14 3-3 3 3 5-6"></path></svg><span>{{ __('nav.transparency') }}</span></a></li>
-                @if(!request()->routeIs('dashboard', 'complaints.index'))
+                @if(!request()->routeIs('complaints.index'))
                 <li><a href="{{ route('complaints.create') }}" class="mobile-nav-drawer__item mobile-nav-drawer__item--primary {{ request()->routeIs('complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.create')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg><span>{{ __('nav.file_complaint') }}</span></a></li>
                 @endif
             </ul>
@@ -76,11 +92,15 @@
             <span class="mobile-nav-drawer__group">{{ __('nav.language') }}</span>
             @include('layouts.partials.language-switcher', ['variant' => 'mobile'])
         </div>
+        <a href="{{ route('settings', ['tab' => 'profile']) }}" class="mobile-nav-drawer__item mobile-nav-drawer__action">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>{{ __('nav.profile') }}</span>
+        </a>
         <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="mobile-nav-drawer__item mobile-nav-drawer__action {{ request()->routeIs('settings*') ? 'is-active' : '' }}" @if(request()->routeIs('settings*')) aria-current="page" @endif>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             <span>{{ __('nav.settings') }}</span>
         </a>
-        <form method="POST" action="{{ route('logout') }}" class="mobile-nav-drawer__logout-form">
+        <form data-loading-submit method="POST" action="{{ route('logout') }}" class="mobile-nav-drawer__logout-form">
             @csrf
             <button type="submit" class="mobile-nav-drawer__item mobile-nav-drawer__action mobile-nav-drawer__action--danger">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>

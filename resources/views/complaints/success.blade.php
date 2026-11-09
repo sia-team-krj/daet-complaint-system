@@ -1,223 +1,233 @@
-@extends('layouts.app')
-@section('title', 'Complaint Submitted - ' . $complaint->ticket_id)
+@extends($mainLayout)
+
+@section('title', __('complaint_success.page.title', ['ticket' => $complaint->ticket_id]))
+
+{{--
+    Submission success — the receipt that closes the citizen filing flow.
+    Light page in the wizard / My-Complaints family: green check hero, mono
+    ticket strip, fact rows, the shared 5-segment progress bar (§5.15 base
+    from partials.public-ui, widened by the page CSS), the same "what
+    happens next" copy the wizard teaches, and ONE gold primary CTA.
+    Page CSS: resources/css/pages/complaint-success.css (token-only).
+--}}
+@include('partials.public-ui')
+@include('pages.transparency.partials.component-styles')
 
 @section('content')
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-  
-  :root {
-    --navy: #142D4F;
-    --navy-mid: #1B3A61;
-    --gold: #C9A84C;
-    --gold-light: #E2C06A;
-    --border-gold: rgba(201,168,76,0.20);
-  }
-  
-  .success-root {
-    min-height: calc(100svh - var(--navbar-height));
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-  }
-  
-  .success-bg {
-    position: absolute;
-    inset: 0;
-    background-image: repeating-linear-gradient(
-      -45deg, transparent, transparent 40px,
-      rgba(201,168,76,0.025) 40px, rgba(201,168,76,0.025) 41px
-    );
-    pointer-events: none;
-  }
-  
-  .success-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border-gold);
-    border-radius: 8px;
-    padding: 48px 56px;
-    max-width: 600px;
-    width: 100%;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .success-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, var(--gold), transparent);
-  }
-  
-  .success-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 32px;
-    color: var(--navy);
-  }
-  
-  .success-icon svg {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .success-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--gold);
-    margin-bottom: 8px;
-  }
-  
-  .ticket-display {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 48px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 24px;
-    letter-spacing: 0.02em;
-  }
-  
-  .routed-to {
-    font-size: 14px;
-    color: rgba(255,255,255,0.7);
-    margin-bottom: 8px;
-  }
-  
-  .department-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--gold);
-    margin-bottom: 24px;
-  }
-  
-  .handling-note {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border-gold);
-    border-radius: 6px;
-    padding: 20px;
-    margin-bottom: 32px;
-    font-size: 14px;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.6;
-  }
-  
-  .btn-group {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-  }
-  
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    color: var(--navy);
-    padding: 14px 28px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(201,168,76,0.3);
-  }
-  
-  .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 14px 28px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 13px;
-    transition: all 0.2s;
-  }
-  
-  .btn-secondary:hover {
-    background: var(--gold);
-    color: var(--navy);
-  }
-  
-  @media (max-width: 640px) {
-    .success-card {
-      padding: 32px 24px;
-    }
-    .ticket-display {
-      font-size: 36px;
-    }
-    .btn-group {
-      flex-direction: column;
-    }
-  }
-</style>
+@php
+    $status = $complaint->statusEnum;
+    $statusKey = \Illuminate\Support\Str::slug($status->value, '_');
+    $closed = $statusKey === 'closed';
+    $step = match ($statusKey) {
+        'submitted' => 1,
+        'under_review', 'verified', 'assigned' => 2,
+        'in_progress' => 3,
+        'resolved' => 4,
+        'closed' => 5,
+        default => null, // rejected — neutral bar, label only
+    };
+    $isRejected = $step === null;
+    $dept = $complaint->department;
+    $photoCount = (int) $complaint->evidence_image_count;
+    $locationSource = session('complaint_location_source');
+@endphp
+<section class="cs-page">
+    <div class="tr-container">
+        <div class="cs-stack">
 
-<div class="success-root">
-  <div class="success-bg"></div>
-  
-  <div class="success-card">
-    <div class="success-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-      </svg>
+            <article class="cs-card cs-hero" aria-labelledby="cs-hero-title">
+                <span class="cs-hero__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 10"/></svg>
+                </span>
+
+                <h1 id="cs-hero-title">{{ __('complaint_success.hero.title') }}</h1>
+
+                @if($dept)
+                    <p class="cs-hero__lede">{{ __('complaint_success.hero.lede_office', ['office' => $dept->name, 'menu' => __('nav.my_complaints')]) }}</p>
+                @else
+                    <p class="cs-hero__lede">{{ __('complaint_success.hero.lede_pending') }}</p>
+                @endif
+
+                <div class="cs-ticket">
+                    <span class="cs-ticket__label">{{ __('complaint_success.ticket.label') }}</span>
+                    <span class="cs-ticket__value">{{ $complaint->ticket_id }}</span>
+                    <span class="cs-ticket__hint">{{ __('complaint_success.ticket.hint') }}</span>
+                </div>
+
+                <ul class="cs-facts">
+                    <li>
+                        <span>{{ __('complaint_success.facts.status') }}</span>
+                        <strong>
+                            <span class="status-pill {{ $statusKey }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $status->label() }}</span>
+                        </strong>
+                    </li>
+                    <li>
+                        <span>{{ __('complaint_success.facts.filed') }}</span>
+                        <strong>{{ $complaint->created_at?->locale(app()->getLocale())->translatedFormat('M j, Y') }}</strong>
+                    </li>
+                    <li>
+                        <span>{{ __('complaint_success.facts.routed_to') }}</span>
+                        <strong>
+                            @if($dept?->code)
+                                <span class="dept-badge" data-dept="{{ $dept->code }}">{{ $dept->code }}</span>
+                            @endif
+                            {{ $dept?->name ?? __('transparency.v2.department_pending') }}
+                        </strong>
+                    </li>
+                    @if($photoCount > 0)
+                        <li>
+                            <span>{{ __('complaint_success.facts.photos') }}</span>
+                            <strong>{{ trans_choice('complaint_success.facts.photos_count', $photoCount, ['count' => $photoCount]) }}</strong>
+                        </li>
+                    @endif
+                </ul>
+
+                <div class="cs-progress">
+                    <div role="img" aria-label="{{ $isRejected ? $status->label() : __('my_complaints.progress_aria', ['step' => $step, 'total' => 5, 'status' => $status->label()]) }}">
+                        <span class="cs-progress__text">
+                            @if($isRejected)
+                                {{ $status->label() }}
+                            @else
+                                {{ __('my_complaints.step_status', ['step' => $step, 'total' => 5, 'status' => $status->label()]) }}
+                            @endif
+                        </span>
+                        <span class="progress progress--full" aria-hidden="true">
+                            @for($segment = 1; $segment <= 5; $segment++)
+                                <span class="progress__seg {{ $isRejected ? '' : ($segment < $step || $closed ? 'progress__seg--complete' : ($segment === $step ? 'progress__seg--current' : '')) }}"></span>
+                            @endfor
+                        </span>
+                    </div>
+                </div>
+            </article>
+
+            <section class="cs-card cs-next" aria-labelledby="cs-next-title">
+                <h2 id="cs-next-title">{{ __('complaint_success.next.title') }}</h2>
+                <ol class="cs-next__list">
+                    <li><span class="cs-step-num" aria-hidden="true">1</span><span>{{ __('complaint_create.wizard.next_1') }}</span></li>
+                    <li><span class="cs-step-num" aria-hidden="true">2</span><span>{{ __('complaint_create.wizard.next_2') }}</span></li>
+                    <li><span class="cs-step-num" aria-hidden="true">3</span><span>{{ __('complaint_create.wizard.next_3') }}</span></li>
+                </ol>
+                <p class="cs-next__note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span>
+                        @if($locationSource === 'photo_gps')
+                            {{ __('complaint_success.next.location_gps') }}
+                        @elseif(in_array($locationSource, ['address', 'map'], true))
+                            {{ __('complaint_success.next.location_plain') }}
+                        @elseif($locationSource === 'not_applicable')
+                            {{ __('complaint_success.next.location_not_applicable') }}
+                        @else
+                            {{ __('complaint_success.next.location_none') }}
+                        @endif
+                    </span>
+                </p>
+            </section>
+
+            {{--
+                Auto-redirect strip: after a short countdown the receipt hands
+                over to My Complaints. "Stay on this page" cancels it so nobody
+                is swept away mid-read; the countdown pauses while the tab is
+                hidden. JS contract: data attributes are the contract (§7).
+            --}}
+            @php
+                $redirectSeconds = 6;
+                $redirectTemplate = __('complaint_success.redirect.countdown', ['menu' => __('nav.my_complaints')]);
+            @endphp
+            <div
+                class="cs-redirect"
+                id="cs-redirect"
+                data-redirect-url="{{ route('complaints.index') }}"
+                data-redirect-seconds="{{ $redirectSeconds }}"
+                data-redirect-template="{{ $redirectTemplate }}"
+            >
+                <span class="cs-redirect__label" role="timer">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span data-redirect-count>{{ str_replace('{s}', (string) $redirectSeconds, $redirectTemplate) }}</span>
+                </span>
+                <button class="cs-redirect__cancel" type="button" data-redirect-cancel>
+                    {{ __('complaint_success.redirect.cancel') }}
+                </button>
+            </div>
+
+            <div class="cs-actions">
+                <a href="{{ route('complaints.show', $complaint) }}" class="cs-btn cs-btn--primary">{{ __('complaint_success.actions.view') }}</a>
+                <a href="{{ route('complaints.index') }}" class="tr-button">{{ __('complaint_success.actions.my_complaints') }}</a>
+            </div>
+
+        </div>
     </div>
-    
-    <div class="success-title">Complaint Submitted Successfully</div>
-    
-    <div class="ticket-display">{{ $complaint->ticket_id }}</div>
-    
-    <div class="routed-to">Routed to:</div>
-    <div class="department-name">{{ $complaint->department?->name ?? 'General Services Office' }}</div>
-    
-    <div class="handling-note">
-      Your complaint has been received and assigned to the appropriate department for verification.
-      {{ $complaint->evidence_image_count }} {{ \Illuminate\Support\Str::plural('photo', $complaint->evidence_image_count) }} attached for review.
-      The department will review the report and confirm its priority before work begins.
-      @if(session('complaint_location_source') === 'photo_gps')
-        The location embedded in your photo was used to place the report.
-      @elseif(in_array(session('complaint_location_source'), ['address', 'map'], true))
-        Your address or map point was used as the location fallback.
-      @else
-        No embedded photo location was found; the department may request more details during review.
-      @endif
-      You will receive updates as your complaint progresses through our system.
-      Please save your ticket number for future reference.
-    </div>
-    
-    <div class="btn-group">
-      <a href="{{ route('complaints.show', $complaint) }}" class="btn-primary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-        View Complaint
-      </a>
-      <a href="{{ route('dashboard') }}" class="btn-secondary">
-        Go to Dashboard
-      </a>
-    </div>
-  </div>
-</div>
+</section>
 @endsection
+
+@push('scripts')
+<script>
+    /*
+     * Success receipt auto-redirect: counts down data-redirect-seconds, then
+     * sends to data-redirect-url. "Stay on this page" cancels; the tick does
+     * not decrement while the tab is hidden so the redirect never fires on a
+     * tab the person isn't looking at. No libraries; data attributes are the
+     * contract (design system §7).
+     */
+    (function () {
+        var box = document.getElementById('cs-redirect');
+        if (!box || !box.getAttribute('data-redirect-url')) { return; }
+
+        var template = box.getAttribute('data-redirect-template') || '';
+        var url = box.getAttribute('data-redirect-url');
+        var remaining = parseInt(box.getAttribute('data-redirect-seconds'), 10);
+        if (!Number.isFinite(remaining) || remaining <= 0) { return; }
+
+        var labelEl = box.querySelector('[data-redirect-count]');
+        var cancelled = false;
+        var timer = null;
+
+        function render(value) {
+            if (labelEl) { labelEl.textContent = template.replace('{s}', String(value)); }
+        }
+
+        function redirect() {
+            if (cancelled || document.visibilityState === 'hidden') { return; }
+            window.location.assign(url);
+        }
+
+        function schedule(ms) {
+            timer = window.setTimeout(nextTick, ms);
+        }
+
+        function nextTick() {
+            if (cancelled) { return; }
+            if (remaining <= 1) {
+                redirect();
+                return;
+            }
+            // While the tab is hidden, hold the countdown instead of landing
+            // the person on My Complaints before they've seen the receipt.
+            if (document.visibilityState === 'hidden') {
+                schedule(1000);
+                return;
+            }
+            remaining -= 1;
+            render(remaining);
+            schedule(1000);
+        }
+
+        var cancel = box.querySelector('[data-redirect-cancel]');
+        if (cancel) {
+            cancel.addEventListener('click', function () {
+                cancelled = true;
+                if (timer) { window.clearTimeout(timer); }
+                box.hidden = true; // [hidden] is the visibility mechanism
+            });
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (!cancelled && document.visibilityState === 'visible' && timer) {
+                window.clearTimeout(timer);
+                schedule(1000);
+            }
+        });
+
+        schedule(1000);
+    })();
+</script>
+@endpush

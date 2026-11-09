@@ -124,7 +124,7 @@
                                                 Its full history stays intact, and you can restore it later.
                                             </p>
                                             <div class="admin-form-actions">
-                                                <form method="POST" action="{{ route('admin.departments.archive', $department) }}">
+                                                <form data-loading-submit method="POST" action="{{ route('admin.departments.archive', $department) }}">
                                                     @csrf
                                                     <button type="submit" class="admin-button admin-button--compact admin-button--danger-ghost"
                                                         @disabled($department->open_complaints_count > 0)
@@ -136,7 +136,7 @@
                                         </div>
                                     </details>
                                 @else
-                                    <form method="POST" action="{{ route('admin.departments.restore', $department) }}">
+                                    <form data-loading-submit method="POST" action="{{ route('admin.departments.restore', $department) }}">
                                         @csrf
                                         <button type="submit" class="admin-button admin-button--compact admin-button--primary">Restore</button>
                                     </form>
@@ -144,7 +144,7 @@
                                 <details class="admin-department-editor">
                                     <summary class="admin-button admin-button--compact admin-button--secondary">Edit</summary>
 
-                                    <form method="POST" action="{{ route('admin.departments.update', $department) }}" class="admin-form-stack">
+                                    <form data-loading-submit method="POST" action="{{ route('admin.departments.update', $department) }}" class="admin-form-stack">
                                         @csrf
                                         @method('PUT')
 

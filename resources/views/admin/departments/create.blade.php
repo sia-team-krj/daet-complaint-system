@@ -26,7 +26,7 @@
             <h2 class="admin-panel-title">Office details</h2>
         </div>
 
-        <form method="POST" action="{{ route('admin.departments.store') }}" class="admin-panel-body admin-form-stack">
+        <form data-loading-submit method="POST" action="{{ route('admin.departments.store') }}" class="admin-panel-body admin-form-stack">
             @csrf
 
             <label class="admin-field">

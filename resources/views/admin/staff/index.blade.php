@@ -37,7 +37,7 @@
                         </td>
                         <td>
                             <div class="admin-staff-actions">
-                                <form method="POST" action="{{ route('admin.staff.update-department', $staffMember) }}">
+                                <form data-loading-submit method="POST" action="{{ route('admin.staff.update-department', $staffMember) }}">
                                     @csrf
                                     @method('PATCH')
                                     <label class="sr-only" for="department-{{ $staffMember->id }}">Department for {{ $staffMember->full_name }}</label>
@@ -47,13 +47,13 @@
                                         @endforeach
                                     </select>
                                 </form>
-                                <form method="POST" action="{{ route('admin.staff.toggle-verification', $staffMember) }}" onsubmit="return confirm('{{ $staffMember->can_verify ? 'Revoke' : 'Grant' }} verification rights for {{ $staffMember->full_name }}?')">
+                                <form data-loading-submit method="POST" action="{{ route('admin.staff.toggle-verification', $staffMember) }}" onsubmit="return confirm('{{ $staffMember->can_verify ? 'Revoke' : 'Grant' }} verification rights for {{ $staffMember->full_name }}?')">
                                     @csrf
                                     <button type="submit" class="admin-button admin-button--compact {{ $staffMember->can_verify ? 'admin-button--secondary' : 'admin-button--primary' }}">
                                         {{ $staffMember->can_verify ? 'Revoke verifier' : 'Make verifier' }}
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('admin.staff.toggle', $staffMember) }}" onsubmit="return confirm('{{ $staffMember->is_active ? 'Deactivate' : 'Activate' }} {{ $staffMember->full_name }}?')">
+                                <form data-loading-submit method="POST" action="{{ route('admin.staff.toggle', $staffMember) }}" onsubmit="return confirm('{{ $staffMember->is_active ? 'Deactivate' : 'Activate' }} {{ $staffMember->full_name }}?')">
                                     @csrf
                                     <button type="submit" class="admin-button admin-button--compact {{ $staffMember->is_active ? 'admin-button--danger-ghost' : 'admin-button--secondary' }}">{{ $staffMember->is_active ? 'Deactivate' : 'Activate' }}</button>
                                 </form>

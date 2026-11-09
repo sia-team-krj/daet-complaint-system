@@ -1,5 +1,10 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./pages/complaint-create.css";
+@import "./pages/complaint-success.css";
+@import "./pages/complaint-show.css";
+@import "./pages/error.css";
+@import "./pages/staff-dashboard.css";
 
 /* Inter — self-hosted (public/fonts/inter). font-display: swap. */
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/inter/inter-latin-400-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
@@ -99,14 +104,14 @@
     /* Department color identifiers (by code). Fallback = slate. */
     --dept-fallback: #475569;
     --dept-fallback-tint: rgba(71, 85, 105, 0.16);
-    --dept-ENG: #B45309; --dept-ENG-tint: rgba(180, 83, 9, 0.16);
-    --dept-HLTH: #0F766E; --dept-HLTH-tint: rgba(15, 118, 110, 0.16);
-    --dept-GSO: #475569; --dept-GSO-tint: rgba(71, 85, 105, 0.16);
-    --dept-MPDO: #1D4ED8; --dept-MPDO-tint: rgba(29, 78, 216, 0.16);
-    --dept-WST: #15803D; --dept-WST-tint: rgba(21, 128, 61, 0.16);
-    --dept-SWDO: #7C3AED; --dept-SWDO-tint: rgba(124, 58, 237, 0.16);
-    --dept-BPLO: #0E7490; --dept-BPLO-tint: rgba(14, 116, 144, 0.16);
-    --dept-OM: #A16207; --dept-OM-tint: rgba(161, 98, 7, 0.16);
+    --dept-ENG: #F59E0B; --dept-ENG-tint: rgba(245, 158, 11, 0.24);
+    --dept-HLTH: #14B8A6; --dept-HLTH-tint: rgba(20, 184, 166, 0.24);
+    --dept-GSO: #F97316; --dept-GSO-tint: rgba(249, 115, 22, 0.24);
+    --dept-MPDO: #F97316; --dept-MPDO-tint: rgba(249, 115, 22, 0.24);
+    --dept-WST: #22C55E; --dept-WST-tint: rgba(34, 197, 94, 0.24);
+    --dept-SWDO: #A855F7; --dept-SWDO-tint: rgba(168, 85, 247, 0.24);
+    --dept-BPLO: #06B6D4; --dept-BPLO-tint: rgba(6, 182, 212, 0.24);
+    --dept-OM: #EAB308; --dept-OM-tint: rgba(234, 179, 8, 0.24);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -174,8 +179,6 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
-    /* `clip` contains horizontal overflow without becoming a scroll container,
-       which would otherwise disable `position: sticky` on descendants. */
     overflow-x: clip;
     overflow-y: visible;
     user-select: auto;
@@ -186,11 +189,6 @@ main {
     max-width: 100%;
     min-width: 0;
     overflow-x: hidden;
-    /* Must be `clip`, not `hidden`. This rule is unlayered, so it outranks the
-       `overflow-x-clip` utility on the <main> element and was quietly turning
-       main into a scroll container. That broke `position: sticky` for
-       descendants AND stopped the register page scrolling on phones, where the
-       form falls back to document scrolling instead of its own panel. */
     overflow-x: clip;
     overflow-y: visible;
 }
@@ -3396,6 +3394,144 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 [data-dept="BPLO"] { --dept-accent: var(--dept-BPLO); --dept-tint: var(--dept-BPLO-tint); }
 [data-dept="OM"] { --dept-accent: var(--dept-OM); --dept-tint: var(--dept-OM-tint); }
 
+/* Canonical department badge (§3.2/§5.11). Global baseline so navbar/drawer/chrome
+   can identify staff departments; transparency partials may still define scoped
+   copies for their pages. */
+.dept-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: var(--dept-tint, var(--dept-fallback-tint));
+    color: var(--dept-accent, var(--dept-fallback));
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+/* Navbar identity indicator (targeted, §5.31): shows staff/admin account context
+   in the fixed top bar (desktop + mobile) without opening menus. Staff use
+   existing department tokens/badges; admin uses navy/gold role tokens. */
+.nav-identity {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    font-family: var(--font-sans);
+    color: var(--color-white);
+}
+.nav-identity__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+.nav-identity__badge--admin {
+    background: color-mix(in srgb, var(--gold-500) 18%, transparent);
+    color: var(--gold-300);
+    border: 1px solid color-mix(in srgb, var(--gold-500) 32%, transparent);
+}
+.nav-identity__badge--staff {
+    background: color-mix(in srgb, var(--gold-500) 10%, transparent);
+    color: rgba(255, 255, 255, 0.88);
+    border: 1px solid color-mix(in srgb, var(--gold-500) 22%, transparent);
+}
+.nav-identity__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.84);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+.nav-identity--compact .nav-identity__label { display: none; }
+.nav-identity--on-dark .dept-badge {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dept-accent, var(--dept-fallback)) 20%, transparent);
+}
+
+/* Department code in navbar uses dept-color variables */
+.nav-dept-account__code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: var(--dept-tint, var(--dept-fallback-tint));
+    color: var(--dept-accent, var(--dept-fallback));
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.dropdown-identity,
+.mobile-user-identity {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+.dropdown-identity__name,
+.mobile-user-identity__label,
+.mobile-nav-drawer__role-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.78);
+    line-height: 1.3;
+}
+.mobile-nav-drawer__role.nav-identity {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+.nav-actions .nav-identity { margin-right: 4px; flex: 0 0 auto; }
+.nav-mobile-right .nav-identity { margin-right: 4px; max-width: min(220px, 38vw); flex: 0 1 auto; }
+@media (max-width: 1240px) and (min-width: 769px) {
+    .nav-mobile-right .nav-identity .nav-identity__label { display: none; }
+}
+@media (max-width: 768px) {
+    .nav-mobile-right .nav-identity .nav-identity__label { display: none; }
+}
+/* ≤640px body.is-auth hides .nav-mobile-right; identity renders as a direct
+   navbar child (like bell/drawer toggle) so account context stays visible. */
+.nav-identity-bar {
+    display: none;
+    align-items: center;
+    min-width: 0;
+    flex: 0 1 auto;
+}
+@media (max-width: 640px) {
+    body.is-auth .nav-identity-bar {
+        display: inline-flex;
+        margin-left: 4px;
+        margin-right: 4px;
+        max-width: 42vw;
+    }
+    body.is-auth .nav-identity-bar .nav-identity__label { display: none; }
+    body.is-auth .nav-identity-bar .nav-identity__badge { font-size: 9px; padding: 2px 5px; }
+    body.is-auth .nav-identity-bar .dept-badge { font-size: 10px; padding: 2px 5px; }
+}
+/* Admin compact (769-768 window not auth-shared): keep identity visible when
+   account popover is the control; handled by nav-mobile-right rules above. */
+
 .admin-department-code[data-dept],
 .dept-chip[data-dept] {
     display: inline-flex;
@@ -3706,22 +3842,81 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     border-color: #cdd5e1;
 }
 
+/* Busy/loading action state (docs/design-system.md §5.31). Shared across
+   admin, citizen, staff, auth, and public action buttons. The spinner uses
+   currentColor so it works on every variant (gold/navy/white/danger/ghost)
+   without new colours. `aria-busy` is the semantic state; `.is-loading` is
+   the visual hook; JS also sets disabled/aria-disabled to prevent repeats. */
+:is(button, [role="button"], a, input[type="submit"], input[type="button"]).is-loading,
+:is(button, [role="button"], a, input[type="submit"], input[type="button"])[data-action-busy="true"],
 .admin-button.is-loading {
     pointer-events: none;
-    opacity: 0.75;
 }
 
-.admin-button.is-loading::after {
+:is(button, [role="button"], input[type="submit"], input[type="button"]).is-loading,
+:is(button, [role="button"], input[type="submit"], input[type="button"])[data-action-busy="true"],
+.admin-button.is-loading,
+.tr-button.is-loading,
+.btn-nav-cta.is-loading,
+.btn-submit.is-loading,
+.fc-submit.is-loading,
+.wizard-btn-next.is-loading,
+.wizard-btn-back.is-loading,
+.cs-btn.is-loading,
+.info-request__submit.is-loading,
+.close-report__submit.is-loading {
+    opacity: 0.82;
+}
+
+:is(button, [role="button"], input[type="submit"], input[type="button"]).is-loading::after,
+:is(button, [role="button"], input[type="submit"], input[type="button"])[data-action-busy="true"]::after,
+.admin-button.is-loading::after,
+.tr-button.is-loading::after,
+.btn-nav-cta.is-loading::after,
+.btn-submit.is-loading::after,
+.fc-submit.is-loading::after,
+.wizard-btn-next.is-loading::after,
+.cs-btn.is-loading::after,
+.info-request__submit.is-loading::after,
+.close-report__submit.is-loading::after {
     content: "";
-    width: 14px;
-    height: 14px;
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 1em;
+    height: 1em;
+    max-width: 16px;
+    max-height: 16px;
+    margin-left: 2px;
     border: 2px solid currentColor;
-    border-top-color: transparent;
+    border-right-color: transparent;
     border-radius: 50%;
-    animation: admin-button-spin 0.7s linear infinite;
+    vertical-align: -0.125em;
+    animation: daet-action-spin 0.7s linear infinite;
 }
 
+@keyframes daet-action-spin { to { transform: rotate(360deg); } }
+
+/* Back-compat alias for existing admin animation name. */
 @keyframes admin-button-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+    :is(button, [role="button"], input[type="submit"], input[type="button"]).is-loading::after,
+    :is(button, [role="button"], input[type="submit"], input[type="button"])[data-action-busy="true"]::after,
+    .admin-button.is-loading::after,
+    .tr-button.is-loading::after,
+    .btn-nav-cta.is-loading::after,
+    .btn-submit.is-loading::after,
+    .fc-submit.is-loading::after,
+    .wizard-btn-next.is-loading::after,
+    .cs-btn.is-loading::after,
+    .info-request__submit.is-loading::after,
+    .close-report__submit.is-loading::after {
+        animation: none;
+        border-right-color: currentColor;
+        border-style: dotted;
+        opacity: 0.7;
+    }
+}
 
 .admin-button:focus-visible,
 .admin-copy-code:focus-visible,
@@ -8541,8 +8736,7 @@ select.staff-input option {
         box-shadow: 0 20px 44px rgba(0, 0, 0, 0.32);
     }
 
-    .admin-workspace,
-    .staff-workspace {
+    .admin-workspace {
         margin-left: 292px;
     }
 }
@@ -8623,7 +8817,7 @@ select.staff-input option {
     }
 
     /* Hamburger & bell: identical 40x40 visible, 44px touch, 10px radius, 20px icons */
-    body.is-auth #navbar .nav-notification__button,
+    body.is-auth #navbar .nav-bell,
     body.is-auth .mobile-drawer-toggle {
         display: inline-flex;
         align-items: center;
@@ -8643,14 +8837,14 @@ select.staff-input option {
         cursor: pointer;
         box-sizing: border-box;
     }
-    body.is-auth #navbar .nav-notification__button::before,
+    body.is-auth #navbar .nav-bell::before,
     body.is-auth .mobile-drawer-toggle::before {
         content: "";
         position: absolute;
         inset: -2px;
     }
 
-    body.is-auth #navbar .nav-notification__button svg,
+    body.is-auth #navbar .nav-bell svg,
     body.is-auth .mobile-drawer-toggle svg {
         width: 20px;
         height: 20px;
@@ -8660,7 +8854,7 @@ select.staff-input option {
         margin-left: 0; /* 8px gap comes from flex gap */
     }
 
-    body.is-auth #navbar .nav-notification__button:focus-visible,
+    body.is-auth #navbar .nav-bell:focus-visible,
     body.is-auth .mobile-drawer-toggle:focus-visible {
         outline: 2px solid var(--color-gold-light);
         outline-offset: 2px;
@@ -9385,6 +9579,257 @@ tr.admin-audit-mobile-only { display: none !important; }
   body.admin-layout .admin-audit-filters-collapsible__body { grid-template-columns: 1fr !important; }
 }
 
-/* Single mechanism for the fixed navbar offset (see AGENTS.md). */
+/* Single mechanism for the fixed navbar offset (see AGENTS.md).
+   Hero/banner pages cancel the body offset so their navy butts against the
+   navbar's navy (no light strip). Their banner absorbs --navbar-height
+   itself (component-styles .tr-banner, .citizen-dashboard welcome). */
 html { scroll-padding-top: calc(var(--navbar-h) + 16px); }
 body { padding-top: var(--navbar-h); }
+body:has(.transparency-page),
+body:has(.citizen-dashboard),
+body:has(.lp-root) { padding-top: 0; }
+
+/* ═══════════════════════════════════════════════════════════
+   Department account header + staff workspace light theme
+   (resident-design parity; tokens from tokens.css)
+   ═══════════════════════════════════════════════════════════ */
+.nav-dept-account {
+  display: inline-flex; align-items: center; gap: 6px; margin-left: 12px; flex-shrink: 0;
+  height: 28px; padding: 0 10px; border-radius: var(--radius-pill);
+  border: 1px solid var(--gold-300); background: rgba(255,255,255,.06);
+  color: var(--surface); font: 600 12px/1 var(--font-sans); letter-spacing: .04em;
+  text-transform: uppercase; white-space: nowrap;
+}
+.nav-dept-account__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold-500); flex-shrink: 0; }
+.nav-dept-account__text { display: inline-flex; align-items: center; gap: 0; white-space: nowrap; }
+.nav-dept-account__code { font-weight: 700; }
+@media (max-width: 767px) {
+  #navbar .logo-sub { display: none; }
+  #navbar .logo-name { flex-shrink: 0; white-space: nowrap; font-size: 16px; letter-spacing: 0; }
+  .nav-dept-account { margin-left: 8px; padding: 0 8px; gap: 5px; max-width: 72px; }
+  .nav-dept-account__label, .nav-dept-account__sep { display: none; }
+}
+@media (max-width: 380px) {
+  #navbar .logo-name { font-size: 15px; }
+  .nav-dept-account { max-width: 64px; padding: 0 7px; }
+}
+body.role-staff #navbar { position: fixed; }
+body.role-staff #navbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px;
+  background: var(--gold-500); pointer-events: none;
+}
+body.role-staff #navbar { border-bottom-color: rgba(255,255,255,.18); }
+
+/* Staff workspace: light surfaces (resident parity) */
+body.role-staff .staff-shell {
+  background: var(--bg); color: var(--text);
+}
+body.role-staff .staff-sidebar {
+  background: transparent; border-right: 0; padding: 16px 16px 24px; width: 292px;
+}
+body.role-staff .staff-department-context { margin: 0; padding: 16px; gap: 6px; background: var(--navy-50); border-bottom: 1px solid var(--line-soft); }
+body.role-staff .staff-department-label { color: var(--muted); font: 700 10px/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; }
+body.role-staff .staff-department-context strong { color: var(--navy-900); font: 700 18px/1.2 var(--font-sans); white-space: normal; }
+body.role-staff .staff-department-context .dept-chip {
+  display: inline-flex; align-items: center; justify-content: center; width: fit-content;
+  min-height: 24px; padding: 0 10px; border-radius: var(--radius-pill);
+  background: var(--gold-500); color: var(--navy-900); font: 800 11px/1 var(--font-sans); letter-spacing: .05em;
+}
+body.role-staff .staff-sidebar-nav { margin: 0; padding: 12px; flex: 0 0 auto; overflow: visible; background: transparent; }
+body.role-staff .staff-sidebar-section-label { margin: 8px 8px 6px; color: var(--faint); font: 700 10px/1 var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+body.role-staff .staff-sidebar-section-label:not(:first-child) { margin-top: 14px; }
+body.role-staff .staff-sidebar-nav a {
+  color: var(--text); border-left: 3px solid transparent; border-radius: var(--radius-sm);
+  min-height: 44px; font: 600 14px/1.3 var(--font-sans);
+}
+body.role-staff .staff-sidebar-nav a:hover { background: var(--navy-50); color: var(--navy-800); }
+body.role-staff .staff-sidebar-nav a.is-active { background: var(--navy-50); color: var(--navy-800); border-left-color: var(--gold-500); }
+body.role-staff .staff-sidebar-nav a:focus-visible,
+body.role-staff .staff-sidebar-close:focus-visible,
+body.role-staff .staff-mobile-menu-button:focus-visible { outline: none; box-shadow: var(--ring); }
+body.role-staff .staff-sidebar-nav svg { color: var(--navy-700); }
+body.role-staff .staff-sidebar-language .language-switcher,
+body.role-staff .staff-sidebar-language .locale-switcher { width: 100%; }
+body.role-staff .staff-sidebar-language { padding: 4px 8px 8px; }
+
+body.role-staff .staff-content { background: transparent; color: var(--text); }
+body.role-staff .staff-page-title,
+body.role-staff .staff-section-title,
+body.role-staff .staff-complaint-copy h3,
+body.role-staff .staff-empty-state h2 { color: var(--navy-900); font-family: var(--font-sans); }
+body.role-staff .staff-page-description,
+body.role-staff .staff-section-description,
+body.role-staff .staff-empty-copy,
+body.role-staff .staff-activity-item-copy,
+body.role-staff .staff-activity-item time { color: var(--muted); }
+body.role-staff .staff-metric { background: var(--surface); }
+body.role-staff .staff-metric span { color: var(--muted); }
+body.role-staff .staff-metric strong { color: var(--navy-800); font-family: var(--font-sans); }
+body.role-staff .staff-metric-grid { background: var(--line-soft); border-color: var(--line-soft); box-shadow: var(--shadow-card); }
+body.role-staff .staff-complaint-list,
+body.role-staff .staff-filter-panel,
+body.role-staff .staff-activity-panel,
+body.role-staff .staff-table-wrap { background: var(--surface); border-color: var(--line-soft); box-shadow: var(--shadow-card); color: var(--text); }
+body.role-staff .staff-complaint-row { background: var(--surface); border-color: var(--line-soft); }
+body.role-staff .staff-complaint-copy p,
+body.role-staff .staff-complaint-meta { color: var(--muted); }
+body.role-staff .staff-ticket-id { color: var(--navy-700); }
+body.role-staff .staff-input,
+body.role-staff .staff-select { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+body.role-staff .staff-button--primary,
+body.role-staff .staff-button.staff-button--primary { background: var(--navy-700); color: var(--surface); border-color: var(--navy-700); }
+body.role-staff .staff-text-link { color: var(--navy-700); }
+body.role-staff .staff-tabs a { color: var(--muted); }
+body.role-staff .staff-tabs a.is-active { color: var(--navy-700); border-bottom-color: var(--gold-500); }
+body.role-staff .staff-tabs { border-bottom-color: var(--line-soft); }
+body.role-staff .staff-activity-marker { background: var(--navy-700); }
+body.role-staff .staff-activity-item-title { color: var(--text); }
+body.role-staff .staff-activity-item:not(:last-child) { border-bottom-color: var(--line-soft); }
+
+@media (max-width: 1023px) {
+  body.role-staff .staff-shell { display: block; }
+  body.role-staff .staff-sidebar {
+    position: fixed; top: var(--navbar-height); left: 0; bottom: 0; width: min(320px, 88vw);
+    height: auto; transform: translateX(-102%); transition: transform 180ms ease;
+    z-index: var(--z-drawer, 1010); background: var(--bg); border-right: 1px solid var(--line-soft);
+    overflow-y: auto; padding: 12px;
+  }
+  body.role-staff .staff-sidebar.is-open,
+  html.staff-sidebar-open body.role-staff .staff-sidebar { transform: translateX(0); }
+  body.role-staff .staff-sidebar-header { display: flex; }
+  body.role-staff .staff-sidebar-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--navy-700);
+  }
+  body.role-staff .staff-sidebar-overlay {
+    display: block; position: fixed; inset: var(--navbar-height) 0 0 0;
+    background: rgba(7,18,38,.48); border: 0; padding: 0; margin: 0;
+    opacity: 0; pointer-events: none; transition: opacity 180ms ease; z-index: var(--z-drawer-backdrop, 1000);
+  }
+  html.staff-sidebar-open body.role-staff .staff-sidebar-overlay { opacity: 1; pointer-events: auto; }
+  body.role-staff .staff-content { padding: 16px 16px 32px; }
+}
+@media (min-width: 1024px) {
+  body.role-staff .staff-content { padding: 24px 24px 48px; }
+  /* Dashboard: grid starts at the workspace edge (right after the sidebar gap),
+     so drop the staff-content side padding to avoid a blank band. */
+  body.role-staff.page-staff-dashboard .staff-content { padding-left: 0; padding-right: 0; }
+}
+
+/* Staff sidebar: single white card (desktop) */
+body.role-staff .staff-sidebar-card { padding: 0; overflow: hidden; }
+body.role-staff .staff-sidebar-card .staff-department-context { margin: 0; border: 0; border-radius: 0; box-shadow: none; border-bottom: 1px solid var(--line-soft); }
+body.role-staff .staff-sidebar-card .staff-sidebar-nav { margin: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+body.role-staff .staff-sidebar > .staff-department-context,
+body.role-staff .staff-sidebar > .staff-sidebar-nav { /* legacy safety */ }
+@media (max-width: 1023px) {
+  body.role-staff .staff-sidebar-card { border: 0; box-shadow: none; background: transparent; }
+  body.role-staff .staff-sidebar-card .staff-department-context,
+  body.role-staff .staff-sidebar-card .staff-sidebar-nav { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); margin-bottom: 12px; }
+}
+body.role-staff .staff-sidebar-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+
+/* Staff sidebar fixes (pass 2): one white card, readable light text, sticky/scroll, language */
+body.role-staff .staff-sidebar { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+@media (min-width: 1024px) {
+  body.role-staff .staff-sidebar { position: sticky; top: calc(var(--navbar-height) + 16px); align-self: flex-start; max-height: calc(100dvh - var(--navbar-height) - 32px); overflow-y: auto; overflow-x: hidden; padding: 16px 12px 24px 16px; }
+  body.role-staff .staff-content { padding-top: 16px; }
+}
+body.role-staff .staff-sidebar-card { background: var(--surface) !important; border: 1px solid var(--line-soft) !important; border-radius: var(--radius-lg) !important; box-shadow: var(--shadow-card) !important; }
+body.role-staff .staff-sidebar-card .staff-department-context { background: var(--navy-50) !important; }
+body.role-staff .staff-sidebar-section-label { color: var(--muted) !important; }
+body.role-staff .staff-sidebar-nav a { color: var(--text) !important; }
+body.role-staff .staff-sidebar-nav a svg { color: var(--muted) !important; stroke: currentColor; }
+body.role-staff .staff-sidebar-nav a:hover,
+body.role-staff .staff-sidebar-nav a.is-active { background: var(--navy-50) !important; color: var(--navy-800) !important; }
+body.role-staff .staff-sidebar-nav a.is-active { border-left: 3px solid var(--gold-500) !important; font-weight: 700; }
+body.role-staff .staff-sidebar-nav a.is-active svg { color: var(--navy-700) !important; }
+body.role-staff .staff-sidebar-nav a { min-height: 44px; }
+/* Language switcher in light sidebar */
+body.role-staff .staff-sidebar .lang-switch {
+  border-color: var(--line) !important; background: var(--surface) !important; width: 100%;
+}
+body.role-staff .staff-sidebar .lang-switch__globe { color: var(--muted) !important; }
+body.role-staff .staff-sidebar .lang-switch__option {
+  color: var(--navy-700) !important; background: transparent !important; font-size: 11px !important;
+}
+body.role-staff .staff-sidebar .lang-switch__option:hover,
+body.role-staff .staff-sidebar .lang-switch__option:focus-visible { background: var(--navy-50) !important; color: var(--navy-800) !important; }
+body.role-staff .staff-sidebar .lang-switch__option.is-active {
+  background: var(--gold-500) !important; color: var(--navy-900) !important;
+}
+body.role-staff .staff-sidebar .lang-switch--compact .lang-switch__label { display: none; }
+body.role-staff .staff-sidebar .lang-switch--compact .lang-switch__code { display: inline; }
+
+/* Staff shell 3-zone layout (dashboard, pass 3) */
+body.role-staff .staff-shell { width: 100%; max-width: 1440px; margin: 0 auto; padding: var(--navbar-height) 0 0 0; box-sizing: border-box; min-height: 100dvh; }
+@media (min-width: 1024px) {
+  body.role-staff .staff-shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 24px; padding: var(--navbar-height) 24px 0 24px; align-items: start; }
+  body.role-staff .staff-sidebar { width: 248px; position: sticky; top: calc(var(--navbar-height) + 16px); max-height: calc(100dvh - var(--navbar-height) - 32px); overflow-y: auto; transform: none; left: auto; }
+  body.role-staff .staff-workspace { min-width: 0; }
+}
+.staff-aside-column { display: none; }
+@media (min-width: 1024px) {
+  body.role-staff .staff-department-context { display: none !important; }
+}
+@media (max-width: 1023px) {
+  body.role-staff .staff-shell { padding: var(--navbar-height) 0 0 0; gap: 0; }
+}
+
+/* Sidebar definitive (pass 3) */
+body.role-staff .staff-sidebar-card { width: 100%; background: var(--dept-surface) !important; border: 1px solid var(--dept-card-border) !important; border-radius: 16px !important; box-shadow: var(--dept-card-shadow) !important; padding: 16px !important; display: flex; flex-direction: column; min-height: 0; }
+@media (min-width: 1024px) { body.role-staff .staff-sidebar-card { min-height: calc(100% - 8px); } }
+body.role-staff .staff-department-context { background: linear-gradient(135deg, var(--dept-active-bg), #f5f8ff) !important; border: 1px solid var(--dept-active-border) !important; border-radius: 12px !important; padding: 14px !important; margin: 0 0 8px !important; box-shadow: none !important; }
+body.role-staff .staff-department-label { color: var(--dept-muted) !important; font-size: 11px !important; letter-spacing: .08em !important; }
+body.role-staff .staff-department-context strong { color: var(--dept-ink) !important; font-size: 16px !important; }
+body.role-staff .staff-department-context .dept-chip { background: var(--dept-gold-chip) !important; color: var(--dept-ink) !important; border: 0 !important; }
+body.role-staff .staff-sidebar-nav { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+body.role-staff .staff-sidebar-nav__main { flex: 0 0 auto; }
+body.role-staff .staff-sidebar-nav__bottom { margin-top: auto; padding-top: 8px; }
+body.role-staff .staff-sidebar-section-label { color: var(--dept-muted) !important; font-size: 11px !important; margin: 16px 8px 6px !important; }
+body.role-staff .staff-sidebar-nav a { min-height: 44px !important; height: 44px; border-radius: 12px !important; color: var(--dept-ink) !important; font-size: 14px !important; font-weight: 500 !important; border-left: 3px solid transparent !important; padding: 0 10px !important; }
+body.role-staff .staff-sidebar-nav a svg { width: 20px !important; height: 20px !important; color: var(--dept-muted) !important; }
+body.role-staff .staff-sidebar-nav a:hover { background: var(--dept-hover) !important; color: var(--dept-ink) !important; }
+body.role-staff .staff-sidebar-nav a.is-active { background: var(--dept-active-bg) !important; color: var(--navy-700) !important; border-left-color: transparent !important; font-weight: 700 !important; }
+body.role-staff .staff-sidebar-nav a.is-active svg { color: var(--navy-700) !important; }
+body.role-staff .staff-sidebar-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--dept-primary); color: var(--surface); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+body.role-staff .staff-sidebar-language .lang-switch { background: var(--dept-hover) !important; border-color: var(--dept-card-border) !important; }
+@media (max-width: 1023px) {
+  body.role-staff .staff-sidebar { width: min(320px, 88vw) !important; padding: 12px !important; }
+  body.role-staff .staff-sidebar-card { min-height: 0; }
+  body.role-staff .staff-sidebar-nav__bottom { margin-top: 8px; }
+}
+
+/* Navbar / header fixes (staff, pass 3) */
+body.role-staff #navbar { border-bottom: 0; }
+body.role-staff #navbar::after {
+  content: ""; display: block; position: absolute; left: 0; right: 0; bottom: -3px; height: 3px;
+  background: var(--gold-500); pointer-events: none;
+}
+body.role-staff .navbar-logo { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+body.role-staff .nav-dept-account {
+  display: inline-flex !important; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px; border-radius: 999px;
+  background: var(--dept-tint, rgba(255,255,255,.12)) !important; 
+  border: 1px solid color-mix(in srgb, var(--dept-accent, var(--gold-500)) 50%, transparent) !important;
+  color: var(--dept-accent, #FFFFFF) !important; font: 600 12px/1 var(--font-sans); letter-spacing: .06em;
+  text-transform: uppercase; white-space: nowrap; flex-shrink: 0; margin-left: 6px; max-width: none !important;
+}
+body.role-staff .nav-dept-account__icon { width: 14px; height: 14px; color: var(--dept-accent, #FFFFFF); flex-shrink: 0; display: block; }
+body.role-staff .nav-dept-account__dot { display: none !important; }
+body.role-staff .nav-dept-account__text, body.role-staff .nav-dept-account__label,
+body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code { color: var(--dept-accent, #FFFFFF) !important; }
+@media (max-width: 767px) {
+  body.role-staff .logo-sub { display: none !important; }
+  body.role-staff .logo-name { flex-shrink: 0; white-space: nowrap; font-size: 16px !important; }
+  body.role-staff .logo-icon, body.role-staff .logo-image { width: 32px !important; height: 32px !important; flex-shrink: 0; }
+  body.role-staff .nav-dept-account__label, body.role-staff .nav-dept-account__sep { display: none !important; }
+  body.role-staff .nav-dept-account { padding: 0 8px; gap: 4px; margin-left: 4px; }
+  body.role-staff .navbar-logo { gap: 8px; flex-shrink: 1; min-width: 0; }
+  body.role-staff .mobile-drawer-toggle, body.role-staff [data-notification-toggle] { width: 40px !important; height: 40px !important; min-width: 40px; }
+  body.role-staff .navbar-inner, body.role-staff .navbar-flex { flex-wrap: nowrap !important; }
+}
+@media (min-width: 768px) {
+  body.role-staff .nav-dept-account { margin-left: 6px; }
+}

@@ -2,13 +2,13 @@
   <div class="navbar-inner w-full max-w-full min-w-0">
     <div class="navbar-flex w-full max-w-full min-w-0">
       @php
-        $logoRoute = match (auth()->user()->role) {
-          'admin' => route('admin.dashboard'),
-          'staff' => route('staff.dashboard'),
-          default => route('dashboard'),
-        };
+        $logoRoute = auth()->user()->homeRouteName();
+        $logoUrl = route($logoRoute);
+        $navRole = auth()->user()->role;
+        $navDept = $navRole === 'staff' ? auth()->user()->department : null;
+        $showNavIdentity = in_array($navRole, ['admin', 'staff'], true);
       @endphp
-      <a href="{{ $logoRoute }}" class="navbar-logo group" aria-label="Daet Listens dashboard">
+      <a href="{{ $logoUrl }}" class="navbar-logo group" aria-label="Daet Listens dashboard">
         <div class="logo-icon">
           <img src="/images/lgulogo.webp" alt="Daet LGU" class="logo-image" width="28" height="28">
         </div>
@@ -16,20 +16,21 @@
           <span class="logo-name">DAET LISTENS</span>
           <span class="logo-sub">LGU Daet · Camarines Norte</span>
         </div>
+        @if($navRole === 'staff')
+          <span class="nav-dept-account" data-dept="{{ $navDept?->code }}" aria-label="{{ __('nav.department_account') }}{{ $navDept?->code ? ' · '.$navDept->code : '' }}">
+            <svg class="nav-dept-account__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V8l6-4 6 4v13"/><path d="M10 10h4"/></svg>
+            <span class="nav-dept-account__text"><span class="nav-dept-account__label">{{ __('nav.department') }}</span>@if($navDept?->code)<span class="nav-dept-account__sep" aria-hidden="true"> · </span><span class="nav-dept-account__code">{{ $navDept->code }}</span>@endif</span>
+          </span>
+        @endif
       </a>
 
       <ul class="nav-links">
         @if(auth()->user()->role === 'citizen')
-          <li><a href="{{ route('dashboard') }}" wire:navigate class="nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif>{{ __('nav.dashboard') }}</a></li>
-          <li><a href="{{ route('complaints.index') }}" wire:navigate class="nav-link {{ request()->routeIs('complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a></li>
-        @endif
-        @if(auth()->user()->role !== 'admin')
+          <li><a href="{{ route('complaints.index') }}" wire:navigate class="nav-link {{ request()->routeIs('complaints.index', 'complaints.show', 'complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index', 'complaints.show', 'complaints.create')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a></li>
           <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">{{ __('nav.transparency') }}</a></li>
         @endif
-        {{-- No Terms or Privacy here on purpose - they live in the site footer,
-             which renders on every page including the admin and staff shells, so
-             a signed-in operator can still read them. The registration consent
-             checkbox links them directly. --}}
+        {{-- Transparency is available in the drawer/footer for staff accounts to
+             keep the department header compact (avoids collision with the bell). --}}
       </ul>
 
       {{-- The bell is a direct child of the bar, NOT a member of .nav-actions.
@@ -38,6 +39,11 @@
            visible at every width and still sits immediately left of whichever
            account control that width uses. --}}
       @include('layouts.partials.notification-bell')
+      @if($navRole === 'admin')
+        <span class="nav-identity-bar nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
+          <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+        </span>
+      @endif
       <button
         type="button"
         class="mobile-drawer-toggle"
@@ -52,13 +58,20 @@
       </button>
 
       <ul class="nav-actions">
-        {{-- No dashboard link here: the logo already routes to the admin or
-             staff workspace, so the action area stays limited to account actions. --}}
+        {{-- No dashboard link here: the logo already routes to the role home
+             (My Complaints for citizens, workspace for staff/admin), so the
+             action area stays limited to account actions. --}}
 
         {{-- Filing a complaint is a citizen action. LGU operators manage the
              queue from their workspace, so the CTA stays out of their bar. --}}
-        @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard', 'complaints.index'))
+        @if(auth()->user()->role === 'citizen' && !request()->routeIs('complaints.index'))
           <li><a href="{{ route('complaints.create') }}" class="btn-nav-cta">{{ __('nav.file_complaint') }}</a></li>
+        @endif
+
+        @if($navRole === 'admin')
+          <li class="nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
+            <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+          </li>
         @endif
 
         <li class="nav-dropdown-wrap">
@@ -72,6 +85,17 @@
             <div class="dropdown-header">
               <span class="dropdown-name">{{ auth()->user()->full_name }}</span>
               <span class="dropdown-email">{{ auth()->user()->email }}</span>
+              @if($showNavIdentity)
+                <span class="dropdown-identity">
+                  @if($navRole === 'admin')
+                    <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                  @elseif($navDept)
+                    <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
+                  @else
+                    <span class="nav-identity__badge nav-identity__badge--staff">{{ __('nav.staff') }}</span>
+                  @endif
+                </span>
+              @endif
             </div>
             <div class="dropdown-divider"></div>
             @if(auth()->user()->role === 'admin')
@@ -96,7 +120,7 @@
               {{ __('nav.settings') }}
             </a>
             <div class="dropdown-divider"></div>
-            <form method="POST" action="{{ route('logout') }}">
+            <form data-loading-submit method="POST" action="{{ route('logout') }}">
               @csrf
               <button type="submit" class="dropdown-item dropdown-logout">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -108,6 +132,11 @@
       </ul>
 
       <div class="nav-mobile-right">
+        @if($showNavIdentity && $navRole === 'admin')
+          <span class="nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
+            <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+          </span>
+        @endif
         @if(auth()->user()->role === 'admin')
           {{-- Admins keep the left workspace drawer for sections; the top-right
                trigger is an account popover, matching the desktop hierarchy. --}}
@@ -130,6 +159,19 @@
               <div class="dropdown-header">
                 <span class="dropdown-name">{{ auth()->user()->full_name }}</span>
                 <span class="dropdown-email">{{ auth()->user()->email }}</span>
+                @if($showNavIdentity)
+                  <span class="dropdown-identity">
+                    @if($navRole === 'admin')
+                      <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                    @elseif($navDept)
+                      <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
+                      <span class="dropdown-identity__name">{{ $navDept->name }}</span>
+                    @else
+                      <span class="nav-identity__badge nav-identity__badge--staff">{{ __('nav.staff') }}</span>
+                      <span class="dropdown-identity__name">{{ __('nav.department_pending') }}</span>
+                    @endif
+                  </span>
+                @endif
               </div>
               <div class="dropdown-divider"></div>
               @if(auth()->user()->role === 'admin')
@@ -154,7 +196,7 @@
                 {{ __('nav.settings') }}
               </a>
               <div class="dropdown-divider"></div>
-              <form method="POST" action="{{ route('logout') }}">
+              <form data-loading-submit method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="dropdown-item dropdown-logout">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -164,8 +206,13 @@
             </div>
           </div>
         @else
-          @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard', 'complaints.index'))
+          @if(auth()->user()->role === 'citizen' && !request()->routeIs('complaints.index'))
             <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm hidden sm:flex">{{ __('nav.file') }}</a>
+          @endif
+          @if($navRole === 'admin')
+            <span class="nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
+              <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+            </span>
           @endif
           <button id="mobile-menu-btn" data-mobile-menu-toggle aria-controls="mobile-menu" aria-label="{{ __('nav.open_navigation') }}" aria-expanded="false" class="hamburger-btn" type="button">
             <span class="hamburger-line"></span>
@@ -195,18 +242,28 @@
         <div class="mobile-user-copy">
           <div class="mobile-user-name">{{ auth()->user()->full_name }}</div>
           <div class="mobile-user-email">{{ auth()->user()->email }}</div>
+          @if($showNavIdentity)
+            <div class="mobile-user-identity">
+              @if($navRole === 'admin')
+                <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+              @elseif($navDept)
+                <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
+                <span class="mobile-user-identity__label">{{ $navDept->name }}</span>
+              @else
+                <span class="nav-identity__badge nav-identity__badge--staff">{{ __('nav.staff') }}</span>
+                <span class="mobile-user-identity__label">{{ __('nav.department_pending') }}</span>
+              @endif
+            </div>
+          @endif
         </div>
       </div>
       <div class="mobile-divider"></div>
 
-      @if(auth()->user()->role === 'citizen' && !request()->routeIs('dashboard', 'complaints.index'))
+      @if(auth()->user()->role === 'citizen' && !request()->routeIs('complaints.index'))
         <a href="{{ route('complaints.create') }}" wire:navigate class="mobile-nav-link mobile-nav-link--primary">{{ __('nav.file_complaint') }}</a>
       @endif
       @if(auth()->user()->role === 'citizen')
-        <a href="{{ route('dashboard') }}" wire:navigate class="mobile-nav-link{{ request()->routeIs('dashboard') ? ' is-active' : '' }}" @if(request()->routeIs('dashboard')) aria-current="page" @endif>{{ __('nav.dashboard') }}</a>
-      @endif
-      @if(auth()->user()->role === 'citizen')
-        <a href="{{ route('complaints.index') }}" wire:navigate class="mobile-nav-link{{ request()->routeIs('complaints.index') ? ' is-active' : '' }}" @if(request()->routeIs('complaints.index')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a>
+        <a href="{{ route('complaints.index') }}" wire:navigate class="mobile-nav-link{{ request()->routeIs('complaints.index', 'complaints.show', 'complaints.create') ? ' is-active' : '' }}" @if(request()->routeIs('complaints.index', 'complaints.show', 'complaints.create')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a>
       @endif
       @if(auth()->user()->role !== 'admin')
         <a href="{{ url('/transparency') }}" wire:navigate class="mobile-nav-link">{{ __('nav.transparency') }}</a>
@@ -228,7 +285,7 @@
       @endif
       <div class="mobile-divider"></div>
 
-      <form method="POST" action="{{ route('logout') }}">
+      <form data-loading-submit method="POST" action="{{ route('logout') }}">
         @csrf
         <button type="submit" class="mobile-nav-link mobile-logout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>

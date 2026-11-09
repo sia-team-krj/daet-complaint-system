@@ -189,31 +189,77 @@ const initializeBarangaySearch = () => {
     });
 };
 
-// A single-use invitation is consumed on submit. A double click would let the
-// second request find the code already redeemed and show a confusing
-// "no longer available" error, so the submit control locks once used.
+// Shared busy/loading state for action buttons (docs/design-system.md §5.31).
+// Prevents double submits, shows the `.is-loading` spinner (currentColor), and
+// restores on bfcache return. Opt-in: forms with `data-loading-submit` or the
+// legacy `data-disable-on-submit`; plus all non-GET method forms by default
+// (state-changing). Opt-out: `data-loading="off"` or `data-loading-managed`.
+const setActionBusy = (el, busy) => {
+    if (!el) return;
+    if (busy) {
+        el.classList.add('is-loading');
+        el.setAttribute('aria-busy', 'true');
+        el.dataset.actionBusy = 'true';
+        if ('disabled' in el) el.disabled = true;
+        else el.setAttribute('aria-disabled', 'true');
+    } else {
+        el.classList.remove('is-loading');
+        el.removeAttribute('aria-busy');
+        delete el.dataset.actionBusy;
+        if ('disabled' in el) el.disabled = false;
+        el.removeAttribute('aria-disabled');
+    }
+};
+window.daetActionLoading = { setBusy: setActionBusy };
+
+const resolveSubmitter = (form, event) => {
+    if (event && event.submitter) return event.submitter;
+    const active = document.activeElement;
+    if (active && form.contains(active) && (active.type === 'submit' || active.getAttribute('type') === 'submit')) return active;
+    return form.querySelector('button[type="submit"]:not([disabled]), input[type="submit"]:not([disabled])');
+};
+
 const initializeSubmitGuards = () => {
-    document.querySelectorAll('form[data-disable-on-submit]').forEach((form) => {
-        if (form.dataset.submitGuarded === 'true') return;
-        form.dataset.submitGuarded = 'true';
+    const clearBusy = (root) => {
+        (root || document).querySelectorAll('[data-action-busy="true"]').forEach((el) => setActionBusy(el, false));
+    };
 
-        form.addEventListener('submit', () => {
-            const button = form.querySelector('button[type="submit"]');
-            if (!button) return;
-
-            button.disabled = true;
-            button.setAttribute('aria-disabled', 'true');
-        });
-
-        // Restored on bfcache restore so a back-navigation can submit again.
+    if (window.__daetActionBusyPageshow !== true) {
+        window.__daetActionBusyPageshow = true;
         window.addEventListener('pageshow', (event) => {
-            if (event.persisted) {
-                form.reset();
-                form.querySelectorAll('button[type="submit"]').forEach((button) => {
-                    button.disabled = false;
-                    button.removeAttribute('aria-disabled');
-                });
-            }
+            if (event.persisted) clearBusy(document);
+        });
+    }
+
+    document.querySelectorAll('form').forEach((form) => {
+        if (form.dataset.actionLoadingBound === 'true') return;
+        const method = (form.getAttribute('method') || 'get').toLowerCase();
+        const explicit = form.hasAttribute('data-loading-submit') || form.hasAttribute('data-disable-on-submit');
+        const managed = form.getAttribute('data-loading') === 'off' || form.hasAttribute('data-loading-managed') || form.hasAttribute('data-preferences-autosave');
+        if (managed) return;
+        if (!explicit && method === 'get') return;
+        if (!explicit && method !== 'get' && form.closest('[data-no-action-loading]')) return;
+        form.dataset.actionLoadingBound = 'true';
+
+        // Legacy single-use guard behavior: keep form reset on bfcache restore.
+        if (form.hasAttribute('data-disable-on-submit') && form.dataset.submitGuarded !== 'true') {
+            form.dataset.submitGuarded = 'true';
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) form.reset();
+            });
+        }
+
+        form.addEventListener('submit', (event) => {
+            if (event.defaultPrevented) return;
+            if (form.hasAttribute('data-loading-managed')) return;
+            const button = resolveSubmitter(form, event);
+            if (!button || button.dataset.actionBusy === 'true') return;
+            // Set immediately so feedback is visible before navigation; if another
+            // handler prevents default (validation, custom flow), clear on next tick.
+            setActionBusy(button, true);
+            window.setTimeout(() => {
+                if (event.defaultPrevented && form.isConnected) setActionBusy(button, false);
+            }, 0);
         });
     });
 };

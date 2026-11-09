@@ -1,9 +1,12 @@
 @extends($mainLayout)
 
 @section('title', $complaint->ticket_id.' - '.__('transparency.show.title'))
+@section('body-class', 'page-transparency-show')
 
 @push('styles')
     <style>
+        /* Cancel global body navbar offset once; .pt provides the page offset. */
+        body.page-transparency-show { padding-top: 0; }
         .pt {
             /* The navbar is fixed; offset like every other shell. */
             padding-top: var(--navbar-height, 64px);
@@ -83,7 +86,6 @@
             overflow-wrap: anywhere;
         }
         @media (max-width: 767px) { .pt-banner__title { font-size: 24px; line-height: 1.25; } }
-        .pt-goldbar { display: block; width: 40px; height: 3px; border-radius: 2px; background: var(--gold-500); margin: 0 0 12px; }
         .pt-banner__status-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
         .pt-chip-neutral {
             display: inline-flex;
@@ -372,7 +374,6 @@
                     <span class="sr-only" id="copy-live" aria-live="polite"></span>
                 </div>
                 <h1 class="pt-banner__title">{{ $complaint->publicTitle() }}</h1>
-                <span class="pt-goldbar" aria-hidden="true"></span>
                 <div class="pt-banner__status-row">
                     <span class="pt-pill pt-pill--{{ str($complaint->status)->slug() }}"><span class="pt-pill__dot" aria-hidden="true"></span>{{ $complaint->statusEnum->label() }}</span>
                     @if($verificationMethod)

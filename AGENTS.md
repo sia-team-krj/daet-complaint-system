@@ -15,8 +15,9 @@
    rows — one markup per list (see guide §5.14 and §7). Never fork the shared
    filter bar or report-row component; extend them.
 5. **Every UI change ends with:** changelog entry in `docs/design-system.md` §12 +
-   the Definition of Done checklist in §11, with screenshots at **393px and 1310px,
-   en and fil**, attached to the change. "Done" without screenshots is rejected.
+   the Definition of Done checklist in §11. Screenshots are optional (waived by the
+   owner 2026-11-09); verification evidence lives in the changelog entry — see
+   `docs/ui-verification.md`.
 6. **z-index contract is LOCKED** (navbar 900, drawer backdrop 1000, drawer 1010,
    toast/modal 1100, map wrappers `isolation: isolate; z-index: 0`). Overlays that
    belong to a map live inside the map.
@@ -33,8 +34,10 @@ without `isolation`. CI runs it; so should you when touching UI.
 
 Every change to `resources/views`, `resources/css`, `resources/js` or `lang` that
 alters how the UI looks or behaves MUST add an entry to `docs/design-changelog.md`
-in the same commit, with before/after screenshots in `docs/design-log/`. See the
-template at the top of that file. "Done" without a changelog entry is rejected.
+in the same commit. Screenshots are optional (waived by the owner 2026-11-09); list
+them when taken, or state the waiver inline in the entry (see `docs/ui-verification.md`
+and the existing `NOT captured (waived by user)` precedent). See the template at the
+top of `docs/design-changelog.md`. "Done" without a changelog entry is rejected.
 
 ## Everything else
 

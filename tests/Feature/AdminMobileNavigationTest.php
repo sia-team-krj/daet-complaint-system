@@ -67,7 +67,7 @@ class AdminMobileNavigationTest extends TestCase
             ->assertDontSee($cta);
 
         $this->actingAs($citizen)
-            ->get(route('dashboard'))
+            ->get(route('complaints.index'))
             ->assertOk()
             ->assertSee($cta);
     }
@@ -90,16 +90,16 @@ class AdminMobileNavigationTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.dashboard'))
             ->assertOk()
-            ->assertSee('href="' . route('admin.dashboard') . '" class="navbar-logo', false)
-            ->assertSee('href="' . route('admin.dashboard') . '" class="dropdown-item"', false)
+            ->assertSee('href="'.route('admin.dashboard').'" class="navbar-logo', false)
+            ->assertSee('href="'.route('admin.dashboard').'" class="dropdown-item"', false)
             ->assertDontSee('class="nav-link">Admin Dashboard', false);
 
         $this->actingAs($staff)
             ->get(route('staff.dashboard'))
             ->assertOk()
-            ->assertSee('href="' . route('staff.dashboard') . '" class="navbar-logo', false)
+            ->assertSee('href="'.route('staff.dashboard').'" class="navbar-logo', false)
             ->assertDontSee('class="nav-link">Staff Dashboard', false)
-            ->assertDontSee('href="' . route('admin.dashboard') . '" class="dropdown-item"', false);
+            ->assertDontSee('href="'.route('admin.dashboard').'" class="dropdown-item"', false);
     }
 
     public function test_account_menu_orders_dashboard_then_complaints_account_and_sign_out(): void

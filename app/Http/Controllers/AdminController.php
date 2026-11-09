@@ -574,7 +574,13 @@ class AdminController extends Controller
             ->with('department')
             ->orderBy('first_name')
             ->get();
-        $reviewStatusOptions = ComplaintReviewStatus::cases();
+        // The review decision is a verdict on an existing report. Asking the
+        // resident for more evidence is a different, dedicated flow that
+        // always carries the question — never this dropdown.
+        $reviewStatusOptions = array_values(array_filter(
+            ComplaintReviewStatus::cases(),
+            fn ($option) => $option !== ComplaintReviewStatus::NeedsInformation
+        ));
         $priorityOptions = ComplaintPriority::cases();
 
         return view('admin.complaints.show', compact(
@@ -679,6 +685,13 @@ class AdminController extends Controller
             }
             if ($newStatus !== $oldStatus) {
                 $updates['status'] = $newStatus->value;
+                if ($newStatus === ComplaintStatus::Resolved && $complaint->resolved_at === null) {
+                    $updates['resolved_at'] = now();
+                }
+                if ($newStatus === ComplaintStatus::Closed) {
+                    $updates['closed_at'] = now();
+                    $updates['closed_by'] = 'admin';
+                }
             }
         }
 

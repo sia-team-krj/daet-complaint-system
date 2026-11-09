@@ -167,5 +167,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('complaints:flag-stale-requests')
             ->dailyAt('07:15')
             ->withoutOverlapping();
+
+        // Resolved reports the resident never confirmed close automatically
+        // after 7 days, so cases do not stay open forever.
+        $schedule->command('complaints:auto-close-resolved')
+            ->dailyAt('07:30')
+            ->withoutOverlapping();
     })
     ->create();

@@ -185,6 +185,11 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     // staff or admin action. Nothing else in the system writes is_public.
     Route::put('/complaints/{complaint}/visibility', [ComplaintController::class, 'updateVisibility'])
         ->name('complaints.visibility.update');
+    // The resident confirms the resolution of their own report. Only allowed
+    // once the department has marked it Resolved; auto-closes after 7 days if
+    // they do not act.
+    Route::post('/complaints/{complaint}/close', [ComplaintController::class, 'close'])
+        ->name('complaints.close');
     Route::get('/complaints/{complaint}/success', [ComplaintController::class, 'success'])->name('complaints.success');
     Route::get('/track', [ComplaintController::class, 'track'])->name('complaints.track');
 });
@@ -236,6 +241,8 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
         Route::post('/complaints/bulk-reassign', [AdminController::class, 'bulkReassign'])->name('admin.complaints.bulk-reassign');
         Route::get('/complaints/{complaint}', [AdminController::class, 'complaintShow'])->name('admin.complaints.show');
         Route::put('/complaints/{complaint}', [AdminController::class, 'complaintUpdate'])->name('admin.complaints.update');
+        Route::post('/complaints/{complaint}/verification/request-information', [ComplaintVerificationController::class, 'requestInformation'])
+            ->name('admin.complaints.verification.request-information');
         Route::post('/complaints/{complaint}/moderation', [AdminController::class, 'moderateComplaint'])
             ->name('admin.complaints.moderate');
         Route::get('/departments', [AdminController::class, 'departmentsIndex'])->name('admin.departments.index');

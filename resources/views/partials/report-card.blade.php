@@ -45,6 +45,7 @@
             <span class="db-progress-segment {{ $i+1 < $step ? 'is-done' : ($i+1 === $step ? 'is-current' : '') }}"></span>
           @endforeach
         </span>
+        <span class="db-card__date-mobile">{{ $createdAt->translatedFormat('M j') }}</span>
       </span>
       <span class="sr-only">{{ trans('dashboard.step_of', ['current'=>$step,'total'=>5,'label'=>$steps[$step-1]]) }}</span>
     </span>

@@ -1,0 +1,270 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Standalone error shell (401 · 403 · 404 · 419 · 429 · 500 · 503).
+
+   The page that must still work when something is wrong: it renders no
+   navbar, no Livewire, no database-backed footer — only the brand header,
+   one centered card, and a minimal footer. Tokens only; no new colours.
+   Anatomy + rationale: docs/design-system.md §5.27.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.error-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* The global shell offsets the fixed navbar. This page has no fixed navbar. */
+body.error-page {
+    padding-top: 0;
+}
+
+.error-page *,
+.error-page *::before,
+.error-page *::after {
+    box-sizing: border-box;
+}
+
+/* ── Brand header ─────────────────────────────────────────────────── */
+.error-header {
+    background: var(--navy-900);
+    border-bottom: 2px solid var(--gold-500);
+}
+
+.error-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 64px;
+}
+
+.error-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+}
+
+.error-brand__logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.error-brand__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.error-brand__name {
+    color: var(--surface);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.error-brand__sub {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+}
+
+.error-header__tag {
+    color: var(--gold-300);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.2;
+    text-align: right;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* ── Error card ───────────────────────────────────────────────────── */
+.error-main {
+    flex: 1 0 auto;
+    padding: 48px 0;
+}
+
+.error-card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 32px;
+    text-align: center;
+}
+
+.error-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-700);
+}
+
+.error-icon svg {
+    width: 28px;
+    height: 28px;
+}
+
+.error-kicker {
+    margin: 16px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.error-title {
+    margin: 8px 0 0;
+    color: var(--text);
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.15;
+}
+
+.error-message {
+    max-width: 46ch;
+    margin: 12px auto 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 32px;
+}
+
+.error-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 24px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--gold-500), var(--gold-300));
+    box-shadow: var(--shadow-card);
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.error-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+}
+
+.error-actions .tr-button {
+    margin-top: 0;
+}
+
+/* ── Focus ────────────────────────────────────────────────────────── */
+.error-page a:focus-visible,
+.error-page button:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+/* ── Minimal footer ───────────────────────────────────────────────── */
+.error-footer {
+    flex-shrink: 0;
+    background: var(--navy-950);
+    border-top: 2px solid var(--gold-500);
+}
+
+.error-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 16px;
+    flex-wrap: wrap;
+    min-height: 64px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+.error-footer__text {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .error-header__inner {
+        min-height: 56px;
+    }
+
+    .error-header__tag {
+        display: none;
+    }
+
+    .error-main {
+        padding: 32px 0;
+    }
+
+    .error-card {
+        padding: 32px 24px;
+    }
+
+    .error-title {
+        font-size: 28px;
+    }
+
+    .error-actions {
+        flex-direction: column;
+    }
+
+    .error-primary,
+    .error-actions .tr-button {
+        width: 100%;
+    }
+
+    .error-footer__inner {
+        min-height: 0;
+        padding-top: 16px;
+        padding-bottom: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .error-primary {
+        transition: none;
+    }
+
+    .error-primary:hover {
+        transform: none;
+    }
+}

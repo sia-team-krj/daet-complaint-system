@@ -1,0 +1,397 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Submission success receipt (/complaints/{id}/success) — light page.
+
+   The citizen filing flow ends here: a light receipt in the same family
+   as the wizard and My Complaints — green check hero, mono ticket strip,
+   fact rows, the shared 5-segment "Step N of 5" bar (§5.15 base from
+   partials.public-ui, widened here), what-happens-next steps and ONE
+   gold primary CTA. Tokens only; the single ≤768px block is at the end.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cs-page {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    padding: calc(var(--navbar-height) + 32px) 0 48px;
+}
+
+.cs-page *,
+.cs-page *::before,
+.cs-page *::after {
+    box-sizing: border-box;
+}
+
+/* The receipt column: a 640px reading measure inside the shared
+   .tr-container (which owns the page's 1040px container + gutters). */
+.cs-stack {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* Sections in the stack butt 24px (mobile 16px). */
+.cs-stack > * + * {
+    margin-top: 24px;
+}
+
+.cs-card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+/* ── Hero card ──────────────────────────────────────────────────── */
+.cs-hero {
+    padding: 32px 40px;
+}
+
+.cs-hero__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--status-resolved-bg);
+    color: var(--status-resolved-text);
+}
+
+.cs-hero__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.cs-hero h1 {
+    margin: 16px 0 0;
+    font-family: var(--font-sans);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.25;
+    color: var(--text);
+}
+
+.cs-hero__lede {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 15px;
+}
+
+/* ── Ticket strip: mono value on a soft field, like the pin card ─── */
+.cs-ticket {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+}
+
+.cs-ticket__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.cs-ticket__value {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--navy-900);
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+.cs-ticket__hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* ── Fact rows: key left (muted), value right (like wizard review) ─ */
+.cs-facts {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+.cs-facts li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line-soft);
+    font-size: 14px;
+}
+
+.cs-facts li:first-child {
+    border-top: 0;
+}
+
+.cs-facts > li > span:first-child {
+    flex: none;
+    color: var(--muted);
+}
+
+.cs-facts strong {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ── Progress: "Step N of 5 · Status" + the shared 5-segment bar ─── */
+.cs-progress {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.cs-progress__text {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* Widen §5.15's 150px mini bar to the receipt width; segments, radii and
+   colours stay the shared ones from partials.public-ui. */
+.cs-page .progress {
+    width: 100%;
+}
+
+/* ── What happens next: numbered steps + location note ───────────── */
+.cs-next {
+    padding: 24px;
+}
+
+.cs-next h2 {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.cs-next__list {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cs-next__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+}
+
+.cs-step-num {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-700);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.cs-next__note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+.cs-next__note svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    color: var(--faint);
+}
+
+/* ── Auto-redirect strip: countdown + "stay" escape hatch ────────── */
+.cs-redirect {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.cs-redirect[hidden] {
+    display: none !important;
+}
+
+.cs-redirect__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 22px;
+    color: var(--muted);
+}
+
+.cs-redirect__label svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--navy-700);
+}
+
+.cs-redirect__cancel {
+    flex: none;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy-700);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.cs-redirect__cancel:hover {
+    color: var(--navy-900);
+}
+
+.cs-redirect__cancel:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+    border-radius: var(--radius-sm);
+}
+
+/* ── Actions: ONE gold primary (§5.4), white secondary ───────────── */
+.cs-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.cs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cs-btn--primary {
+    background: var(--gold-500);
+    color: var(--navy-900);
+    box-shadow: var(--shadow-card);
+}
+
+.cs-btn--primary:hover {
+    background: var(--gold-300);
+}
+
+.cs-btn--primary:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+/* Secondary reuses the shared .tr-button (component-styles); this row
+   only equalises the two heights and text weight behaviour. */
+.cs-actions .tr-button {
+    margin-top: 0;
+    font-weight: 700;
+}
+
+.cs-actions .tr-button:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+/* ── Mobile ≤768px (one block) ───────────────────────────────────── */
+@media (max-width: 768px) {
+    .cs-page {
+        padding: calc(var(--navbar-height) + 16px) 0 32px;
+    }
+
+    .cs-stack > * + * {
+        margin-top: 16px;
+    }
+
+    .cs-hero {
+        padding: 24px 20px;
+    }
+
+    .cs-hero h1 {
+        font-size: 22px;
+    }
+
+    .cs-hero__lede {
+        font-size: 14px;
+    }
+
+    .cs-ticket {
+        margin-top: 16px;
+        padding: 12px 16px;
+    }
+
+    .cs-ticket__value {
+        font-size: 18px;
+    }
+
+    .cs-next {
+        padding: 20px;
+    }
+
+    .cs-redirect {
+        flex-wrap: wrap;
+    }
+
+    .cs-actions {
+        flex-direction: column;
+    }
+
+    .cs-actions .cs-btn,
+    .cs-actions .tr-button {
+        width: 100%;
+        min-height: 48px;
+        padding: 0 16px;
+    }
+}

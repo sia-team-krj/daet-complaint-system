@@ -84,6 +84,15 @@ class ComplaintVerificationService
         $oldStatus = $complaint->statusEnum;
         $oldPriority = $complaint->confirmedPriorityEnum;
 
+        // needs_information is not a bare review decision: it requires a
+        // question the resident can act on. The only legitimate path is
+        // requestInformation(), which always carries one.
+        if ($reviewStatus === ComplaintReviewStatus::NeedsInformation) {
+            throw ValidationException::withMessages([
+                'review_status' => 'Use "Ask the resident for more evidence" so the question reaches them.',
+            ]);
+        }
+
         if ($reviewStatus === ComplaintReviewStatus::Verified && ! $confirmedPriority) {
             throw ValidationException::withMessages([
                 'confirmed_priority' => 'A confirmed priority is required before verifying a complaint.',
@@ -241,6 +250,26 @@ class ComplaintVerificationService
         }
 
         $request = $complaint->informationRequests()->open()->latest('id')->first();
+
+        if ($request === null
+            && $complaint->review_status === ComplaintReviewStatus::NeedsInformation->value) {
+            // Orphaned ask: the ticket was flagged needs_information without a
+            // question (legacy path). Materialise a request from whatever the
+            // reviewer wrote, so the resident has a question to act on.
+            $reviewerNote = trim((string) $complaint->review_notes);
+            $round = (int) $complaint->informationRequests()->max('round') + 1;
+
+            $complaint->informationRequests()->create([
+                'requested_by' => $complaint->verifying_staff_id ?? $complaint->reviewed_by,
+                'question' => $reviewerNote !== ''
+                    ? $reviewerNote
+                    : __('complaint_show.action.fallback_question'),
+                'status' => InformationRequestStatus::Open->value,
+                'round' => $round,
+            ]);
+
+            $request = $complaint->informationRequests()->open()->latest('id')->first();
+        }
 
         if ($request === null) {
             throw ValidationException::withMessages([

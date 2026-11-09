@@ -25,71 +25,71 @@ class User extends Authenticatable
     // Keep this list as the single source of truth for registration and profile options.
     // ─────────────────────────────────────────────
     const BARANGAYS = [
-        "Alawihao",
-        "Awitan",
-        "Bagasbas",
-        "Barangay I (Hilahod)",
-        "Barangay II (Pasig)",
-        "Barangay III (Iraya)",
-        "Barangay IV (Mantagbac)",
-        "Barangay V (Pandan)",
-        "Barangay VI (Centro)",
-        "Barangay VII (Diego Liñan)",
-        "Barangay VIII (Salcedo)",
-        "Bibirao",
-        "Borabod",
-        "Calasgasan",
-        "Camambugan",
-        "Cobangbang",
-        "Dogongan",
-        "Gahonon",
-        "Gubat (Moreno, Gubat, Mandulongan)",
-        "Lag-on",
-        "Magang",
-        "Mambalite",
-        "Mancruz",
-        "Pamorangon",
-        "San Isidro",
+        'Alawihao',
+        'Awitan',
+        'Bagasbas',
+        'Barangay I (Hilahod)',
+        'Barangay II (Pasig)',
+        'Barangay III (Iraya)',
+        'Barangay IV (Mantagbac)',
+        'Barangay V (Pandan)',
+        'Barangay VI (Centro)',
+        'Barangay VII (Diego Liñan)',
+        'Barangay VIII (Salcedo)',
+        'Bibirao',
+        'Borabod',
+        'Calasgasan',
+        'Camambugan',
+        'Cobangbang',
+        'Dogongan',
+        'Gahonon',
+        'Gubat (Moreno, Gubat, Mandulongan)',
+        'Lag-on',
+        'Magang',
+        'Mambalite',
+        'Mancruz',
+        'Pamorangon',
+        'San Isidro',
     ];
 
     protected $fillable = [
-        "first_name",
-        "last_name",
-        "email",
-        "email_verified_at",
-        "contact_number",
-        "barangay",
-        "password",
-        "must_change_password",
-        "password_expires_at",
-        "role",
-        "department_id",
-        "created_by",
-        "display_alias",
-        "prefers_anonymity",
-        "is_active",
-        "can_verify",
-        "locale",
-        "text_size",
-        "notification_preferences",
-        "default_queue_view",
-        "daily_digest",
+        'first_name',
+        'last_name',
+        'email',
+        'email_verified_at',
+        'contact_number',
+        'barangay',
+        'password',
+        'must_change_password',
+        'password_expires_at',
+        'role',
+        'department_id',
+        'created_by',
+        'display_alias',
+        'prefers_anonymity',
+        'is_active',
+        'can_verify',
+        'locale',
+        'text_size',
+        'notification_preferences',
+        'default_queue_view',
+        'daily_digest',
     ];
 
-    protected $hidden = ["password", "remember_token"];
+    protected $hidden = ['password', 'remember_token'];
 
     protected function casts(): array
     {
         return [
-            "email_verified_at" => "datetime",
-            "password" => "hashed",
-            "prefers_anonymity" => "boolean",
-            "must_change_password" => "boolean",
-            "password_expires_at" => "datetime",
-            "is_active" => "boolean",
-            "can_verify" => "boolean",
-            "notification_preferences" => "array",
-            "daily_digest" => "boolean",
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'prefers_anonymity' => 'boolean',
+            'must_change_password' => 'boolean',
+            'password_expires_at' => 'datetime',
+            'is_active' => 'boolean',
+            'can_verify' => 'boolean',
+            'notification_preferences' => 'array',
+            'daily_digest' => 'boolean',
         ];
     }
 
@@ -175,7 +175,7 @@ class User extends Authenticatable
 
         return $alias !== ''
             ? $alias
-            : 'Resident #' . str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
+            : 'Resident #'.str_pad((string) $this->id, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -185,7 +185,7 @@ class User extends Authenticatable
     public function getInitialsAttribute(): string
     {
         return strtoupper(
-            substr($this->first_name, 0, 1) . substr($this->last_name, 0, 1),
+            substr($this->first_name, 0, 1).substr($this->last_name, 0, 1),
         );
     }
 
@@ -200,18 +200,32 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === "admin";
+        return $this->role === 'admin';
     }
 
     /** Returns true for both staff AND admin */
     public function isStaff(): bool
     {
-        return in_array($this->role, ["staff", "admin"]);
+        return in_array($this->role, ['staff', 'admin']);
     }
 
     public function isCitizen(): bool
     {
-        return $this->role === "citizen";
+        return $this->role === 'citizen';
+    }
+
+    /**
+     * Where this user's home is. Single source for logo + post-login/
+     * post-register/verification + denial redirects.
+     * Citizen -> My Complaints (complaints.index); /dashboard now 302s there.
+     */
+    public function homeRouteName(): string
+    {
+        return match ($this->role) {
+            'admin' => 'admin.dashboard',
+            'staff' => 'staff.dashboard',
+            default => 'complaints.index',
+        };
     }
 
     // ─────────────────────────────────────────────
@@ -238,7 +252,7 @@ class User extends Authenticatable
     /** All complaint log entries where this user was the actor (staff/admin) */
     public function complaintActions(): HasMany
     {
-        return $this->hasMany(ComplaintLog::class, "actor_id");
+        return $this->hasMany(ComplaintLog::class, 'actor_id');
     }
 
     public function createdInvitations(): HasMany
@@ -267,17 +281,17 @@ class User extends Authenticatable
 
     public function scopeCitizens($query)
     {
-        return $query->where("role", "citizen");
+        return $query->where('role', 'citizen');
     }
 
     public function scopeStaff($query)
     {
-        return $query->whereIn("role", ["staff", "admin"]);
+        return $query->whereIn('role', ['staff', 'admin']);
     }
 
     public function scopeForDepartment($query, int $departmentId)
     {
-        return $query->where("department_id", $departmentId);
+        return $query->where('department_id', $departmentId);
     }
 
     // ─────────────────────────────────────────────

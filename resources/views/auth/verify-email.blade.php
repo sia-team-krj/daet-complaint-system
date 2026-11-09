@@ -220,7 +220,7 @@
       <div class="verification-alert verification-success" role="status">{{ session('status') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('email.verify.submit') }}" class="verification-form">
+    <form data-loading-submit method="POST" action="{{ route('email.verify.submit') }}" class="verification-form">
       @csrf
       <input type="hidden" name="purpose" value="{{ old('purpose', $purpose) }}">
 
@@ -257,7 +257,7 @@
         script below once it takes over, so the countdown is an enhancement and
         never the only thing standing between a user and a rejected POST.
     --}}
-    <form method="POST" action="{{ route('email.verify.resend') }}">
+    <form data-loading-submit method="POST" action="{{ route('email.verify.resend') }}">
       @csrf
       <input type="hidden" name="purpose" value="{{ old('purpose', $purpose) }}">
       <button
@@ -269,7 +269,7 @@
       ><span data-resend-label>{{ __('auth_ui.verify.resend') }}</span></button>
     </form>
 
-    <form method="POST" action="{{ route('logout') }}">
+    <form data-loading-submit method="POST" action="{{ route('logout') }}">
       @csrf
       <button type="submit" class="verification-signout">{{ __('auth_ui.verify.sign_out') }}</button>
     </form>

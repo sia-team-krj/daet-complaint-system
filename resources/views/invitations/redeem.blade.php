@@ -28,7 +28,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('invitations.redeem', $invitation->code) }}" class="invitation-form" data-disable-on-submit>
+        <form data-loading-submit method="POST" action="{{ route('invitations.redeem', $invitation->code) }}" class="invitation-form" data-disable-on-submit>
             @csrf
             <div class="invitation-form-grid">
                 <label class="invitation-field">

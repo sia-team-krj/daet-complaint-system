@@ -26,7 +26,7 @@ class RoleDashboardTest extends TestCase
 
         $this->actingAs($citizen)
             ->get('/')
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('complaints.index'));
 
         $this->actingAs($staff)
             ->get('/')
@@ -49,9 +49,9 @@ class RoleDashboardTest extends TestCase
         $citizen = User::factory()->create(['role' => 'citizen']);
 
         $this->actingAs($citizen)
-            ->get(route('dashboard'))
+            ->get(route('complaints.index'))
             ->assertOk()
-            ->assertSee('href="'.route('dashboard').'" class="navbar-logo', false);
+            ->assertSee('href="'.route('complaints.index').'" class="navbar-logo', false);
 
         $this->actingAs($staff)
             ->get(route('staff.dashboard'))
@@ -64,7 +64,25 @@ class RoleDashboardTest extends TestCase
             ->assertSee('href="'.route('admin.dashboard').'" class="navbar-logo', false);
     }
 
-    public function test_citizen_dashboard_only_shows_the_signed_in_residents_reports(): void
+    public function test_citizen_dashboard_redirects_to_my_complaints(): void
+    {
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($resident)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('complaints.index'));
+    }
+
+    public function test_citizen_dashboard_redirect_preserves_the_query_string(): void
+    {
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($resident)
+            ->get(route('dashboard', ['foo' => '1', 'status' => 'open']))
+            ->assertRedirect(route('complaints.index', ['foo' => '1', 'status' => 'open']));
+    }
+
+    public function test_my_complaints_only_shows_the_signed_in_residents_reports(): void
     {
         $this->seed(DepartmentSeeder::class);
         $department = Department::where('code', 'ENG')->firstOrFail();
@@ -88,19 +106,12 @@ class RoleDashboardTest extends TestCase
             'title' => 'Another resident report',
         ]);
 
-        $response = $this->actingAs($resident)->get(route('dashboard'));
+        $response = $this->actingAs($resident)->get(route('complaints.index'));
 
         $response->assertOk()
-            ->assertSee('Your reports')
-            ->assertSee('File a new complaint')
-            ->assertSee('Track a report')
-            ->assertSee('Private view:')
             ->assertSee($ownComplaint->title)
             ->assertSee($ownComplaint->ticket_id)
             ->assertDontSee($otherComplaint->title)
-            ->assertDontSee($otherComplaint->ticket_id)
-            ->assertDontSee('Needs attention')
-            ->assertDontSee('Avg. resolution')
-            ->assertDontSee('Total Filed');
+            ->assertDontSee($otherComplaint->ticket_id);
     }
 }

@@ -25,7 +25,7 @@
           </div>
         @endif
 
-        <form method="POST" action="{{ route('password.change.store') }}">
+        <form data-loading-submit method="POST" action="{{ route('password.change.store') }}">
           @csrf
 
           <div class="field-group fu d3">

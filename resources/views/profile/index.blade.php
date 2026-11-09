@@ -428,7 +428,7 @@
         <div class="form-card fu d3">
           <div class="form-card-header">Personal Information</div>
           
-          <form method="POST" action="{{ route('profile.update') }}">
+          <form data-loading-submit method="POST" action="{{ route('profile.update') }}">
             @csrf
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -474,7 +474,7 @@
         <div class="form-card fu d4">
           <div class="form-card-header">Security</div>
           
-          <form method="POST" action="{{ route('profile.password') }}">
+          <form data-loading-submit method="POST" action="{{ route('profile.password') }}">
             @csrf
             
             <div class="form-group">

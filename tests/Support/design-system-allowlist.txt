@@ -181,11 +181,6 @@ hex|resources/views/complaints/show.blade.php|#fdf6e7|1
 hex|resources/views/complaints/show.blade.php|#fef8ed|1
 hex|resources/views/complaints/show.blade.php|#ffffff|1
 hex|resources/views/complaints/show.blade.php|#fff|1
-hex|resources/views/complaints/success.blade.php|#142d4f|1
-hex|resources/views/complaints/success.blade.php|#1b3a61|1
-hex|resources/views/complaints/success.blade.php|#c9a84c|1
-hex|resources/views/complaints/success.blade.php|#e2c06a|1
-hex|resources/views/complaints/success.blade.php|#fff|1
 hex|resources/views/complaints/track.blade.php|#142d4f|1
 hex|resources/views/complaints/track.blade.php|#1b3a61|1
 hex|resources/views/complaints/track.blade.php|#4b5563|1
@@ -381,7 +376,6 @@ serif|resources/views/auth/register.blade.php|declared
 serif|resources/views/auth/reset-password.blade.php|declared
 serif|resources/views/complaints/create.blade.php|declared
 serif|resources/views/complaints/show.blade.php|declared
-serif|resources/views/complaints/success.blade.php|declared
 serif|resources/views/complaints/track.blade.php|declared
 serif|resources/views/mail/password-reset.blade.php|declared
 serif|resources/views/mail/staff-invitation.blade.php|declared

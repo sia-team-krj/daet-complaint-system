@@ -18,9 +18,17 @@
             font-family: var(--font-sans);
             font-size: 15px;
             line-height: 1.5;
-            /* The navbar is fixed; every other shell offsets it the same way. */
-            padding-top: var(--navbar-height, 64px);
+            /* The navbar is fixed; the banner absorbs the offset so its navy
+               butts against the navbar's navy (no light gap strip). Staff
+               and admin shells already offset the navbar — they override
+               .tr-banner to keep their workspace spacing. */
+            padding-top: 0;
         }
+
+        /* Cancel the global body navbar offset on hero/banner pages so the
+           navy runs uninterrupted (also in app.css; duplicated here so it
+           holds even when the compiled app.css is cached). */
+        body:has(.transparency-page) { padding-top: 0; }
 
         /* .tr-container extracted to partials.public-ui */
 
@@ -33,7 +41,10 @@
             background:
                 repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 14px),
                 linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 62%, var(--navy-600) 100%);
-            padding: 48px 0 64px;
+            /* Full-bleed behind the fixed navbar: navbar height + 16px breathing
+               room, so the visible gap below the navbar is 16px navy (was a
+               64px light strip + 48px navy). 16 and 48 are on the scale. */
+            padding: calc(var(--navbar-height, 64px) + 16px) 0 48px;
             overflow: visible;
         }
 
@@ -44,27 +55,20 @@
             font-weight: 700;
             letter-spacing: var(--tracking-display);
             line-height: 1.15;
+            text-align: left;
         }
 
         @media (max-width: 768px) {
             .tr-h1 { font-size: 28px; }
         }
 
-        .tr-goldbar {
-            display: block;
-            width: 40px;
-            height: 3px;
-            border-radius: 2px;
-            background: var(--gold-500);
-            margin: 12px 0 16px;
-        }
-
         .tr-privacy {
-            margin: 0 0 12px;
+            margin: 12px 0 0;
             max-width: 640px;
             color: rgba(255, 255, 255, 0.82);
             font-size: 15px;
             line-height: 1.55;
+            text-align: left;
         }
 
         /* "How this data is shown" disclosure */
@@ -149,6 +153,7 @@
             color: rgba(255, 255, 255, 0.7);
             font-size: 13px;
             font-variant-numeric: tabular-nums;
+            text-align: left;
         }
 
         .tr-updated svg { width: 14px; height: 14px; }

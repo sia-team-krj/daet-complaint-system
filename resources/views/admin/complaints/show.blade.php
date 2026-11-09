@@ -126,7 +126,7 @@
                 <div class="admin-panel-heading">
                     <h2 id="complaint-update-title" class="admin-panel-title">Update complaint</h2>
                 </div>
-                <form method="POST" action="{{ route('admin.complaints.update', $complaint) }}" class="admin-panel-body admin-form-stack">
+                <form data-loading-submit method="POST" action="{{ route('admin.complaints.update', $complaint) }}" class="admin-panel-body admin-form-stack">
                     @csrf
                     @method('PUT')
 
@@ -210,6 +210,35 @@
                 </form>
             </section>
 
+            @php
+                $adminOutstandingRequest = $complaint->informationRequests()->whereIn('status', ['open', 'answered'])->latest('id')->first();
+            @endphp
+            <section class="admin-panel" aria-labelledby="ask-resident-title">
+                <div class="admin-panel-heading">
+                    <h2 id="ask-resident-title" class="admin-panel-title">Ask the resident for more evidence</h2>
+                </div>
+                <div class="admin-panel-body">
+                    @if($adminOutstandingRequest)
+                        <p class="admin-section-description"><strong>{{ $adminOutstandingRequest->status->label() }} · round {{ $adminOutstandingRequest->round }}</strong></p>
+                        <p class="admin-section-description">{{ $adminOutstandingRequest->question }}</p>
+                        @if($adminOutstandingRequest->response_text)
+                            <p class="admin-section-description"><strong>Resident replied:</strong> {{ $adminOutstandingRequest->response_text }}</p>
+                        @endif
+                    @else
+                        <p class="admin-section-description">Asking moves the report to <em>Needs information</em> and the resident gets the words you type — so make it specific about what would settle it. The resident replies on their ticket page.</p>
+                        <form data-loading-submit method="POST" action="{{ route('admin.complaints.verification.request-information', $complaint) }}" class="admin-form-stack">
+                            @csrf
+                            <label class="admin-field">
+                                <span>What&rsquo;s missing?</span>
+                                <textarea name="question" class="admin-input admin-textarea" rows="3" minlength="15" maxlength="1000" required placeholder="The streetlight photo is too dark to read the pole number. Please send a closer shot.">{{ old('question') }}</textarea>
+                                @error('question')<p class="admin-field-error">{{ $message }}</p>@enderror
+                            </label>
+                            <button type="submit" class="admin-button admin-button--secondary">Ask the resident</button>
+                        </form>
+                    @endif
+                </div>
+            </section>
+
             <section class="admin-panel" aria-labelledby="complaint-history-title">
                 <div class="admin-panel-heading">
                     <h2 id="complaint-history-title" class="admin-panel-title">Audit history</h2>
@@ -260,7 +289,7 @@
         : 'It does not appear on the transparency page, and nothing you do here can put it there.' }}
   </p>
 
-  <form method="POST" action="{{ route('admin.complaints.moderate', $complaint) }}">
+  <form data-loading-submit method="POST" action="{{ route('admin.complaints.moderate', $complaint) }}">
     @csrf
 
     <div class="moderation-field">

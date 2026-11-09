@@ -30,7 +30,7 @@
           </div>
         @endif
 
-        <form method="POST" action="{{ route('password.update') }}">
+        <form data-loading-submit method="POST" action="{{ route('password.update') }}">
           @csrf
 
           {{-- Hidden token --}}

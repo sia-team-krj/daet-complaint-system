@@ -68,7 +68,7 @@ class StaffWorkspaceTest extends TestCase
             ->assertDontSee($otherComplaint->title);
     }
 
-    public function test_staff_queue_uses_a_table_and_limits_each_page_to_five_complaints(): void
+    public function test_staff_queue_limits_each_page_to_three_complaints(): void
     {
         $this->seed(DepartmentSeeder::class);
         $engineering = Department::where('code', 'ENG')->firstOrFail();
@@ -78,7 +78,7 @@ class StaffWorkspaceTest extends TestCase
         ]);
         $resident = User::factory()->create(['role' => 'citizen']);
 
-        $complaints = collect(range(1, 6))->map(function (int $index) use ($engineering, $resident): Complaint {
+        $complaints = collect(range(1, 4))->map(function (int $index) use ($engineering, $resident): Complaint {
             return Complaint::factory()->create([
                 'department_id' => $engineering->id,
                 'user_id' => $resident->id,
@@ -91,11 +91,11 @@ class StaffWorkspaceTest extends TestCase
         $response = $this->actingAs($staff)
             ->get(route('staff.complaints.index'))
             ->assertOk()
-            ->assertSee('5 per page')
+            ->assertSee('3 per page')
             ->assertSee('page=2', false)
             ->assertDontSee($complaints->last()->ticket_id);
 
-        $this->assertSame(5, substr_count($response->getContent(), '<li class="staff-queue-item'));
+        $this->assertSame(3, substr_count($response->getContent(), '<li class="staff-queue-item'));
     }
 
     public function test_staff_queue_formats_ticket_age_in_compact_units(): void
@@ -148,6 +148,17 @@ class StaffWorkspaceTest extends TestCase
             'department_id' => $department->id,
             'user_id' => User::factory()->create(['role' => 'citizen'])->id,
         ]);
+        \App\Models\ComplaintLog::create([
+            'complaint_id' => $complaint->id,
+            'actor_id' => $staff->id,
+            'new_status' => 'in_progress',
+            'comment' => 'Investigation started',
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.dashboard'))
+            ->assertOk()
+            ->assertSee(route('staff.complaints.show', $complaint));
 
         $this->actingAs($staff)
             ->get(route('staff.complaints.show', $complaint))

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\InformationRequestStatus;
-use App\Enums\VerificationMethod;
 use App\Models\Complaint;
 use App\Models\ComplaintInformationRequest;
 use App\Models\Department;
@@ -262,6 +261,7 @@ class NotificationDeliveryTest extends TestCase
             'category' => 'road_damage',
             'title' => 'Fallen tree blocking the road near the hall',
             'description' => 'A large tree has fallen across the road and residents cannot pass.',
+            'barangay' => \App\Models\User::BARANGAYS[0],
             'image' => $this->complaintEvidence(),
             'terms' => '1',
         ])->assertRedirect();
@@ -302,7 +302,7 @@ class NotificationDeliveryTest extends TestCase
 
         $byRole = [
             'staff' => [$this->verifier, route('staff.dashboard')],
-            'citizen' => [$this->resident, route('dashboard')],
+            'citizen' => [$this->resident, route('complaints.index')],
             'admin' => [$admin, route('admin.dashboard')],
         ];
 
@@ -355,7 +355,7 @@ class NotificationDeliveryTest extends TestCase
 
         $byRole = [
             'staff' => [$this->verifier, route('staff.dashboard')],
-            'citizen' => [$this->resident, route('dashboard')],
+            'citizen' => [$this->resident, route('complaints.index')],
             'admin' => [$admin, route('admin.dashboard')],
         ];
 

@@ -32,7 +32,7 @@
     @if($tab === 'profile')
       <section class="settings-panel" role="tabpanel" aria-labelledby="tab-profile" id="tab-profile">
         <h2>{{ __('settings.profile.title') }}</h2>
-        <form method="POST" action="{{ route('settings.profile.update') }}" data-settings-form>
+        <form data-loading-submit method="POST" action="{{ route('settings.profile.update') }}" data-settings-form>
           @csrf
           <div class="settings-grid">
             <label class="admin-field" for="settings-first-name"><span>{{ __('settings.profile.first_name') }} <span class="required-mark" aria-hidden="true">*</span></span><input id="settings-first-name" type="text" name="first_name" class="admin-input" value="{{ old('first_name', $user->first_name) }}" required></label>
@@ -61,7 +61,7 @@
     @if($tab === 'security')
       <section class="settings-panel" role="tabpanel" id="tab-security">
         <h2>{{ __('settings.security.title') }}</h2>
-        <form method="POST" action="{{ route('settings.password.update') }}" data-settings-form>
+        <form data-loading-submit method="POST" action="{{ route('settings.password.update') }}" data-settings-form>
           @csrf
           <h3>{{ __('settings.security.change_password') }}</h3>
           <label class="admin-field field-narrow" for="settings-current"><span>{{ __('settings.security.current_password') }} <span class="required-mark" aria-hidden="true">*</span></span>
@@ -90,7 +90,7 @@
                 @if($s->is_current)<span class="settings-session__badge">{{ __('settings.security.this_device') }}</span>@endif
                 <span class="settings-session__meta">{{ $s->ip }} · <time datetime="{{ $s->last_activity->toIso8601String() }}" title="{{ $s->last_full }}" aria-label="{{ $s->last_full }}">{{ $s->last_relative }}</time></span>
                 @if(!$s->is_current)
-                  <form method="POST" action="{{ route('settings.sessions.logout', $s->id) }}" style="margin-left:auto">@csrf<button type="submit" class="admin-button admin-button--secondary admin-button--compact">Log out</button></form>
+                  <form data-loading-submit method="POST" action="{{ route('settings.sessions.logout', $s->id) }}" style="margin-left:auto">@csrf<button type="submit" class="admin-button admin-button--secondary admin-button--compact">Log out</button></form>
                 @endif
               </li>
             @endforeach
@@ -100,15 +100,15 @@
           @endif
         @endif
 
-        <form method="POST" action="{{ route('settings.logout-other-devices') }}" id="logout-other-form">
+        <form data-loading-submit method="POST" action="{{ route('settings.logout-other-devices') }}" id="logout-other-form">
           @csrf
           <button type="button" class="admin-button admin-button--danger" id="logout-other-btn">{{ __('settings.security.logout_other_devices') }}</button>
         </form>
         <dialog id="logout-other-dialog" aria-labelledby="logout-other-title">
           <h3 id="logout-other-title">{{ __('settings.security.logout_other_devices') }}</h3>
           <p>{{ __('settings.security.logout_other_done') }}</p>
-          <form method="dialog"><button class="admin-button admin-button--secondary" formmethod="dialog">Cancel</button></form>
-          <form method="POST" action="{{ route('settings.logout-other-devices') }}">@csrf<button type="submit" class="admin-button admin-button--danger">Confirm</button></form>
+          <form data-loading-submit method="dialog"><button class="admin-button admin-button--secondary" formmethod="dialog">Cancel</button></form>
+          <form data-loading-submit method="POST" action="{{ route('settings.logout-other-devices') }}">@csrf<button type="submit" class="admin-button admin-button--danger">Confirm</button></form>
         </dialog>
       </section>
     @endif
@@ -116,7 +116,7 @@
     @if($tab === 'notifications')
       <section class="settings-panel" role="tabpanel" id="tab-notifications">
         <h2>{{ __('settings.notifications.title') }}</h2>
-        <form method="POST" action="{{ route('settings.notifications.update') }}" data-settings-form>
+        <form data-loading-submit method="POST" action="{{ route('settings.notifications.update') }}" data-settings-form>
           @csrf
           @php $prefs = $user->notification_preferences ?? ['channels'=>['in_app','email'],'events'=>$notificationEvents]; @endphp
           <fieldset><legend>{{ __('settings.notifications.channels') }}</legend>
@@ -174,7 +174,7 @@
         <h2>{{ __('settings.privacy.title') }}</h2>
         <p>{{ __('settings.privacy.download_hint') }}</p>
         <div class="settings-form-actions"><a href="{{ route('settings.download-data') }}" class="admin-button admin-button--secondary">{{ __('settings.privacy.download') }}</a></div>
-        <form method="POST" action="{{ route('settings.delete-account') }}" data-settings-form onsubmit="return confirm('{{ __('settings.privacy.delete_hint') }}')">
+        <form data-loading-submit method="POST" action="{{ route('settings.delete-account') }}" data-settings-form onsubmit="return confirm('{{ __('settings.privacy.delete_hint') }}')">
           @csrf
           <h3>{{ __('settings.privacy.delete') }}</h3>
           <p>{{ __('settings.privacy.delete_hint') }}</p>

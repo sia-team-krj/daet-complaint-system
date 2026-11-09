@@ -8,7 +8,7 @@
 
   <section class="admin-panel">
     <div class="admin-panel-heading"><h2 class="admin-panel-title">{{ __('admin_settings.title') }}</h2></div>
-    <form method="POST" action="{{ route('admin.settings.update') }}" class="admin-panel-body admin-form-stack">
+    <form data-loading-submit method="POST" action="{{ route('admin.settings.update') }}" class="admin-panel-body admin-form-stack">
       @csrf @method('PUT')
       <label class="admin-field"><span>{{ __('admin_settings.default_language') }}</span>
         <select name="default_locale" class="admin-input">
@@ -48,7 +48,7 @@
     <div class="admin-panel-heading"><h2 class="admin-panel-title">{{ __('admin_settings.categories') }}</h2></div>
     <div class="admin-panel-body admin-form-stack">
       <p>{{ __('admin_settings.categories_hint') }}</p>
-      <form method="POST" action="{{ route('admin.settings.categories.store') }}" class="admin-form-grid">
+      <form data-loading-submit method="POST" action="{{ route('admin.settings.categories.store') }}" class="admin-form-grid">
         @csrf
         <label class="admin-field"><span>{{ __('admin_settings.key') }}</span><input type="text" name="key" class="admin-input" required placeholder="road_damage"></label>
         <label class="admin-field"><span>{{ __('admin_settings.label_en') }}</span><input type="text" name="label_en" class="admin-input" required></label>
@@ -58,7 +58,7 @@
       <ul>
         @foreach($categories as $cat)
           <li>
-            <form method="POST" action="{{ route('admin.settings.categories.update', $cat) }}" class="admin-form-grid">
+            <form data-loading-submit method="POST" action="{{ route('admin.settings.categories.update', $cat) }}" class="admin-form-grid">
               @csrf @method('PUT')
               <span>{{ $cat->key }} — {{ $cat->label() }} ({{ $cat->is_active ? __('admin_settings.active') : __('admin_settings.deactivate') }})</span>
               <label class="admin-field"><span>{{ __('admin_settings.label_en') }}</span><input type="text" name="label_en" class="admin-input" value="{{ $cat->label_en }}" required></label>
@@ -66,7 +66,7 @@
               <label><input type="checkbox" name="is_active" value="1" @checked($cat->is_active)> {{ __('admin_settings.active') }}</label>
               <button type="submit" class="admin-button admin-button--secondary">{{ __('admin_settings.save') }}</button>
             </form>
-            <form method="POST" action="{{ route('admin.settings.categories.toggle', $cat) }}">@csrf<button type="submit" class="admin-button admin-button--secondary">{{ $cat->is_active ? __('admin_settings.deactivate') : __('admin_settings.activate') }}</button></form>
+            <form data-loading-submit method="POST" action="{{ route('admin.settings.categories.toggle', $cat) }}">@csrf<button type="submit" class="admin-button admin-button--secondary">{{ $cat->is_active ? __('admin_settings.deactivate') : __('admin_settings.activate') }}</button></form>
           </li>
         @endforeach
       </ul>

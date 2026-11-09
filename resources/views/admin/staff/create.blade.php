@@ -22,7 +22,7 @@
         <div class="admin-panel-heading">
             <h2 class="admin-panel-title">Staff details</h2>
         </div>
-        <form method="POST" action="{{ route('admin.staff.store') }}" class="admin-panel-body admin-form-stack staff-create-form" id="staff-create-form" novalidate>
+        <form data-loading-submit method="POST" action="{{ route('admin.staff.store') }}" class="admin-panel-body admin-form-stack staff-create-form" id="staff-create-form" novalidate>
             @csrf
             <p class="staff-required-note"><span class="required-mark" aria-hidden="true">*</span> Required field</p>
             <div class="admin-form-grid">

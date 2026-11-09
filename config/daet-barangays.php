@@ -64,4 +64,15 @@ return [
      * rather than an error.
      */
     'max_metres_from_table' => 3500,
+
+    /*
+     * The municipal boundary used to reject pins outside Daet.
+     *
+     * The polygon is simplified, so a pin a little over the line is still
+     * accepted. 250 m is deliberately generous: the alternative is telling a
+     * resident standing on the edge of their own barangay that they are not in
+     * Daet, because a bundled line is a few metres off.
+     */
+    'boundary_path' => resource_path('data/daet-boundary.geojson'),
+    'boundary_tolerance_metres' => 250,
 ];

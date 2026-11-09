@@ -270,7 +270,7 @@ class LegalPagesTest extends TestCase
         ]);
 
         $html = $this->actingAs($resident)
-            ->get(route('dashboard'))
+            ->get(route('complaints.index'))
             ->assertOk()
             ->getContent();
 

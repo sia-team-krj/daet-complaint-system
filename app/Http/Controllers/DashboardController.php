@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -21,6 +22,10 @@ class DashboardController extends Controller
         if ($user->isStaff()) {
             return redirect()->route('staff.dashboard');
         }
+
+        // Citizens land on My Complaints. 302 (not 301) so the merge is
+        // trivially rollable back. Query string is preserved.
+        return redirect()->route('complaints.index', $request->query());
 
         // Paginated list of this citizen's complaints — latest first
         $base = Complaint::where('user_id', $user->id);

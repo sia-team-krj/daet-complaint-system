@@ -13,6 +13,11 @@
   .dashboard-primary-action:hover { background:#b8902f; color:#fff; }
   .dashboard-primary-action:focus-visible, .db-card:focus-visible, a:focus-visible, button:focus-visible, input:focus-visible { outline:2px solid #d4a947; outline-offset:2px; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
   .dashboard-content { padding-top:32px; padding-bottom:48px; }
+  /* Mobile-only elements: hidden on desktop (>640px) so the desktop render
+     and tests using desktop markup are unchanged; shown only ≤640px below. */
+  .dashboard-mobile-summary { display:none; }
+  .db-view-all-mobile { display:none; }
+  .db-card__date-mobile { display:none; }
   .dashboard-columns { display:grid; grid-template-columns:minmax(0,1fr); gap:24px; align-items:start; }
   .dashboard-reports { min-width:0; }
   .dashboard-section-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
@@ -97,6 +102,46 @@
     .db-icon-btn, .db-chip { min-height:44px; }
   }
   @media (prefers-reduced-motion: reduce) { .citizen-dashboard * { transition-duration:0.01ms !important; } }
+  @media (max-width:640px) {
+    .citizen-dashboard .dashboard-welcome-inner { padding-top:calc(var(--navbar-height) + 16px); padding-bottom:24px; }
+    .citizen-dashboard .dashboard-welcome-title { font-size:24px; font-weight:600; letter-spacing:-0.01em; }
+    .citizen-dashboard .dashboard-welcome-copy p { font-size:14px; line-height:1.45; max-width:none; }
+    .citizen-dashboard .dashboard-primary-action { width:100%; min-height:48px; border-radius:12px; font-size:14px; }
+    .citizen-dashboard .dashboard-content { padding-top:16px; padding-bottom:32px; }
+    .citizen-dashboard .dashboard-mobile-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+    .citizen-dashboard .db-summary-tile { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:4px; min-height:72px; padding:12px 16px; background:#fff; border:1px solid var(--db-line); border-radius:12px; box-shadow:0 1px 3px rgba(15,23,42,.06); text-decoration:none; min-width:0; }
+    .citizen-dashboard .db-summary-tile__num { font-size:24px; font-weight:700; line-height:1.1; color:var(--db-ink); font-variant-numeric:tabular-nums; }
+    .citizen-dashboard .db-summary-tile__label { font-size:12px; line-height:1.3; color:var(--db-sub); white-space:nowrap; }
+    .citizen-dashboard .dashboard-section-heading { margin-bottom:12px; }
+    .citizen-dashboard .db-view-all-mobile { display:inline-flex; align-items:center; min-height:44px; font-size:13px; font-weight:600; color:#102545; text-decoration:none; white-space:nowrap; }
+    /* /complaints already has search + filters: hide dashboard duplicates on mobile only */
+    .citizen-dashboard .db-filters,
+    .citizen-dashboard .db-track-form { display:none !important; }
+    /* Show only the 3 most recent reports on mobile (server still paginates 5) */
+    .citizen-dashboard .dashboard-report-list > li:nth-child(n+4) { display:none; }
+    .citizen-dashboard .db-view-all-bottom { display:none !important; }
+    .citizen-dashboard .dashboard-report-list { gap:12px; }
+    /* Report card: compact 4-row mobile layout, no chevron, no dead space */
+    .citizen-dashboard .db-card { padding:16px; border-radius:12px; min-height:0; }
+    .citizen-dashboard .db-card:active { background:#f6f8fb; }
+    .citizen-dashboard .db-card:focus-visible { outline:2px solid #d4a947; outline-offset:2px; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
+    .citizen-dashboard .db-card__chevron { display:none; }
+    .citizen-dashboard .db-card__body { padding-right:0; display:flex; flex-direction:column; gap:8px; }
+    .citizen-dashboard .db-card__row1 { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:0; }
+    .citizen-dashboard .db-ticket { font-size:12px; color:#475569; white-space:nowrap; }
+    .citizen-dashboard .db-pill { font-size:12px; white-space:nowrap; flex-shrink:0; }
+    .citizen-dashboard .db-card__title { font-size:16px; line-height:1.35; margin:0; }
+    .citizen-dashboard .db-card__meta { margin:0; display:flex; flex-wrap:nowrap; gap:4px; font-size:13px; overflow:hidden; }
+    .citizen-dashboard .db-card__meta span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .citizen-dashboard .db-card__meta span:first-child { flex:0 1 auto; }
+    .citizen-dashboard .db-card__meta span:nth-child(2) { flex:1 1 auto; text-align:left; }
+    .citizen-dashboard .db-card__meta span+span::before { content:"·"; margin:0 4px; color:#94a3b8; }
+    .citizen-dashboard .db-card__meta span:last-child { display:none; }
+    .citizen-dashboard .db-progress-mobile { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .citizen-dashboard .db-progress-mobile__label { font-size:12px; line-height:1.3; color:#475569; white-space:nowrap; flex-shrink:0; }
+    .citizen-dashboard .db-progress-segments { flex:1 1 auto; margin-top:0; min-width:64px; }
+    .citizen-dashboard .db-card__date-mobile { display:inline-flex; font-size:12px; line-height:1.3; color:#475569; font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
+  }
 </style>
 
 <div class="citizen-dashboard">
@@ -121,6 +166,23 @@
     </div>
   </section>
 
+  {{-- Mobile-only summary strip (≤640px): three compact tiles. Desktop keeps
+       no tiles (CSS display:none ≥641px) so the desktop render is unchanged. --}}
+  <div class="db-container dashboard-mobile-summary" aria-label="Report summary">
+    <a href="{{ route('complaints.index', ['status' => 'open']) }}" wire:navigate class="db-summary-tile">
+      <span class="db-summary-tile__num">{{ $counts['open'] }}</span>
+      <span class="db-summary-tile__label">{{ __('dashboard.open') }}</span>
+    </a>
+    <a href="{{ route('complaints.index') }}" wire:navigate class="db-summary-tile">
+      <span class="db-summary-tile__num">{{ $counts['all'] }}</span>
+      <span class="db-summary-tile__label">{{ __('dashboard.all') }}</span>
+    </a>
+    <a href="{{ route('complaints.index', ['status' => 'resolved']) }}" wire:navigate class="db-summary-tile">
+      <span class="db-summary-tile__num">{{ $counts['resolved'] }}</span>
+      <span class="db-summary-tile__label">{{ __('dashboard.resolved') }}</span>
+    </a>
+  </div>
+
   <div class="db-container dashboard-content">
     @if (session('success'))
       <div class="dashboard-success" role="status">
@@ -143,6 +205,7 @@
             <h2 id="dashboard-reports-title">{{ __('dashboard.your_reports') }}</h2>
             <p>{{ __('dashboard.your_reports_hint') }}</p>
           </div>
+          <a href="{{ route('complaints.index') }}" wire:navigate class="db-view-all-mobile">{{ __('dashboard.view_all') }} ({{ $totalReports }}) →</a>
           <div class="db-filters" role="group" aria-label="{{ __('dashboard.your_reports') }}">
             <a href="{{ route('dashboard') }}" class="db-chip {{ !request('filter') ? 'is-active' : '' }}">{{ __('dashboard.all') }} ({{ $counts['all'] }})</a>
             <a href="{{ route('dashboard', ['filter' => 'open']) }}" class="db-chip {{ request('filter') === 'open' ? 'is-active' : '' }}">{{ __('dashboard.open') }} ({{ $counts['open'] }})</a>
@@ -150,7 +213,7 @@
           </div>
         </div>
 
-        <form method="GET" action="{{ route('complaints.track') }}" class="db-track-form" style="margin-bottom:16px">
+        <form data-loading-submit method="GET" action="{{ route('complaints.track') }}" class="db-track-form" style="margin-bottom:16px">
           <label class="sr-only" for="db-ticket-search">{{ __('dashboard.track_by_ticket') }}</label>
           <input id="db-ticket-search" type="search" name="ticket_id" placeholder="{{ __('dashboard.search_placeholder') }}" value="{{ request('ticket_id') }}">
           <button type="submit" class="admin-button admin-button--secondary" style="min-height:40px">{{ __('dashboard.search') }}</button>
@@ -175,7 +238,7 @@
           <ul class="dashboard-report-list">@foreach ($displayComplaints as $complaint) @include('partials.report-card', ['complaint' => $complaint]) @endforeach</ul>
 
           @if ($totalReports > 3)
-            <p style="margin-top:16px"><a href="{{ route('complaints.index') }}" wire:navigate style="color:#102545;font-weight:600">{{ __('dashboard.view_all') }} →</a></p>
+            <p style="margin-top:16px" class="db-view-all-bottom"><a href="{{ route('complaints.index') }}" wire:navigate style="color:#102545;font-weight:600">{{ __('dashboard.view_all') }} →</a></p>
           @endif
 
           @if ($complaints->hasPages())

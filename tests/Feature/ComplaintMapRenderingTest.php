@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Complaint;
-use App\Models\Department;
-use App\Models\User;
 use Database\Seeders\DepartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -100,7 +98,7 @@ class ComplaintMapRenderingTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            "import \"leaflet/dist/leaflet.css\"",
+            'import "leaflet/dist/leaflet.css"',
             $bundle,
             'The leaflet bundle does not import leaflet.css, so the tiles lay out wrong.',
         );
@@ -170,7 +168,7 @@ class ComplaintMapRenderingTest extends TestCase
     {
         $expected = [
             'views/complaints/create.blade.php' => 'You can still submit',
-            'views/complaints/show.blade.php' => 'Your coordinates are still listed below',
+            'views/complaints/show.blade.php' => 'map_unavailable',
             'views/staff/complaints/show.blade.php' => 'handheld GPS',
             'views/pages/transparency/index.blade.php' => 'mapUnavailable',
         ];
@@ -202,6 +200,17 @@ class ComplaintMapRenderingTest extends TestCase
             'Interactive map unavailable',
             $lang,
             'The lang file no longer carries the message shown when the transparency map cannot load.',
+        );
+
+        // Same contract for the resident ticket: template wires the key, the
+        // lang file carries the words.
+        $ticketLang = file_get_contents(lang_path('en/complaint_show.php'));
+
+        $this->assertIsString($ticketLang);
+        $this->assertStringContainsString(
+            'map_unavailable',
+            $ticketLang,
+            'The lang file no longer carries the message shown when the ticket map cannot load.',
         );
     }
 
@@ -306,9 +315,17 @@ class ComplaintMapRenderingTest extends TestCase
 
         foreach ($containers as $template => $containerClass) {
             $source = $this->template($template);
+            // Filing styles moved to resources/css/pages/complaint-create.css
+            // (imported via app.css). Check both so the height guarantee
+            // follows the move without weakening it.
+            if ($template === 'views/complaints/create.blade.php') {
+                $css = file_get_contents(resource_path('css/pages/complaint-create.css'));
+                $this->assertIsString($css, 'Could not read complaint-create.css.');
+                $source .= "\n".$css;
+            }
 
             preg_match_all(
-                '/\.' . preg_quote($containerClass, '/') . '\s*\{([^}]*)\}/',
+                '/\.'.preg_quote($containerClass, '/').'\s*\{([^}]*)\}/',
                 $source,
                 $rules,
             );
@@ -488,7 +505,7 @@ class ComplaintMapRenderingTest extends TestCase
                         // pulled into every layout that way — and replacing the
                         // directive with its body silently deletes the very
                         // string they look for.
-                        return $matches[0] . "\n" . $this->template($candidate, $depth + 1);
+                        return $matches[0]."\n".$this->template($candidate, $depth + 1);
                     }
                 }
 

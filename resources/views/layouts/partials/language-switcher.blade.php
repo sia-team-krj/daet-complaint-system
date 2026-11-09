@@ -4,7 +4,7 @@
     $variant = $variant ?? 'compact';
 @endphp
 
-<form
+<form data-loading-submit
     method="POST"
     action="{{ route('locale.update') }}"
     class="lang-switch lang-switch--{{ $variant }}"

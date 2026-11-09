@@ -92,7 +92,7 @@ class AuthController extends Controller
 
         $guestLocale = $request->session()->get('locale') ?? $request->cookie(config('localization.cookie', 'locale'));
         $supportedLocales = array_keys(config('localization.supported', []));
-        if (!in_array($guestLocale, $supportedLocales, true)) {
+        if (! in_array($guestLocale, $supportedLocales, true)) {
             $guestLocale = \App\Models\SystemSetting::getValue('default_locale', 'en');
         }
 
@@ -217,7 +217,23 @@ class AuthController extends Controller
             );
         }
 
-        return redirect()->intended(route('dashboard'));
+        // Never land on a notification poll endpoint if url.intended was
+        // poisoned by a background fetch (see EnsureEmailIsVerified).
+        $intended = $request->session()->pull('url.intended');
+        $intendedPath = is_string($intended) ? (string) (parse_url($intended, PHP_URL_PATH) ?? '') : '';
+
+        if (
+            is_string($intended) && $intended !== ''
+            && ! in_array($intendedPath, ['/notifications/unread-count', '/notifications/feed'], true)
+        ) {
+            return redirect()->to($intended);
+        }
+
+        return redirect()->route(
+            // Only the citizen home moved in this change; operators keep the
+            // historical /dashboard hop (which routes them to their workspace).
+            $user->isCitizen() ? $user->homeRouteName() : 'dashboard'
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════════

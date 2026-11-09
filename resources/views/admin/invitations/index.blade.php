@@ -46,7 +46,7 @@
                                 <td><span class="admin-status admin-status--{{ str($invitation->statusLabel())->slug() }}">{{ $invitation->statusLabel() }}</span></td>
                                 <td>
                                     @if($invitation->is_active)
-                                        <form method="POST" action="{{ route('admin.invitations.revoke', $invitation) }}" onsubmit="return confirm('Revoke this invitation?')">
+                                        <form data-loading-submit method="POST" action="{{ route('admin.invitations.revoke', $invitation) }}" onsubmit="return confirm('Revoke this invitation?')">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="admin-button admin-button--compact admin-button--danger-ghost">Revoke</button>
@@ -73,7 +73,7 @@
                 <div class="admin-panel-heading">
                     <h2 id="create-invitation-title" class="admin-panel-title">Invite one person</h2>
                 </div>
-                <form method="POST" action="{{ route('admin.invitations.store') }}" class="admin-panel-body admin-form-stack admin-invitation-form">
+                <form data-loading-submit method="POST" action="{{ route('admin.invitations.store') }}" class="admin-panel-body admin-form-stack admin-invitation-form">
                     @csrf
                     <label class="admin-field">
                         <span>Department</span>
@@ -120,7 +120,7 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('admin.invitations.preview') }}" class="admin-form-stack admin-invitation-form">
+        <form data-loading-submit method="POST" action="{{ route('admin.invitations.preview') }}" class="admin-form-stack admin-invitation-form">
             @csrf
             <div class="admin-invitation-bulk-grid">
                 <label class="admin-field">
@@ -187,7 +187,7 @@
                 </div>
 
                 @if($preview['ready'] > 0)
-                    <form method="POST" action="{{ route('admin.invitations.send') }}" class="admin-invitation-confirm">
+                    <form data-loading-submit method="POST" action="{{ route('admin.invitations.send') }}" class="admin-invitation-confirm">
                         @csrf
                         <button type="submit" class="admin-button admin-button--primary">
                             Yes, email {{ $preview['ready'] }} invitation{{ $preview['ready'] === 1 ? '' : 's' }}

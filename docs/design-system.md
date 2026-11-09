@@ -184,11 +184,30 @@ green-yellow-purple of your own.
 - **Page background:** `--bg` (#f4f6fa). Never white-page, never cream.
 - **Section rhythm:** sections butt with 24px (mobile 16px); register section uses
   `margin-top: 32px` for its heading.
-- **Banner:** full-bleed, `padding: 48px 0 64px`,
+- **Resident dashboard content:** `.dashboard-content` (`32px 0 48px`,
+  `24px 0 32px` ≤768px) separates the welcome hero from the columns (top) and
+  the last card/pagination from the navy footer (bottom). Containers butt with
+  24px (columns gap, rail gap, section-heading `margin-bottom: 24px`,
+  success/alert `margin-bottom: 24px`, track form `margin-bottom: 24px`,
+  view-all `margin-top: 24px`, pagination `margin-top: 24px`); report rows
+  keep 12px inside their list.
+- **Banner:** full-bleed behind the fixed navbar, `padding: calc(var(--navbar-height) + 16px) 0 48px`,
   `linear-gradient(135deg, #0b1a33 0%, #17305a 62%, #1e3f73 100%)` +
   `repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 1px, transparent 1px 14px)`.
-  Content: h1 white 34/700 −0.02em, **40×3px `--gold-500` horizontal bar** (radius 2px)
-  below it, privacy sentence `rgba(255,255,255,.82)`, optional `<details wire:ignore>`
+  The navbar offset lives *inside* the banner, never as a `padding-top` on the
+  page: the visible gap below the navbar is 16px and the banner's navy butts
+  against the navbar's navy. **Why:** a light `--bg` strip between two navies
+  read as a "~50px mystery gap" (the repeated failure in §10) and pushed the
+  h1 a full navbar-height away from the nav. 16px is on the spacing scale.
+  Text stack is left-aligned as one block: h1 (34/700 −0.02em, left), privacy
+  `margin: 12px 0 0` (15px, left, max 640px), CTA `margin-top: 12px` (left),
+  updated `margin-top: 12px` (13px, left, flex 6px gap). **Why:** 12px below
+  the h1 reads as one left-aligned unit and sits optically centered under
+  the fixed navbar.
+  Staff/admin workspaces override `.tr-banner { padding-top: 48px }` because
+  their shells already offset the navbar — they must not add it twice.
+  Content: h1 white 34/700 −0.02em, privacy sentence `rgba(255,255,255,.82)`,
+  optional `<details wire:ignore>`
   ("How this data is shown", gold-300 summary → white popover card with 3 checks),
   "Updated M j, Y" line `rgba(255,255,255,.7)` with a clock icon.
   **LOCKED:** no gold side borders, no vertical accent lines, no serif, and the
@@ -211,7 +230,6 @@ green-yellow-purple of your own.
 ```
 ┌ banner (full-bleed) ─────────────────────────────────────────┐
 │ h1                                          (white)          │
-│ ▬ 40×3 gold bar                                             │
 │ one-line subtitle + optional "How this data is shown" ▾     │
 │ Updated M j, Y                                              │
 └──────────────────────────────┬───────────────────────────────┘
@@ -228,7 +246,7 @@ green-yellow-purple of your own.
 ```
 banner: h1 + ONE line subtitle + one CTA ("File a complaint" only if the navbar
 does not show it at this viewport — never two)
-stat strip: Total · Open · Resolved · Avg. resolution time   (server-side)
+stat strip: **none** (2026-11-09: removed) — the hero runs into the filter bar; keep the page flat on a phone
 filter bar (search + chips + dept/category/sort, URL-persisted)
 list card: same <ul>/<li> rows as Transparency; the resident adds two pills
 (needs-response, visibility) — never more rows of facts
@@ -246,6 +264,25 @@ status-change timeline: ol of dated events, newest first
 evidence grid: ≤ 3 visible, rest behind "show all"
 ```
 
+### Shell D — standalone error page (401 · 403 · 404 · 419 · 429 · 500 · 503)
+```
+brand header: navy-900, 64px, logo + DAET LISTENS + "LGU Daet · Camarines Norte"
+              (no fixed navbar, no drawer, no session/DB lookups)
+centered card (640px max): 64px navy-50 icon circle → "ERROR <code>" kicker →
+                           h1 → one-line message → ONE gold primary + one secondary
+minimal footer: navy-950, 2px gold top accent, copyright + portal line
+```
+**Why a separate shell:** the normal navbar, notification bell and shared site
+footer all query the database (unread notifications, `SystemSetting` copy), and
+the error page is exactly the surface that must survive a database or asset
+failure. It therefore renders none of them — but it still uses the portal's
+tokens, type, `.tr-container`, `.tr-card`, `.tr-button` and `.empty-state`
+vocabulary so it never reads as a browser default. The page has no banner, no
+stat strip, no filter bar and no list; the card is the whole message. Secondary
+action is "Go back" (history) on 401/403/404/419 and "Try again" (reload) on
+429/500/503. **LOCKED:** one `<h1>`, one primary action, no raw exception text,
+no stack trace, no database-backed chrome.
+
 ---
 
 ## 5. Component catalog
@@ -257,8 +294,15 @@ second page consumes them, at which point they are extracted.
 
 ### 5.1 Banner / page header — `.tr-banner`
 Purpose: anchor the page; state what it is and what it is not.
-Anatomy: `<header class="tr-banner"><div class="tr-container">h1, .tr-goldbar,
+Anatomy: `<header class="tr-banner"><div class="tr-container">h1,
 .tr-privacy, optional details.tr-how, .tr-updated`.
+Full-bleed behind the fixed navbar (`padding-top: calc(var(--navbar-height) + 16px)`,
+`.transparency-page { padding-top: 0 }`) — the navy runs uninterrupted from the
+navbar into the banner, with 16px of breathing room below the navbar. The text
+stack is left-aligned as one block (h1 left, privacy `margin: 12px 0 0`
+left, CTA `margin-top: 12px` left, updated left).
+Workspace shells (staff/admin) keep `padding-top: 48px` since their shell
+already offsets the navbar.
 States: disclosure open/closed (chevron rotates 180°); no interactive states on text.
 Mobile: h1 28px; banner stays ~200px; nothing is hidden, the disclosure popover
 clamps to `calc(100vw - 48px)`.
@@ -464,6 +508,303 @@ Why: a table with stretched pills and a progress bar made rows ~120px tall
 and forced horizontal scroll on phones; cards give a uniform 12px gap and
 predictable heights that fit the scroll budget.
 
+### 5.24 Resident dashboard content — `.dashboard-content`
+Purpose: separate the welcome hero, the report/rail containers, and the navy
+footer with visible breathing room on every breakpoint.
+Anatomy: `.dashboard-content` (`32px 0 48px`; `24px 0 32px` ≤768px) wrapping
+`.dashboard-columns` (reports + rail, `gap: 24px`) with
+`.dashboard-section-heading { margin-bottom: 24px }`, track form
+`margin-bottom: 24px`, view-all `margin-top: 24px`, pagination
+`margin-top: 24px`, success/alert `margin-bottom: 24px`, rail `gap: 24px`,
+report list `gap: 12px` (rows only — not containers).
+Why: the 32/48 band is the only separation between the last card and the
+footer's gold accent; off-scale 16/20 separators made headings, banners and
+cards read as one block.
+
+### 5.25 Citizen mobile redesign (≤640px) — dashboard + My Complaints
+Purpose: ≤640px overview + list that never changes desktop (`@media
+(max-width:640px)` only; new markup `display:none` ≥641px, desktop
+`before/after` pixel-diff zero at 1310×900).
+Anatomy (mobile): hero `padding-top: calc(var(--navbar-height) + 16px)` (56px
+on mobile, var — never hardcoded), greeting 24/600 + one 14px line, CTA
+full-width 48 flat gold 12px; summary tiles 3-up ~72px (num 24/700, label 12
+muted, 12px radius) linking to `/complaints?status=`; recent 3 only
+(`nth-child(n+4) hide`), dashboard search/chips hidden (complaints has
+equivalents); card rows: ticket mono 12 muted | status 12 nowrap,
+title 16/600 clamp 2, `Category · Department` 13 muted 1-line ellipsis,
+progress 5×4px + `Step N of 5 · Status` 12 muted left + date `M j` right,
+no chevron/min-height, padding 16, gap 12, radius 12, `:active` bg +
+`:focus-visible` ring, status/progress never truncated; stats 3 tiles +
+muted avg line (hidden when null); search 48 visible, dept/category/sort
+behind Filters button + badge (div panel, not `<details>`, always open ≥641px,
+button hidden); chips horizontal scroll-snap + fade, hidden scrollbar, active
+scrolled in, 36 visible / 44 tap via `::before`; top bar bell/hamburger
+40×40 radius 10 border same, icons 20, 44 touch via `::before`.
+Why: the mobile list repeated desktop work (full list + search + chips) and
+cramped meta/chevron/dead space; the compact overview + shared card keeps one
+job per screen on a phone without forking desktop markup.
+
+### 5.26 Submission receipt (success page) — `.cs-*`
+Purpose: the light receipt that ends the citizen filing flow
+(`/complaints/{id}/success`). Replaces the one-off dark serif page: if a
+confirmation does not look like the portal, the portal does not look finished.
+Server-redirected here after `complaints.store` succeeds.
+
+Anatomy (one centered column, max 640px inside the shared `.tr-container`,
+page padding `calc(var(--navbar-height) + 32px) 0 48px`):
+
+1. **Hero card** (`.cs-hero`): green check circle (48px, `--status-resolved-*`
+   colours — meaning, not decoration), one h1 "Your complaint has been
+   submitted", one-line lede carrying the routed office and the live
+   `nav.my_complaints` label. Below: **ticket strip** (`.cs-ticket`,
+   `--surface-soft` field) — uppercase label, mono 20px value (`tnum`,
+   `--navy-900`), a "save this number" whisper — then **fact rows**
+   (`.cs-facts`, the wizard-review pattern: muted key left, 14px value right,
+   hairlines) — Status (shared `.status-pill.<key>` from the live status),
+   Filed (`M j, Y` localized), Routed to (`.dept-badge[data-dept]` + name;
+   `transparency.v2.department_pending` when unassigned), Photos
+   (`trans_choice`, only when > 0) — and the **progress bar**: the shared
+   `.progress` 5 segments (§5.15 base from `partials.public-ui`, widened by
+   `.cs-page .progress { width: 100% }`), `role="img"` +
+   `my_complaints.progress_aria`, visible "Step N of 5 · Status" from the
+   **live** status so a revisit never lies (`closed` completes the bar,
+   rejected renders label only).
+2. **What-happens-next card** (`.cs-next`): the same three steps the wizard
+   teaches (`complaint_create.wizard.next_1..3`, one copy, two pages) with
+   24px navy-50 number circles; a hairline note states which location source
+   was used (photo GPS / address·map / none) instead of a wall of prose.
+3. **Auto-redirect strip** (`.cs-redirect`, `--surface-soft`): clock icon +
+   `role="timer"` countdown "Redirecting to My Complaints in 6 s" (template
+   from `complaint_success.redirect.countdown` via `data-redirect-template`,
+   based on `my_complaints` menu label) + ghost text cancel "Stay on this
+   page" (§5.8 style; 44px target). JS: data attributes are the contract
+   (`#cs-redirect`, `data-redirect-url/-seconds/-template`); ticks
+   **pause while the tab is hidden** and the redirect never fires unseen;
+   cancel sets `[hidden]` (never `style.display`). No libraries, page
+   script in `@push('scripts')`.
+4. **Actions** (`.cs-actions`): ONE gold primary "View your report"
+   (gold-500/navy-900, radius-sm — the wizard CTA language) + shared white
+   `.tr-button` "Go to My Complaints". Stacked full-width 48px at ≤768px,
+   inline 44px on desktop (§5.4 LOCKED numbers).
+
+States: default only; hover on CTAs (gold-300 fill / navy-50 fill), focus
+rings `--ring`. Mobile ≤768px: 16px page gutters, h1 22px, strip+buttons
+stacked, cards 20px padding — delivered in one media block. The receipt is
+deliberately narrow (640px reading measure) while remaining inside the
+standard container gutters.
+Tokens: `--bg`, `--surface`, `--surface-soft`, `--line`, `--line-soft`,
+`--text`, `--muted`, `--navy-50/700/900`, `--gold-300/500`,
+`--status-resolved-bg/-text`, `--radius-sm/-lg`, `--shadow-card`, `--ring`,
+`--tracking-display`, `--font-mono`, `--navbar-height`.
+Why: after a submit the person needs one glance — did it work, what is my
+number, what happens now — then hand-off either to tracking (primary) or
+away with minimal friction (auto-redirect with a visible clock and a stay
+control, never a blind hop).
+
+### 5.27 Error page — `.error-page` (Shell D)
+Purpose: keep the portal usable, legible and branded when a request cannot be
+completed — the one page a resident reaches when something is already wrong.
+
+Anatomy (`resources/views/errors/layout.blade.php`):
+1. **Brand header** (`.error-header`): navy-900 fill, 2px gold-500 bottom accent,
+   64px row with the LGU seal + `DAET LISTENS` + `LGU Daet · Camarines Norte`
+   (the whole lockup links home). On ≤640px it becomes 56px and drops the
+   right-side "Official complaint portal" tag; the brand stays.
+2. **Main** (`.error-main`): `48px 0` desktop, `32px 0` mobile, inside the shared
+   `.tr-container` (1040px, 24px gutters / 16px ≤768px).
+3. **Card** (`.tr-card.error-card`): 640px max, centered, `48px 32px` padding
+   (`32px 24px` ≤640px), `--surface` + `--line-soft` + radius-lg +
+   `--shadow-card`. Contents in order:
+   - `.error-icon` — 64px navy-50 circle, 28px 1.8-stroke line icon keyed by
+     status (search 404 · lock 401/403 · clock 419/429 · server 503 ·
+     alert 500/unknown);
+   - `.error-kicker` — 12px/600 uppercase `--muted`, `Error <code>`;
+   - `.error-title` — the single `<h1>`, 34px/700 `--tracking-display`
+     (28px ≤640px);
+   - `.error-message` — 15px `--muted`, max 46ch, one or two sentences;
+   - `.error-actions` — ONE gold primary `.error-primary` (gold-500 → gold-300
+     gradient, navy-900 13/700 uppercase, radius-sm, 44px mobile / 40px desktop,
+     hover lift + `--shadow-lift`, focus `--ring`) plus ONE secondary
+     `.tr-button` — "Go back" (browser history; hidden until history exists) or
+     "Try again" (current URL) depending on the code.
+4. **Minimal footer** (`.error-footer`): navy-950 fill, 2px gold-500 top accent,
+   64px row with `© <year> Municipality of Daet` and
+   `footer.portal`; stacks at ≤640px.
+
+Variants: 401 (sign in), 403 (permission), 404 (missing), 419 (session expired),
+429 (throttled), 500 (server), 503 (maintenance) + generic `4xx`/`5xx` for any
+other status. Copy lives in `lang/{en,fil}/errors.php`; no raw exception text
+is ever printed. States: default + hover/focus on the two actions; the back
+button is only revealed by JS when `history.length > 1` so it is never a dead
+control. `prefers-reduced-motion` removes the lift.
+Tokens: `--bg`, `--surface`, `--line-soft`, `--text`, `--muted`, `--navy-50`,
+`--navy-700`, `--navy-900`, `--navy-950`, `--gold-300`, `--gold-500`,
+`--radius-sm`, `--radius-lg`, `--shadow-card`, `--shadow-lift`, `--ring`,
+`--tracking-display`, `--font-sans`.
+Deliberately **not** included: the app navbar, notification bell, mobile drawer,
+Livewire, or the shared site footer — each depends on the database/session and
+would turn a database outage into a second failure while rendering the error
+page. The card reuses the shared `.tr-container`, `.tr-card`, `.tr-button` and
+`.empty-state` vocabulary, so it still reads as Daet Listens.
+
+### 5.28 Filter popover (mobile, ≤640px) — `.mc-filters-panel` as an anchored overlay
+Purpose: the resident filter panel must not displace the list. It floats below the
+Filters button as a button-anchored popover — never in the content flow.
+Anatomy: `.mc-filters-panel` (2-col grid, 16px padding, `--surface`, 1px `--line-soft`
+hairline, `--radius-sm`, `--shadow-lift`) anchored to the relative
+`.tr-filters__row1` at `top: calc(100% + 8px); right: 0; width: min(100%, 340px);
+z-index: var(--z-popover)`. It overlays the chips row and the list — opening and
+closing never shifts layout.
+Behaviour: the "Filters" toggle opens/closes the popover; a tap/click outside the
+popover (or its trigger) closes it; `Escape` closes it and returns focus to the
+trigger. Changing a select **never** auto-submits — q, department, category and
+sort are drafts. "Apply" (gold, `type="submit"`) commits once (GET round-trip,
+URL persists); "Clear filters" drops to the bare `/complaints`. Closing the
+popover (toggle / outside / Esc) discards unsaved drafts and reverts the selects
+to the values in the URL, so the badge and aria-hidden state always testify to
+the applied filters. The Apply/Clear row (`.mc-filters-actions`) is visible at
+all breakpoints; ≤1024px it wraps to a right-aligned full-width second row under
+the selects, ≥1025px it sits inline after "Newest first". Desktop (≥641px) keeps
+the inline always-open panel with the toggle hidden.
+States: closed (`[hidden]` + `aria-hidden="true"` + `aria-expanded="false"`), open
+(`[hidden]` removed, `aria-hidden="false"` + `aria-expanded="true"`). No transitions
+are used, so `prefers-reduced-motion` needs nothing extra.
+Tokens: `--surface`, `--line-soft`, `--radius-sm`, `--shadow-lift`, `--z-popover`,
+plus the existing control tokens. **No new colours, radii or shadows.**
+Why: expanding in-flow pushed the whole list down under the user's thumb — a layout
+jump, a taller page and a worse thumb target. A button-anchored popover gives one
+overlay surface, exactly three close paths (toggle / outside / Esc), and zero reflow.
+
+### 5.29 Needs-information panel (resident) — tickets waiting on the resident
+Purpose: when the office needs more from the resident, this is the one screen where
+that lands. It is the resident-facing counterpart of the staff "Ask for evidence"
+flow; `needs_information` without this panel is a dead end and never happens.
+Anatomy (top of the ticket body, right after the back link): a `--status-progress-bg`
+card (1.5px amber hairline, `--radius-sm`, `--shadow-card`) with: a 44px navy-900
+icon tile, `.info-request__kicker` (10px/800 uppercase "Waiting on you",
+`--status-progress-text`) + `.info-request__title` (20px/700) — heading states the
+state ("needs more information" / "we received your reply"), a 13.5px lede
+(`--navy-900`), then the ask as a white `.info-request__question` card
+(`Asked by <name> · time` line in amber-caps, then the question text in `--navy-900`)
+— when the ask was flagged without a question (legacy), a generic fallback line is
+shown — then either the answered box (`.info-request__answer`, white) or the reply
+form: `Your reply` textarea (min 92px, 10px uppercase-muted label) + optional
+photos input (jpeg/png/webp, ≤5, 5 MB each) + gold `Send to the department` button;
+
+States: waiting (kicker/heading open, reply form) and answered (heading + reply text
+box, no form). The section renders whenever there is an open/answered information
+request **or** the ticket is flagged `needs_information`; legacy orphans still render
+and the resident's reply materialises the request server-side (service invariant:
+`needs_information` is never set without an accompanying question — the plain review
+decision cannot carry it).
+Tokens: `--status-progress-bg/-text/-dot`; `--surface`, `--line-soft`, `--navy-900`,
+`--radius-sm`, `--shadow-card`, `--gold-500`, existing control tokens. **No new
+colours.**
+Why: two different things wearing the same costume made the resident page feel broken
+(a banner with nothing to act on). One dedicated panel, one ask, one reply path is
+the entire "needs information" story on the resident side.
+
+### 5.30 Resolved close-confirmation panel (resident) — `.close-report`
+Purpose: when the department has marked a report `Resolved`, the resident can
+confirm the outcome and close it. If they do not act, the report auto-closes
+7 days after `resolved_at` (scheduled `complaints:auto-close-resolved`).
+Anatomy: `--status-resolved-bg` card (resolved-dot hairline, `--radius-sm`,
+`--shadow-card`) with 44px navy-900 icon tile, resolved kicker, 20px/700 title,
+lede explaining the 7-day auto-close, and one gold primary button
+(`--gold-500`/`--navy-900`, 44px min-height, `--ring` focus) posting to
+`complaints.close`. Visible only to the complaint owner while status is `Resolved`.
+States: actionable (form shown) only; once closed the normal Closed/stepper state
+renders. Tokens: `--status-resolved-*`, `--navy-900`, `--gold-300/500`,
+`--radius-sm`, `--shadow-card`, `--ring`. No new colours.
+Why: resolution and closure are different decisions — the office finishes the
+work, the resident confirms it is done for them.
+
+### 5.31 Navbar identity indicator (staff/admin) — `.nav-identity`
+Purpose: make the current account context unmistakable in the fixed top bar
+without opening any menu. Staff/department accounts and administrators see who
+they are operating as on desktop and mobile; citizens see no extra chrome.
+Anatomy: `.nav-identity` (inline, on the navy navbar) contains either an admin
+role badge (`.nav-identity__badge--admin`, `--gold-300` text on a gold-500 tint,
+6px radius, 10px/700 uppercase) or a department context: the canonical
+`.dept-badge[data-dept="CODE"]` (§3.2/§5.11, department colour tokens) plus
+`.nav-identity__label` (12px/500, light on navy, truncated). Staff with no
+assigned department render a neutral staff badge (`.nav-identity__badge--staff`)
+plus the "Department pending" label.
+Placements (targeted): desktop `nav-actions` (before the account dropdown),
+compact/tablet `nav-mobile-right` where visible, and a direct `.nav-identity-bar`
+child of `.navbar-flex` for the `body.is-auth` ≤640px shared-drawer mode (so
+identity remains visible when `nav-mobile-right` is hidden). The same
+department/role treatment appears in the shared mobile drawer header and legacy
+mobile menu header; dropdown headers repeat it as `.dropdown-identity`.
+States: static (no interactive state). Labels collapse at tight widths
+(`.nav-identity--compact` / breakpoint rules) so the badge/code remains legible.
+Tokens: existing `--dept-*`/`--dept-*-tint` + `[data-dept]`, `--gold-300`,
+`--gold-500` (tints via `color-mix`), `--color-white`, `--radius-sm`-scale
+shape (6px badge), `--font-sans`. **No new colours.** JS contracts untouched
+(no existing `id`/`data-*`/`aria-controls` changed).
+Why: a person handling complaints for a department, or administering the whole
+system, must never have to guess which account they are in — the navbar states
+it once, always, in the same place the account lives.
+
+### 5.32 Busy / loading action state — `.is-loading` / `aria-busy="true"`
+Purpose: give immediate, honest feedback when an action with real pending work
+is triggered (Apply, Submit, Login, Save, Send, state changes) and prevent
+double activation. **Applies to all sectors** (auth, citizen complaints,
+settings/profile, staff, admin, invitations/public forms). Do not use it for
+instant client-only toggles (opening a popover, local wizard step changes) or as
+a page-navigation progress bar.
+
+Anatomy: the pressed control keeps its label and gains an inline spinner
+(`::after`, 1em, `currentColor`, circular). The spinner inherits the control's
+text color, so it works on every variant — gold primary, navy/secondary, white,
+danger, ghost — with **no new colours**. Opacity reduces slightly while busy;
+pointer interaction is blocked.
+
+States:
+- **Idle:** normal control.
+- **Busy:** `.is-loading` + `aria-busy="true"` + disabled/`aria-disabled="true"`
+  + `data-action-busy="true"` (JS marker for restore). Visual spinner via
+  `::after`; `pointer-events: none`.
+- **Settled (success/navigation):** the request completes, navigates, or the
+  region updates; busy clears naturally.
+- **Settled (validation/error, same page):** a full render clears state; fetch
+  handlers must call `window.daetActionLoading.setBusy(el, false)` and surface
+  the error via the existing status/toast pattern.
+- **bfcache restore:** busy/disabled state is cleared on `pageshow` when
+  `event.persisted` (Back/Forward cache).
+
+Motion & accessibility (LOCKED for this pattern): the spin animation runs only
+when motion is allowed; under `prefers-reduced-motion: reduce` the animation is
+removed and the indicator becomes a static dotted ring (still perceivable, no
+motion). Controls keep their visible focus treatment when applicable; do not
+trap focus. The existing label remains available; `aria-busy="true"` announces
+the pending state. Native `<button>`/submit inputs use `disabled`; non-native
+action controls use `aria-disabled` + handler guards.
+
+Implementation contract (for future use):
+- **Standard forms:** add `data-loading-submit` to the `<form>` (applied across
+  the app). The global handler in `resources/js/app.js` (`initializeSubmitGuards`
+  / `window.daetActionLoading`) also auto-applies to non-GET forms. Legacy
+  `data-disable-on-submit` remains supported (invitation single-use flows).
+  Opt out with `data-loading="off"` or `data-loading-managed` (e.g. forms whose
+  JS fully owns submission/validation or fetch-only autosave like
+  `data-preferences-autosave`).
+- **Fetch / custom actions:** call `window.daetActionLoading.setBusy(button, true)`
+  before the request and `setBusy(button, false)` on settle/error; pair with an
+  `aria-busy`/status region where a whole list updates (notifications pattern).
+- **Livewire:** use `wire:loading`/`wire:target` to toggle `.is-loading` and
+  `aria-busy` on the targeted control, e.g.
+  `wire:loading.class="is-loading" wire:loading.attr="aria-busy=true" wire:target="save"`.
+- **Shared CSS:** `resources/css/app.css` (`.is-loading` / `[data-action-busy]`
+  + `@keyframes daet-action-spin`, reduced-motion override). Spinner uses
+  `currentColor`; **no new colour tokens, no hard-coded hex**.
+- **Do not** replace button labels with hardcoded English "Loading/Sending"
+  strings in JS. Keep the localized label visible; use the spinner + `aria-busy`.
+  If a design ever needs visible busy text, add `en` + `fil` lang keys first.
+
+Demo: `/design-system` → "Busy / loading actions" (all major variants, reduced-
+motion note).
+
 ## 6. The z-index contract — **LOCKED**
 
 | Layer | z-index |
@@ -475,6 +816,7 @@ predictable heights that fit the scroll budget.
 | Mobile drawer (`.mobile-menu`, was `#mobile-nav-drawer`) | **1010** |
 | Mobile drawer close `X` (`.mobile-menu-close`) | inside the panel, not a new layer |
 | Toast / modal / full overlays | **1100** |
+| Anchored filter popover (≤640px, e.g. My Complaints) | **500** (`--z-popover`) |
 | Landing page sticky mobile CTA (`.lp-sticky-cta`) | **800** |
 | In-map overlays (`#map-status`, hint, attribution) | **inside** the map only |
 
@@ -521,7 +863,7 @@ open mobile menu. A map overlay (loading skeleton, legend, hint) that escapes
    and any `.mobile-menu a` tap; plus `html/body.mobile-menu-open` scroll lock.
 
 **Prove it, don't trust it.** Before claiming a layering fix, run it in a real
-browser (Playwright) at 393px: open the surface, then
+browser at 393px: open the surface, then
 `document.elementFromPoint(x, y)` at the center of **every** item and assert the
 hit is the item or a descendant — plus a click-through of every item, plus
 backdrop/Esc/scroll-lock/closed-state-interception assertions, at 393px and
@@ -614,12 +956,14 @@ These are the things that broke before.
 | Page | Shell | Banner | Stat strip | Filter bar | List / card | Empty state |
 |---|---|---|---|---|---|---|
 | Transparency (public list) | A | yes — h1 + privacy sentence + "How this data is shown" + updated line | Public reports · In progress · Resolved · Resolution rate | yes (search, dept, category, sort, status chips, barangay chip) | `.report-row` grid, desktop table head + mobile cards | empty = "No public complaints yet" (no CTA), no-results = filters box |
-| My Complaints (resident) | A/B | yes — h1 + ONE line subtitle + **one** CTA ("File a complaint", suppressed when the navbar shows it at this viewport) | Total (all) · Open (submitted+under review+in progress) · Resolved · Avg. resolution time | yes, URL-persisted `?status=&q=&sort=`; chips carry counts; dept select folded in only when meaningful | same `.report-row` + the resident extras (needs-response pill, visibility pill, Updated x ago) | empty = circle + "No complaints yet" + ONE "File a complaint" |
+| My Complaints (resident) | A/B | yes — h1 + ONE line subtitle + **one** CTA ("File a complaint", suppressed when the navbar shows it at this viewport) | none (2026-11-09: strip removed) | yes, URL-persisted `?status=&q=&sort=`; chips carry counts; dept select folded in only when meaningful | same `.report-row` + the resident extras (needs-response pill, visibility pill, Updated x ago) | empty = circle + "No complaints yet" + ONE "File a complaint" |
 | Staff Complaint Queue / Admin All complaints (work lists) | A | yes — plain title + ONE line of scope ("Your office's queue"/"Filter the municipal queue"); no CTA | 4 existing metrics (do not invent) | yes — extended with review + priority (admin: + department, flagged, dates) — the same bar visual language, not a fork | same row component + staff columns (Review, Priority, Age); row click opens detail | empty per q-status = "queue clear"; no-results = same clear-filters box |
 | Public complaint detail (`/transparency/complaints/{id}`) | C | no banner — back link only | no | no | stepper + timeline + evidence grid + alias/privacy card | "Exact location withheld" is the privacy state — keep it |
 | Resident complaint detail (`/complaints/{id}`) | C | no banner — back link + breadcrumb dots, no cream/serif | no | no | stepper + actions for the resident (respond to info requests, toggle visibility) | same as above |
+| Submission success receipt (`/complaints/{id}/success`) | receipt (§5.26) | no banner — light page, centered 640px | no | no | hero card (check, h1, mono ticket strip, fact rows, live 5-segment bar) + what-next card | auto-redirect strip with clock + "Stay on this page" cancel; actions: view report + my complaints |
 | File complaint / create (wizard) | form | no banner | no | wizard steps, one action per step | review-card before submit | "Ready to submit" row shows barangay, never coordinates (LOCKED) |
 | Settings | form panel | no banner — h1 + tab nav | no | no | panel cards | Plug: profile/security/notifications/preferences/privacy tabs |
+| Error page (401/403/404/419/429/500/503 + generic 4xx/5xx) | D | no banner — standalone brand header | no | no | one 640px error card: 64px icon, code kicker, h1, message, ONE gold primary + one secondary | the card is the whole page; no list and no data chrome |
 | Admin dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles from real metrics | no | dark tables + dept chips | treat separately: admin shell |
 | Staff dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles | no | dark tables | treat separately |
 
@@ -634,8 +978,11 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 
 ## 11. Definition of Done (any UI change)
 
-1. [ ] Screenshotped at **393px and 1310px**, in **both `en` and `fil`**, with data
-       and zero data; attached to the PR/change.
+1. [ ] Verification evidence recorded in the changelog entry — what was rendered/clicked
+       in a real browser and what passed (see `docs/ui-verification.md`). Screenshots
+       at 393px and 1310px, in both `en` and `fil` with and without data are
+       **optional** and attached when taken; otherwise the entry states the waiver
+       inline (`NOT captured — waived by owner, <date>`).
 2. [ ] Exactly one `<h1>`, exactly one footer; no horizontal scroll;
        `scrollWidth ≤ innerWidth` at 393px.
 3. [ ] No raw lang keys rendered; `en`+`fil` complete for every string you added.
@@ -666,6 +1013,108 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 
 Every UI task appends here: **(date · page · what changed).**
 
+- 2026-11-09 · Staff department dashboard (`staff.dashboard`) — footer anchoring + mobile bottom
+  nav / complaint-card layout fix (follow-up to the 2026-11-09 pass 3):
+  - **Why:** reported `/staff/dashboard` UI breakage — footer not anchored to end of page (desktop
+    rendered mid-screen, splitting the complaint list) and, on mobile, bottom nav floating into the
+    content area with search/chips/cards overlapping the Recent Activity card.
+  - **What:** page shell normal flow restored (body flex column `min-height: 100vh`, main
+    `flex: 1 0 auto` → footer after main, anchored to end); bottom-nav content clearance now
+    relaxes at the nav breakpoint (1024px) instead of 768px; complaint-card ≤1100px grid tracks
+    made shrinkable (`minmax(0, …)`).
+  - **Verify:** design-system guard — no NEW violations from changed files; StaffWorkspace +
+    PageOverflowTest green; screenshots NOT captured (waived by owner, 2026-11-09).
+- 2026-11-09 · Department Account Dashboard (`staff.dashboard`, resident parity) · light-theme
+  redesign reusing transparency/resident tokens and components: navy hero + diagonal texture +
+  gold CTA, gold accent strip under `#navbar` for `role-staff`, compact `Department Account` +
+  dept code in header, hero identity card, 2×2/4-across white stat cards (tappable → queue
+  filters), priority complaint cards (left priority strip, mono ticket, status pill, priority
+  chip, suggested/confirmed line, formatted days-open, 44px Review), GET priority
+  search/filter chips, collapsible/sticky recent-activity timeline with merged consecutive
+  entries and "No notes added" fallback, desktop 8/4 grid (no overlap) + white-card sidebar
+  (gold-left active), fixed mobile bottom nav (Dashboard/Queue/Verify/Activity). i18n
+  `staff.dashboard.*`/`staff.bottom_nav.*`/`nav.department_account` (en+fil). No routes/API/data
+  logic changed.
+
+- 2026-11-09 · All sectors · busy/loading action state (§5.32, "all sector" +
+  future-use docs): shared `.is-loading`/`aria-busy` pattern with `currentColor`
+  spinner (`resources/css/app.css`, `daet-action-spin`, reduced-motion static
+  dotted ring, unified legacy `.admin-button.is-loading`) and global JS
+  (`resources/js/app.js` — `window.daetActionLoading.setBusy`, submit handler
+  for non-GET/`data-loading-submit`/legacy `data-disable-on-submit`, double-submit
+  guard, bfcache restore). `data-loading-submit` applied across action forms in
+  auth/complaints/settings/profile/staff/admin/invitations; fetch autosave
+  (`data-preferences-autosave`) and `data-loading="off"`/`-managed` opted out.
+  Complaint create uses shared busy state (no hardcoded busy text). No new
+  colours/hex; `/design-system` swatch + §5.32 contract document Livewire/fetch
+  usage for future work.
+
+- 2026-11-09 · Global navbar + mobile drawer headers (staff/admin identity) · added
+  §5.31 `.nav-identity` indicator so staff/department accounts and administrators
+  are identifiable from the fixed top navbar on desktop and mobile without opening
+  menus. Staff show the canonical `.dept-badge[data-dept]` (existing §3.2 tokens)
+  + department name (or a neutral staff badge + "Department pending"); admin show
+  an `Administrator` role badge using `--gold-300`/`--gold-500` tints on navy.
+  Placements: desktop `nav-actions`, compact `nav-mobile-right`, and a direct
+  `.nav-identity-bar` child of `.navbar-flex` for the `body.is-auth` ≤640px
+  shared-drawer mode; mirrored in the shared mobile drawer header, legacy mobile
+  menu header, and account dropdown headers. Added global `.dept-badge` baseline
+  in `app.css` (token-driven, `[data-dept]` mapping). No new colours; no
+  `id`/`data-*`/JS contracts changed; z-index contract unchanged. Citizens unchanged.
+- 2026-11-13 · Resident ticket detail + closure lifecycle (B/UI) · resolved-owner close
+  confirmation panel (§5.30, `complaints.close`, owner-only on `Resolved`, `Resolved→Closed`,
+  `closed_at/closed_by=resident`) + 7-day auto-close
+  (`complaints:auto-close-resolved`, daily 07:30, stamps `closed_by=system`, notifies resident,
+  legacy `resolved_at` fallback) + `resolved_at/closed_at/closed_by` migration and staff/admin
+  timestamping. Lang `complaint_show.close.*` (en+fil). No new tokens.
+- 2026-11-09 · My Complaints `/complaints` · stat strip removed outright (all breakpoints):
+  the desktop `.tr-stats` 4-card strip and the ≤640px 3-cell `.mc-mobile-summary` card
+  are gone — hero now runs straight into the filter bar. `$avgDays` computed nowhere;
+  dead `my_complaints.stat_*`/`avg_*` lang keys purged. Shell B and the §10 recipe
+  updated; nothing else references the strip.
+- 2026-11-09 · Resident ticket detail · removed the mobile "Latest update" inset
+  entirely: the section, the scoped `.pcs-latest* / .pcs-no-updates` rules and the
+  `.pcs-latest` flex-order, the `$pcsLatestLog` computation, and the now-dead
+  `complaint_show.latest.*` keys (en+fil). The timeline (#pcs-updates) is the
+  single place the newest staff response appears. `pcs-inset` stays (help card).
+- 2026-11-09 · Resident ticket detail + admin all-complaints + status model (B) ·
+  needs-information is now one coherent story everywhere: resident ticket renders a
+  dedicated 5.29 panel (kicker, question, reply form or answered state; renders on
+  `open|answered` requests **and** on legacy `needs_information` orphans) with the
+  lede/kicker/fallback-question keys (en+fil); `recordResidentReply` auto-creates the
+  request for legacy orphans (FK `requested_by` is now nullable, 2026-11-09
+  migration); resident attention strip keys off `open` information requests, so the
+  banner always lands on a reply form; admin complaint page gains the same "Ask the
+  resident for more evidence" panel as staff (new `admin…request-information` route,
+  same controller/service); bare review dropdowns on staff+admin no longer offer
+  `needs_information` and the service rejects it via `reviewUpdates()` — needs
+  information always carries a question. No new colours.
+- 2026-11-09 · My Complaints `/complaints` · filter selects are drafts, never
+  auto-apply (§5.28): removed `onchange="this.form.submit()"` from q → department →
+  category → sort; "Apply" commits once on all breakpoints (visible ≥641px too,
+  inline after sort ≥1025px, right-aligned second row ≤1025px); closing the
+  popover (toggle / outside / Esc) reverts unsaved drafts to the applied URL.
+- 2026-11-09 · My Complaints `/complaints` (resident, ≤640px) · filter panel is now an
+  anchored popover below the Filters button (§5.28): `position:absolute` under
+  `.tr-filters__row1`, `--z-popover` (500, new z-contract row), `--shadow-lift`, zero
+  reflow of the list/chips; outside-tap and `Escape` close; toggle/aria sync.
+  Desktop unchanged (inline panel). New `--z-popover` in `tokens.css`.
+- 2026-11-09 · Error pages (401/403/404/419/429/500/503 + generic 4xx/5xx) ·
+  new standalone Shell D (§4) and §5.27: brand header, one centered
+  `.error-card` (64px icon, code kicker, single h1, one-line message, ONE gold
+  primary + one secondary), minimal footer. Deliberately no app navbar, drawer,
+  Livewire or database-backed site footer — the page must render when the DB or
+  assets are the failure. Copy in `lang/{en,fil}/errors.php`; styles in
+  `resources/css/pages/error.css` (tokens only). Back action is revealed only
+  when browser history exists; 429/500/503 offer Reload. Added to `/design-system`.
+- 2026-11-08 · Submission success (`/complaints/{id}/success`) · light receipt
+  redesign (§5.26): green check hero, mono ticket strip, fact rows with shared
+  status pill + dept badge, live 5-segment progress bar (§5.15 base widened),
+  what-next card reusing the wizard's three steps, ONE gold CTA + shared
+  `.tr-button`; auto-redirect clock strip cancels and pauses on hidden tabs.
+  Removed the dark navy serif page (5 hexes + serif gone; allowlist rows
+  dropped); CSS moved to `resources/css/pages/complaint-success.css`; new
+  `complaint_success` lang group (en+fil).
 - 2026-11-08 · Transparency · ground-up redesign: banner + stat strip + map/top-areas
   + filter bar + report-row pattern; tokens created; single-footer contract
   verified; sort/`data-iso-date` bug fixed; barangay resolver unified across
@@ -709,6 +1158,22 @@ Every UI task appends here: **(date · page · what changed).**
   family keeps `aria-expanded` in sync; z-contract anatomy + verification
   recipe locked in §6. Verified in Playwright at 393x852 + 360x740, `en` +
   `fil` (elementFromPoint per item, full click-through, screenshots).
+- 2026-11-08 · My Complaints `/complaints` (citizen home, mobile pass 3, ≤640px) ·
+  flat, token-only mobile redesign scoped to `body.page-complaints-index`
+  (desktop ≥641px unchanged): 16px edge, no nested/wrapper cards; compact hero
+  (24/700 title + 14px greeting, no "Updated", full-width 48px flat gold
+  `--radius-sm` CTA with `+`); attention strip moved under hero on mobile
+  (`min-height:48px`, wrapping, `role="status"`); one 3-column summary card
+  (Total|Open|Resolved, 1px hairlines, 24/700+13px, 72px) overlapping hero 24px;
+  "Your complaints" 20/600 + single muted count (bottom "Showing" SR-only on
+  mobile); flat toolbar (search 48 + Filters button with icon/badge, in-place panel
+  2-col/360px 1-col with gold Apply + Clear, GET/field names/submit unchanged) and
+  16px-aligned scrolling status chips with fade (36px/44px tap, active gold inset
+  accent); page-scoped report-card order (ticket mono 13 + status → 16/600 title →
+  category·department 13 muted → step/progress+short date, needs-response full
+  line, 8px radius, no stray dot). No new tokens/hex. Lang `list_heading_mobile`
+  + `count`. Footer kept shared (requested). Screenshots
+  `public/debug-ui/pass3-*-complaints-*.png`.
 - 2026-11-08 · Guest landing page (`/`) · redesigned for the 5-second
   resident test: H1 states the task, one filled gold CTA ("File a complaint")
   reused verbatim in hero/sticky bar/final band; navy gradient hero with an
@@ -728,3 +1193,80 @@ Every UI task appends here: **(date · page · what changed).**
   `.ticket-id`) — the register consumes it too, no forked rows. Verified in
   Playwright at 393/360/768/1024/1310, en+fil, plus synthetic 0/4/17-report
   data states and a click-through of every drawer item.
+- 2026-11-08 · Transparency + My Complaints + resident dashboard · banner/welcome
+  now butt against the navbar (global `body` offset cancelled for hero pages
+  via `body:has(.transparency-page), body:has(.citizen-dashboard)`), navbar
+  offset folded into the navy (`calc(var(--navbar-height) + 16px) 0 48px`),
+  visible gap 16px navy instead of a ~50px light "mystery gap" (§10) + 48px.
+  Text stack left-aligned as one block (h1 left, gold bar `8px 0 12px` left,
+  privacy left, CTA `12px` left, updated left); dashboard welcome
+  `align-items: flex-start` (CTA top matches heading top), title −0.02em left.
+  Staff/admin keep 48px via `.tr-banner { padding-top: 48px }` (shell offsets).
+  No new tokens; 8/12/16 are on the spacing scale.
+- 2026-11-08 · Resident dashboard content · `.dashboard-content` now separates
+  hero/columns/footer with `32px 0 48px` (`24px 0 32px` ≤768px); containers
+  butt 24px (columns/rail gaps, heading/banners/track `margin-bottom: 24px`,
+  view-all/pagination `margin-top: 24px`), report rows keep 12px. Corrects
+  off-scale 16/20 separators; bottom band keeps last card off the footer gold
+  accent. New §5.24 spec.
+- 2026-11-08 · Citizen mobile dashboard + My Complaints (≤640px) · hero
+  `calc(var(--navbar-height) + 16px)` (56px mobile), dashboard 24/600 +
+  14px line + 48px full-width CTA; 3-tile summaries (link to
+  `/complaints?status=` where filter exists) + muted avg line (hidden when
+  null/negative); dashboard recent 3 via `nth-child`, search/chips hidden on
+  mobile (complaints equivalents exist); shared 4-row cards (ticket 12 muted
+  | status 12 nowrap, title 16/600 clamp 2, `Category · Department` 13 1-line,
+  5×4px + step 12 left + `M j` right, no chevron/min-height, 16/12/12,
+  `:active` + ring); filters search 48 visible, dept/cat/sort behind Filters
+  + badge (div panel, always open ≥641px); chips scroll-snap + fade, hidden
+  scrollbar, active scrolled in, 36/44 via `::before`; bell/hamburger 40×40
+  radius 10 border same, icons 20, 44 touch via `::before`. Averages exclude
+  invalid `end<created` rows (seed backdates) + clamp ≥0. New §5.25 spec;
+  desktop unchanged (mobile markup `display:none` ≥641px).
+- 2026-11-08 · All banners (Transparency, My Complaints, staff/admin queues,
+  public complaint list + ticket detail, file-complaint) · removed the 40×3px
+  `--gold-500` horizontal after-title bar (`.tr-goldbar` / `.pt-goldbar` /
+  `.fc-goldbar` spans + CSS) from every banner hero. Privacy/lede now sit
+  `12px` below the h1 (`margin: 12px 0 0`) so the stack stays one
+  left-aligned unit on the spacing scale; ticket title's existing `12px`
+  bottom margin already covered the status row. Design-system §4/§5.1/Shell A
+  updated; no new tokens.
+- 2026-11-08 · Citizen dashboard merged into My Complaints · citizen `/dashboard`
+  302 → `complaints.index` (query preserved, `dashboard` route name kept;
+  staff/admin unchanged), duplicate Dashboard nav item removed from desktop +
+  drawer, My Complaints active on index/show/create, logo → role home through
+  `User::homeRouteName()`, greeting as hero title (24px ≤640px), and a 48px
+  amber `needs_information` strip (only when count > 0, `role="status"`,
+  opens the newest matching report). Reuses `--status-progress-bg/text` and
+  `--radius-sm`; no new tokens. Screenshots
+  `docs/design-log/2026-11-08-citizen-merge-*.png`.
+- 2026-11-08 · File complaint wizard (`/complaints/create`, ≤767px wizard-on, light) · mobile flat app-like: compact back+progress row, one-line chip, no banner, hidden cards leave no shell (`[hidden]` + backstop), footer hidden on this page only, bottom=`var(--fc-bar-h)+safe+16`, draft `hidden`-only ≥2 fields; group 2-col 104px, category 64px rows + group Change, describe 56px/autogrow + counters + priority toggle, photos primary 56px + 3-col thumbs + tips toggle, where landmark collapse, pin locate-above-map `clamp(240px,45dvh,360px)`, visibility gold cards + Why toggle, review 7 rows + Edit (`goToStep`) + What-next + 48px terms; 180ms motion, 44px targets, 16px padding; desktop 1310 diff zero. Screenshots `public/debug-wizard/` 390×844 + 360×800 (8 steps/invalid/review-5) + 1310 before/after; visibility lock + breakpoint unchanged (await decision). No new tokens.
+- 2026-11-08 · Guest landing page (`/`) · spacing tightened, navbar-to-hero gap
+  fixed: `.lp-root` joins the `body:has(...)` navbar-offset cancel list in
+  `app.css` (the double 64px body + hero offset was the ~79px measured gap, the
+  §10 repeated failure) and `.lp-hero` now follows §4
+  (`calc(var(--navbar-height) + 16px) 0 24px`, inner top padding 56/48 → 0,
+  desktop `min-height: 440px` dropped, phone 430 → 400px) — visible gap 15px
+  measured at 1310 and 393, en + fil. Sections 48/64 → 32/48, buttons 52/56 →
+  48px, tiles/rows/steps/FAQ/final each one step down the spacing scale
+  (16/24/32/48 only); targets stay ≥44px. No new tokens. Screenshots
+  `docs/design-log/2026-11-08-landing-spacing-{en,fil}-{desktop-1310x900,mobile-393x852}.png`.
+
+## 2026-11-09 — Department Account Dashboard pass 3 (staff workspace)
+- **Why:** pass 2 left dark/heavy staff surfaces and conflicting CSS (invisible sidebar
+  text/double box, unreadable header pill, cramped stats, duplicate mobile priority chip,
+  noisy activity, mobile header wrap). Presentation-only correction to match the spec.
+- **What:** brighter department identity via `--dept-*` tokens (page `#F4F7FC`, hero
+  `#1E3A8A→#2563EB→#3B82F6`, review blue `#1D4ED8`, priority/status/stat tints, card
+  border/shadow) in `tokens.css`; single white sidebar card (248px sticky, Assigned Dept
+  gradient, Workspace/Verification with count, bottom EN/FIL + Settings, active
+  `#EAF1FF`/blue/3px gold bar); 3-zone dashboard layout at ≥1280px (sidebar/main/320px
+  sticky activity), 1024–1279px activity below main; hero contained (no dark overlap
+  block) with CTA right on desktop, vertical stat cards; navbar pill white-on-navy with
+  gold border (desktop `Department · GSO`, mobile icon+`GSO`), no wordmark truncation at
+  360px, 3px staff gold strip; mobile chips rendered once auto-width, relative filed time
+  with "ago"/exact tooltip, activity strips "Administrative review:"/dedupes `Note:`,
+  bottom-nav safe-area padding. No routes/queries/permissions/data logic changed.
+- **Verify:** `php artisan test --filter=StaffWorkspace` (6 passed). Headless Playwright
+  screenshots in `/tmp/opencode/staff-pass3/` (1440/1100/1024 full, 393 top/bottom/drawer,
+  360 header/full). Guard: no new violations in files touched by this pass.

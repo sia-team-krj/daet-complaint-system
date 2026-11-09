@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="staff-shell">
+<div class="staff-shell @hasSection('staff-aside') staff-shell--with-aside @endif">
     @include('staff.partials.sidebar')
 
     <button
@@ -35,5 +35,11 @@
             @yield('staff-content')
         </div>
     </section>
+
+    @hasSection('staff-aside')
+        <aside class="staff-aside-column" aria-label="{{ __('staff.dashboard.activity_title') }}">
+            @yield('staff-aside')
+        </aside>
+    @endif
 </div>
 @endsection

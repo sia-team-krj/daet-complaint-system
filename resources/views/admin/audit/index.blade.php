@@ -19,7 +19,7 @@
         ])->filter(fn ($v) => filled($v));
     @endphp
     <section class="admin-filter-panel admin-filter-panel--audit" aria-label="Audit trail filters">
-        <form method="GET" action="{{ route('admin.audit.index') }}" class="admin-filter-grid admin-filter-grid--audit admin-audit-filters" data-filter-form>
+        <form data-loading-submit method="GET" action="{{ route('admin.audit.index') }}" class="admin-filter-grid admin-filter-grid--audit admin-audit-filters" data-filter-form>
             <details class="admin-audit-filters-collapsible" data-audit-filters-mobile @if($auditActiveFilters->except(['search'])->isNotEmpty()) open @endif>
                 <summary class="admin-audit-filters-toggle">
                     <span class="admin-audit-filters-toggle__icon" aria-hidden="true">

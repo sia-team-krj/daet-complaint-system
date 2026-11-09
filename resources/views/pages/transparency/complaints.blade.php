@@ -13,17 +13,11 @@
         <a href="{{ route('transparency') }}" class="tr-back">{{ __('transparency.register.back_to_transparency') }}</a>
     </div>
 
-    <header class="tr-banner tr-banner--compact">
-        <div class="tr-container">
-            <a href="{{ route('transparency') }}" class="tr-back">{{ __('transparency.register.back_to_transparency') }}</a>
-            <h1 class="tr-h1">{{ __('transparency.register.all_heading') }}</h1>
-            <span class="tr-goldbar" aria-hidden="true"></span>
-        </div>
-    </header>
+    <h1 class="tr-h1" style="margin: 0 0 16px; padding: 0 16px;">{{ __('transparency.register.all_heading') }}</h1>
 
     <div class="tr-container complaints-wrap">
         <div class="tr-card tr-filters-card">
-            <form method="GET" action="{{ route('transparency.complaints') }}" id="complaints-filter-form">
+            <form data-loading-submit method="GET" action="{{ route('transparency.complaints') }}" id="complaints-filter-form">
                 {{-- Row 1: search + Filters button --}}
                 <div class="cf-row1">
                     <label class="tr-search" for="complaints-search">

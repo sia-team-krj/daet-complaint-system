@@ -96,7 +96,7 @@
                         <p class="admin-section-description">Update permitted profile fields or change this account’s access assignment.</p>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('admin.users.update', $user) }}" class="admin-panel-body admin-form-stack">
+                <form data-loading-submit method="POST" action="{{ route('admin.users.update', $user) }}" class="admin-panel-body admin-form-stack">
                     @csrf
                     @method('PATCH')
 
@@ -204,7 +204,7 @@
                     @elseif($user->is_active && $user->role === 'admin' && $activeAdminCount <= 1)
                         <div class="admin-control-note">This is the last active administrator. Promote another administrator before pausing it.</div>
                     @else
-                        <form method="POST" action="{{ route('admin.users.toggle', $user) }}" onsubmit="return confirm('{{ $user->is_active ? 'Pause' : 'Activate' }} this account?')">
+                        <form data-loading-submit method="POST" action="{{ route('admin.users.toggle', $user) }}" onsubmit="return confirm('{{ $user->is_active ? 'Pause' : 'Activate' }} this account?')">
                             @csrf
                             <button type="submit" class="admin-button {{ $user->is_active ? 'admin-button--danger-ghost' : 'admin-button--primary' }} admin-user-toggle-button">
                                 {{ $user->is_active ? 'Pause account access' : 'Activate account access' }}

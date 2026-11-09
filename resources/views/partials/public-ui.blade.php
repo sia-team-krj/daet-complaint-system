@@ -32,7 +32,7 @@
         }
 
         @media (max-width: 900px) {
-            .tr-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .tr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         }
 
         .tr-stat {
@@ -47,7 +47,12 @@
         }
 
         @media (max-width: 768px) {
-            .tr-stat { padding: 16px; gap: 12px; }
+            .tr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .tr-stat { padding: 12px; gap: 8px; }
+            .tr-stat__icon { width: 32px; height: 32px; flex: 0 0 32px; }
+            .tr-stat__icon svg { width: 16px; height: 16px; }
+            .tr-stat__value { font-size: 24px; }
+            .tr-stat__label { font-size: 10.5px; margin-top: 2px; }
         }
 
         .tr-stat__icon {
@@ -75,13 +80,15 @@
             color: var(--text);
             font-variant-numeric: tabular-nums lining-nums;
             letter-spacing: -0.02em;
+            text-align: left;
         }
 
         .tr-stat__label {
             display: block;
-            margin-top: 2px;
+            margin-top: 4px;
             font-size: 13px;
             color: var(--muted);
+            text-align: left;
         }
 
                 .transparency-page .ticket-id,

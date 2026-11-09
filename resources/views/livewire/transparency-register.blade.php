@@ -29,7 +29,6 @@
     <header class="tr-banner">
         <div class="tr-container">
             <h1 class="tr-h1">{{ __('transparency.header.title') }}</h1>
-            <span class="tr-goldbar" aria-hidden="true"></span>
             <p class="tr-privacy">{{ __('transparency.header.privacy') }}</p>
 
             <details class="tr-how" wire:ignore>

@@ -240,7 +240,7 @@
     {{-- ═══ BANNER EXAMPLE ═══ --}}
     <section class="ds-section" aria-labelledby="ds-banner">
         <h2 class="ds-h2" id="ds-banner">Banner / page header</h2>
-        <p class="ds-note">Component: <code>.tr-banner</code> — full-bleed, navy gradient + hairline pattern layer, 40×3 gold bar, privacy sentence, disclosure, updated line. No buttons.</p>
+        <p class="ds-note">Component: <code>.tr-banner</code> — full-bleed, navy gradient + hairline pattern layer, privacy sentence, disclosure, updated line. No buttons.</p>
         @include('pages.transparency.partials.banner-example')
     </section>
 
@@ -274,6 +274,20 @@
         <p class="ds-note" style="margin-top:12px"><code>.btn-nav-cta</code> is the literal navbar component (gradient, bold navy, shadow) — mapping for the portal, not for every button on every page.</p>
     </section>
 
+    {{-- ═══ BUSY / LOADING ACTIONS ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-loading">
+        <h2 class="ds-h2" id="ds-loading">Busy / loading actions (§5.32)</h2>
+        <p class="ds-note">Applied on press for actions with pending work (Apply, Submit, Login, Save, Send, state changes) across all sectors. The inline spinner uses <code>currentColor</code> (no new colours) and keeps the label visible. JS sets <code>.is-loading</code> + <code>aria-busy="true"</code> and prevents double activation; it clears on settle, validation re-render, or bfcache restore. Under <code>prefers-reduced-motion: reduce</code> the spin becomes a static dotted ring.</p>
+        <div class="ds-kbd-row" style="align-items:center;">
+            <button class="btn-nav-cta is-loading" type="button" aria-busy="true" disabled style="text-transform:none; letter-spacing:0; font-size:14px; border-radius: var(--radius-sm); padding: 10px 18px;">Submitting</button>
+            <button class="tr-button is-loading" type="button" aria-busy="true" disabled>Applying</button>
+            <button class="admin-button admin-button--primary is-loading" type="button" aria-busy="true" disabled>Saving</button>
+            <button class="tr-button is-loading" type="button" aria-busy="true" disabled style="color:#991b1b; border-color:#fecaca;">Deleting</button>
+            <button class="tr-clear is-loading" type="button" aria-busy="true" disabled>Sending</button>
+        </div>
+        <p class="ds-note" style="margin-top:12px">Forms: <code>data-loading-submit</code> (global auto-applies to non-GET forms). Fetch: <code>window.daetActionLoading.setBusy(el, true|false)</code>. Livewire: <code>wire:loading.class="is-loading" wire:loading.attr="aria-busy=true" wire:target="…"</code>. Opt out with <code>data-loading="off"</code>/<code>data-loading-managed</code>.</p>
+    </section>
+
     {{-- ═══ FORM CONTROLS ═══ --}}
     <section class="ds-section" aria-labelledby="ds-forms">
         <h2 class="ds-h2" id="ds-forms">Search, select, chips</h2>
@@ -305,6 +319,20 @@
                     <button class="status-chip" type="button">Submitted</button>
                     <button class="status-chip" type="button">In Progress</button>
                     <button class="status-chip" type="button">Resolved</button>
+                </div>
+                <div style="height:24px"></div>
+                <div style="position:relative; max-width:340px;">
+                    <div style="display:flex; gap:8px; align-items:center; position:relative;">
+                        <input type="search" placeholder="Search ticket or title" readonly style="height:48px; flex:1 1 0; min-width:0; border:1px solid var(--line); border-radius:var(--radius-sm); padding:0 12px; font-size:15px; background:var(--surface); color:var(--muted);" aria-label="Search demo">
+                        <button type="button" aria-expanded="true" aria-controls="ds-popover-demo" style="display:inline-flex; align-items:center; gap:8px; flex:0 0 auto; height:48px; padding:0 12px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); font-family:var(--font-sans); font-size:14px; font-weight:600; cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>Filters<span style="display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; border-radius:var(--radius-pill); background:var(--navy-700); color:var(--surface); font-size:12px; font-weight:700;">2</span></button>
+                    </div>
+                    <div id="ds-popover-demo" style="position:absolute; top:calc(100% + 8px); right:0; width:min(100%, 340px); z-index:var(--z-popover); display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:16px; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm); box-shadow:var(--shadow-lift);">
+                        <div class="tr-select" style="grid-column:1/-1;"><select aria-label="Department"><option>All departments</option></select><svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+                        <div class="tr-select"><select aria-label="Category"><option>All categories</option></select><svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+                        <div class="tr-select"><select aria-label="Sort"><option>Newest first</option></select><svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+                        <button type="button" style="grid-column:span 1; min-height:48px; border:0; border-radius:var(--radius-sm); background:var(--gold-500); color:var(--navy-900); font-family:var(--font-sans); font-weight:700; font-size:16px;">Apply</button>
+                        <button type="button" style="grid-column:span 1; min-height:48px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); color:var(--text); font-family:var(--font-sans); font-weight:600;">Clear filters</button>
+                    </div>
                 </div>
             </div>
             <div>
@@ -347,6 +375,22 @@
                     <span class="dept-badge" data-dept="BPLO">BPLO</span>
                     <span class="dept-badge" data-dept="OM">OM</span>
                     <span class="dept-badge" data-dept="UNKNOWN-XX">UNKNOWN</span>
+                </div>
+
+                <h3 class="ds-h3">Account identity (navbar, §5.31)</h3>
+                <p class="ds-note">Staff/admin context shown in the fixed top bar (desktop + mobile). On navy chrome; uses dept tokens for staff and navy/gold tokens for admin. No new colours.</p>
+                <div style="display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; padding:12px 16px; background:var(--navy-800); border:1px solid color-mix(in srgb, var(--gold-500) 30%, transparent); border-radius:var(--radius-sm);">
+                    <span class="nav-identity nav-identity--on-dark" aria-label="Administrator">
+                        <span class="nav-identity__badge nav-identity__badge--admin">Administrator</span>
+                    </span>
+                    <span class="nav-identity nav-identity--on-dark" aria-label="Engineering Office · Staff">
+                        <span class="dept-badge" data-dept="ENG">ENG</span>
+                        <span class="nav-identity__label">Engineering Office</span>
+                    </span>
+                    <span class="nav-identity nav-identity--on-dark" aria-label="Department pending · Staff">
+                        <span class="nav-identity__badge nav-identity__badge--staff">Staff</span>
+                        <span class="nav-identity__label">Department pending</span>
+                    </span>
                 </div>
             </div>
             <div>
@@ -411,6 +455,28 @@
         </div>
     </section>
 
+    {{-- ═══ ERROR PAGES ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-errors">
+        <h2 class="ds-h2" id="ds-errors">Error pages — standalone shell</h2>
+        <p class="ds-note">One centered card, one <code>&lt;h1&gt;</code>, one gold primary action. Codes: 401 · 403 · 404 · 419 · 429 · 500 · 503 plus generic 4xx/5xx. The shell deliberately renders no app navbar or shared footer — both query the database, and this is the page that must still work when the database or the app is the thing that failed.</p>
+
+        <div class="ds-frame" style="padding: 32px 16px;">
+            <div class="tr-card error-card" style="margin: 0 auto;">
+                <span class="error-icon" aria-hidden="true">
+                    @include('errors.partials.icon', ['icon' => 'search'])
+                </span>
+                <p class="error-kicker">Error 404</p>
+                <p class="error-title">Page not found</p>
+                <p class="error-message">The page you are looking for does not exist, or it may have been moved or removed.</p>
+                <div class="error-actions">
+                    <a href="{{ url('/') }}" class="error-primary">Back to home</a>
+                    <a href="{{ url('/') }}" class="tr-button">Go back</a>
+                </div>
+            </div>
+        </div>
+        <p class="ds-note" style="margin-top: 12px;">The secondary action is “Go back” (browser history) on 401/403/404/419 and “Try again” (reload) on 429/500/503. The error code, copy and locale come from <code>lang/{en,fil}/errors.php</code>.</p>
+    </section>
+
     {{-- ═══ Z-INDEX CONTRACT ═══ --}}
     <section class="ds-section" aria-labelledby="ds-z">
         <h2 class="ds-h2" id="ds-z">The z-index contract</h2>
@@ -419,13 +485,29 @@
             <thead><tr><th>Layer</th><th>z-index</th><th>Rule</th></tr></thead>
             <tbody>
                 <tr><td>any <code>.tr-map</code> wrapper</td><td><code>isolation: isolate; z-index: 0</code></td><td>Locks all Leaflet panes inside the map</td></tr>
+                <tr><td><code>.mc-filters-panel</code> popover (≤640px)</td><td><code>500</code></td><td>Anchored under the Filters button (§5.28) — above content, below chrome</td></tr>
+                <tr><td><code>.lp-sticky-cta</code></td><td><code>800</code></td><td>Landing sticky CTA, yields to the navbar</td></tr>
                 <tr><td><code>#navbar</code></td><td><code>900</code></td><td>Below drawer, above page and maps</td></tr>
-                <tr><td><code>.mobile-nav-overlay</code></td><td><code>1000</code></td><td>Backdrop for the drawer</td></tr>
+                <tr><td><code>#mobile-nav-drawer</code> backdrop</td><td><code>1000</code></td><td>Backdrop for the drawer</td></tr>
                 <tr><td><code>#mobile-nav-drawer</code></td><td><code>1010</code></td><td>The drawer itself</td></tr>
                 <tr><td>toast / modal</td><td><code>1100</code></td><td>Above everything, including drawers</td></tr>
                 <tr><td>map overlays (status/hint)</td><td><code>inside the map</code></td><td>Never escape the isolated context</td></tr>
             </tbody>
         </table>
+    </section>
+
+    <section class="ds-section" aria-labelledby="ds-needspanel">
+        <h2 class="ds-h2" id="ds-needspanel">Needs-information panel (resident) — §5.29</h2>
+        <p class="ds-note">Static swatch: the one screen a ticket waiting on the resident renders. Amber progress-tint card; white question/answer body; gold submit. Shell C, right after the back link.</p>
+        <div style="max-width: 640px; padding: 20px; background: var(--status-progress-bg); border: 1.5px solid rgba(180,83,9,0.4); border-radius: var(--radius-sm); box-shadow: var(--shadow-card);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="flex:0 0 auto; width:44px; height:44px; border-radius:var(--radius-sm); background:var(--navy-900); color:var(--surface); display:inline-flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+                <span style="min-width:0;"><span style="display:block; font-size:10px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:var(--status-progress-text);">WAITING ON YOU</span><strong style="display:block; font-size:20px; font-weight:700; color:var(--navy-900); margin-top:2px;">The department needs more information</strong></span>
+            </div>
+            <p style="margin:6px 0 14px; font-size:13.5px; line-height:1.55; color:var(--navy-900);">The office reviewing this complaint needs more from you before it can proceed. Answer the question below — photos help confirm the spot.</p>
+            <blockquote style="margin:0 0 16px; padding:16px 18px; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm);"><p style="margin:0 0 6px; font-size:10px; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--status-progress-text);">Asked by GSO · Nov 9, 2026 10:15 AM</p><p style="margin:0; font-size:14px; line-height:1.65; color:var(--navy-900);">The streetlight photo is too dark to read the pole number. Please send a closer shot of the pole.</p></blockquote>
+            <p style="margin:0; font-size:12px; color:var(--status-progress-text); font-weight:700;">→ Your reply textarea + optional photos + gold “Send to the department”</p>
+        </div>
     </section>
 
     {{-- ═══ Wireframes ═══ --}}
@@ -434,7 +516,7 @@
         <p class="ds-note">Three standard shells — see docs/design-system.md §4 for exact paddings and the banner grammar.</p>
         <div class="ds-wireframe">Shell A — banner + stat strip + content (list pages)
 ┌ banner ─────────────────────────────────────────────┐
-│ h1  ▬ (40×3 gold bar)                               │
+│ h1                                                  │
 │ privacy sentence · How this data is shown ▾          │
 │ Updated Nov 8, 2026                                  │
 └──────────────────────────────┬───────────────────────┘

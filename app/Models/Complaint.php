@@ -17,66 +17,72 @@ class Complaint extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        "ticket_id",
-        "user_id",
-        "department_id",
-        "category",
-        "title",
-        "description",
-        "image_path",
-        "image_paths",
-        "latitude",
-        "longitude",
-        "address_text",
-        "barangay",
-        "urgency",
-        "status",
-        "is_public",
-        "hidden_from_public",
-        "redacted_title",
-        "redacted_description",
-        "withheld_image_paths",
-        "moderation_reason",
-        "moderated_by",
-        "moderated_at",
-        "assigned_staff_id",
-        "verifying_staff_id",
-        "verification_method",
-        "content_fingerprint",
-        "spam_status",
-        "spam_score",
-        "spam_reasons",
-        "similarity_score",
-        "duplicate_of_id",
-        "suggested_priority",
-        "confirmed_priority",
-        "review_status",
-        "suggestion_reasons",
-        "reviewed_by",
-        "reviewed_at",
-        "review_notes",
+        'ticket_id',
+        'user_id',
+        'department_id',
+        'category',
+        'title',
+        'description',
+        'image_path',
+        'image_paths',
+        'latitude',
+        'longitude',
+        'address_text',
+        'barangay',
+        'intake_mode',
+        'urgency',
+        'status',
+        'resolved_at',
+        'closed_at',
+        'closed_by',
+        'is_public',
+        'hidden_from_public',
+        'redacted_title',
+        'redacted_description',
+        'withheld_image_paths',
+        'moderation_reason',
+        'moderated_by',
+        'moderated_at',
+        'assigned_staff_id',
+        'verifying_staff_id',
+        'verification_method',
+        'content_fingerprint',
+        'spam_status',
+        'spam_score',
+        'spam_reasons',
+        'similarity_score',
+        'duplicate_of_id',
+        'suggested_priority',
+        'confirmed_priority',
+        'review_status',
+        'suggestion_reasons',
+        'reviewed_by',
+        'reviewed_at',
+        'review_notes',
     ];
 
     protected function casts(): array
     {
         return [
-            "is_public" => "boolean",
-            "hidden_from_public" => "boolean",
-            "withheld_image_paths" => "array",
-            "moderated_at" => "datetime",
-            "image_paths" => "array",
-            "spam_status" => "string",
-            "spam_score" => "integer",
-            "spam_reasons" => "array",
-            "similarity_score" => "float",
-            "suggestion_reasons" => "array",
-            "reviewed_at" => "datetime",
-            "suggested_priority" => "string",
-            "confirmed_priority" => "string",
-            "review_status" => "string",
-            "verification_method" => VerificationMethod::class,
-            "latitude" => "decimal:8",
-            "longitude" => "decimal:8",
+            'is_public' => 'boolean',
+            'hidden_from_public' => 'boolean',
+            'withheld_image_paths' => 'array',
+            'moderated_at' => 'datetime',
+            'resolved_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'image_paths' => 'array',
+            'spam_status' => 'string',
+            'spam_score' => 'integer',
+            'spam_reasons' => 'array',
+            'similarity_score' => 'float',
+            'suggestion_reasons' => 'array',
+            'reviewed_at' => 'datetime',
+            'suggested_priority' => 'string',
+            'confirmed_priority' => 'string',
+            'review_status' => 'string',
+            'verification_method' => VerificationMethod::class,
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
         ];
     }
 
@@ -106,7 +112,9 @@ class Complaint extends Model
      * preserved via the filled() guard.
      */
     public const TICKET_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
     public const TICKET_RANDOM_LENGTH = 5;
+
     public const TICKET_MAX_ATTEMPTS = 10;
 
     protected static function booted(): void
@@ -311,6 +319,51 @@ class Complaint extends Model
     }
 
     /**
+     * Resolve intake mode/policy for a category (extensible, config-driven).
+     *
+     * @return array{mode:string, photos_required:bool, photos_allowed:bool, location_required:bool, barangay_required:bool, address_text_required:bool, show_photos_step:bool, show_location_steps:bool}
+     */
+    public static function intakePolicyFor(?string $category): array
+    {
+        $config = config('complaint_intake_policy', []);
+        $modes = $config['modes'] ?? [];
+        $defaultMode = $config['default'] ?? 'physical_required';
+        $mode = ($config['categories'] ?? [])[$category] ?? $defaultMode;
+        $policy = $modes[$mode] ?? $modes[$defaultMode] ?? [
+            'photos_required' => true,
+            'photos_allowed' => true,
+            'location_required' => true,
+            'barangay_required' => true,
+            'address_text_required' => false,
+            'show_photos_step' => true,
+            'show_location_steps' => true,
+        ];
+
+        return ['mode' => $mode] + $policy;
+    }
+
+    public function intakePolicy(): array
+    {
+        $policy = self::intakePolicyFor($this->category);
+        if (is_string($this->intake_mode) && $this->intake_mode !== '') {
+            $config = config('complaint_intake_policy', []);
+            $modes = $config['modes'] ?? [];
+            if (isset($modes[$this->intake_mode])) {
+                $policy = ['mode' => $this->intake_mode] + $modes[$this->intake_mode];
+            }
+        }
+
+        return $policy;
+    }
+
+    public function intakeLocationApplicable(): bool
+    {
+        $policy = $this->intakePolicy();
+
+        return (bool) ($policy['location_required'] || $policy['barangay_required'] || $policy['address_text_required'] || $policy['show_location_steps']);
+    }
+
+    /**
      * Whether this complaint may appear on the public transparency page.
      *
      * Three independent conditions, owned by three different decisions:
@@ -423,7 +476,7 @@ class Complaint extends Model
 
     public function scopePending($query)
     {
-        return $query->whereIn("status", [
+        return $query->whereIn('status', [
             ComplaintStatus::Submitted->value,
             ComplaintStatus::UnderReview->value,
             ComplaintStatus::InProgress->value,
@@ -432,7 +485,7 @@ class Complaint extends Model
 
     public function scopeResolved($query)
     {
-        return $query->where("status", ComplaintStatus::Resolved->value);
+        return $query->where('status', ComplaintStatus::Resolved->value);
     }
 
     /**
@@ -465,7 +518,7 @@ class Complaint extends Model
 
     public function scopeForDepartment($query, int $departmentId)
     {
-        return $query->where("department_id", $departmentId);
+        return $query->where('department_id', $departmentId);
     }
 
     // ─────────────────────────────────────────────
@@ -486,13 +539,13 @@ class Complaint extends Model
     ): void {
         $previous = $this->status;
 
-        $this->update(["status" => $newStatus]);
+        $this->update(['status' => $newStatus]);
 
         $this->logs()->create([
-            "actor_id" => $actorId ?? auth()->id(),
-            "previous_status" => $previous,
-            "new_status" => $newStatus,
-            "comment" => $comment,
+            'actor_id' => $actorId ?? auth()->id(),
+            'previous_status' => $previous,
+            'new_status' => $newStatus,
+            'comment' => $comment,
         ]);
     }
 }

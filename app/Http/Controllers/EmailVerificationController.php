@@ -123,7 +123,7 @@ class EmailVerificationController extends Controller
         }
 
         return redirect()
-            ->intended($this->destinationRoute($user, $purpose))
+            ->to($this->safeDestination($request, $user, $purpose))
             ->with('status', __('auth.email_verified'));
     }
 
@@ -227,17 +227,50 @@ class EmailVerificationController extends Controller
             : EmailVerificationService::PURPOSE_REGISTRATION;
     }
 
+    /**
+     * Resolve where to send the user after verification.
+     *
+     * `url.intended` may already hold a notification poll URL
+     * (/notifications/unread-count) stored by EnsureEmailIsVerified before
+     * the guard was tightened. Blindly using `intended()` would dump the
+     * user on that JSON endpoint, so polling/API paths — and anything
+     * external — fall back to the role dashboard.
+     */
+    private function safeDestination(Request $request, User $user, string $purpose): string
+    {
+        $fallback = route($this->destinationRoute($user, $purpose));
+        $intended = $request->session()->pull('url.intended');
+
+        if (! is_string($intended) || $intended === '') {
+            return $fallback;
+        }
+
+        $path = (string) (parse_url($intended, PHP_URL_PATH) ?? '');
+
+        if (in_array($path, ['/notifications/unread-count', '/notifications/feed'], true)) {
+            return $fallback;
+        }
+
+        // Only accept internal URLs (absolute on this host, or a local path).
+        $host = parse_url($intended, PHP_URL_HOST);
+        if ($host !== null && $host !== $request->getHost()) {
+            return $fallback;
+        }
+
+        if ($host === null && ! str_starts_with($path, '/')) {
+            return $fallback;
+        }
+
+        return $intended;
+    }
+
     private function destinationRoute(User $user, string $purpose): string
     {
         if ($purpose === EmailVerificationService::PURPOSE_EMAIL_CHANGE) {
             return 'profile';
         }
 
-        return match ($user->role) {
-            'admin' => 'admin.dashboard',
-            'staff' => 'staff.dashboard',
-            default => 'dashboard',
-        };
+        return $user->homeRouteName();
     }
 
     private function verifyRateLimitKey(User $user, string $purpose): string

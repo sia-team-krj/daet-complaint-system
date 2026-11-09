@@ -10,7 +10,7 @@
 <div class="notification-feed__header">
     <span class="notification-feed__title">Notifications</span>
     @if($unreadCount > 0)
-        <form method="POST" action="{{ route('notifications.read-all') }}">
+        <form data-loading-submit method="POST" action="{{ route('notifications.read-all') }}">
             @csrf
             <button type="submit" class="notification-feed__mark-all">Mark all as read</button>
         </form>

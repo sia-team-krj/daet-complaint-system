@@ -131,7 +131,7 @@
       </div>
     @endif
 
-    <form method="GET" action="{{ route('complaints.track') }}" class="track-form">
+    <form data-loading-submit method="GET" action="{{ route('complaints.track') }}" class="track-form">
       <input type="text" name="ticket_id" placeholder="e.g. COMP-2026-A7K9P" value="{{ request('ticket_id') }}" />
       <button type="submit">Track</button>
     </form>

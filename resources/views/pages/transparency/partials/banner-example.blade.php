@@ -2,7 +2,6 @@
      classes so a token change takes this down too. --}}
 <div class="tr-banner" style="border-radius: var(--radius-lg); overflow: hidden; padding: 32px 24px 40px; margin-bottom: 16px;">
     <h1 class="tr-h1">Public transparency</h1>
-    <span class="tr-goldbar" aria-hidden="true"></span>
     <p class="tr-privacy">Only complaints residents chose to share are listed. Exact addresses and private reports are never shown.</p>
     <details class="tr-how">
         <summary>

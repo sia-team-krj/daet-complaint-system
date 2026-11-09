@@ -38,6 +38,7 @@
     --faint: #64748b;
 
     /* ── Shape + depth ─────────────────────────────────────────────── */
+    --radius-xs: 4px;
     --radius-sm: 8px;
     --radius: 12px;
     --radius-lg: 16px;
@@ -99,6 +100,23 @@
     --cat-other-bg: #e2e8f0;
     --cat-other-fg: #475569;
 
+    /* ── Filing picker extensions (same style as above; new groups/leaves) ── */
+    --cat-spaces-bg: #ecfccb;
+    --cat-spaces-fg: #4d7c0f;
+    --cat-sanitation-bg: #ccfbf1;
+    --cat-sanitation-fg: #0f766e;
+    --cat-stray-bg: #ffedd5;
+    --cat-stray-fg: #c2410c;
+    --cat-business-bg: #cffafe;
+    --cat-business-fg: #0e7490;
+
+    /* ── Filing form errors / states ───────────────────────────────── */
+    --error-text: #b91c1c;
+    --error-bg: #fef2f2;
+    --error-line: #fecaca;
+    --surface-soft: #f8fafc;
+    --border-strong: #94a3b8;
+
     /* ── Spacing scale: 4 · 8 · 12 · 16 · 24 · 32 · 48 ─────────────── */
     /* (Informational; the portal writes raw multiples of these.) */
 
@@ -109,13 +127,53 @@
     /* Leaflet internal panes reach z-index 1000 inside a map. The portal
        traps that inside .tr-map's stacking context (isolation: isolate),
        keeps the navbar at 900, the mobile drawer backdrop at 1000 and the
-       drawer itself at 1010, fixed overlays (toast/modal) at 1100, and the
+       drawer itself at 1010, fixed overlays (toast/modal) at 1100, the
        landing page's sticky mobile CTA at 800 (it must yield to the navbar
-       and never touch the drawer). */
+       and never touch the drawer), and anchored filter popovers at 500 —
+       above page content and in-list overlays, below every chrome layer. */
     --z-map: 0;
+    --z-popover: 500;
     --z-sticky-cta: 800;
     --z-navbar: 900;
     --z-drawer-backdrop: 1000;
     --z-drawer: 1010;
     --z-overlay: 1100;
+    /* ── Department workspace (brighter blue identity; header stays navy) ── */
+    --dept-page-bg: #f4f7fc;
+    --dept-card-border: #e2e8f3;
+    --dept-card-shadow: 0 1px 2px rgba(15, 35, 71, 0.04), 0 8px 24px rgba(15, 35, 71, 0.06);
+    --dept-hero-start: #1e3a8a;
+    --dept-hero-mid: #2563eb;
+    --dept-hero-end: #3b82f6;
+    --dept-hero-overlay: rgba(255, 255, 255, 0.12);
+    --dept-identity-border: rgba(255, 255, 255, 0.28);
+    --dept-gold-chip: #e4b94a;
+    --dept-primary: #1d4ed8;
+    --dept-primary-hover: #1e40af;
+    --dept-active-bg: #eaf1ff;
+    --dept-active-border: #cfe0ff;
+    --dept-hover: #f1f5fb;
+    --dept-ink: #0f2347;
+    --dept-muted: #5b6b82;
+    --dept-surface: #ffffff;
+    --dept-priority-critical-bg: #fee2e2;
+    --dept-priority-critical-text: #b91c1c;
+    --dept-priority-critical-strip: #ef4444;
+    --dept-priority-elevated-bg: #fef3c7;
+    --dept-priority-elevated-text: #92400e;
+    --dept-priority-elevated-strip: #f59e0b;
+    --dept-priority-routine-bg: #e8eef7;
+    --dept-priority-routine-text: #475569;
+    --dept-priority-routine-strip: #94a3b8;
+    --dept-status-submitted-bg: #e0ecff;
+    --dept-status-submitted-text: #1d4ed8;
+    --dept-status-submitted-dot: #2563eb;
+    --dept-icon-amber-bg: #fef3c7;
+    --dept-icon-amber-fg: #b45309;
+    --dept-icon-blue-bg: #dbeafe;
+    --dept-icon-blue-fg: #1d4ed8;
+    --dept-icon-green-bg: #dcfce7;
+    --dept-icon-green-fg: #15803d;
+    --dept-icon-sky-bg: #e0f2fe;
+    --dept-icon-sky-fg: #0369a1;
 }

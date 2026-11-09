@@ -55,7 +55,7 @@
             @endif
         </div>
 
-        <form method="GET" action="{{ route('admin.users.index') }}" class="admin-filter-panel">
+        <form data-loading-submit method="GET" action="{{ route('admin.users.index') }}" class="admin-filter-panel">
             <div class="admin-filter-grid admin-user-filter-grid">
                 <label class="admin-field admin-field--search">
                     <span>Search accounts</span>
@@ -169,7 +169,7 @@
                                 <td data-label="Manage">
                                     <div class="admin-user-actions">
                                         <a href="{{ route('admin.users.show', $directoryUser) }}" class="admin-button admin-button--compact admin-button--secondary">Manage</a>
-                                        <form method="POST" action="{{ route('admin.users.toggle', $directoryUser) }}" onsubmit="return confirm('{{ $directoryUser->is_active ? 'Deactivate' : 'Activate' }} this account?')">
+                                        <form data-loading-submit method="POST" action="{{ route('admin.users.toggle', $directoryUser) }}" onsubmit="return confirm('{{ $directoryUser->is_active ? 'Deactivate' : 'Activate' }} this account?')">
                                             @csrf
                                             <button type="submit" class="admin-button admin-button--compact {{ $directoryUser->is_active ? 'admin-button--danger-ghost' : 'admin-button--secondary' }}">
                                                 {{ $directoryUser->is_active ? 'Pause' : 'Enable' }}

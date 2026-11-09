@@ -3,7 +3,6 @@
     .tr-banner--compact { padding: 20px 0 40px; }
     .tr-banner--compact .tr-h1 { font-size: 24px; font-weight: 700; margin: 4px 0 8px; }
     @media (min-width: 768px) { .tr-banner--compact { padding: 20px 0 40px; } .tr-banner--compact .tr-h1 { font-size: 30px; } }
-    .tr-goldbar { display: block; width: 40px; height: 3px; border-radius: 2px; background: var(--gold-500); margin: 0; }
 
     .tr-back {
         display: inline-flex; align-items: center; min-height: 44px;

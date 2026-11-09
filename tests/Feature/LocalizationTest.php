@@ -55,10 +55,10 @@ class LocalizationTest extends TestCase
         ]);
 
         $this->actingAs($user->fresh())
-            ->get(route('dashboard'))
+            ->get(route('complaints.index'))
             ->assertOk()
-            ->assertSee('Maghain ng complaint')
-            ->assertSee('Ang iyong mga ulat')
+            ->assertSee('Aking mga Reklamo')
+            ->assertSee('Sundan ang bawat ulat')
             ->assertSee('lang="fil"', false);
     }
 
@@ -70,9 +70,9 @@ class LocalizationTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->get(route('dashboard'))
+            ->get(route('complaints.index'))
             ->assertOk()
-            ->assertSee('Maghain ng complaint')
+            ->assertSee('Aking mga Reklamo')
             ->assertSee('lang="fil"', false);
     }
 

@@ -314,7 +314,7 @@
           </div>
         @endif
 
-        <form method="POST" action="{{ route('register') }}">
+        <form data-loading-submit method="POST" action="{{ route('register') }}">
           @csrf
 
           <div class="field-row-2 fu d3">

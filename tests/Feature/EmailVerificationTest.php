@@ -135,7 +135,7 @@ class EmailVerificationTest extends TestCase
         $this->post(route('email.verify.submit'), [
             'purpose' => 'registration',
             'code' => $secondCode,
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('complaints.index'));
 
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
     }
@@ -252,9 +252,8 @@ class EmailVerificationTest extends TestCase
         // The attempt is counted, not the delivery. A broken mail transport must
         // not be retryable without a pause, or this page becomes a way to hammer
         // a provider that is already failing.
-        $this->app->instance(EmailVerificationService::class, new class(
-            $this->app->make(BrevoOtpSender::class),
-        ) extends EmailVerificationService {
+        $this->app->instance(EmailVerificationService::class, new class($this->app->make(BrevoOtpSender::class)) extends EmailVerificationService
+        {
             public function issue(User $user, string $email, string $purpose): EmailVerificationCode
             {
                 throw new RuntimeException('transport down');
@@ -273,6 +272,26 @@ class EmailVerificationTest extends TestCase
             RateLimiter::availableIn("email-otp:resend:{$user->id}:registration"),
             'A send that failed must still have consumed the resend cooldown.',
         );
+    }
+
+    public function test_notification_poll_does_not_poison_post_verification_redirect(): void
+    {
+        $user = $this->registerUnverifiedUser('poll.tester');
+        $code = $this->captureOtp($user->id, 'registration');
+
+        // The navbar bell polls this endpoint via fetch while unverified.
+        // Before the fix, this stored the JSON endpoint as url.intended,
+        // so verifying dumped the user on a pretty-printed badge payload.
+        $this->get(route('notifications.unread-count'), ['Accept' => 'application/json'])
+            ->assertRedirect(route('email.verify'));
+        $this->assertNotSame(route('notifications.unread-count'), session('url.intended'));
+
+        // Even a session already poisoned by the old behaviour must recover.
+        $this->withSession(['url.intended' => route('notifications.unread-count')]);
+        $this->post(route('email.verify.submit'), [
+            'purpose' => 'registration',
+            'code' => $code,
+        ])->assertRedirect(route('complaints.index'));
     }
 
     private function registerUnverifiedUser(string $localPart): User

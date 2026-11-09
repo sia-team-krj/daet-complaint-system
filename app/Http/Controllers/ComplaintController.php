@@ -8,13 +8,15 @@ use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Models\Department;
 use App\Models\User;
+use App\Rules\WithinDaet;
 use App\Services\ActivityLogger;
+use App\Services\BarangayLocator;
 use App\Services\ComplaintDetectionService;
 use App\Services\ComplaintPriorityService;
 use App\Services\ComplaintVerificationService;
+use App\Services\DaetBoundary;
 use App\Services\DepartmentRouter;
 use App\Services\NotificationService;
-use App\Services\BarangayLocator;
 use App\Services\PendingLocationUpload;
 use App\Services\PhotoLocationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -94,24 +96,22 @@ class ComplaintController extends Controller
                 + (int) ($byStatus[ComplaintStatus::InProgress->value] ?? 0),
         ];
 
-        // Average days to resolution, from the log that closed the report.
-        // Complaints already resolved but without a log fall back to the
-        // last-touched timestamp — a floor, not a fiction.
-        $resolvedDays = (clone $base)
-            ->whereIn('status', [ComplaintStatus::Resolved->value, ComplaintStatus::Closed->value])
-            ->get()
-            ->map(function (Complaint $complaint): int {
-                $closed = $complaint->logs
-                    ->where('new_status', ComplaintStatus::Resolved->value)
-                    ->sortBy('created_at')
-                    ->first();
+        // Attention strip: reports with a question currently waiting on the
+        // resident (an information request in `open` state), on open reports.
+        // Keyed off the ask itself, not the review axis, so the banner always
+        // lands on a reply form — never on an empty page.
+        $attentionBase = fn () => Complaint::where('user_id', $userId)
+            ->whereHas('informationRequests', fn ($q) => $q->open())
+            ->whereIn('status', [
+                ComplaintStatus::Submitted->value,
+                ComplaintStatus::UnderReview->value,
+                ComplaintStatus::InProgress->value,
+            ]);
 
-                $end = $closed?->created_at ?? $complaint->updated_at;
-
-                return (int) $complaint->created_at->diffInDays($end);
-            });
-
-        $avgDays = $resolvedDays->isNotEmpty() ? round($resolvedDays->average()) : null;
+        $attentionCount = $attentionBase()->count();
+        $attentionComplaint = $attentionCount > 0
+            ? $attentionBase()->orderByDesc('updated_at')->first()
+            : null;
 
         $query = clone $base;
 
@@ -190,9 +190,10 @@ class ComplaintController extends Controller
             'complaints',
             'statuses',
             'counts',
-            'avgDays',
             'departmentOptions',
             'categoryOptions',
+            'attentionCount',
+            'attentionComplaint',
         ));
     }
 
@@ -259,6 +260,54 @@ class ComplaintController extends Controller
             ->with('status', $isPublic
                 ? 'Your complaint is now published on the public transparency page.'
                 : 'Your complaint is now private and has been removed from the transparency page.');
+    }
+
+    /**
+     * The resident confirms the resolution and closes their own report.
+     *
+     * Only meaningful once the department has marked it Resolved. If they do not
+     * act, the scheduled auto-close closes it 7 days after it became Resolved.
+     */
+    public function close(
+        Request $request,
+        Complaint $complaint,
+        ActivityLogger $activityLogger,
+    ): RedirectResponse {
+        $this->authorize('close', $complaint);
+
+        $oldStatus = $complaint->statusEnum;
+        $newStatus = ComplaintStatus::Closed;
+        $user = $request->user();
+
+        DB::transaction(function () use ($complaint, $oldStatus, $newStatus, $user, $activityLogger): void {
+            $complaint->update([
+                'status' => $newStatus->value,
+                'closed_at' => now(),
+                'closed_by' => 'resident',
+            ]);
+
+            ComplaintLog::create([
+                'complaint_id' => $complaint->id,
+                'actor_id' => $user->id,
+                'previous_status' => $oldStatus->value,
+                'new_status' => $newStatus->value,
+                'comment' => __('complaint_show.close.log_comment'),
+            ]);
+
+            $activityLogger->log(
+                'complaint.closed_by_resident',
+                "Resident closed complaint {$complaint->ticket_id} after resolution.",
+                $complaint,
+                metadata: [
+                    'previous_status' => $oldStatus->value,
+                    'new_status' => $newStatus->value,
+                ],
+            );
+        });
+
+        return redirect()
+            ->route('complaints.show', $complaint)
+            ->with('status', __('complaint_show.close.success'));
     }
 
     /**
@@ -484,7 +533,7 @@ class ComplaintController extends Controller
     /**
      * Show the complaint creation form.
      */
-    public function create(PendingLocationUpload $pendingUpload)
+    public function create(PendingLocationUpload $pendingUpload, DaetBoundary $boundary)
     {
         $categoryOptions = DepartmentRouter::getCategoryOptions();
 
@@ -494,9 +543,106 @@ class ComplaintController extends Controller
         // refresh, a back button or a second tab does not lose the decision.
         $pending = $pendingUpload->pending();
 
+        // Two-level picker data: groups (resident language) → leaf categories.
+        // $categoryOptions shape is preserved for the select and #category-department-data.
+        $flatOptions = collect($categoryOptions)->flatten(1)->keyBy('value');
+        $departmentByCategory = collect($categoryOptions)
+            ->mapWithKeys(fn ($options, $department) => collect($options)->mapWithKeys(fn ($option) => [$option['value'] => $department]))
+            ->all();
+
+        $leafStyles = [
+            'road_damage' => ['icon' => 'construction', 'color' => 'roads'],
+            'flooding' => ['icon' => 'waves', 'color' => 'flood'],
+            'streetlight' => ['icon' => 'lightbulb', 'color' => 'streetlight'],
+            'garbage' => ['icon' => 'trash-2', 'color' => 'waste'],
+            'sanitation' => ['icon' => 'spray-can', 'color' => 'sanitation'],
+            'park_maintenance' => ['icon' => 'trees', 'color' => 'spaces'],
+            'noise_complaint' => ['icon' => 'volume-2', 'color' => 'neighborhood'],
+            'stray_animals' => ['icon' => 'paw-print', 'color' => 'stray'],
+            'business_permit' => ['icon' => 'file-badge', 'color' => 'business'],
+            'others' => ['icon' => 'circle-help', 'color' => 'other'],
+        ];
+        $defaultLeafStyle = ['icon' => 'circle-help', 'color' => 'other'];
+
+        $buildLeaf = function (string $value) use ($flatOptions, $departmentByCategory, $leafStyles, $defaultLeafStyle) {
+            $option = $flatOptions->get($value);
+            if ($option === null) {
+                return null;
+            }
+
+            $translatedLabel = __("complaint_create.leaves.{$value}.label");
+            $label = $translatedLabel === "complaint_create.leaves.{$value}.label"
+                ? $option['label']
+                : $translatedLabel;
+            $translatedHelper = __("complaint_create.leaves.{$value}.helper");
+            $helper = $translatedHelper === "complaint_create.leaves.{$value}.helper"
+                ? ''
+                : $translatedHelper;
+            $style = $leafStyles[$value] ?? $defaultLeafStyle;
+
+            return [
+                'value' => $value,
+                'label' => $label,
+                'helper' => $helper,
+                'icon' => $style['icon'],
+                'color' => $style['color'],
+                'department' => $departmentByCategory[$value] ?? 'General Services',
+            ];
+        };
+
+        $categoryGroups = [];
+        $covered = [];
+        foreach (config('complaint_category_groups', []) as $groupConfig) {
+            $children = [];
+            foreach ($groupConfig['categories'] ?? [] as $value) {
+                $leaf = $buildLeaf((string) $value);
+                if ($leaf !== null) {
+                    $children[] = $leaf;
+                    $covered[] = (string) $value;
+                }
+            }
+
+            $categoryGroups[] = [
+                'key' => $groupConfig['key'],
+                'label' => __("complaint_create.groups.{$groupConfig['key']}.label"),
+                'helper' => __("complaint_create.groups.{$groupConfig['key']}.helper"),
+                'icon' => $groupConfig['icon'],
+                'color' => $groupConfig['color'],
+                'children' => $children,
+            ];
+        }
+
+        foreach ($categoryGroups as $idx => $group) {
+            if ($group['key'] !== 'other') {
+                continue;
+            }
+
+            foreach (array_keys($flatOptions->all()) as $value) {
+                if (in_array((string) $value, $covered, true)) {
+                    continue;
+                }
+
+                $leaf = $buildLeaf((string) $value);
+                if ($leaf !== null) {
+                    $categoryGroups[$idx]['children'][] = $leaf;
+                }
+            }
+
+            break;
+        }
+
+        $intakePoliciesByCategory = [];
+        foreach (self::VALID_CATEGORIES as $categoryKey) {
+            $intakePoliciesByCategory[$categoryKey] = \App\Models\Complaint::intakePolicyFor($categoryKey);
+        }
+
         return view('complaints.create', [
             'categoryOptions' => $categoryOptions,
+            'categoryGroups' => $categoryGroups,
             'locationConflict' => $pending['context'] ?? null,
+            'daetBoundary' => $boundary->geojson(),
+            'daetBoundaryTolerance' => $boundary->toleranceMetres(),
+            'intakePoliciesByCategory' => $intakePoliciesByCategory,
         ]);
     }
 
@@ -518,21 +664,41 @@ class ComplaintController extends Controller
         PendingLocationUpload $pendingUpload,
         BarangayLocator $barangays,
     ) {
+        $categoryInput = (string) $request->input('category', '');
+        $intakePolicy = Complaint::intakePolicyFor($categoryInput !== '' ? $categoryInput : null);
+        $intakeMode = $intakePolicy['mode'];
+        $photosRequired = (bool) ($intakePolicy['photos_required'] ?? true);
+        $photosAllowed = (bool) ($intakePolicy['photos_allowed'] ?? true);
+        $barangayRequired = (bool) ($intakePolicy['barangay_required'] ?? true);
+        $addressTextRequired = (bool) ($intakePolicy['address_text_required'] ?? false);
+        $locationStepsEnabled = (bool) ($intakePolicy['show_location_steps'] ?? true);
+        // Backward compatibility: physical_required keeps nullable barangay with
+        // profile fallback (old/bookmarked forms). proof_optional (1a) requires it.
+        $barangayServerRequired = $intakeMode === 'proof_optional';
+
         $validated = $request->validate([
             'category' => ['required', 'string', 'in:'.implode(',', self::VALID_CATEGORIES)],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'min:20'],
             // `images` is the current field. `image` remains accepted for old
             // clients and existing bookmarked forms during the transition.
-            'images' => ['nullable', 'array', 'min:1', 'max:5'],
+            'images' => ['nullable', 'array', 'max:5'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'camera_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'terms' => ['accepted'],
             // Jurisdiction, not just a coordinate range. `between:-90,90` accepted
-            // a pin anywhere on the planet; a complaint outside Daet has no
-            // department to route to and no business being on this system.
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            // a pin anywhere on the planet; a complaint outside Daet cannot be
+            // labelled with a barangay from the app's own table, and it has no
+            // place on the city's service map. The boundary is simplified, so a
+            // deliberate tolerance at the edge keeps genuine border-adjacent
+            // reports from being rejected over map data.
+            'latitude' => [
+                'nullable',
+                'numeric',
+                'between:-90,90',
+                new WithinDaet($request->input('longitude')),
+            ],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             // The resident's own decision on whether this may appear on the
             // public transparency page. `private` is the default, both in the
@@ -540,7 +706,7 @@ class ComplaintController extends Controller
             // field — a bookmarked page, an old client — files privately
             // rather than publishing by accident.
             'visibility' => ['nullable', Rule::in([self::VISIBILITY_PRIVATE, self::VISIBILITY_PUBLIC])],
-            'address_text' => ['nullable', 'string', 'max:500'],
+            'address_text' => [$addressTextRequired ? 'required' : 'nullable', 'string', 'max:500'],
             // The resident's own answer to "which barangay is this?", which they
             // are simply asked rather than guessed for. Guessing from a single
             // reference point per barangay gets it wrong across most of a large
@@ -553,7 +719,7 @@ class ComplaintController extends Controller
             // statement rather than our inference, so the column is never
             // populated from a guess.
             'barangay' => [
-                'nullable',
+                $barangayServerRequired ? 'required' : 'nullable',
                 'string',
                 Rule::in(User::BARANGAYS),
             ],
@@ -565,7 +731,7 @@ class ComplaintController extends Controller
             ])],
         ]);
 
-        $photos = $this->evidencePhotos($request);
+        $photos = $photosAllowed ? $this->evidencePhotos($request) : [];
 
         // Evidence is required, but on the second pass of a location decision the
         // photos are already held rather than re-uploaded — asking for them again
@@ -573,7 +739,7 @@ class ComplaintController extends Controller
         // yes/no question, so the holding area counts as having them.
         $hasHeldPhotos = $pendingUpload->hasStagedFiles();
 
-        if ($photos === [] && ! $hasHeldPhotos) {
+        if ($photosRequired && $photos === [] && ! $hasHeldPhotos) {
             return back()
                 ->withInput()
                 ->withErrors(['images' => 'Add at least one clear photo of the issue.']);
@@ -619,7 +785,7 @@ class ComplaintController extends Controller
          */
         $choice = $validated['location_choice'] ?? null;
 
-        if ($choice === null
+        if ($locationStepsEnabled && $choice === null
             && $pendingUpload->isConflict(
                 $photoLocation,
                 $validated['latitude'] ?? null,
@@ -718,14 +884,18 @@ class ComplaintController extends Controller
             && $pinLongitude !== null && $pinLongitude !== '';
         $hasPhoto = $photoLocation !== null;
 
-        if ($choice === self::LOCATION_CHOICE_MAP) {
+        if (! $locationStepsEnabled) {
+            $latitude = null;
+            $longitude = null;
+            $locationSource = 'not_applicable';
+        } elseif ($choice === self::LOCATION_CHOICE_MAP) {
             $latitude = $hasPin ? (float) $pinLatitude : null;
             $longitude = $hasPin ? (float) $pinLongitude : null;
             $locationSource = $hasPin ? 'map' : 'none';
         } elseif ($choice === self::LOCATION_CHOICE_PHOTO) {
-            $latitude = $photoLocation['latitude'];
-            $longitude = $photoLocation['longitude'];
-            $locationSource = 'photo_gps';
+            $latitude = $hasPhoto ? $photoLocation['latitude'] : null;
+            $longitude = $hasPhoto ? $photoLocation['longitude'] : null;
+            $locationSource = $hasPhoto ? 'photo_gps' : 'none';
         } else {
             // No question was asked, so the existing preference stands: a photo
             // that knows where it was taken beats a pin, and a pin beats prose.
@@ -737,7 +907,7 @@ class ComplaintController extends Controller
         }
 
         try {
-            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $activityLogger, $detector, $priorityService) {
+            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $locationStepsEnabled, $intakeMode, $activityLogger, $detector, $priorityService) {
                 // The resident's stated barangay: what they chose on the form, or
                 // failing that what they gave at registration. Never a guess — a
                 // guess from a reference point is wrong across most of a large
@@ -745,8 +915,12 @@ class ComplaintController extends Controller
                 // no barangay at all.
                 $barangay = $validated['barangay'] ?? null;
 
-                if ($barangay === null || $barangay === '') {
+                // For modes where location is not applicable (hidden steps),
+                // never infer incident location from the resident's profile.
+                if (($barangay === null || $barangay === '') && $locationStepsEnabled && $intakeMode !== 'proof_optional') {
                     $barangay = Auth::user()?->barangay ?: null;
+                } elseif (! $locationStepsEnabled) {
+                    $barangay = null;
                 }
 
                 $complaint = Complaint::create([
@@ -759,8 +933,9 @@ class ComplaintController extends Controller
                     'image_paths' => $imagePaths,
                     'latitude' => $latitude,
                     'longitude' => $longitude,
-                    'address_text' => $validated['address_text'] ?? null,
+                    'address_text' => $locationStepsEnabled ? ($validated['address_text'] ?? null) : null,
                     'barangay' => $barangay,
+                    'intake_mode' => $intakeMode,
                     'status' => ComplaintStatus::Submitted->value,
                     // Private unless the resident explicitly asked otherwise.
                     'is_public' => ($validated['visibility'] ?? self::VISIBILITY_PRIVATE)
@@ -811,6 +986,7 @@ class ComplaintController extends Controller
                         'suggestion_reasons' => $suggestion['reasons'],
                         'review_status' => $complaint->review_status,
                         'location_source' => $locationSource,
+                        'intake_mode' => $intakeMode,
                         'evidence_count' => count($imagePaths),
                         'department' => $department?->name,
                     ],

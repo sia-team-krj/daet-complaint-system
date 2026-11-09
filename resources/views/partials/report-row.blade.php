@@ -12,6 +12,8 @@
 
     $status = $complaint->statusEnum;
     $statusKey = Str::slug($status->value, '_');
+    $mcCategoryLabels = collect(\App\Services\DepartmentRouter::getCategoryOptions())->flatten()->pluck('label', 'value');
+    $mcCategoryLabel = $mcCategoryLabels->get($complaint->category, ucwords(str_replace('_', ' ', (string) $complaint->category)));
     $closed = $statusKey === 'closed';
     $step = match ($statusKey) {
         'submitted' => 1,
@@ -69,6 +71,8 @@
         </span>
 
         <span class="report-row__dept">
+            <span class="report-row__category-mobile">{{ $mcCategoryLabel }}</span>
+            <span class="report-row__sep-mobile" aria-hidden="true">·</span>
             @if($complaint->department?->code)
                 <span class="dept-badge" data-dept="{{ $complaint->department->code }}">{{ $complaint->department->code }}</span>
             @endif
@@ -114,6 +118,7 @@
                     <span class="progress__seg {{ $isRejected ? '' : ($segment < $step || $closed ? 'progress__seg--complete' : ($segment === $step ? 'progress__seg--current' : '')) }}"></span>
                 @endfor
             </span>
+            <span class="report-row__date-mobile">{{ $complaint->created_at?->translatedFormat('M j') }}</span>
         </span>
 
         <svg class="report-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>

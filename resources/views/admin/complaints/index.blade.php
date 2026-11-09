@@ -12,7 +12,6 @@
             <div class="tr-admin-banner-row">
                 <div>
                     <h1 class="tr-h1">Complaints</h1>
-                    <span class="tr-goldbar" aria-hidden="true"></span>
                     <p class="tr-privacy">Filter the municipal queue, reassign ownership, and review every service request.</p>
                 </div>
                 <a href="{{ route('admin.complaints.export', request()->query()) }}" class="btn-nav-cta" style="text-transform:none; letter-spacing:0; font-size:14px; border-radius: var(--radius-sm); padding: 11px 18px; white-space: nowrap;">
@@ -75,7 +74,7 @@
 
     <section aria-labelledby="queue-filters-title" class="tr-container queue-section" style="max-width: none; padding: 0 24px;">
         <span id="queue-filters-title" class="sr-only">Complaint filters</span>
-        <form method="GET" action="{{ route('admin.complaints.index') }}" class="tr-card tr-filters" id="filter-bar" role="search" data-filter-form style="margin-top: 24px;">
+        <form data-loading-submit method="GET" action="{{ route('admin.complaints.index') }}" class="tr-card tr-filters" id="filter-bar" role="search" data-filter-form style="margin-top: 24px;">
             <div class="tr-filters__row1">
                 <label class="tr-search" for="complaint-search">
                     <svg class="tr-search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -163,7 +162,7 @@
     </section>
 
     {{-- ════════════ QUEUE LIST ════════════ --}}
-    <form method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" data-bulk-form class="tr-container" style="max-width: none; padding: 0 24px 48px;">
+    <form data-loading-submit method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" data-bulk-form class="tr-container" style="max-width: none; padding: 0 24px 48px;">
         @csrf
         <section class="queue-list" aria-labelledby="complaint-queue-title">
             <div class="tr-register-head">
@@ -300,6 +299,11 @@
     /* The admin shell already offsets the fixed navbar — cancel the page's offset. */
     .admin-workspace .transparency-page,
     .admin-content .transparency-page { padding-top: 0; }
+
+    /* Workspace banners keep 48px breathing room: the shell provides the navbar
+       offset, so the public banner's navbar-height term must not be added again. */
+    .admin-workspace .tr-banner,
+    .admin-content .tr-banner { padding-top: 48px; }
 
     /* Admin queue — light family over the dark admin workspace chrome */
     .tr-admin-banner-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }

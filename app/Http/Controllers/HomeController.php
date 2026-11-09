@@ -7,9 +7,7 @@ use App\Models\Complaint;
 use App\Models\Department;
 use App\Services\BarangayLocator;
 use App\Services\TransparencyFeed;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
@@ -26,13 +24,7 @@ class HomeController extends Controller
         // This prevents the public home controller from showing system-wide
         // complaint totals inside a personal dashboard.
         if (auth()->check()) {
-            $route = match (auth()->user()->role) {
-                'admin' => 'admin.dashboard',
-                'staff' => 'staff.dashboard',
-                default => 'dashboard',
-            };
-
-            return redirect()->route($route);
+            return redirect()->route(auth()->user()->homeRouteName());
         }
 
         // The proof strip and the recent-reports list are derived from the

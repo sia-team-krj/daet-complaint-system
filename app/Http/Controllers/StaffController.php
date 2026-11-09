@@ -70,31 +70,92 @@ class StaffController extends Controller
             'avgDays' => $this->calculateAvgResolutionDays($departmentId),
         ];
 
-        $priorityComplaints = (clone $baseQuery)
-            ->whereIn('status', [
-                ComplaintStatus::Submitted->value,
-                ComplaintStatus::UnderReview->value,
-                ComplaintStatus::InProgress->value,
-            ])
-            ->with(['user'])
+        $priorityFilter = $request->string('priority_filter')->toString();
+        $prioritySearch = $request->string('q')->toString();
+
+        $openPriorityBase = (clone $baseQuery)->whereIn('status', [
+            ComplaintStatus::Submitted->value,
+            ComplaintStatus::UnderReview->value,
+            ComplaintStatus::InProgress->value,
+        ]);
+        $priorityCounts = [
+            'all' => (clone $openPriorityBase)->count(),
+            'pending' => (clone $openPriorityBase)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
+            'needs_review' => (clone $openPriorityBase)->where('review_status', ComplaintReviewStatus::NeedsInformation->value)->count(),
+            'possible_duplicate' => (clone $openPriorityBase)->where(function ($query) {
+                $query->where('review_status', ComplaintReviewStatus::Duplicate->value)
+                    ->orWhereNotNull('duplicate_of_id')
+                    ->orWhereIn('spam_status', ['review', 'spam']);
+            })->count(),
+        ];
+
+        $priorityQuery = (clone $openPriorityBase)->with(['user']);
+
+        if ($priorityFilter === 'pending') {
+            $priorityQuery->where('review_status', ComplaintReviewStatus::Pending->value);
+        } elseif ($priorityFilter === 'needs_review') {
+            $priorityQuery->where('review_status', ComplaintReviewStatus::NeedsInformation->value);
+        } elseif ($priorityFilter === 'possible_duplicate') {
+            $priorityQuery->where(function ($query) {
+                $query->where('review_status', ComplaintReviewStatus::Duplicate->value)
+                    ->orWhereNotNull('duplicate_of_id')
+                    ->orWhereIn('spam_status', ['review', 'spam']);
+            });
+        }
+
+        if ($prioritySearch !== '') {
+            $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $prioritySearch).'%';
+            $priorityQuery->where(function ($query) use ($like) {
+                $query->where('ticket_id', 'ILIKE', $like)
+                    ->orWhere('title', 'ILIKE', $like)
+                    ->orWhere('category', 'ILIKE', $like);
+            });
+        }
+
+        $priorityComplaints = $priorityQuery
             ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
             ->oldest('created_at')
-            ->limit(5)
+            ->limit(3)
             ->get();
 
-        $recentActivity = ComplaintLog::with(['complaint', 'actor'])
+        $rawActivity = ComplaintLog::with(['complaint', 'actor'])
             ->whereHas('complaint', fn ($query) => $query->where('department_id', $departmentId))
             ->latest('created_at')
-            ->limit(5)
+            ->limit(12)
             ->get();
 
+        $recentActivity = collect();
+        $group = null;
+        $flush = function () use (&$group, &$recentActivity) {
+            if ($group === null) {
+                return;
+            }
+            $recentActivity->push($this->formatActivityGroup($group));
+            $group = null;
+        };
+        foreach ($rawActivity as $log) {
+            $ticketId = $log->complaint?->ticket_id ?? null;
+            if ($group === null || $group['ticket_id'] !== $ticketId) {
+                $flush();
+                $group = ['ticket_id' => $ticketId, 'logs' => [$log]];
+            } else {
+                $group['logs'][] = $log;
+            }
+            if ($recentActivity->count() >= 5) {
+                break;
+            }
+        }
+        $flush();
         return view('staff.dashboard.index', compact(
             'department',
             'stats',
             'priorityComplaints',
+            'priorityCounts',
             'recentActivity',
-            'user'
+            'user',
+            'priorityFilter',
+            'prioritySearch'
         ));
     }
 
@@ -140,6 +201,79 @@ class StaffController extends Controller
         return view('staff.activity.index', compact('department', 'stats', 'complaints', 'user'));
     }
 
+    /**
+     * Display-only formatting for recent activity messages (does not alter stored data).
+     *
+     * @return array{detail:string,note:?string}
+     */
+    private function formatActivityDisplay(string $raw, ?string $newStatus): array
+    {
+        $note = null;
+        if (preg_match('/Review notes:\s*(.+)$/iu', $raw, $m)) {
+            $candidate = trim($m[1]);
+            if ($candidate !== '' && $candidate !== '?') {
+                $note = implode(' · ', array_unique(array_map('trim', explode(' · ', $candidate))));
+            }
+        }
+
+        // Detail says only what changed: the status transition. Department names
+        // and free-form comment text are intentionally not repeated here.
+        if ($newStatus) {
+            $label = ComplaintStatus::tryFrom($newStatus)?->label() ?? $newStatus;
+            $detail = $label ? 'Status: '.$label : __('staff.dashboard.activity_status_changed');
+        } else {
+            $detail = __('staff.dashboard.activity_status_changed');
+        }
+
+        return ['detail' => $detail, 'note' => $note];
+    }
+    private function activityVerb(?string $newStatus): string
+    {
+        return match ($newStatus) {
+            'submitted' => __('staff.dashboard.verb_filed'),
+            'under_review', 'verified', 'assigned' => __('staff.dashboard.verb_reviewed'),
+            'in_progress' => __('staff.dashboard.verb_assigned'),
+            'resolved' => __('staff.dashboard.verb_resolved'),
+            'closed' => __('staff.dashboard.verb_closed'),
+            default => __('staff.dashboard.verb_updated'),
+        };
+    }
+
+    private function formatActivityGroup(array $group): \stdClass
+    {
+        $logs = array_values($group['logs']);
+        $latest = end($logs);
+        $actorName = $latest->actor?->full_name ?? __('staff.dashboard.activity_actor_fallback');
+        $ticket = $latest->complaint?->ticket_id ?? __('staff.dashboard.activity_ticket_fallback');
+        $count = count($logs);
+        $title = __('staff.dashboard.activity_grouped', [
+            'actor' => $actorName,
+            'verb' => $this->activityVerb($latest->new_status),
+            'ticket' => $ticket,
+        ]);
+        if ($latest->new_status) {
+            $label = ComplaintStatus::tryFrom($latest->new_status)?->label() ?? $latest->new_status;
+            $detail = $label ? 'Status: '.$label : __('staff.dashboard.activity_status_changed');
+        } else {
+            $detail = __('staff.dashboard.activity_status_changed');
+        }
+        $note = null;
+        $raw = trim((string) ($latest->comment ?? ''));
+        if (preg_match('/Review notes:\s*(.+)$/iu', $raw, $m)) {
+            $candidate = trim($m[1]);
+            if ($candidate !== '' && $candidate !== '?') {
+                $note = implode(' · ', array_unique(array_map('trim', explode(' · ', $candidate))));
+            }
+        }
+        $entry = new \stdClass();
+        $entry->display_title = $title;
+        $entry->display_detail = $detail;
+        $entry->display_note = $note;
+        $entry->display_count = $count > 1 ? $count : null;
+        $entry->created_at = $latest->created_at;
+        $entry->complaint = $latest->complaint;
+        return $entry;
+    }
     /**
      * Calculate average resolution days for department
      */
@@ -219,7 +353,7 @@ class StaffController extends Controller
             ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
             ->orderBy('created_at', 'asc')
-            ->paginate(5)
+            ->paginate(3)
             ->withQueryString();
 
         $stats = [
@@ -266,7 +400,13 @@ class StaffController extends Controller
 
         // Status options for dropdown (excluding current status to force change)
         $statuses = array_filter(ComplaintStatus::cases(), fn ($s) => $s->value !== $complaint->statusEnum->value);
-        $reviewStatusOptions = ComplaintReviewStatus::cases();
+        // The review decision is a verdict on an existing report. Asking the
+        // resident for more evidence is a different, dedicated flow that
+        // always carries the question — never this dropdown.
+        $reviewStatusOptions = array_values(array_filter(
+            ComplaintReviewStatus::cases(),
+            fn ($option) => $option !== ComplaintReviewStatus::NeedsInformation
+        ));
         $priorityOptions = ComplaintPriority::cases();
 
         // Only offered when the viewer can actually verify, so the page does not
@@ -537,9 +677,20 @@ class StaffController extends Controller
 
         try {
             DB::transaction(function () use ($complaint, $oldStatus, $newStatus, $validated, $user, $activityLogger, $documentationPaths): void {
-                $complaint->update([
+                $updates = [
                     'status' => $newStatus->value,
-                ]);
+                ];
+
+                if ($newStatus === ComplaintStatus::Resolved && $complaint->resolved_at === null) {
+                    $updates['resolved_at'] = now();
+                }
+
+                if ($newStatus === ComplaintStatus::Closed) {
+                    $updates['closed_at'] = now();
+                    $updates['closed_by'] = $user->role === 'admin' ? 'admin' : 'staff';
+                }
+
+                $complaint->update($updates);
 
                 ComplaintLog::create([
                     'complaint_id' => $complaint->id,

@@ -70,6 +70,17 @@ class ComplaintPolicy
     }
 
     /**
+     * The resident who filed a resolved complaint may close it (confirm the
+     * resolution). Nobody else closes on their behalf; staff/admin use the
+     * normal status workflow.
+     */
+    public function close(User $user, Complaint $complaint): bool
+    {
+        return $user->id === $complaint->user_id
+            && $complaint->statusEnum === \App\Enums\ComplaintStatus::Resolved;
+    }
+
+    /**
      * Only admin can view real identity of anonymous citizens.
      */
     public function viewRealIdentity(User $user, Complaint $complaint): bool
