@@ -5,11 +5,10 @@
 
 @push('styles')
     <style>
-        /* Cancel global body navbar offset once; .pt provides the page offset. */
-        body.page-transparency-show { padding-top: 0 !important; }
+        /* Single fixed-navbar offset on this page (avoids double gap from body + .pt). */
+        body.page-transparency-show { padding-top: var(--navbar-h, var(--navbar-height, 64px)) !important; }
         .pt {
-            /* The navbar is fixed; offset like every other shell. */
-            padding-top: var(--navbar-h, var(--navbar-height, 64px));
+            padding-top: 0;
             background: var(--bg);
             color: var(--text);
             font-family: var(--font-sans);
