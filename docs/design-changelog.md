@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Transparency complaints page — title visible on white background
+
+- Page / component: `resources/views/pages/transparency/partials/complaints-styles.blade.php` (`.complaints-page-title`).
+- Why (the problem found): after switching the page background to white (`--surface`), the title kept `color: var(--surface)` (white), making it invisible on the white background — especially for logged-in users where the app shell renders the page against a white surface.
+- What changed: `.complaints-page-title` color changed from `var(--surface)` to `var(--text)` so the heading is dark and readable on the white background.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (one-token color swap; design-system guard reports no NEW violations in touched files).
+
 ## 2026-11-10: Transparency complaints page — white background, remove back link
 
 - Page / component: `resources/views/pages/transparency/complaints.blade.php`.

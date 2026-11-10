@@ -1,6 +1,6 @@
 <style>
     .complaints-wrap { margin-top: -20px; position: relative; z-index: 1; }
-    .complaints-page-title { margin: 16px 0 24px; color: var(--surface); }
+    .complaints-page-title { margin: 16px 0 24px; color: var(--text); }
     .tr-banner--compact { padding: 20px 0 40px; }
     .tr-banner--compact .tr-h1 { font-size: 24px; font-weight: 700; margin: 4px 0 8px; }
     @media (min-width: 768px) { .tr-banner--compact { padding: 20px 0 40px; } .tr-banner--compact .tr-h1 { font-size: 30px; } }
