@@ -311,19 +311,10 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-text-link:focus-visible 
 /* ─── Department cards ───────────────────────────────────────────────────── */
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    align-items: stretch;
     gap: 12px;
     width: 100%;
-}
-@media (max-width: 767px) {
-    body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
-        grid-template-columns: 1fr;
-    }
-}
-@media (min-width: 1024px) and (max-width: 1399px) {
-    body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
 }
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card {
     display: flex;
@@ -336,6 +327,7 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-department-card {
     box-shadow: var(--dept-card-shadow);
     width: 100%;
     min-width: 0;
+    height: 100%;
     text-decoration: none;
     color: inherit;
 }
@@ -349,33 +341,58 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-department-card:focus-vi
     box-shadow: var(--ring-inset);
     border-radius: var(--radius-lg);
 }
-body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__row {
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__content {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1 1 auto;
     min-width: 0;
 }
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    min-width: 0;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__head .dept-badge {
+    width: fit-content;
+    max-width: 100%;
+    flex: none;
+    align-self: start;
+}
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__name {
-    flex: 1;
     min-width: 0;
     font-size: 15px;
     font-weight: 700;
     color: var(--dept-ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: 1.2;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
 }
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__meta {
-    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
     min-width: 0;
     font-size: 12px;
     color: var(--dept-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__chevron {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    align-self: center;
+    color: var(--faint);
+}
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card:hover .dept-department-card__chevron {
+    color: var(--dept-primary);
 }
 
 /* ─── Complaint cards (unassigned + recent) ──────────────────────────────── */

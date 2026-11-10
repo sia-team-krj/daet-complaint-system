@@ -7,6 +7,22 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Transparency complaints page — white background, remove back link
+
+- Page / component: `resources/views/pages/transparency/complaints.blade.php`.
+- Why (the problem found): the page inherited the guest shell's navy body background (`#142D4F`), creating a dark blue backdrop, and had a "Back to Transparency" link that wasn't needed on this sub-page.
+- What changed: removed the back link (`<a class="tr-back">` to `route('transparency')`); wrapped the page content in `<section class="complaints-page">` with `background: var(--surface)` (white) and `min-height: calc(100svh - var(--navbar-height))` so the page fills the viewport with a white background instead of navy.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted markup/CSS fix; uses `--surface` token, no new hard-coded hex/serif/map-isolation issues; design-system guard reports no NEW violations in touched files).
+
+## 2026-11-10: Admin dashboard — restructure Departments cards for robust responsiveness
+
+- Page / component: `resources/views/admin/dashboard/index.blade.php` and `resources/css/pages/admin-dashboard.css` (Departments card grid).
+- Why (the problem found): the previous card was a single flex row where the badge, title, and stats all competed for width. Long names (e.g. “Municipal Planning and Development Office”) collided with the code badge, the title and stats both used `white-space: nowrap` + `text-overflow: ellipsis` (so “0 pending · 0 staff” rendered as “0…” / “0 pend…”), and the chevron sat at an arbitrary position. The forced 3-column 1024–1399px rule made the cards even narrower.
+- What changed: rebuilt each card as content column + chevron column. Inside the content column, the badge and title share a `grid-template-columns: auto minmax(0, 1fr)` row (badge content-sized and nowrap, title freely wrapping with `overflow-wrap: anywhere` + `text-wrap: balance`), and the stats sit on their own wrapping flex line with no ellipsis. The chevron is fixed 18px and vertically centred. The grid is now `repeat(auto-fill, minmax(min(100%, 280px), 1fr))` with `align-items: stretch`; the hard-coded 1-col and 3-col media queries were removed, so cards collapse to one column when narrow and add columns as width allows.
+- Verification: Playwright at 1440/1280/1100/1024/900/768/700/640/480/393/360px — zero badge/title overlap, no truncated titles or stats, equal heights within each row, 18px chevrons centred to <0.1px, and no horizontal overflow. Stress-tested with a 110-character title and 5-digit pending/staff counts at 1920/1440/393/320/300px — all wrap cleanly with no overflow. Screenshots captured locally in `/tmp/opencode/dept-cards/` (not committed).
+- Definition of Done checklist: passed (targeted markup/CSS restructure; existing `--surface`, `--dept-*`, `--faint`, `--radius-lg`, `--shadow-card/-lift`, `--ring-inset` tokens only; no new hard-coded hex/serif/map-isolation issues; guard reports no NEW violations in touched files).
+
 ## 2026-11-10: Admin complaint detail — tighten layout, fix blank aside space
 
 - Page / component: `resources/css/app.css` (`.admin-detail-layout`, `.admin-detail-list`, `.admin-panel-heading`, `.admin-detail-list dt/dd`) and `resources/css/pages/admin-workspace.css` (tablet breakpoint).

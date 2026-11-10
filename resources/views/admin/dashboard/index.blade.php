@@ -81,12 +81,18 @@
                         @forelse($departments ?? [] as $department)
                             @php $pending = (int) ($department->pending_count ?? 0); @endphp
                             <a href="{{ route('admin.complaints.index', ['department' => $department->id]) }}" class="dept-department-card tr-card">
-                                <div class="dept-department-card__row">
-                                    <span class="dept-badge dept-badge--{{ strtolower($department->code) }}" data-dept="{{ $department->code }}">{{ $department->code }}</span>
-                                    <span class="dept-department-card__name">{{ $department->name }}</span>
-                                    <span class="dept-department-card__meta">{{ $pending }} pending · {{ $department->staff_count ?? 0 }} staff</span>
-                                </div>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                                <span class="dept-department-card__content">
+                                    <span class="dept-department-card__head">
+                                        <span class="dept-badge dept-badge--{{ strtolower($department->code) }}" data-dept="{{ $department->code }}">{{ $department->code }}</span>
+                                        <span class="dept-department-card__name">{{ $department->name }}</span>
+                                    </span>
+                                    <span class="dept-department-card__meta">
+                                        <span>{{ $pending }} pending</span>
+                                        <span aria-hidden="true">·</span>
+                                        <span>{{ $department->staff_count ?? 0 }} staff</span>
+                                    </span>
+                                </span>
+                                <svg class="dept-department-card__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                             </a>
                         @empty
                             <p class="dept-empty">No departments have been created yet.</p>
