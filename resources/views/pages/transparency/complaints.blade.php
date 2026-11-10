@@ -9,15 +9,12 @@
         @include('pages.transparency.partials.complaints-styles')
     @endpush
 
-    <div class="tr-container" style="padding-top: 12px; padding-bottom: 8px;">
-        <a href="{{ route('transparency') }}" class="tr-back">{{ __('transparency.register.back_to_transparency') }}</a>
-    </div>
+    <section class="complaints-page" style="background: var(--surface); min-height: calc(100svh - var(--navbar-height));">
+        <div class="tr-container">
+            <h1 class="tr-h1 complaints-page-title">{{ __('transparency.register.all_heading') }}</h1>
+        </div>
 
-    <div class="tr-container">
-        <h1 class="tr-h1 complaints-page-title">{{ __('transparency.register.all_heading') }}</h1>
-    </div>
-
-    <div class="tr-container complaints-wrap">
+        <div class="tr-container complaints-wrap">
         <div class="tr-card tr-filters-card">
             <form data-loading-submit method="GET" action="{{ route('transparency.complaints') }}" id="complaints-filter-form">
                 {{-- Row 1: search + Filters button --}}
@@ -229,6 +226,7 @@
             @endif
         @endif
     </div>
+</section>
 
     @if($anyFilter)
         @push('head')
