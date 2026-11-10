@@ -17,16 +17,24 @@
         /* The guest shell is always a dark navy surface. Painting html as well
            as body means a decorative element that reaches past the viewport can
            never expose the browser's white canvas behind it. */
-        html,
+        html {
+            background-color: #142D4F;
+        }
+        @if(request()->routeIs('transparency.complaints'))
+        body {
+            background-color: var(--surface);
+        }
+        @else
         body {
             background-color: #142D4F;
         }
+        @endif
     </style>
     @livewireStyles
     @stack('head')
     @stack('styles')
 </head>
-<body class="w-full max-w-full bg-navy overflow-x-clip">
+<body class="w-full max-w-full @if(!request()->routeIs('transparency.complaints'))bg-navy @endifoverflow-x-clip">
     @include('layouts.guest-navbar')
     <main class="w-full max-w-full overflow-x-clip">
         @yield('content')

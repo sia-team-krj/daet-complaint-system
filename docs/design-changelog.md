@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Transparency complaints page — remove navy body background, make white
+
+- Page / component: `resources/views/layouts/guest.blade.php` (body class + inline style).
+- Why (the problem found): the guest layout hardcodes `bg-navy` on `<body>` and `background-color: #142D4F` on `html, body` in an inline `<style>` block, so the transparency complaints page had a navy backdrop even though its content section was white.
+- What changed: conditionally removed `bg-navy` from `<body>` and set `body { background-color: var(--surface) }` (white) when `request()->routeIs('transparency.complaints')`. The `html` background stays navy (it only shows at viewport edges); the body is now white on this page so the white content section blends seamlessly.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (conditional class/style; uses existing `--surface` token; no new hard-coded hex/serif/map-isolation issues; design-system guard reports no NEW violations in touched files).
+
 ## 2026-11-10: Transparency complaints page — title visible on white background
 
 - Page / component: `resources/views/pages/transparency/partials/complaints-styles.blade.php` (`.complaints-page-title`).
