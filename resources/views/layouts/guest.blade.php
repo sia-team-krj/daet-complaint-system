@@ -34,7 +34,7 @@
     @stack('head')
     @stack('styles')
 </head>
-<body class="w-full max-w-full @if(!request()->routeIs('transparency.complaints'))bg-navy @endifoverflow-x-clip">
+<body class="w-full max-w-full {{ request()->routeIs('transparency.complaints') ? '' : 'bg-navy' }} overflow-x-clip">
     @include('layouts.guest-navbar')
     <main class="w-full max-w-full overflow-x-clip">
         @yield('content')
