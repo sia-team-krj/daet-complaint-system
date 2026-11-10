@@ -9,9 +9,9 @@
 @php
     $statCards = [
         ['key' => 'total', 'label' => 'Total complaints', 'value' => $stats['total'] ?? 0, 'icon' => 'calendar', 'href' => route('admin.complaints.index'), 'tone' => 'sky'],
-        ['key' => 'unassigned', 'label' => 'Unassigned', 'value' => $stats['unassigned'] ?? 0, 'icon' => 'clock', 'href' => route('admin.complaints.index', ['status' => 'submitted']), 'tone' => 'amber'],
-        ['key' => 'progress', 'label' => 'In progress', 'value' => $stats['inProgress'] ?? 0, 'icon' => 'progress', 'href' => route('admin.complaints.index', ['status' => 'in_progress']), 'tone' => 'navy'],
-        ['key' => 'resolved', 'label' => 'Resolved today', 'value' => $stats['resolvedToday'] ?? 0, 'icon' => 'check', 'href' => route('admin.complaints.index', ['status' => 'resolved']), 'tone' => 'green'],
+        ['key' => 'unassigned', 'label' => 'Unassigned', 'value' => $stats['unassigned'] ?? 0, 'icon' => 'clock', 'href' => route('admin.complaints.index', ['status' => \App\Enums\ComplaintStatus::Submitted->value]), 'tone' => 'amber'],
+        ['key' => 'progress', 'label' => 'In progress', 'value' => $stats['inProgress'] ?? 0, 'icon' => 'progress', 'href' => route('admin.complaints.index', ['status' => \App\Enums\ComplaintStatus::InProgress->value]), 'tone' => 'navy'],
+        ['key' => 'resolved', 'label' => 'Resolved today', 'value' => $stats['resolvedToday'] ?? 0, 'icon' => 'check', 'href' => route('admin.complaints.index', ['status' => \App\Enums\ComplaintStatus::Resolved->value]), 'tone' => 'green'],
     ];
 @endphp
 

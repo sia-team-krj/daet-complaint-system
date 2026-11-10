@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Admin dashboard — stat card links now use correct status enum values
+
+- Page / component: `resources/views/admin/dashboard/index.blade.php`.
+- Why (the problem found): stat card links ("Unassigned", "In progress", "Resolved today") navigated to `/admin/complaints?status=submitted` etc. with lowercase snake_case values, but `ComplaintStatus` enum stores Title Case (`"Submitted"`, `"In Progress"`, `"Resolved"`). The controller filter `$query->where('status', $request->status)` never matched, so the complaints table showed all records instead of the filtered subset.
+- What changed: replaced hardcoded lowercase status strings with `\App\Enums\ComplaintStatus::Submitted->value`, `::InProgress->value`, and `::Resolved->value` so the URL status values match the database column values and the filter applies correctly.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted markup fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
 ## 2026-11-10: Staff & admin navbars — remove desktop language switcher
 
 - Page / component: `resources/views/staff/partials/sidebar.blade.php`, `resources/views/admin/partials/sidebar.blade.php`.
