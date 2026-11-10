@@ -31,6 +31,14 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
 - Definition of Done checklist: passed (targeted markup/CSS fix; uses `--surface` token, no new hard-coded hex/serif/map-isolation issues; design-system guard reports no NEW violations in touched files).
 
+## 2026-11-10: Admin dashboard — remove the empty “System activity” card
+
+- Page / component: `resources/views/admin/dashboard/index.blade.php`, `resources/css/pages/admin-dashboard.css` (dashboard side rail).
+- Why (the problem found): the card was a copy of the staff activity feed, but `AdminController@dashboard()` never supplied `$recentActivity` (and `ActivityLog` has no `display_title`/`display_detail` accessors), so it always rendered “No system activity yet.” It also forced a 320px side rail that squeezed the dashboard content. System-wide activity already has a dedicated home on the Audit trail page.
+- What changed: removed the dead aside and its fallback markup, removed the admin-scoped `.dept-activity*` styles, and collapsed the dashboard to a single full-width column (removed the 320px side rail/sticky-side rules). The Departments grid now gains columns from the recovered width: 3 at 1440/1280, 2 at 1024/900, 1 at 768/393/360.
+- Verification: Playwright at 1440/1280/1024/900/768/640/393/360 — no “System activity” text or aside in the DOM, no horizontal overflow, Department columns 3/3/2/2/1/2/1/1. Screenshot captured locally at `/tmp/opencode/dept-cards/dashboard-no-activity-1440.png` (not committed).
+- Definition of Done checklist: passed (dead UI removal; no new hard-coded hex/serif/map-isolation issues; guard reports no NEW violations in touched files).
+
 ## 2026-11-10: Admin dashboard — restructure Departments cards for robust responsiveness
 
 - Page / component: `resources/views/admin/dashboard/index.blade.php` and `resources/css/pages/admin-dashboard.css` (Departments card grid).

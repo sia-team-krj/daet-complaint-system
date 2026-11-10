@@ -169,33 +169,6 @@
                     </div>
                 </section>
             </div>
-
-            <aside class="dept-dashboard__side dept-dashboard__side--in-main">
-                @php
-                    $activityLogs = $recentActivity ?? collect();
-                @endphp
-                <section class="tr-card dept-activity" aria-labelledby="admin-activity-title">
-                    <div class="dept-activity__head">
-                        <h2 id="admin-activity-title" class="dept-section-title">System activity</h2>
-                    </div>
-                    <div class="dept-activity__feed">
-                        @forelse($activityLogs as $i => $log)
-                            <div class="dept-activity-item {{ $i >= 4 ? 'dept-activity-item--extra' : '' }}">
-                                <span class="dept-activity-item__dot" aria-hidden="true"></span>
-                                <div class="dept-activity-item-main">
-                                    <div class="dept-activity-item__copy">
-                                        <p class="dept-activity-item__title">{{ $log->display_title ?? 'System event' }}</p>
-                                        <p class="dept-activity-item__note">{{ $log->display_detail ?? '' }}</p>
-                                    </div>
-                                    <time datetime="{{ $log->created_at?->toAtomString() }}" class="dept-activity-item__time">{{ $log->created_at?->diffForHumans() }}</time>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="dept-activity__empty">No system activity yet.</p>
-                        @endforelse
-                    </div>
-                </section>
-            </aside>
         </div>
     </div>
 </div>

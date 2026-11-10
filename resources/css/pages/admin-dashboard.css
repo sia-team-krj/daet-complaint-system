@@ -31,28 +31,11 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__shell {
 }
 body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__grid {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
     align-items: start;
 }
-/* ≥1024px: main content + sticky activity aside */
-@media (min-width: 1024px) {
-    body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__grid {
-        grid-template-columns: minmax(0, 1fr) 320px;
-    }
-    body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__side {
-        position: sticky;
-        top: calc(var(--navbar-height) + 16px);
-        align-self: start;
-    }
-}
-/* <1024px: single column, activity below main */
-@media (max-width: 1023px) {
-    body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__grid {
-        grid-template-columns: 1fr;
-    }
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__main,
-body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__side {
+body.role-admin.admin-layout.page-admin-dashboard .dept-dashboard__main {
     min-width: 0;
 }
 
@@ -513,89 +496,6 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-age {
     body.role-admin.admin-layout.page-admin-dashboard .dept-complaint__age {
         flex-direction: row;
         align-items: center;
-    }
-}
-
-/* ─── System activity (aside) ────────────────────────────────────────────── */
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity {
-    padding: 0;
-    overflow: hidden;
-    border-radius: var(--radius-lg);
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity__head {
-    padding: 16px 20px 0;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity__feed {
-    position: relative;
-    padding: 8px 20px 8px;
-    display: grid;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity__feed::before {
-    content: "";
-    position: absolute;
-    left: 24px;
-    top: 8px;
-    bottom: 8px;
-    width: 1px;
-    background: var(--dept-card-border);
-    z-index: -1;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item {
-    display: grid;
-    grid-template-columns: 12px minmax(0, 1fr);
-    gap: 12px;
-    padding: 10px 0;
-    border-top: 1px solid var(--dept-card-border);
-    min-width: 0;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item:first-child {
-    border-top: 0;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__dot {
-    width: 8px;
-    height: 8px;
-    margin-top: 6px;
-    border-radius: 50%;
-    background: var(--dept-primary);
-    position: relative;
-    z-index: 2;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__copy {
-    min-width: 0;
-    display: grid;
-    gap: 2px;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    line-height: 1.35;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__note {
-    margin: 0;
-    font-size: 13px;
-    color: var(--dept-muted);
-    line-height: 1.4;
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item__copy time {
-    font-size: 12px;
-    color: var(--dept-muted);
-}
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity__empty {
-    margin: 0;
-    padding: 12px 0;
-    font-size: 14px;
-    color: var(--dept-muted);
-}
-
-/* Mobile: collapse extra activity items; no show-more JS on admin (first 5) */
-body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item--extra {
-    display: grid;
-}
-@media (max-width: 1023px) {
-    body.role-admin.admin-layout.page-admin-dashboard .dept-activity-item--extra {
-        display: none;
     }
 }
 
