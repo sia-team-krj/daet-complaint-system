@@ -77,4 +77,104 @@ return [
         'verify' => 'Verify',
         'activity' => 'Activity',
     ],
+
+    // The staff proof capture (design system §5.36): the photos that prove
+    // the work was done, and the rule that says when they are required.
+    'proof' => [
+        'optional_title' => 'Optional for this update',
+        'optional_body' => 'Attach a photo when the work needs proof. Up to five photos — JPG, PNG or WEBP, 5 MB each.',
+        'required_title' => 'A photo is required for this status',
+        'required_body' => 'Moving this complaint to :status needs at least one documentation photo. Attach one before you send the update.',
+        'choose_title' => 'Add up to five photos',
+        'choose_body' => 'Choose from your device or take one with your phone’s camera.',
+        'library' => 'Photo library',
+        'camera' => 'Use camera',
+        'attached' => 'photos attached',
+        'invalid' => 'Use JPG, PNG, or WEBP photos no larger than 5 MB each.',
+        'too_many' => 'You can attach a maximum of :max photos.',
+        'remove' => 'Remove :name',
+        'preview' => 'Selected documentation photo :name',
+        'timeline_alt' => 'Documentation photo :index',
+        'no_location' => 'No location recorded',
+    ],
+
+    // The live ticket panel (design system §5.39): what changed while the
+    // ticket was open, and who changed it.
+    'live' => [
+        'moved' => ':actor moved this complaint from :previous to :status.',
+        'updated' => ':actor updated this complaint.',
+        'note' => ':actor left an internal note.',
+        'changed' => 'This complaint changed while you were working.',
+        'refresh' => 'Reload to see the latest',
+        'dismiss' => 'Dismiss',
+    ],
+
+    // The two verification actions the November rewrite dropped (design
+    // system §5.40): ask the resident for better evidence, and hand the
+    // decision to another verifier.
+    'verification' => [
+        'follow_up' => 'Verification follow-up',
+        'waiting_title' => 'Waiting on the resident',
+        'waiting_body' => 'They have been asked for more evidence. Their reply will appear here, and the ticket stays with them until it does.',
+        'answered_title' => 'The resident answered',
+        'answered_body' => 'Review their reply below, then record a verification decision in the form above.',
+        'round' => 'Question · round :round of :max',
+        'reply_title' => 'Resident’s reply',
+        'orphan_waiting' => 'The resident has been asked for more evidence. Their reply will appear here.',
+        'orphan_no_question' => 'This ticket is marked as needing information. The resident has not been asked a specific question yet.',
+        'ask_title' => 'Ask the resident for more evidence',
+        'ask_body' => 'Say exactly what is missing. The resident sees the question and can reply with text and photos. This uses round :round of :max.',
+        'question_label' => 'What is missing?',
+        'question_placeholder' => 'The streetlight photo is too dark to read the pole number. Please send a closer shot of the pole.',
+        'question_hint' => 'At least 15 characters. A vague ask is refused by the server.',
+        'ask_submit' => 'Ask the resident',
+        'rounds_exhausted' => 'This complaint has already gone back to the resident twice. Ask an administrator to review it.',
+        'delegate_title' => 'Hand verification to another verifier',
+        'delegate_body' => 'Only staff in this department who hold verification rights are listed. The assigned worker cannot verify their own assignment.',
+        'delegate_label' => 'Verifier',
+        'delegate_choose' => 'Choose a verifier',
+        'delegate_submit' => 'Hand over verification',
+        'delegate_current' => 'Verification currently sits with :name.',
+    ],
+
+    // The internal half of a status update. Written to the same immutable
+    // log as the public note, but never shown to the resident or the public.
+    'internal_note' => [
+        'label' => 'Internal note',
+        'optional' => '(optional — not visible to the resident)',
+        'placeholder' => 'Context for your office only. For example: the contractor reference, or why the crew was delayed.',
+        'hint' => 'Saved to the internal timeline only. It never appears on the resident’s page or the public register.',
+    ],
+
+    // Public-presentation moderation, shared by the staff and admin ticket
+    // pages. The office can withhold or redact, never publish.
+    'moderation' => [
+        'title' => 'Public presentation',
+        'lede' => 'You can withhold this report or clean up sensitive parts of it. You cannot publish or unpublish it.',
+        'published' => 'The resident published this.',
+        'private' => 'The resident kept this private.',
+        'published_body' => 'It appears on the transparency page under their display alias. Moderating below can withhold it, but nothing here can change that choice.',
+        'private_body' => 'It does not appear on the transparency page, and nothing you do here can put it there.',
+        'hide' => 'Remove this report from the public transparency page',
+        'redacted_title' => 'Replacement title for the public page',
+        'redacted_description' => 'Replacement description for the public page',
+        'photos' => 'Evidence photos',
+        'restore' => 'Restore',
+        'withhold' => 'Withhold',
+        'reason' => 'Reason (required)',
+        'reason_placeholder' => 'Why is this being withheld or cleaned up?',
+        'save' => 'Save moderation',
+    ],
+
+    // The clock on the work a department owes. The office accepts a report
+    // when it verifies it, and from then the work is due.
+    'sla' => [
+        'action_start' => 'Start work',
+        'action_finish' => 'Finish work',
+        'days_left' => '{1} :count day left|[2,*] :count days left',
+        'days_overdue' => '{1} :count day overdue|[2,*] :count days overdue',
+        'overdue_filter' => 'Overdue',
+        'overdue_count' => ':count overdue',
+        'no_overdue' => 'Nothing overdue',
+    ],
 ];

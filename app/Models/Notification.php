@@ -42,6 +42,9 @@ class Notification extends Model
     /** A complaint was handed to a staff member to work. */
     public const COMPLAINT_ASSIGNED = 'complaint.assigned';
 
+    /** The office verified a report and has not started the work in time. */
+    public const COMPLAINT_WORK_OVERDUE = 'complaint.work_overdue';
+
     protected $fillable = [
         'user_id',
         'type',

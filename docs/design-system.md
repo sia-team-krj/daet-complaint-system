@@ -998,6 +998,278 @@ admin page.
 Demo: `/admin/complaints` (the queue rows) and `/admin/audit-trail` (the trail
 cards) on a 393px viewport.
 
+### 5.36 Proof capture (staff) — `.proof-capture`
+
+Purpose: let a staff member attach the photograph that proves the work was done,
+and state the office's proof rule **before** they choose a status. The server
+already refuses a move to `In Progress` or `Resolved` without a photo
+(`StaffController@update`); this component moves that refusal earlier, so a staff
+member learns what the office owes instead of discovering it from a validation
+error after pressing send.
+
+Staff-only. The resident filing wizard has its own picker and is a different
+component: it collects evidence, this one collects *proof of work* and carries a
+rule. They share the portal's tokens and visual language (same 48px icon circle,
+same 44px buttons, same dashed zone) but not their markup, so either can change
+without touching the other.
+
+**Both staff and administrators use it.** The staff complaint page and the admin
+complaint page both carry the component, because the rule is the same for both:
+an administrator settles a ticket no more loosely than the office does.
+
+Anatomy:
+
+- **Requirement note** (`.proof-capture__note`) — an icon, a title and one line of
+  body, above the picker. Neutral (`--surface-soft` / `--line-soft` / `--navy-700`)
+  while the chosen status needs no photo; the amber action-needed family
+  (`--status-progress-bg` / `--status-progress-text` / `--status-progress-dot`)
+  once it does, and the body then names the status. The state is driven by the
+  status select, so the note and the dropdown can never disagree about what is
+  owed.
+- **Zone** (`.proof-capture__zone`) — a dashed `--line` border on `--surface`; the
+  gold `--gold-500` border on hover/drag; `--surface-soft` while dragging. The two
+  file inputs are visually hidden but focusable, and the two visible buttons
+  (`Photo library` / `Use camera`) are the real controls. The zone is also
+  clickable — a convenience, never the only path.
+- **Icon** (`.proof-capture__icon`) — a 48px `--navy-50` circle with a 24px
+  `--navy-700` line icon, matching the wizard's picker.
+- **Actions** (`.proof-capture__action`) — 44px min height, `--line` border,
+  `--radius-sm`, `--navy-700` text, `--navy-50` on hover. `--ring` on focus.
+- **Counter** (`.proof-capture__counter`) — `N / 5` with the number in
+  `--navy-700`/700 and the label in `--muted`. `aria-live="polite"`.
+- **Previews** (`.proof-capture__previews`) — a grid of `minmax(92px, 1fr)`
+  squares; each is a `figure`-shaped tile (`--navy-50` underlay, `--line-soft`
+  border, `--radius-sm`, `object-fit: cover`) with a 32px circular remove button
+  in the top-right corner.
+- **Error** (`.proof-capture__error`) — `--error-text`, 14px, `role="alert"`.
+
+States: the note's **optional** and **required** states; the zone's default,
+hover and dragging states; and the error line, which appears only for a
+wrong-type/oversized file or a sixth selection. The server's own message renders
+below the zone (`@error`), so a refusal is never silent.
+
+Behaviour: the picker owns the selection and writes it back into the gallery
+input through the DataTransfer API — a file input's own list cannot be edited, so
+per-photo removal is only possible that way. The camera input is emptied only
+after the write-back succeeds, so a browser that refuses DataTransfer still
+submits the camera photos (the server reads both inputs and merges them).
+**Without JavaScript the form is still a working form:** the browser puts the
+files in the inputs, the server reads them, and what is lost is the preview, the
+remove button and the live rule.
+
+Tokens: `--surface`, `--surface-soft`, `--line`, `--line-soft`, `--text`,
+`--muted`, `--navy-50`, `--navy-700`, `--navy-950`, `--gold-500`,
+`--status-progress-bg` / `--status-progress-text` / `--status-progress-dot`,
+`--error-text`, `--radius-sm`, `--radius`, `--ring`. **No new colours.**
+
+Markup contract (the JS reads the markup, not a function call):
+`[data-proof-capture]` · `[data-proof-gallery]` · `[data-proof-camera]` ·
+`[data-proof-previews]` · `[data-proof-count]` · `[data-proof-error]` ·
+`[data-proof-trigger]` · `[data-proof-note]` · `[data-proof-status]`.
+Controller: `resources/js/proof-capture.js`; styles:
+`resources/css/pages/staff-complaint.css`; markup:
+`resources/views/components/proof-capture.blade.php`.
+
+Why: an office that cannot photograph its own work cannot prove it did. The rule
+was already on the server — what was missing was any way to satisfy it, because
+the staff form had lost its upload surface entirely. Stating the rule beside the
+picker (not only in the error) is what makes it a rule the staff member can
+follow rather than a wall they hit.
+
+Demo: `/design-system` → "Proof capture (staff)" (live; change the status to see
+the note switch).
+
+### 5.37 Proof in the timeline — `.proof-timeline`
+
+Purpose: show the proof an update carried, and **where each photograph was
+taken**. A photograph of a repair only means something if the place it was
+taken at is on the record — otherwise it is a picture of anything, taken
+anywhere, at any time.
+
+The staff complaint timeline and the admin audit timeline both carry it. The
+resident timeline does not show coordinates: a resident is told the work was
+done and shown the photograph, and the exact position of a municipal work site
+is not theirs to need.
+
+Anatomy:
+
+- `.proof-timeline` — a grid of `minmax(110px, 1fr)` tiles, 12px gap.
+- `.proof-timeline__item` — a `figure`: the photograph, and its location.
+- `.proof-timeline__item a` — a square frame (`--line-soft` border,
+  `--radius-sm`, `--navy-50` underlay) with the photograph `object-fit: cover`.
+- `.proof-timeline__location` — the coordinates, 10px `--muted`, with a 11px
+  `--navy-700` pin icon. The coordinates are mono and may wrap over two lines.
+- `.proof-timeline__location--none` — the same line in `--faint`, reading "No
+  location recorded". **A photograph with no location says so** rather than
+  being silently treated as proof of anything.
+
+The admin timeline shows the same coordinates on its evidence card
+(`.admin-evidence-card__location`, mono, `--faint`).
+
+Tokens: `--surface`, `--line-soft`, `--navy-50`, `--navy-700`, `--muted`,
+`--faint`, `--radius-sm`, `--font-mono`. **No new colours.**
+
+Why: the office is being asked to prove its work. A photograph proves a place
+only if the place is written down next to it; without that, "the crew was at
+the site" is a claim, and the file has nothing to check it against. Saying
+"No location recorded" is as important as saying where — a reader who cannot
+tell the difference is being asked to take it on trust.
+
+### 5.38 Deadline chip — `.sla-chip`
+
+Purpose: say how long the office has left on a complaint, in one place, on
+every surface that lists work. A report becomes the office's responsibility
+the moment it is verified; from then the office owes the resident two things —
+to start the work and to finish it. This chip is where that obligation is
+visible.
+
+Anatomy: two parts — **the action** ("Start work" / "Finish work") and **the
+time** ("2 days left" / "3 days overdue"), separated by a middot. An 11px/600
+pill, `--radius-pill`, 2px 8px padding, `white-space: nowrap` so the pair never
+wraps mid-phrase.
+
+States, and the family each belongs to:
+
+| State | Class | Background / text | Means |
+|---|---|---|---|
+| On track | `.sla-chip--on-track` | `--status-review-bg` / `--status-review-text` | Comfortably inside the deadline |
+| Due soon | `.sla-chip--due-soon` | `--status-progress-bg` / `--status-progress-text` | A day or less left |
+| Overdue | `.sla-chip--overdue` | `--status-rejected-bg` / `--status-rejected-text` | The deadline has passed |
+| Met | `.sla-chip--met` | `--status-resolved-bg` / `--status-resolved-text` | The work was done in time |
+| Not applicable | `.sla-chip--none` | `--surface-soft` / `--muted` | Nothing is owed yet — not verified |
+
+The colour is the status family the meaning belongs to, not decoration: a chip
+that is late must not be dressed the same as one that is comfortable.
+
+Where it appears: the **staff queue row** (beside the status and priority
+pills), the **staff complaint banner** (beside the priority badge), and the
+**admin dashboard department card** (as a count of what that office has let
+slip, in the negative family).
+
+Tokens: `--status-review-bg` / `--status-review-text`,
+`--status-progress-bg` / `--status-progress-text`,
+`--status-rejected-bg` / `--status-rejected-text`,
+`--status-resolved-bg` / `--status-resolved-text`, `--surface-soft`,
+`--muted`, `--radius-pill`. **No new colours.**
+
+Why: a ticket nobody started must not look exactly like a ticket being worked
+on today. Without the clock, "verified three weeks ago, still Under Review" is
+one of forty rows in a queue and nobody is looking at it. With it, the row
+itself says the office is late.
+
+### 5.39 Live ticket notice — `.ticket-live-note`
+
+Purpose: a ticket is worked by more than the person looking at it. Somebody in
+the same office can move the case, settle it or leave a note while this page is
+open — and a staff member who finds out only when the server refuses their
+update has already wasted the work. The ticket page polls a fingerprint and,
+when it differs, says who changed what. **It never replaces the page's form**:
+a live update must not take the words out of somebody's mouth.
+
+Anatomy:
+- **`[data-live-ticket]`** — the root. Carries `data-endpoint` (the state
+  endpoint), `data-fingerprint` (what is on screen) and `data-interval`
+  (milliseconds, 20000 by default).
+- **`.ticket-live-note`** — the notice, `hidden` until the fingerprint moves.
+  It is **outside the form**. Amber action-needed family: a case that moved is
+  something to read before pressing send.
+- **`.ticket-live-note__text`** — the server's sentence, naming the actor and
+  both statuses ("Maria Dela Cruz moved this complaint from Under Review to In
+  Progress") or the internal note ("…left an internal note").
+- **`.ticket-live-note__reload`** — an ordinary link to the same ticket, so it
+  works without JavaScript and never traps the reader.
+- **`.ticket-live-note__dismiss`** — hides the notice for that one change. A
+  newer change is a new fact and may speak again.
+
+Behaviour:
+- An unchanged ticket costs one small request and touches no DOM.
+- A hidden tab is not polled; it catches up on `visibilitychange`.
+- The status pill in the banner (`[data-ticket-status-pill]`,
+  `[data-ticket-status-label]`) is the shared §5.10 `.status-pill` recipe and
+  is updated in place with the status the server returned. Inputs, the form,
+  the timeline and the map are never rewritten.
+- Without JavaScript the ticket is still a ticket; the reader reloads when
+  they choose to.
+- The endpoint is a machine endpoint: a person who opens it in the address bar
+  is redirected to the ticket, not shown JSON.
+
+Tokens: `--status-progress-bg`, `--status-progress-text`, `--radius-sm`,
+`--radius-pill`. **No new colours.**
+
+Why: a queue can be live and the ticket still stale. The person doing the work
+needs the same truth as the person watching the list — but their hands are on
+the form, so the update must inform them without interrupting them.
+
+### 5.40 Staff action panels — `.staff-action-panel` / `.staff-field`
+
+Purpose: the ticket is where a department acts, but three of the actions it
+owns have no other surface — asking the resident for better evidence, handing
+verification to another verifier, and moderating the public copy. They are not
+navigation and not a list; they are short forms that belong beside the thing
+they act on. The panel is the card those actions share, so a staff member sees
+one grammar for "here is a thing the office can do" instead of three bespoke
+boxes.
+
+Anatomy:
+- **`.staff-action-panel`** — an ordinary `.workspace-card` carrying a
+  section list. The header is the page's existing icon + `h2`.
+- **`.staff-action-panel__section`** — one action. A hairline rule separates
+  two actions; the first has none. A section that only reports state (waiting
+  on the resident) is still a section, because the question and the answer
+  belong to the same action.
+- **`.staff-action-panel__section-title`** — the action's verb, 13px/700.
+- **`.staff-action-panel__hint`** — the sentence under it: what the action
+  does, what it will cost, what the resident will see.
+- **`.staff-action-panel__state`** — the current state of a conversation
+  (waiting, answered). A waiting state uses the action-needed family so it
+  cannot be mistaken for a completed one.
+- **`.staff-action-panel__quote`** — the resident's question or reply, set
+  apart with a left rule and `white-space: pre-line`; the resident's line
+  breaks are part of what they said.
+- **`.staff-field`** — a labelled form field: label (11px/700 uppercase
+  `--faint`), control, and optional `.staff-field__hint` /
+  `.staff-field__error`. Inputs are 44px-high or taller and take the shared
+  gold focus ring.
+- **`.staff-action-panel__submit`** — the one primary action in a section,
+  navy on light, 44px minimum.
+
+Variants:
+- **Verification follow-up** (verifier only): ask form, waiting state,
+  answered state, or the round cap. Delegation sits in a second section only
+  when an eligible verifier exists.
+- **Internal note** — a `.staff-field` inside the official response form, not
+  a panel of its own. It is the internal half of the same update; splitting
+  it into a second form would let the two halves drift apart.
+- **`.moderation-panel--light`** — the shared moderation component
+  (`resources/views/components/moderation-panel.blade.php`) re-toned for a
+  light page. The markup is one component used by staff and admin; only the
+  surface tone changes. The office can **withhold or redact**, never publish:
+  the resident's visibility choice is stated, not offered as a control.
+
+Behaviour:
+- Ask and delegate are shown only when the viewer can verify and the report
+  is still being settled (`Submitted` / `Under Review`). The page never
+  advertises a control the service would refuse.
+- The delegation select excludes the viewer and the assigned worker — the
+  separation-of-duties rule — so the refused options are not offered.
+- The ask form is not shown while a request is open or answered; the state
+  box replaces it. Round 2 is the cap, and the page says so.
+- Moderation is available to every staff member in the department, not only
+  verifiers, because it is a content decision rather than a verification one.
+- The internal note is written to the immutable log with `is_internal = true`
+  and never rendered on the resident page, the public timeline or the
+  transparency register.
+
+Tokens: `--navy-900`, `--navy-800`, `--gold-500`, `--surface`,
+`--surface-soft`, `--line`, `--line-soft`, `--text`, `--muted`, `--faint`,
+`--error-text`, `--status-progress-bg` / `--status-progress-text`,
+`--radius-sm`, `--radius-lg`, `--shadow-card`. **No new colours.**
+
+Why: a staff member should not have to guess where the office's powers live,
+and the resident's consent should not look like one of them. One card grammar
+for the actions, one shared moderation markup, and no control for a decision
+that is not the office's to make.
+
 ## 6. The z-index contract — **LOCKED**
 
 | Layer | z-index |
@@ -1205,6 +1477,123 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+
+- 2026-11-10 · Staff queue, staff complaint detail, admin dashboard · **the
+  clock on the work a department owes.** A report became the office's
+  responsibility the moment it was verified, and nothing in the system noticed
+  when that responsibility went unpaid. "Verified three weeks ago, still Under
+  Review" was one of forty rows in a queue and nobody was looking at it. Now
+  every verified complaint carries a **deadline**: work must start (three days
+  by default, one for a critical report) and work must finish (fourteen days
+  by default). The days are per priority and admin-editable. The clock starts
+  the first time a report is verified — `reviewed_at` moves on every review
+  decision and cannot say when the office took ownership, so a new
+  `verified_at` records it once — and it never restarts on a later re-review,
+  because the resident has already served that wait. The **staff queue row**
+  and the **staff complaint banner** now carry a deadline chip (§5.38): the
+  action owed and the time left, in the status family the meaning belongs to,
+  so a late row cannot be mistaken for a comfortable one. The queue gained an
+  **Overdue filter**. The **admin dashboard** counts what each office has let
+  slip, on its department card. And a daily sweep
+  (`complaints:flag-overdue-work`) tells the office and the administrators —
+  once each, so a badge nobody reads is not the safety net, but a badge that
+  cries wolf every morning is not a safety net either. Files:
+  `app/Enums/ComplaintSlaState.php` (new), `app/Services/ComplaintSlaService.php`
+  (new), `app/Console/Commands/FlagOverdueWork.php` (new),
+  `app/Services/NotificationService.php`, `app/Models/Notification.php`,
+  `app/Services/ComplaintVerificationService.php`, `app/Models/Complaint.php`,
+  `app/Http/Controllers/{StaffController,AdminController}.php`,
+  `resources/views/staff/complaints/index.blade.php`,
+  `resources/views/staff/complaints/show.blade.php`,
+  `resources/views/admin/dashboard/index.blade.php`,
+  `resources/css/pages/staff-complaint.css`,
+  `resources/css/pages/admin-dashboard.css`, `lang/{en,fil}/staff.php`,
+  `lang/{en,fil}/statuses.php`, `bootstrap/app.php`,
+  `database/migrations/2026_11_10_000004_add_verified_at_to_complaints_table.php`
+  (new), `tests/Feature/ComplaintSlaTest.php` (new). New tokens: none.
+
+- 2026-11-10 · Staff and admin complaint detail · **the proof carries its
+  place.** A photograph of the work was being stored as a bare path with
+  nothing about it but the file — so "the crew was at the reported site" was a
+  claim the file could not be checked against, and the **staff page did not
+  even show the photographs it had been given**. Every photograph now has a
+  row of its own (`complaint_evidences`): the place it was taken, read from
+  the camera's own EXIF record; when it was taken; who attached it; and which
+  part of the work it proves (`work_start` · `completion`). The **staff
+  timeline** now shows the proof it holds, each photograph captioned with its
+  coordinates — §5.37 — and says **"No location recorded"** rather than
+  quietly implying a photograph is proof of somewhere. The **admin timeline**
+  carries the same coordinates on its evidence card. The resident timeline is
+  unchanged: a resident is shown the photograph and told the work was done;
+  the exact position of a municipal work site is not theirs to need. Files:
+  `app/Models/ComplaintEvidence.php` (new),
+  `database/migrations/2026_11_10_000003_create_complaint_evidences_table.php`
+  (new, with a backfill so no existing photograph is invisible),
+  `app/Services/ComplaintWorkService.php`, `app/Services/PhotoLocationService.php`,
+  `app/Models/ComplaintLog.php`, `app/Http/Controllers/{StaffController,AdminController}.php`,
+  `resources/views/staff/complaints/show.blade.php`,
+  `resources/views/admin/complaints/show.blade.php`,
+  `resources/css/pages/staff-complaint.css`,
+  `resources/css/pages/admin-workspace.css`, `lang/{en,fil}/staff.php`,
+  `tests/Feature/ComplaintEvidenceTest.php` (new),
+  `tests/Unit/PhotoLocationServiceTest.php`, `tests/TestCase.php`. New tokens:
+  none.
+
+- 2026-11-10 · Staff **and** admin complaint detail · **the proof rule is now
+  category-aware, and it applies to everyone who can act on a ticket.** The rule
+  was "a photo, always" — every complaint, every office, and only the staff
+  path. That was wrong twice over. A noise complaint is an enforcement action
+  with no site work to photograph, and demanding a photograph of it is theatre;
+  and an administrator could settle a repair with a sentence the department
+  could not. What changed: a complaint now carries a **work mode** —
+  `labor_required` (a repair: proven by a photograph of it), `report_only` (an
+  enforcement or desk action: proven by a written record) or `referral` — taken
+  from its category (`config/complaint_work_policy.php`), **frozen onto the
+  complaint the first time anyone acts on it**, so a later policy edit cannot
+  move the goalposts on a ticket already in flight. The staff and admin paths
+  both call one service (`ComplaintWorkService`), so they cannot drift. The
+  **staff page** states the kind of work in its banner and asks for a photograph
+  only when the chosen status is one that needs it; the **admin page** gained
+  the same proof capture, the same rule, and the kind of work in its detail
+  list — and an administrator can no longer resolve labor work with no
+  photograph. The office may override the mode on a single complaint (a
+  streetlight that turns out to need a crew), and the override is recorded in
+  the audit trail. Files: `app/Enums/WorkExecutionMode.php`,
+  `config/complaint_work_policy.php`, `app/Services/ComplaintWorkService.php`,
+  `app/Http/Controllers/{StaffController,AdminController}.php`,
+  `resources/views/staff/complaints/show.blade.php`,
+  `resources/views/admin/complaints/show.blade.php`,
+  `lang/{en,fil}/statuses.php`, `lang/{en,fil}/staff.php`,
+  `database/migrations/2026_11_10_000002_add_work_mode_to_complaints_table.php`,
+  `tests/Feature/ComplaintWorkProofTest.php`. New tokens: none.
+
+- 2026-11-10 · Staff complaint detail (`/staff/complaints/{id}`) · **proof capture,
+  rebuilt**: the "Add official response" form could not attach a documentation photo
+  at all — the Nov 9 page rewrite dropped the upload surface, while the server kept
+  refusing any move to `In Progress` or `Resolved` without one. The office was stuck
+  at *Under Review* with no way forward. What shipped is a new component, §5.36
+  "Proof capture (staff)": the photo-proof picker with the office's rule stated
+  *above* it, so a staff member learns what the office owes before choosing a
+  status rather than from a validation error after pressing send. The note is
+  driven by the status select and turns to the amber action-needed family the
+  moment a status that needs a photo is chosen, naming that status. Two sources,
+  one picker; the camera input is emptied only after the selection is written back
+  into the gallery input, so a browser that refuses DataTransfer still submits the
+  photos. **Without JavaScript the form still works** — the browser puts the files
+  in the inputs and the server reads them; what is lost is the preview, the
+  per-photo remove button and the live rule. Two fixes came with it: the status
+  dropdown now offers only the transitions the server accepts (it offered every
+  status except the current one, so its default option was a move the server would
+  refuse), and the dropdown's default is now the status the proof note describes.
+  Staff-only — no resident view, route or payload was touched. Files:
+  `resources/views/components/proof-capture.blade.php` (new),
+  `resources/css/pages/staff-complaint.css` (new),
+  `resources/js/proof-capture.js` (new),
+  `resources/views/staff/complaints/show.blade.php`,
+  `resources/views/pages/design-system.blade.php` (live demo),
+  `lang/{en,fil}/staff.php`, `resources/css/app.css` (one import),
+  `resources/js/app.js` (one import), `tests/Feature/StaffDocumentationProofTest.php`.
+  New tokens: none.
 
 - 2026-11-10 · Public transparency feed (`/transparency/complaints`) · **soft
   navigation**: the status chips (with their per-status totals), the active

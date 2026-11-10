@@ -47,6 +47,7 @@
                         <div><dt>Suggested priority</dt><dd>{{ $complaint->suggestedPriorityEnum->label() }}</dd></div>
                         <div><dt>Confirmed priority</dt><dd>{{ $complaint->confirmedPriorityEnum?->label() ?? 'Awaiting confirmation' }}</dd></div>
                         <div><dt>Department</dt><dd>@if($complaint->department)<span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span class="dept-indicator__name">{{ $complaint->department->name }} <span class="dept-chip" data-dept="{{ $complaint->department->code }}">{{ $complaint->department->code }}</span></span></span>@else Unassigned @endif</dd></div>
+                        <div><dt>Work</dt><dd>{{ $workMode->label() }}</dd></div>
                         <div><dt>Reviewed by</dt><dd>{{ $complaint->reviewedBy?->full_name ?? 'Not reviewed yet' }}</dd></div>
                         <div><dt>Filed</dt><dd>{{ $complaint->created_at?->format('M j, Y g:i A') }}</dd></div>
                     </dl>
@@ -126,13 +127,13 @@
                 <div class="admin-panel-heading">
                     <h2 id="complaint-update-title" class="admin-panel-title">Update complaint</h2>
                 </div>
-                <form data-loading-submit method="POST" action="{{ route('admin.complaints.update', $complaint) }}" class="admin-panel-body admin-form-stack">
+                <form data-loading-submit method="POST" action="{{ route('admin.complaints.update', $complaint) }}" enctype="multipart/form-data" class="admin-panel-body admin-form-stack">
                     @csrf
                     @method('PUT')
 
                     <label class="admin-field">
                         <span>Status</span>
-                        <select name="status" class="admin-input">
+                        <select name="status" id="admin-status" class="admin-input">
                             @foreach($statuses as $status)
                                 <option value="{{ $status->value }}" @selected($complaint->status === $status->value)>{{ $status->label() }}</option>
                             @endforeach
@@ -206,6 +207,17 @@
                         <textarea name="staff_note" class="admin-input admin-textarea" rows="5" placeholder="Record a concise update for the audit trail."></textarea>
                     </label>
 
+                    {{-- The same proof the department owes: labor work is proven by
+                         a photograph of it, and an administrator settles a
+                         ticket no more loosely than the office does. --}}
+                    <x-proof-capture
+                        name="documentation_images"
+                        camera-name="documentation_camera_photos"
+                        status-select="admin-status"
+                        :initial-status="$complaint->status"
+                        :require-statuses="$documentationRequiredStatuses"
+                    />
+
                     <button type="submit" class="admin-button admin-button--primary">Save update</button>
                 </form>
             </section>
@@ -252,11 +264,16 @@
                                     <p class="admin-timeline-status">{{ $log->previous_status ?? 'Complaint filed' }} <span aria-hidden="true">→</span> {{ $log->new_status }}</p>
                                     @if($log->comment)<p class="admin-timeline-comment">{{ $log->comment }}</p>@endif
                                     @if($log->documentation_images)
+                                        @php $evidenceRows = $log->documentation_evidence; @endphp
                                         <div class="admin-evidence-grid admin-timeline-evidence">
                                             @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                                                @php $evidenceRow = $evidenceRows[$documentationIndex] ?? null; @endphp
                                                 <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener" class="admin-evidence-card">
-                                                    <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
+                                                    <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('staff.proof.timeline_alt', ['index' => $documentationIndex + 1]) }}" loading="lazy">
                                                     <span>Proof {{ $documentationIndex + 1 }}</span>
+                                                    @if($evidenceRow?->hasLocation())
+                                                        <span class="admin-evidence-card__location">{{ $evidenceRow->locationLabel() }}</span>
+                                                    @endif
                                                 </a>
                                             @endforeach
                                         </div>
@@ -278,75 +295,11 @@
     Admin moderation. Same capability and same limits as the department
     verifier's: withhold or redact, with a reason, and never publish.
 --}}
-<div class="moderation-panel">
-  <h3 class="moderation-panel__title">Public presentation</h3>
-  <p class="moderation-panel__lede">You can withhold this report or clean up sensitive parts of it. You cannot publish or unpublish it.</p>
-
-  <p class="moderation-panel__consent">
-    <strong>{{ $complaint->is_public ? 'The resident published this.' : 'The resident kept this private.' }}</strong>
-    {{ $complaint->is_public
-        ? 'It appears on the transparency page under their display alias. Moderating below can withhold it, but nothing here can change that choice.'
-        : 'It does not appear on the transparency page, and nothing you do here can put it there.' }}
-  </p>
-
-  <form data-loading-submit method="POST" action="{{ route('admin.complaints.moderate', $complaint) }}">
-    @csrf
-
-    <div class="moderation-field">
-      <label class="moderation-check" for="admin-moderation-hide">
-        <input type="hidden" name="hidden_from_public" value="0">
-        <input type="checkbox" id="admin-moderation-hide" name="hidden_from_public" value="1" @checked($complaint->hidden_from_public)>
-        <span class="moderation-check__text">Remove this report from the public transparency page</span>
-      </label>
-    </div>
-
-    <div class="moderation-field">
-      <label for="admin-redacted_title">Replacement title for the public page</label>
-      <input type="text" id="admin-redacted_title" name="redacted_title" maxlength="255"
-             value="{{ old('redacted_title', $complaint->redacted_title) }}"
-             placeholder="{{ $complaint->title }}">
-    </div>
-
-    <div class="moderation-field">
-      <label for="admin-redacted_description">Replacement description for the public page</label>
-      <textarea id="admin-redacted_description" name="redacted_description" rows="4" maxlength="5000"
-                placeholder="{{ $complaint->description }}">{{ old('redacted_description', $complaint->redacted_description) }}</textarea>
-    </div>
-
-    @if (count($complaint->allImagePaths()) > 0)
-      <div class="moderation-field">
-        <label>Evidence photos</label>
-        <div class="moderation-photos">
-          @foreach ($complaint->allImagePaths() as $path)
-            @php $isWithheld = in_array($path, $complaint->withheldImagePaths(), true); @endphp
-            <div class="moderation-photo">
-              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ basename($path) }}</span>
-              @if ($isWithheld)
-                <label style="margin: 0; color: var(--color-gold); cursor: pointer;">
-                  <input type="checkbox" name="restore_image_paths[]" value="{{ $path }}"> Restore
-                </label>
-              @else
-                <label style="margin: 0; cursor: pointer;">
-                  <input type="checkbox" name="withheld_image_paths[]" value="{{ $path }}"> Withhold
-                </label>
-              @endif
-            </div>
-          @endforeach
-        </div>
-      </div>
-    @endif
-
-    <div class="moderation-field">
-      <label for="admin-moderation_reason">Reason (required)</label>
-      <textarea id="admin-moderation_reason" name="moderation_reason" rows="2" maxlength="1000"
-                placeholder="Why is this being withheld or cleaned up?">{{ old('moderation_reason', $complaint->moderation_reason) }}</textarea>
-    </div>
-
-    @error('moderation_reason') <div class="filing-error">{{ $message }}</div> @enderror
-
-    <button type="submit" class="moderation-panel__submit">Save moderation</button>
-  </form>
-</div>
+<x-moderation-panel
+    :complaint="$complaint"
+    :action="route('admin.complaints.moderate', $complaint)"
+    id-prefix="admin"
+/>
 
 @endsection
 

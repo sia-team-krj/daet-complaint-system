@@ -20,7 +20,7 @@
                 </div>
                 @php
                     $statusEnum = $complaint->statusEnum;
-                    $statusKey = \Illuminate\Support\Str::slug((string) $complaint->status, '-');
+                    $statusKey = \Illuminate\Support\Str::slug((string) $complaint->status, '_');
                     $ageNow = now();
                     $ageSeconds = max(0, (int) $complaint->created_at->diffInSeconds($ageNow));
                     $ageDays = (int) floor($ageSeconds / 86400);
@@ -31,9 +31,9 @@
                             : (int) floor($ageSeconds / 3600).' hour'.(floor($ageSeconds / 3600) === 1.0 ? '' : 's'));
                 @endphp
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="pt-pill pt-pill--{{ $statusKey }}" style="font-size: 11px; padding: 3px 10px;">
-                        <span class="pt-pill__dot" aria-hidden="true"></span>
-                        {{ $statusEnum->label() }}
+                    <span class="status-pill {{ $statusKey }}" data-ticket-status-pill style="font-size: 11px; padding: 3px 10px;">
+                        <span class="status-pill__dot" aria-hidden="true"></span>
+                        <span data-ticket-status-label>{{ $statusEnum->label() }}</span>
                     </span>
                     @if($complaint->confirmedPriorityEnum)
                         @php
@@ -49,6 +49,19 @@
                             {{ $complaint->confirmedPriorityEnum->label() }}
                         </span>
                     @endif
+
+                    {{-- How long the office has left on this one. --}}
+                    @if($slaSummary['state'] !== \App\Enums\ComplaintSlaState::NotApplicable)
+                        <span class="sla-chip {{ $slaSummary['state']->badgeClass() }}">
+                            <span>{{ $slaSummary['action'] === 'complete_work'
+                                ? __('staff.sla.action_finish')
+                                : __('staff.sla.action_start') }}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{{ $slaSummary['days'] < 0
+                                ? trans_choice('staff.sla.days_overdue', abs($slaSummary['days']))
+                                : trans_choice('staff.sla.days_left', $slaSummary['days']) }}</span>
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -60,6 +73,7 @@
             <div class="banner-metadata-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; font-size: 12px; color: rgba(255,255,255,0.78); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
                 <div>Filed: <strong style="color: #fff;">{{ $complaint->created_at->format('M d, Y') }}</strong></div>
                 <div>Dept: <strong style="color: #fff;">{{ $complaint->department?->name ?? 'Unassigned' }}</strong></div>
+                <div>Work: <strong style="color: #fff;">{{ $workMode->label() }}</strong></div>
                 <div>Age: <strong style="color: #E9B943;">{{ $ageLabel }} open</strong></div>
             </div>
         </div>
@@ -89,6 +103,30 @@
                 <span>Back to Staff Dashboard</span>
             </a>
         </nav>
+
+        {{-- ════════════ LIVE TICKET ════════════
+             Another hand may move this case while it is open. The panel
+             polls a fingerprint and, when it differs, says who changed what.
+             It never replaces the form: a staff member mid-sentence keeps
+             every word they typed. --}}
+        <div data-live-ticket
+             data-endpoint="{{ route('staff.complaints.state', $complaint) }}"
+             data-fingerprint="{{ $ticketFingerprint }}"
+             data-interval="20000">
+
+            <div class="ticket-live-note" data-live-ticket-notice role="status" aria-live="polite" hidden>
+                <span class="ticket-live-note__dot" aria-hidden="true"></span>
+                <p class="ticket-live-note__text" data-live-ticket-message></p>
+                <div class="ticket-live-note__actions">
+                    <a class="ticket-live-note__reload" data-live-ticket-refresh href="{{ route('staff.complaints.show', $complaint) }}">
+                        {{ __('staff.live.refresh') }}
+                    </a>
+                    <button type="button" class="ticket-live-note__dismiss" data-live-ticket-dismiss>
+                        {{ __('staff.live.dismiss') }}
+                    </button>
+                </div>
+            </div>
+        </div>
 
         {{-- Optimized Responsive Grid (Adapts intelligently across breakpoints) --}}
         <div class="staff-detail-grid">
@@ -215,6 +253,101 @@
                     </form>
                 </div>
 
+                {{-- 5. Verification follow-up — the two actions the November
+                     rewrite dropped: ask the resident for better evidence, and
+                     hand verification to another verifier. The server has
+                     always supported both; this is the surface that lets a
+                     staff member reach them. --}}
+                @if($user->canVerifyComplaints() && $verificationOpen)
+                    <div class="tr-card workspace-card staff-action-panel" style="border-top: 3px solid var(--status-review-dot);">
+                        <div class="workspace-card__header">
+                            <div class="workspace-card__icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3Z"/></svg>
+                            </div>
+                            <h2>{{ __('staff.verification.follow_up') }}</h2>
+                        </div>
+
+                        <div class="staff-action-panel__section">
+                            @if($openInformationRequest)
+                                @if($openInformationRequest->isOpen())
+                                    <div class="staff-action-panel__state staff-action-panel__state--waiting">
+                                        <strong>{{ __('staff.verification.waiting_title') }}</strong>
+                                        <p>{{ __('staff.verification.waiting_body') }}</p>
+                                    </div>
+                                @else
+                                    <div class="staff-action-panel__state">
+                                        <strong>{{ __('staff.verification.answered_title') }}</strong>
+                                        <p>{{ __('staff.verification.answered_body') }}</p>
+                                    </div>
+                                @endif
+
+                                <p class="staff-action-panel__hint"><strong>{{ __('staff.verification.round', ['round' => $openInformationRequest->round, 'max' => \App\Services\ComplaintVerificationService::MAX_INFORMATION_ROUNDS]) }}</strong></p>
+                                <blockquote class="staff-action-panel__quote">{{ $openInformationRequest->question }}</blockquote>
+
+                                @if($openInformationRequest->isAnswered())
+                                    <p class="staff-action-panel__hint" style="margin-top: 12px;"><strong>{{ __('staff.verification.reply_title') }}</strong></p>
+                                    <blockquote class="staff-action-panel__quote">{{ $openInformationRequest->response_text }}</blockquote>
+                                @endif
+                            @elseif($awaitingResident)
+                                <div class="staff-action-panel__state staff-action-panel__state--waiting">
+                                    <strong>{{ __('staff.verification.waiting_title') }}</strong>
+                                    <p>{{ trim((string) $complaint->review_notes) !== ''
+                                        ? __('staff.verification.orphan_waiting')
+                                        : __('staff.verification.orphan_no_question') }}</p>
+                                </div>
+                            @elseif($canAskForInformation)
+                                <h3 class="staff-action-panel__section-title">{{ __('staff.verification.ask_title') }}</h3>
+                                <p class="staff-action-panel__hint">{{ __('staff.verification.ask_body', ['round' => $informationRounds + 1, 'max' => \App\Services\ComplaintVerificationService::MAX_INFORMATION_ROUNDS]) }}</p>
+
+                                <form method="POST" action="{{ route('staff.complaints.verification.request-information', $complaint) }}">
+                                    @csrf
+
+                                    <div class="staff-field">
+                                        <label for="verification-question">{{ __('staff.verification.question_label') }}</label>
+                                        <textarea id="verification-question" name="question" rows="3" required minlength="15" maxlength="1000" placeholder="{{ __('staff.verification.question_placeholder') }}">{{ old('question') }}</textarea>
+                                        <p class="staff-field__hint">{{ __('staff.verification.question_hint') }}</p>
+                                        @error('question')<p class="staff-field__error">{{ $message }}</p>@enderror
+                                    </div>
+
+                                    <button type="submit" class="staff-action-panel__submit">{{ __('staff.verification.ask_submit') }}</button>
+                                </form>
+                            @elseif($informationRounds >= \App\Services\ComplaintVerificationService::MAX_INFORMATION_ROUNDS)
+                                <p class="staff-action-panel__hint">{{ __('staff.verification.rounds_exhausted') }}</p>
+                            @endif
+                        </div>
+
+                        @if($canDelegateVerification)
+                            <div class="staff-action-panel__section">
+                                <h3 class="staff-action-panel__section-title">{{ __('staff.verification.delegate_title') }}</h3>
+                                <p class="staff-action-panel__hint">{{ __('staff.verification.delegate_body') }}</p>
+
+                                <form method="POST" action="{{ route('staff.complaints.verification.delegate', $complaint) }}">
+                                    @csrf
+
+                                    <div class="staff-field">
+                                        <label for="verifying-staff">{{ __('staff.verification.delegate_label') }}</label>
+                                        <select id="verifying-staff" name="verifying_staff_id" required>
+                                            <option value="">{{ __('staff.verification.delegate_choose') }}</option>
+                                            @foreach($delegationCandidates as $verifier)
+                                                <option value="{{ $verifier->id }}" @selected((int) old('verifying_staff_id', $complaint->verifying_staff_id) === $verifier->id)>{{ $verifier->full_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('verifying_staff_id')<p class="staff-field__error">{{ $message }}</p>@enderror
+                                    </div>
+
+                                    <button type="submit" class="staff-action-panel__submit">{{ __('staff.verification.delegate_submit') }}</button>
+                                </form>
+                            </div>
+                        @endif
+
+                        @if($complaint->verifyingStaff?->full_name)
+                            <p class="staff-action-panel__hint" style="margin: 14px 0 0;">
+                                {{ __('staff.verification.delegate_current', ['name' => $complaint->verifyingStaff->full_name]) }}
+                            </p>
+                        @endif
+                    </div>
+                @endif
+
             </div>
 
             {{-- SIDE COLUMN: Resident Info, Official Response, Activity Timeline --}}
@@ -243,7 +376,18 @@
                     </p>
                 </div>
 
-                {{-- 2. Official Response Form Card (when verified) --}}
+                {{-- 2. Public presentation — moderation, not publication. The
+                     resident's visibility choice is theirs alone; the office can
+                     withhold or redact the public copy. Shared with the admin
+                     ticket page so the two cannot drift. --}}
+                <x-moderation-panel
+                    class="moderation-panel--light"
+                    :complaint="$complaint"
+                    :action="route('staff.complaints.moderate', $complaint)"
+                    id-prefix="staff"
+                />
+
+                {{-- 3. Official Response Form Card (when verified) --}}
                 @if($complaint->isVerified() && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Rejected && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Closed)
                     <div class="tr-card workspace-card" style="border-top: 3px solid #3FCB6F;">
                         <div class="workspace-card__header">
@@ -255,20 +399,53 @@
                         <form method="POST" action="{{ route('staff.complaints.update', $complaint) }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 14px;">
                             @csrf
                             @method('PUT')
+                            @php
+                                // Only the statuses this complaint can legally
+                                // move to. The server refuses every other
+                                // transition, so offering them here only gives
+                                // the staff member a dead end.
+                                $availableStatuses = $complaint->statusEnum->allowedTransitions();
+                                // The browser selects the first option that is not
+                                // marked selected, and this dropdown never marks
+                                // one — so this is the status the form opens on.
+                                $initialStatus = collect($availableStatuses)->first()?->value;
+                            @endphp
                             <div>
-                                <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 6px;">Status update</label>
-                                <select name="status" class="tr-select" style="width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line, #DCE5F1); border-radius: 6px; background: var(--surface, #FFFFFF); color: #142D50; font-size: 13px;" required>
-                                    @foreach($statuses as $statusOption)
-                                        <option value="{{ $statusOption->value }}" {{ $complaint->statusEnum->value === $statusOption->value ? 'selected' : '' }}>{{ $statusOption->label() }}</option>
+                                <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 6px;" for="status">Status update</label>
+                                <select name="status" id="status" class="tr-select" style="width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line, #DCE5F1); border-radius: 6px; background: var(--surface, #FFFFFF); color: #142D50; font-size: 13px;" required>
+                                    @foreach($availableStatuses as $statusOption)
+                                        <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div>
-                                <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 6px;">Public response note</label>
-                                <textarea name="note" rows="3" style="width: 100%; padding: 10px 12px; border: 1px solid var(--line, #DCE5F1); border-radius: 6px; background: var(--surface, #FFFFFF); color: #142D50; font-size: 13px;" required minlength="10" placeholder="Write update visible to resident...">{{ old('note') }}</textarea>
+                                <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748B; margin-bottom: 6px;" for="note">Public response note</label>
+                                <textarea name="note" id="note" rows="3" style="width: 100%; padding: 10px 12px; border: 1px solid var(--line, #DCE5F1); border-radius: 6px; background: var(--surface, #FFFFFF); color: #142D50; font-size: 13px;" required minlength="10" placeholder="Write update visible to resident...">{{ old('note') }}</textarea>
                             </div>
+
+                            {{-- The internal half of the update: context for the
+                                 office, written to the same immutable log spine
+                                 but never shown to the resident or the public. --}}
+                            <div class="staff-field">
+                                <label for="internal_note">{{ __('staff.internal_note.label') }} <span style="font-weight: 600; text-transform: none; letter-spacing: 0;">{{ __('staff.internal_note.optional') }}</span></label>
+                                <textarea name="internal_note" id="internal_note" rows="2" maxlength="2000" placeholder="{{ __('staff.internal_note.placeholder') }}">{{ old('internal_note') }}</textarea>
+                                <p class="staff-field__hint">{{ __('staff.internal_note.hint') }}</p>
+                                @error('internal_note')<p class="staff-field__error">{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- The proof the resident will see. The office cannot say
+                                 the work is under way, or that it is done, without a
+                                 photograph of it. --}}
+                            <x-proof-capture
+                                name="documentation_images"
+                                camera-name="documentation_camera_photos"
+                                status-select="status"
+                                :initial-status="$initialStatus"
+                                :require-statuses="$documentationRequiredStatuses"
+                            />
+
                             <button type="submit" class="tr-button" style="width: 100%; justify-content: center; min-height: 44px; background: #15803D; color: #FFFFFF; font-weight: 700; border-radius: 6px; font-size: 13px;">
-                                Send response & update status
+                                Send response &amp; update status
                             </button>
                         </form>
                     </div>
@@ -292,7 +469,7 @@
                                 <div style="position: relative; font-size: 12px;">
                                     <div style="position: absolute; left: -18px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: {{ $log->is_internal ? '#D97706' : '#10294B' }}; border: 2px solid #FFFFFF;"></div>
                                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                                        <strong style="color: #142D50;">{{ $log->actor->full_name ?? 'System' }}</strong>
+                                        <strong style="color: #142D50;">{{ $log->actor->staff_actor_name ?? 'System' }}</strong>
                                         <span style="font-size: 10px; color: #64748B;">{{ $log->created_at->diffForHumans() }}</span>
                                     </div>
                                     @if($log->previous_status && $log->new_status)
@@ -302,6 +479,34 @@
                                     @endif
                                     @if($log->comment)
                                         <p style="margin: 3px 0; color: #334155; line-height: 1.45;">{{ $log->comment }}</p>
+                                    @endif
+
+                                    {{-- The proof this update carried, and where each
+                                         photograph was taken. A photo of a repair
+                                         only means something if the place it was
+                                         taken is on the record. --}}
+                                    @if($log->documentation_images)
+                                        @php $evidenceRows = $log->documentation_evidence; @endphp
+                                        <div class="proof-timeline">
+                                            @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                                                @php $evidenceRow = $evidenceRows[$documentationIndex] ?? null; @endphp
+                                                <figure class="proof-timeline__item">
+                                                    <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
+                                                        <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('staff.proof.timeline_alt', ['index' => $documentationIndex + 1]) }}" loading="lazy">
+                                                    </a>
+                                                    @if($evidenceRow?->hasLocation())
+                                                        <figcaption class="proof-timeline__location">
+                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                            <span>{{ $evidenceRow->locationLabel() }}</span>
+                                                        </figcaption>
+                                                    @else
+                                                        <figcaption class="proof-timeline__location proof-timeline__location--none">
+                                                            {{ __('staff.proof.no_location') }}
+                                                        </figcaption>
+                                                    @endif
+                                                </figure>
+                                            @endforeach
+                                        </div>
                                     @endif
                                     <span style="font-size: 10px; color: {{ $log->is_internal ? '#D97706' : '#15803D' }}; font-weight: 600;">
                                         {{ $log->is_internal ? 'Internal Staff Note' : 'Public Update' }}

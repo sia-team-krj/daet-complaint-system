@@ -46,11 +46,38 @@ class StaffDocumentationProofTest extends TestCase
             ->assertOk()
             ->assertSee('Photo library')
             ->assertSee('Use camera')
-            ->assertSee('documentation-previews', false)
+            ->assertSee('proof-capture__previews', false)
             ->assertSee('name="documentation_camera_photos[]"', false)
-            ->assertSee('data-documentation-trigger="documentation_camera_photos"', false)
+            ->assertSee('data-proof-trigger="documentation_camera_photos-proof-camera"', false)
             ->assertSee('capture="environment"', false)
             ->assertSee('multiple', false);
+    }
+
+    public function test_the_form_states_the_proof_rule_before_the_status_is_chosen(): void
+    {
+        $complaint = $this->verifiedComplaint(ComplaintStatus::UnderReview);
+
+        // Under Review is the complaint's own status, so the dropdown opens on
+        // the first status after it — In Progress, which demands a photo. The
+        // form must say so before the staff member presses send.
+        $this->actingAs($this->staff)
+            ->get(route('staff.complaints.show', $complaint))
+            ->assertOk()
+            ->assertSee('A photo is required for this status')
+            ->assertSee('proof-capture__note--required', false);
+    }
+
+    public function test_the_form_does_not_demand_a_photo_for_a_status_that_needs_none(): void
+    {
+        $complaint = $this->verifiedComplaint(ComplaintStatus::Submitted);
+
+        // Submitted is the complaint's status, so the dropdown opens on Under
+        // Review — which needs no photo.
+        $this->actingAs($this->staff)
+            ->get(route('staff.complaints.show', $complaint))
+            ->assertOk()
+            ->assertSee('Optional for this update')
+            ->assertDontSee('proof-capture__note--required', false);
     }
 
     public function test_staff_cannot_mark_a_complaint_in_progress_without_documentation(): void

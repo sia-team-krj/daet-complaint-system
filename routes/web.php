@@ -211,6 +211,10 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
         Route::get('/activity', [StaffController::class, 'activityIndex'])->name('staff.activity.index');
         Route::get('/complaints', [StaffController::class, 'complaintsIndex'])->name('staff.complaints.index');
+        Route::get('/complaints/browser', [StaffController::class, 'complaintsBrowser'])->name('staff.complaints.browser');
+        // The live ticket panel's machine endpoint. It answers a fingerprint,
+        // never a page: the page's form must not be replaced under the typist.
+        Route::get('/complaints/{complaint}/state', [StaffController::class, 'complaintState'])->name('staff.complaints.state');
         Route::get('/complaints/{complaint}', [StaffController::class, 'show'])->name('staff.complaints.show');
         Route::put('/complaints/{complaint}/review', [StaffController::class, 'review'])->name('staff.complaints.review');
         Route::put('/complaints/{complaint}', [StaffController::class, 'update'])->name('staff.complaints.update');

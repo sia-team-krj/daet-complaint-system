@@ -107,117 +107,32 @@
                 </div>
                 <div class="tr-filters__row2">
                     <button type="submit" class="tr-button" style="margin: 0;">Apply</button>
-                    @if(request()->filled('status') || request()->filled('review') || request()->filled('priority') || request()->filled('search'))
+                    <a href="{{ route('staff.complaints.index', array_merge(request()->except(['overdue']), $overdue ? [] : ['overdue' => 1])) }}"
+                       class="status-chip {{ $overdue ? 'selected' : '' }}"
+                       @if($overdue) aria-current="true" @endif>
+                        {{ __('staff.sla.overdue_filter') }}
+                    </a>
+                    @if(request()->filled('status') || request()->filled('review') || request()->filled('priority') || request()->filled('search') || $overdue)
                         <a href="{{ route('staff.complaints.index') }}" class="tr-clear">Clear</a>
                     @endif
                 </div>
             </form>
 
-            <div class="tr-register-head">
-                <h2 class="tr-h2" id="queue-list-title">{{ __('staff.queue') }} — {{ $complaints->total() }} {{ \Illuminate\Support\Str::plural('complaint', $complaints->total()) }}</h2>
-                @if($complaints->hasPages())
-                    <p class="tr-results">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }}</p>
-                @endif
+            {{-- The live queue: the browser polls this endpoint and swaps the
+                 rows only when a case actually changed. Two staff members on
+                 the same office no longer work the same case. See
+                 docs/design-system.md §5.36. --}}
+            <div data-live-queue
+                 data-endpoint="{{ route('staff.complaints.browser') }}"
+                 data-fingerprint="{{ $queueFingerprint }}"
+                 data-interval="30000"
+                 data-message-changed-one="{{ __('audit.queue_changed_one') }}"
+                 data-message-changed-many="{{ __('audit.queue_changed_many') }}"
+                 data-message-updated="{{ __('audit.queue_updated') }}">
+
+            <div data-queue-list>
+                @include('staff.complaints.partials.list', ['complaints' => $complaints, 'slaSummaries' => $slaSummaries])
             </div>
-
-            {{-- ════════════ QUEUE LIST (Redesigned Cards, 3 per page) ════════════ --}}
-            <ul class="report-list" id="complaint-table-body">
-                @forelse($complaints as $complaint)
-                    @php
-                        $statusKey = \Illuminate\Support\Str::slug((string) $complaint->status, '_');
-                        $reviewKey = \Illuminate\Support\Str::slug((string) $complaint->review_status, '_');
-                        $ageNow = now();
-                        $ageSeconds = max(0, (int) $complaint->created_at->diffInSeconds($ageNow));
-                        $ageDays = (int) floor($ageSeconds / 86400);
-                        $ageLabel = $ageDays >= 1
-                            ? $ageDays.' day'.($ageDays === 1 ? '' : 's')
-                            : ($ageSeconds < 3600
-                                ? max(1, (int) floor($ageSeconds / 60)).' minute'.(floor($ageSeconds / 60) === 1.0 ? '' : 's')
-                                : (int) floor($ageSeconds / 3600).' hour'.(floor($ageSeconds / 3600) === 1.0 ? '' : 's'));
-                        $priorityValue = $complaint->confirmedPriorityEnum?->value ?? $complaint->suggested_priority ?? 'unset';
-                        $priority = $complaint->confirmedPriorityEnum?->label() ?? $complaint->suggestedPriorityEnum->label();
-                        $waiting = $complaint->informationRequests->first();
-                        $waitingDays = $waiting ? max(0, (int) floor($waiting->created_at->diffInSeconds($ageNow) / 86400)) : null;
-                    @endphp
-                    <li class="staff-queue-item {{ $ageDays > 14 ? 'staff-queue-item--overdue' : ($ageDays > 7 ? 'staff-queue-item--aging' : '') }}"
-                        data-report-row
-                        data-report-id="{{ $complaint->ticket_id }}"
-                        data-department="{{ $department?->name ?? '' }}"
-                        data-category="{{ $complaint->category }}"
-                        data-status="{{ $statusKey }}"
-                        data-search="{{ \Illuminate\Support\Str::lower($complaint->ticket_id.' '.$complaint->title.' '.$complaint->description.' '.$complaint->category) }}"
-                        data-iso-date="{{ $complaint->created_at?->toAtomString() ?? '' }}"
-                    >
-                        <a href="{{ route('staff.complaints.show', $complaint) }}" class="staff-row" wire:navigate>
-                            
-                            {{-- Top Section: Category Icon, Title, Ticket ID & Category --}}
-                            <div class="staff-row__top">
-                                <div class="staff-row__icon-wrapper">
-                                    @include('pages.transparency.partials.category-icon', ['category' => $complaint->category])
-                                </div>
-                                <div class="staff-row__text">
-                                    <h3 class="staff-row__title">{{ \Illuminate\Support\Str::limit($complaint->title, 90) }}</h3>
-                                    <div class="staff-row__meta">
-                                        <span class="ticket-id" style="font-family: var(--font-mono, monospace); font-weight: 700; color: #10294B;">{{ $complaint->ticket_id }}</span>
-                                        <span aria-hidden="true"> · </span>
-                                        <span>{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Middle Section: Status, Review Status & Priority Badges --}}
-                            <div class="staff-row__badges">
-                                <span class="status-pill {{ $statusKey }}">
-                                    <span class="status-pill__dot" aria-hidden="true"></span>
-                                    {{ $complaint->statusEnum->label() }}
-                                </span>
-
-                                @if($complaint->isModerationFlagged())
-                                    <span class="status-pill rejected">
-                                        <span class="status-pill__dot" aria-hidden="true"></span>
-                                        {{ $complaint->moderationLabel() }}
-                                    </span>
-                                @endif
-
-                                <span class="status-pill {{ $reviewKey }}">
-                                    <span class="status-pill__dot" aria-hidden="true"></span>
-                                    {{ $complaint->reviewStatusEnum->label() }}
-                                </span>
-
-                                @if($waiting)
-                                    <span class="staff-row__subtext" style="color: #D97706; font-weight: 600;">
-                                        Waiting {{ $waitingDays }}d{{ $waiting->isStale() ? ' · overdue' : '' }}
-                                    </span>
-                                @endif
-
-                                <span class="staff-priority staff-priority--{{ \Illuminate\Support\Str::slug($priorityValue) }}">
-                                    {{ $priority }}
-                                </span>
-
-                                @if($complaint->suggestedPriorityEnum && $complaint->suggestedPriorityEnum->value !== $priorityValue)
-                                    <span class="staff-row__subtext">Suggested: {{ $complaint->suggestedPriorityEnum->label() }}</span>
-                                @endif
-                            </div>
-
-                            {{-- Bottom / Right Section: Age & Filing Duration --}}
-                            <div class="staff-row__age">
-                                <span class="staff-age">{{ $ageLabel }} open</span>
-                            </div>
-
-                        </a>
-                    </li>
-                @empty
-                    <li>
-                        <div class="empty-state">
-                            <span class="empty-state__icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-                            </span>
-                            <strong>{{ __('staff.empty_title') }}</strong>
-                            <p>{{ __('staff.empty_desc') }}</p>
-                        </div>
-                    </li>
-                @endforelse
-            </ul>
 
             {{-- ════════════ RESPONSIVE PAGINATION SECTION ════════════ --}}
             @php
@@ -227,39 +142,11 @@
                 $from = $total > 0 ? ($currentPage - 1) * $perPage + 1 : 0;
                 $to = min($currentPage * $perPage, $total);
             @endphp
-            <div class="staff-pagination-container">
-                <div class="staff-pagination-info">
-                    <strong>{{ $total }}</strong> {{ \Illuminate\Support\Str::plural('complaint', $total) }} found
-                    @if($total > 0)
-                        <span class="pagination-range">· Showing {{ $from }}–{{ $to }} of {{ $total }} · {{ $perPage }} per page</span>
-                    @endif
-                </div>
+            <div data-queue-pagination>
+                @include('staff.complaints.partials.pagination', ['complaints' => $complaints])
+            </div>
 
-                @if($complaints->hasPages())
-                    {{-- Desktop / Tablet Numbered Pagination --}}
-                    <div class="staff-pagination-desktop">
-                        {{ $complaints->appends(request()->query())->links('pagination::workspace', ['ariaLabel' => __('staff.pagination_label', [], null) ?: 'Complaint queue pagination']) }}
-                    </div>
-
-                    {{-- Mobile Compact Pagination --}}
-                    <div class="staff-pagination-mobile">
-                        @if($complaints->onFirstPage())
-                            <button type="button" class="staff-page-btn staff-page-btn--disabled" disabled>Previous</button>
-                        @else
-                            <a href="{{ $complaints->previousPageUrl() }}" class="staff-page-btn">Previous</a>
-                        @endif
-
-                        <span class="staff-page-indicator">
-                            Page {{ $currentPage }} of {{ $complaints->lastPage() }}
-                        </span>
-
-                        @if($complaints->hasMorePages())
-                            <a href="{{ $complaints->nextPageUrl() }}" class="staff-page-btn">Next</a>
-                        @else
-                            <button type="button" class="staff-page-btn staff-page-btn--disabled" disabled>Next</button>
-                        @endif
-                    </div>
-                @endif
+            <p class="staff-queue-live-status" data-live-queue-status role="status" aria-live="polite"></p>
             </div>
 
         </div>

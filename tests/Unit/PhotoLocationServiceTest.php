@@ -32,6 +32,32 @@ class PhotoLocationServiceTest extends TestCase
         $this->assertNull(app(PhotoLocationService::class)->extract($photo));
     }
 
+    public function test_inspect_reports_the_location_and_where_it_came_from(): void
+    {
+        $inspection = app(PhotoLocationService::class)->inspect(
+            $this->proofPhotoWithGps(14.12345678, 121.65432100),
+        );
+
+        $this->assertEqualsWithDelta(14.12345678, $inspection['latitude'], 0.000001);
+        $this->assertEqualsWithDelta(121.65432100, $inspection['longitude'], 0.000001);
+        $this->assertSame('exif', $inspection['location_source']);
+        $this->assertArrayHasKey('captured_at', $inspection);
+    }
+
+    public function test_inspect_says_none_rather_than_guessing(): void
+    {
+        $photo = UploadedFile::fake()->createWithContent(
+            'plain.png',
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+        );
+
+        $inspection = app(PhotoLocationService::class)->inspect($photo);
+
+        $this->assertNull($inspection['latitude']);
+        $this->assertNull($inspection['longitude']);
+        $this->assertSame('none', $inspection['location_source']);
+    }
+
     private function geotaggedJpeg(): string
     {
         $gpsDataOffset = 80;

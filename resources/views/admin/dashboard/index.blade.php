@@ -90,6 +90,12 @@
                                         <span>{{ $pending }} pending</span>
                                         <span aria-hidden="true">·</span>
                                         <span>{{ $department->staff_count ?? 0 }} staff</span>
+                                        @if(($overdueByDepartment[$department->id] ?? 0) > 0)
+                                            <span aria-hidden="true">·</span>
+                                            <span class="dept-department-card__overdue">
+                                                {{ trans_choice('staff.sla.overdue_count', $overdueByDepartment[$department->id]) }}
+                                            </span>
+                                        @endif
                                     </span>
                                 </span>
                                 <svg class="dept-department-card__chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>

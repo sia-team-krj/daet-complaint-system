@@ -1065,6 +1065,18 @@ body.role-admin.admin-layout .admin-evidence-card:focus-visible {
     border-color: var(--navy-100);
 }
 
+/* Where the photograph was taken. The coordinates are the proof that the
+ * work happened at the reported site, so they are shown, not hidden. */
+body.role-admin.admin-layout .admin-evidence-card__location {
+    display: block;
+    margin-top: 2px;
+    color: var(--faint);
+    font-size: 10px;
+    font-family: var(--font-mono);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
 body.role-admin.admin-layout .admin-moderation-panel {
     color: var(--status-progress-text);
     background: var(--status-progress-bg);

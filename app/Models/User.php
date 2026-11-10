@@ -179,6 +179,24 @@ class User extends Authenticatable
     }
 
     /**
+     * Name shown on staff-facing surfaces. Complaint timelines, activity
+     * groups and the live ticket panel are shared by staff and resident
+     * actors, so the label must pick the right name per role: a resident is
+     * masked by the same staff-safe alias as everywhere else on staff
+     * screens, while staff and administrators keep their real names so the
+     * office still knows who acted. The resident's real name reaches only
+     * the administrator surfaces (see ComplaintPolicy::viewRealIdentity).
+     *
+     * Usage: $log->actor->staff_actor_name
+     */
+    public function getStaffActorNameAttribute(): string
+    {
+        return $this->role === 'citizen'
+            ? $this->staff_safe_name
+            : $this->full_name;
+    }
+
+    /**
      * Avatar initials — used in navbar avatar circles.
      * Usage: auth()->user()->initials → "JD"
      */

@@ -121,6 +121,13 @@ class ComplaintVerificationService
             $updates['verification_method'] = $method->value;
         }
 
+        // The first time the office accepts a report, the clock starts: from
+        // then the office owes the resident work. Set once — a later re-review
+        // does not restart the wait the resident has already served.
+        if ($reviewStatus === ComplaintReviewStatus::Verified && $complaint->verified_at === null) {
+            $updates['verified_at'] = now();
+        }
+
         if ($notes !== null && trim($notes) !== '') {
             $updates['review_notes'] = trim($notes);
         }

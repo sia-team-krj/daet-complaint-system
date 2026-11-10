@@ -168,6 +168,51 @@ class NotificationService
     /**
      * A request has gone unanswered long enough that someone should notice.
      */
+    /**
+     * The office accepted a report and has not started the work in time.
+     *
+     * The people told are the ones who can do the work — the department's
+     * staff — plus the administrators, because a department that has let a
+     * report slip is something the municipality should be able to see rather
+     * than something each office has to notice alone.
+     */
+    public function workOverdue(Complaint $complaint, int $daysOverdue): int
+    {
+        $recipients = $this->departmentStaffFor($complaint)
+            ->merge($this->adminFallbackFor())
+            ->unique('id');
+
+        return $this->notifyMany(
+            $recipients,
+            Notification::COMPLAINT_WORK_OVERDUE,
+            "{$complaint->ticket_id} is {$daysOverdue} day(s) past its deadline",
+            $complaint,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'days_overdue' => $daysOverdue,
+                'status' => $complaint->status,
+            ],
+        );
+    }
+
+    /**
+     * The staff of the complaint's department who can be asked to do the work.
+     *
+     * @return Collection<int, User>
+     */
+    public function departmentStaffFor(Complaint $complaint): Collection
+    {
+        if ($complaint->department_id === null) {
+            return collect();
+        }
+
+        return User::query()
+            ->where('role', 'staff')
+            ->where('department_id', $complaint->department_id)
+            ->where('is_active', true)
+            ->get();
+    }
+
     public function informationStale(Complaint $complaint, ComplaintInformationRequest $request): int
     {
         return $this->notifyDepartmentVerifiers(

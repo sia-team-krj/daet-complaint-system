@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ComplaintLog extends Model
 {
@@ -35,6 +36,34 @@ class ComplaintLog extends Model
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    /**
+     * The photographs attached to this update, each with its own location.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<ComplaintEvidence>
+     */
+    public function evidences(): HasMany
+    {
+        return $this->hasMany(ComplaintEvidence::class, 'log_id');
+    }
+
+    /**
+     * The evidence rows for this update, in the order the photographs were
+     * attached — so they line up with documentation_images by index.
+     *
+     * @return array<int, ComplaintEvidence>
+     */
+    public function getDocumentationEvidenceAttribute(): array
+    {
+        if (! $this->relationLoaded('evidences')) {
+            $this->load('evidences');
+        }
+
+        return $this->getRelation('evidences')
+            ->sortBy('id')
+            ->values()
+            ->all();
     }
 
     /**

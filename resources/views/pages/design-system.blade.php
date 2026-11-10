@@ -676,6 +676,116 @@
         </div>
     </section>
 
+    {{-- ═══ PROOF CAPTURE (staff) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-proof">
+        <h2 class="ds-h2" id="ds-proof">Proof capture (staff) — §5.36</h2>
+        <p class="ds-note">
+            The staff photo-proof picker, live. It states the office's rule <em>before</em>
+            the staff member chooses a status: pick a status that needs a photo and the note
+            turns to the amber action-needed family and names it. The server refuses the
+            update without the photo either way — this only moves the refusal earlier.
+            Change the status below to see it switch.
+        </p>
+        <div style="max-width: 520px;">
+            <div class="tr-select" style="max-width: 320px; margin-bottom: 16px;">
+                <select id="ds-proof-status" aria-label="Status update">
+                    <option value="In Progress" selected>In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+                <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <x-proof-capture status-select="ds-proof-status" initial-status="In Progress" />
+            <p class="ds-note" style="margin-top: 12px;">
+                Markup contract: <code>[data-proof-capture]</code> · <code>[data-proof-gallery]</code> ·
+                <code>[data-proof-camera]</code> · <code>[data-proof-previews]</code> ·
+                <code>[data-proof-count]</code> · <code>[data-proof-error]</code> ·
+                <code>[data-proof-trigger]</code> · <code>[data-proof-note]</code>.
+                Controller: <code>resources/js/proof-capture.js</code>. Staff-only — it binds to
+                nothing on a resident page.
+            </p>
+        </div>
+    </section>
+
+    {{-- ═══ LIVE TICKET NOTICE ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-live-ticket">
+        <h2 class="ds-h2" id="ds-live-ticket">Live ticket notice — §5.39</h2>
+        <p class="ds-note">
+            Static swatch: the notice a staff ticket raises when another hand moves the case
+            while the page is open. Amber action-needed, outside the form, with a reload that
+            works without JavaScript and a dismiss for this one change. The status pill updates
+            in place; the form and everything already typed are never rewritten.
+        </p>
+        <div style="max-width: 720px;">
+            <div class="ticket-live-note" style="margin-bottom: 0;">
+                <span class="ticket-live-note__dot" aria-hidden="true"></span>
+                <p class="ticket-live-note__text">Maria Dela Cruz moved this complaint from Under Review to In Progress.</p>
+                <div class="ticket-live-note__actions">
+                    <a class="ticket-live-note__reload" href="#ds-live-ticket">Reload to see the latest</a>
+                    <button type="button" class="ticket-live-note__dismiss">Dismiss</button>
+                </div>
+            </div>
+            <p class="ds-note" style="margin-top: 12px;">
+                Markup contract: <code>[data-live-ticket]</code> ·
+                <code>[data-live-ticket-notice]</code> · <code>[data-live-ticket-message]</code> ·
+                <code>[data-live-ticket-refresh]</code> · <code>[data-live-ticket-dismiss]</code> ·
+                <code>[data-ticket-status-pill]</code> · <code>[data-ticket-status-label]</code>.
+                Controller: <code>resources/js/live-ticket.js</code>. Staff- and admin-only — it
+                binds to nothing on a resident page.
+            </p>
+        </div>
+    </section>
+
+    {{-- ═══ STAFF ACTION PANELS ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-staff-actions">
+        <h2 class="ds-h2" id="ds-staff-actions">Staff action panels — §5.40</h2>
+        <p class="ds-note">
+            Static swatch: the verification follow-up card a verifier sees on a ticket that is
+            still being settled. The ask form is replaced by a waiting or answered state while a
+            request is open; the delegation section appears only when another eligible verifier
+            exists. Fields are the shared <code>.staff-field</code> recipe.
+        </p>
+
+        <div style="max-width: 620px; padding: 20px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); box-shadow: var(--shadow-card);">
+            <h3 class="staff-action-panel__section-title">Ask the resident for more evidence</h3>
+            <p class="staff-action-panel__hint">Say exactly what is missing. The resident sees the question and can reply with text and photos. This uses round 1 of 2.</p>
+
+            <div class="staff-field">
+                <label for="ds-staff-question">What is missing?</label>
+                <textarea id="ds-staff-question" rows="3">The streetlight photo is too dark to read the pole number. Please send a closer shot of the pole.</textarea>
+                <p class="staff-field__hint">At least 15 characters. A vague ask is refused by the server.</p>
+            </div>
+
+            <button type="button" class="staff-action-panel__submit">Ask the resident</button>
+        </div>
+
+        <div class="staff-action-panel__state staff-action-panel__state--waiting" style="max-width: 620px; margin-top: 16px;">
+            <strong>Waiting on the resident</strong>
+            <p>They have been asked for more evidence. Their reply will appear here, and the ticket stays with them until it does.</p>
+        </div>
+
+        <div class="moderation-panel moderation-panel--light" style="max-width: 620px; margin-top: 16px;">
+            <h3 class="moderation-panel__title">Public presentation</h3>
+            <p class="moderation-panel__lede">You can withhold this report or clean up sensitive parts of it. You cannot publish or unpublish it.</p>
+            <p class="moderation-panel__consent">
+                <strong>The resident published this.</strong>
+                It appears on the transparency page under their display alias. Moderating below can withhold it, but nothing here can change that choice.
+            </p>
+        </div>
+
+        <p class="ds-note" style="margin-top: 12px;">
+            Markup contract: <code>.staff-action-panel__section</code> ·
+            <code>.staff-action-panel__state</code> ·
+            <code>.staff-action-panel__quote</code> ·
+            <code>.staff-field</code> ·
+            <code>.moderation-panel--light</code>.
+            Moderation markup lives once in
+            <code>resources/views/components/moderation-panel.blade.php</code> and is shared by
+            staff and admin. The internal note is a <code>.staff-field</code> inside the official
+            response form, never a separate form.
+        </p>
+    </section>
+
     {{-- ═══ Wireframes ═══ --}}
     <section class="ds-section" aria-labelledby="ds-wire">
         <h2 class="ds-h2" id="ds-wire">Shells</h2>

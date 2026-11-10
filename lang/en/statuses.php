@@ -37,4 +37,23 @@ return [
         'site_visit' => 'Site attended',
         'duplicate_match' => 'Already reported',
     ],
+
+    // What kind of work a complaint is. It decides what counts as proof:
+    // a repair is proven by a photograph of it, an enforcement action by a
+    // written record. See config/complaint_work_policy.php.
+    'work_mode' => [
+        'labor_required' => 'Labor work',
+        'report_only' => 'Report only',
+        'referral' => 'Referral',
+    ],
+
+    // Where a complaint stands against its deadline. The office owes work
+    // from the moment it verifies a report.
+    'sla' => [
+        'on_track' => 'On track',
+        'due_soon' => 'Due soon',
+        'overdue' => 'Overdue',
+        'met' => 'Met',
+        'not_applicable' => 'Not verified yet',
+    ],
 ];

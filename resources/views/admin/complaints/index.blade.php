@@ -143,6 +143,16 @@
     </section>
 
     {{-- ════════════ QUEUE LIST ════════════ --}}
+    {{-- The live queue: the browser polls this endpoint and swaps the rows
+         only when a case actually changed. See docs/design-system.md §5.36. --}}
+    <div data-live-queue
+         data-endpoint="{{ route('admin.complaints.browser') }}"
+         data-fingerprint="{{ $queueFingerprint }}"
+         data-interval="30000"
+         data-message-changed-one="{{ __('audit.queue_changed_one') }}"
+         data-message-changed-many="{{ __('audit.queue_changed_many') }}"
+         data-message-updated="{{ __('audit.queue_updated') }}">
+
     <form data-loading-submit method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" data-bulk-form class="tr-container admin-queue-bulk">
         @csrf
         <section class="queue-list" aria-labelledby="complaint-queue-title">
@@ -179,6 +189,9 @@
 
     <div data-queue-pagination>
         @include('admin.complaints.partials.pagination', ['complaints' => $complaints])
+    </div>
+
+    <p class="admin-queue-live-status" data-live-queue-status role="status" aria-live="polite"></p>
     </div>
 </div>
 

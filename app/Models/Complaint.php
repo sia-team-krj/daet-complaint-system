@@ -30,6 +30,7 @@ class Complaint extends Model
         'address_text',
         'barangay',
         'intake_mode',
+        'work_mode',
         'urgency',
         'status',
         'resolved_at',
@@ -58,6 +59,7 @@ class Complaint extends Model
         'suggestion_reasons',
         'reviewed_by',
         'reviewed_at',
+        'verified_at',
         'review_notes',
     ];
 
@@ -77,6 +79,7 @@ class Complaint extends Model
             'similarity_score' => 'float',
             'suggestion_reasons' => 'array',
             'reviewed_at' => 'datetime',
+            'verified_at' => 'datetime',
             'suggested_priority' => 'string',
             'confirmed_priority' => 'string',
             'review_status' => 'string',

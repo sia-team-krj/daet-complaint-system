@@ -4,6 +4,15 @@ import "./bootstrap";
 // bundle, which means the library is present on every page that might need it
 // and on no page that does not.
 import "./leaflet";
+// The staff proof-capture picker (docs/design-system.md §5.36). Staff-only:
+// it binds to [data-proof-capture] and does nothing on any resident page.
+import { initializeProofCaptures } from "./proof-capture";
+// The live queue (docs/design-system.md §5.36). Staff- and admin-only: it
+// binds to [data-live-queue] and does nothing on a resident page.
+import { initializeLiveQueues } from "./live-queue";
+// The live ticket panel (docs/design-system.md §5.39). Staff- and admin-only:
+// it binds to [data-live-ticket] and never replaces the page's form.
+import { initializeLiveTickets } from "./live-ticket";
 
 const normalizeSearchValue = (value) => value.trim().toLocaleLowerCase();
 
@@ -270,15 +279,24 @@ const initializeRegistrationFields = () => {
     initializeSubmitGuards();
 };
 
+const initializeSharedComponents = () => {
+    initializeRegistrationFields();
+    // Staff-only: finds nothing on a resident page.
+    initializeProofCaptures();
+    // Staff- and admin-only: finds nothing on a resident page.
+    initializeLiveQueues();
+    initializeLiveTickets();
+};
+
 const registerRegistrationFieldLifecycle = () => {
-    document.addEventListener('livewire:load', initializeRegistrationFields);
-    document.addEventListener('livewire:navigated', initializeRegistrationFields);
-    window.addEventListener('pageshow', initializeRegistrationFields);
+    document.addEventListener('livewire:load', initializeSharedComponents);
+    document.addEventListener('livewire:navigated', initializeSharedComponents);
+    window.addEventListener('pageshow', initializeSharedComponents);
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeRegistrationFields);
+        document.addEventListener('DOMContentLoaded', initializeSharedComponents);
     } else {
-        initializeRegistrationFields();
+        initializeSharedComponents();
     }
 };
 

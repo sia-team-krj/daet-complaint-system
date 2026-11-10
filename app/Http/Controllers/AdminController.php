@@ -15,9 +15,12 @@ use App\Models\User;
 use App\Models\InvitationCode;
 use App\Notifications\StaffWelcomeNotification;
 use App\Services\ActivityLogger;
+use App\Support\QueueFingerprint;
 use App\Services\AuditDirectory;
 use App\Services\ComplaintModerationService;
+use App\Services\ComplaintSlaService;
 use App\Services\ComplaintVerificationService;
+use App\Services\ComplaintWorkService;
 use App\Services\EmailVerificationService;
 use App\Services\DepartmentRouter;
 use App\Services\NotificationService;
@@ -29,8 +32,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -49,7 +54,7 @@ class AdminController extends Controller
     /**
      * Admin dashboard with system-wide overview
      */
-    public function dashboard(): View
+    public function dashboard(ComplaintSlaService $sla): View
     {
         $stats = [
             'total' => Complaint::count(),
@@ -65,6 +70,16 @@ class AdminController extends Controller
             'complaints as pending_count' => fn ($q) => $q->where('status', ComplaintStatus::Submitted->value),
             'complaints as in_progress_count' => fn ($q) => $q->where('status', ComplaintStatus::InProgress->value),
         ])->withCount('staff')->get();
+
+        // The work that has slipped past its deadline, by office. A ticket
+        // nobody started must not sit in the queue looking exactly like a
+        // ticket being worked on today.
+        $overdueByDepartment = [];
+        foreach ($departments as $department) {
+            $overdueByDepartment[$department->id] = $sla->overdueCount($department->id);
+        }
+
+        $stats['overdue'] = array_sum($overdueByDepartment);
 
         // Recent complaints (all departments)
         $recentComplaints = Complaint::with(['user', 'department'])
@@ -84,6 +99,7 @@ class AdminController extends Controller
         return view('admin.dashboard.index', compact(
             'stats',
             'departments',
+            'overdueByDepartment',
             'recentComplaints',
             'unassignedComplaints'
         ));
@@ -788,6 +804,7 @@ class AdminController extends Controller
         $complaints = $this->complaintsQueue($request);
         $activeFilters = $this->complaintFilterLabels($request, $departments, $statuses, $reviewStatusOptions, $priorityOptions);
         $stats = $this->complaintQueueStats();
+        $queueFingerprint = QueueFingerprint::for($complaints);
 
         return view('admin.complaints.index', compact(
             'complaints',
@@ -798,6 +815,7 @@ class AdminController extends Controller
             'priorityOptions',
             'stats',
             'activeFilters',
+            'queueFingerprint',
         ));
     }
 
@@ -835,6 +853,8 @@ class AdminController extends Controller
             'pagination' => view('admin.complaints.partials.pagination', [
                 'complaints' => $complaints,
             ])->render(),
+            // What the live queue compares: equal means nothing changed.
+            'fingerprint' => QueueFingerprint::for($complaints),
         ]);
     }
 
@@ -1075,9 +1095,11 @@ class AdminController extends Controller
     /**
      * Show single complaint details (admin view)
      */
-    public function complaintShow(Complaint $complaint): View
+    public function complaintShow(Complaint $complaint, ComplaintWorkService $work): View
     {
-        $complaint->load(['user', 'department', 'logs.actor', 'assignedStaff', 'reviewedBy']);
+        Gate::authorize('viewRealIdentity', $complaint);
+
+        $complaint->load(['user', 'department', 'logs.actor', 'logs.evidences', 'assignedStaff', 'reviewedBy']);
 
         $statuses = ComplaintStatus::cases();
         // Passes the complaint's current office so an archived one still shows
@@ -1097,20 +1119,30 @@ class AdminController extends Controller
         ));
         $priorityOptions = ComplaintPriority::cases();
 
+        // The same proof the department owes. An administrator settling labor
+        // work has to attach the same photograph.
+        $workMode = $work->modeFor($complaint);
+        $documentationRequiredStatuses = array_map(
+            fn (ComplaintStatus $status): string => $status->value,
+            $work->documentationRequiredStatuses($complaint),
+        );
+
         return view('admin.complaints.show', compact(
             'complaint',
             'statuses',
             'departments',
             'staffMembers',
             'reviewStatusOptions',
-            'priorityOptions'
+            'priorityOptions',
+            'workMode',
+            'documentationRequiredStatuses'
         ));
     }
 
     /**
      * Update complaint status, department, or staff assignment
      */
-    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications): RedirectResponse
+    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintWorkService $work): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['nullable', Rule::enum(ComplaintStatus::class)],
@@ -1124,6 +1156,10 @@ class AdminController extends Controller
             'staff_note' => ['nullable', 'string', 'max:1000'],
             'department_id' => ['nullable', 'exists:departments,id'],
             'assigned_staff_id' => ['nullable', 'exists:users,id'],
+            'documentation_images' => ['nullable', 'array', 'max:5'],
+            'documentation_images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'documentation_camera_photos' => ['nullable', 'array', 'max:5'],
+            'documentation_camera_photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $oldStatus = $complaint->statusEnum;
@@ -1192,12 +1228,41 @@ class AdminController extends Controller
         }
 
         // Handle status change
+        $documentationPaths = [];
+        $evidence = ['paths' => [], 'rows' => []];
         if (isset($validated['status'])) {
             $newStatus = ComplaintStatus::from($validated['status']);
             if (! $complaint->isVerified() && $newStatus !== ComplaintStatus::Submitted) {
                 return back()->with('error', 'This complaint must pass review before its status can advance.');
             }
             if ($newStatus !== $oldStatus) {
+                // The same proof the department owes. An administrator cannot
+                // settle labor work with a sentence the department could not.
+                $documentationPhotos = $work->collectPhotos($request);
+                $work->freezeMode($complaint);
+
+                try {
+                    $work->assertActionAllowed($complaint, $newStatus, count($documentationPhotos));
+                } catch (ValidationException $exception) {
+                    return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
+                }
+
+                $documentationPaths = [];
+                $evidence = ['paths' => [], 'rows' => []];
+
+                if ($documentationPhotos !== []) {
+                    try {
+                        $evidence = $work->storeEvidence($documentationPhotos, $complaint, $newStatus);
+                    } catch (\Throwable $exception) {
+                        report($exception);
+
+                        return back()->withErrors([
+                            'documentation_images' => 'We could not save the documentation photos. Please try again.',
+                        ]);
+                    }
+
+                    $documentationPaths = $evidence['paths'];
+                }
                 $updates['status'] = $newStatus->value;
                 if ($newStatus === ComplaintStatus::Resolved && $complaint->resolved_at === null) {
                     $updates['resolved_at'] = now();
@@ -1221,13 +1286,18 @@ class AdminController extends Controller
         }
 
         if (isset($updates['status']) || $note) {
-            ComplaintLog::create([
+            $log = ComplaintLog::create([
                 'complaint_id' => $complaint->id,
                 'previous_status' => $oldStatus->value,
                 'new_status' => $updates['status'] ?? $oldStatus->value,
                 'comment' => $note,
+                'documentation_paths' => $documentationPaths !== [] ? $documentationPaths : null,
                 'actor_id' => Auth::id(),
             ]);
+
+            // Each photograph now has a row of its own: where it was taken,
+            // when, and by whom.
+            $work->attachEvidence($log, $evidence['rows'], Auth::user());
         }
 
         if ($reviewInputProvided) {

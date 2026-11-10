@@ -3,9 +3,69 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 
 class PhotoLocationService
 {
+    /**
+     * Everything a photograph can tell us about itself: where it was taken and
+     * when.
+     *
+     * The location comes from the camera's own EXIF record. It is advisory
+     * input for the resident's report, and proof for the office: a photograph
+     * of a repair only means something if the place it was taken is recorded.
+     *
+     * @return array{latitude: ?float, longitude: ?float, location_source: string, captured_at: ?Carbon}
+     */
+    public function inspect(UploadedFile $photo): array
+    {
+        $coordinates = $this->extract($photo);
+
+        return [
+            'latitude' => $coordinates['latitude'] ?? null,
+            'longitude' => $coordinates['longitude'] ?? null,
+            'location_source' => $coordinates !== null ? 'exif' : 'none',
+            'captured_at' => $this->capturedAt($photo),
+        ];
+    }
+
+    /**
+     * When the photograph was taken, as the camera recorded it.
+     *
+     * Only the native EXIF reader can answer this: the date lives in the EXIF
+     * segment, and the hand-rolled JPEG reader below reads GPS only. When it
+     * is unavailable the answer is honestly null rather than the upload time,
+     * which would be a different and much less useful fact.
+     */
+    public function capturedAt(UploadedFile $photo): ?Carbon
+    {
+        $path = $photo->getRealPath();
+
+        if (! $path || ! is_readable($path) || ! function_exists('exif_read_data')) {
+            return null;
+        }
+
+        $exif = @exif_read_data($path, null, true);
+
+        if (! is_array($exif)) {
+            return null;
+        }
+
+        $raw = $exif['EXIF']['DateTimeOriginal']
+            ?? $exif['IFD0']['DateTime']
+            ?? null;
+
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y:m:d H:i:s', trim($raw));
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
     /**
      * Extract GPS coordinates from an uploaded photo.
      *

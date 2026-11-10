@@ -10,10 +10,16 @@ use App\Mail\ComplaintUpdatedMail;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Models\User;
+use App\Http\Controllers\Concerns\SoftNavigation;
 use App\Services\ActivityLogger;
 use App\Services\ComplaintModerationService;
+use App\Services\ComplaintSlaService;
 use App\Services\ComplaintVerificationService;
+use App\Services\ComplaintWorkService;
 use App\Services\NotificationService;
+use App\Support\QueueFingerprint;
+use App\Support\TicketFingerprint;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -21,6 +27,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -28,6 +35,8 @@ use Throwable;
 
 class StaffController extends Controller
 {
+    use SoftNavigation;
+
     /**
      * Get department-scoped complaint query builder
      */
@@ -36,7 +45,15 @@ class StaffController extends Controller
         $user = Auth::user();
         $departmentId = $user->department_id;
 
-        $query = Complaint::with(['user', 'department', 'logs.actor']);
+        // Columns are restricted on staff surfaces: a resident travels to every
+        // staff page as the staff-safe alias plus the barangay the report was
+        // filed about — never as the full model with its email and contact
+        // number (see ComplaintPolicy::viewRealIdentity).
+        $query = Complaint::with([
+            'user:id,display_alias,barangay',
+            'department',
+            'logs.actor:id,display_alias,first_name,last_name,role',
+        ]);
 
         if ($departmentId) {
             $query->where('department_id', $departmentId);
@@ -89,7 +106,7 @@ class StaffController extends Controller
             })->count(),
         ];
 
-        $priorityQuery = (clone $openPriorityBase)->with(['user']);
+        $priorityQuery = (clone $openPriorityBase)->with(['user:id,display_alias,barangay']);
 
         if ($priorityFilter === 'pending') {
             $priorityQuery->where('review_status', ComplaintReviewStatus::Pending->value);
@@ -119,7 +136,10 @@ class StaffController extends Controller
             ->limit(3)
             ->get();
 
-        $rawActivity = ComplaintLog::with(['complaint', 'actor'])
+        $rawActivity = ComplaintLog::with([
+            'complaint',
+            'actor:id,display_alias,first_name,last_name,role',
+        ])
             ->whereHas('complaint', fn ($query) => $query->where('department_id', $departmentId))
             ->latest('created_at')
             ->limit(12)
@@ -184,7 +204,7 @@ class StaffController extends Controller
         ];
 
         $complaints = Complaint::whereIn('id', $handledComplaintIds)
-            ->with(['user', 'logs' => fn ($query) => $query
+            ->with(['user:id,display_alias,barangay', 'logs' => fn ($query) => $query
                 ->where('actor_id', $user->id)
                 ->latest('created_at')
                 ->limit(1)])
@@ -243,7 +263,7 @@ class StaffController extends Controller
     {
         $logs = array_values($group['logs']);
         $latest = end($logs);
-        $actorName = $latest->actor?->full_name ?? __('staff.dashboard.activity_actor_fallback');
+        $actorName = $latest->actor?->staff_actor_name ?? __('staff.dashboard.activity_actor_fallback');
         $ticket = $latest->complaint?->ticket_id ?? __('staff.dashboard.activity_ticket_fallback');
         $count = count($logs);
         $title = __('staff.dashboard.activity_grouped', [
@@ -293,15 +313,87 @@ class StaffController extends Controller
         return $avgDays ? round($avgDays, 1) : null;
     }
 
-    public function complaintsIndex(Request $request): View
+    public function complaintsIndex(Request $request, ComplaintSlaService $sla): View
     {
         $user = Auth::user();
         $department = $user->department;
+        $status = $request->get('status');
+        $reviewStatus = $request->get('review');
+        $priority = $request->get('priority');
+        $search = $request->get('search');
+        $overdue = $request->get('overdue') === '1';
+
+        $complaints = $this->complaintsQueue($request, $user, $sla);
+        $queueFingerprint = QueueFingerprint::for($complaints);
+
+        $stats = [
+            'new' => Complaint::where('department_id', $user->department_id)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
+            'inProgress' => Complaint::where('department_id', $user->department_id)->where('status', ComplaintStatus::InProgress->value)->count(),
+            'resolvedThisMonth' => Complaint::where('department_id', $user->department_id)
+                ->where('status', ComplaintStatus::Resolved->value)
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->count(),
+            'avgDays' => $this->calculateAvgResolutionDays($user->department_id),
+        ];
+
+        $reviewStatusOptions = ComplaintReviewStatus::cases();
+        $priorityOptions = ComplaintPriority::cases();
+
+        // Where each complaint stands against its deadline, so the row can say
+        // how long the office has left rather than only where it is.
+        $slaSummaries = $this->slaSummariesFor($complaints);
+
+        return view('staff.complaints.index', compact(
+            'department',
+            'stats',
+            'complaints',
+            'status',
+            'reviewStatus',
+            'priority',
+            'reviewStatusOptions',
+            'priorityOptions',
+            'search',
+            'user',
+            'slaSummaries',
+            'queueFingerprint',
+            'overdue'
+        ));
+    }
+
+    /**
+     * Where each complaint in the queue stands against its deadline.
+     *
+     * Shared by the page and the live-queue endpoint, so a swapped-in row can
+     * never disagree with the page it was swapped into.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function slaSummariesFor($complaints): array
+    {
+        $sla = app(ComplaintSlaService::class);
+
+        return $complaints->getCollection()
+            ->mapWithKeys(fn (Complaint $complaint): array => [
+                $complaint->id => $sla->summary($complaint),
+            ])
+            ->all();
+    }
+
+    /**
+     * The staff queue's rows.
+     *
+     * Shared by the page and the live-queue endpoint, so a fragment can never
+     * disagree with the page it was swapped into.
+     */
+    private function complaintsQueue(Request $request, User $user, ComplaintSlaService $sla)
+    {
         $departmentId = $user->department_id;
         $status = $request->get('status');
         $reviewStatus = $request->get('review');
         $priority = $request->get('priority');
         $search = $request->get('search');
+        $overdue = $request->get('overdue') === '1';
         $validStatuses = [
             ComplaintStatus::Submitted->value,
             ComplaintStatus::UnderReview->value,
@@ -314,6 +406,7 @@ class StaffController extends Controller
             fn (ComplaintReviewStatus $review): string => $review->value,
             ComplaintReviewStatus::cases(),
         );
+
         $validPriorities = array_map(
             fn (ComplaintPriority $priority): string => $priority->value,
             ComplaintPriority::cases(),
@@ -322,7 +415,7 @@ class StaffController extends Controller
         // Outstanding asks are eager-loaded, otherwise the queue would issue one
         // extra query per row just to show how long a resident has been waiting.
         $query = Complaint::where('department_id', $departmentId)->with([
-            'user',
+            'user:id,display_alias,barangay',
             'informationRequests' => fn ($relation) => $relation
                 ->outstanding()
                 ->latest('id'),
@@ -349,45 +442,125 @@ class StaffController extends Controller
             });
         }
 
-        $complaints = $query
+        // Only the work that has actually slipped past its deadline. The days
+        // depend on the priority, so the ids come back from the clock rather
+        // than from a plain interval.
+        if ($overdue) {
+            $query->whereIn('complaints.id', $sla->overdueIds($departmentId));
+        }
+
+        return $query
             ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
             ->orderBy('created_at', 'asc')
             ->paginate(3)
             ->withQueryString();
+    }
 
-        $stats = [
-            'new' => Complaint::where('department_id', $departmentId)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
-            'inProgress' => Complaint::where('department_id', $departmentId)->where('status', ComplaintStatus::InProgress->value)->count(),
-            'resolvedThisMonth' => Complaint::where('department_id', $departmentId)
-                ->where('status', ComplaintStatus::Resolved->value)
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->count(),
-            'avgDays' => $this->calculateAvgResolutionDays($departmentId),
-        ];
+    /**
+     * The staff queue's regions, for the live queue.
+     *
+     * A staff member who leaves the queue open must see that a case was moved
+     * or closed by someone else. The endpoint answers with the rendered rows
+     * and a fingerprint: the browser compares the fingerprint and swaps the
+     * rows only when something really changed.
+     */
+    public function complaintsBrowser(Request $request, ComplaintSlaService $sla): JsonResponse|RedirectResponse
+    {
+        // A person gets the page; only a script gets the fragments.
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to($this->fragmentFallbackUrl($request, 'staff.complaints.index'));
+        }
 
-        $reviewStatusOptions = ComplaintReviewStatus::cases();
-        $priorityOptions = ComplaintPriority::cases();
+        $complaints = $this->complaintsQueue($request, Auth::user(), $sla);
+        $slaSummaries = $this->slaSummariesFor($complaints);
 
-        return view('staff.complaints.index', compact(
-            'department',
-            'stats',
-            'complaints',
-            'status',
-            'reviewStatus',
-            'priority',
-            'reviewStatusOptions',
-            'priorityOptions',
-            'search',
-            'user'
-        ));
+        return response()->json([
+            'list' => view('staff.complaints.partials.list', [
+                'complaints' => $complaints,
+                'slaSummaries' => $slaSummaries,
+            ])->render(),
+            'pagination' => view('staff.complaints.partials.pagination', [
+                'complaints' => $complaints,
+            ])->render(),
+            'fingerprint' => QueueFingerprint::for($complaints),
+        ]);
+    }
+
+    /**
+     * The complaint's current state, for the live ticket panel.
+     *
+     * A staff member who opens a ticket and starts writing a response can
+     * easily spend several minutes on it. In that time somebody else in the
+     * office may move the case, settle it, or leave a note. Without this the
+     * page says nothing, and the staff member finds out by being refused.
+     *
+     * The endpoint answers with a fingerprint of what changed and who changed
+     * it. It never rewrites the page: a staff member who is typing must not
+     * have the form pulled out from under them. A person who opens the URL in
+     * the address bar is sent to the ticket instead of being shown JSON.
+     */
+    public function complaintState(Complaint $complaint, Request $request): JsonResponse|RedirectResponse
+    {
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to(route('staff.complaints.show', $complaint));
+        }
+
+        $user = Auth::user();
+
+        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+            abort(403, 'This complaint is not assigned to your department.');
+        }
+
+        $complaint->load(['logs.actor:id,display_alias,first_name,last_name,role']);
+
+        $fingerprint = TicketFingerprint::for($complaint);
+        $rendered = (string) $request->query('fingerprint', '');
+
+        if ($fingerprint === $rendered) {
+            return response()->json(['fingerprint' => $fingerprint, 'changed' => false]);
+        }
+
+        $newest = $complaint->logs->sortByDesc('id')->first();
+        $previous = $newest?->previous_status !== null
+            ? ComplaintStatus::tryFrom($newest->previous_status)
+            : null;
+        $movedTo = $newest !== null
+            ? ComplaintStatus::tryFrom((string) $newest->new_status)
+            : null;
+
+        // The resident is reported by their staff-safe alias, never their real
+        // name — the same masking the timeline keeps (§ staff-safe identity).
+        $message = match (true) {
+            $newest === null => __('staff.live.changed'),
+            $newest->is_internal && $newest->actor !== null => __('staff.live.note', [
+                'actor' => $newest->actor->staff_actor_name,
+            ]),
+            $newest->actor === null => __('staff.live.changed'),
+            $previous !== null && $movedTo !== null && $previous !== $movedTo => __('staff.live.moved', [
+                'actor' => $newest->actor->staff_actor_name,
+                'previous' => $previous->label(),
+                'status' => $movedTo->label(),
+            ]),
+            default => __('staff.live.updated', ['actor' => $newest->actor->staff_actor_name]),
+        };
+
+        return response()->json([
+            'fingerprint' => $fingerprint,
+            'changed' => true,
+            'status' => $complaint->status,
+            'status_label' => $complaint->statusEnum->label(),
+            'status_key' => Str::slug((string) $complaint->status, '_'),
+            'actor' => $newest?->actor?->staff_actor_name,
+            'occurred_at' => $newest?->created_at?->toAtomString(),
+            'message' => $message,
+        ]);
     }
 
     /**
      * Show single complaint details for staff
      */
-    public function show(Complaint $complaint): View
+    public function show(Complaint $complaint, ComplaintWorkService $work, ComplaintSlaService $sla): View
     {
         $user = Auth::user();
 
@@ -396,7 +569,19 @@ class StaffController extends Controller
             abort(403, 'This complaint is not assigned to your department.');
         }
 
-        $complaint->load(['user', 'department', 'logs.actor', 'reviewedBy', 'verifyingStaff', 'informationRequests.requester']);
+        // The resident rides as the staff-safe alias plus the barangay the
+        // report named — never as the full model with its email or contact
+        // number. Staff actors load their name columns so the page still says
+        // who verified, reviewed or delegated.
+        $complaint->load([
+            'user:id,display_alias,barangay',
+            'department',
+            'logs.actor:id,display_alias,first_name,last_name,role',
+            'logs.evidences',
+            'reviewedBy',
+            'verifyingStaff',
+            'informationRequests.requester:id,display_alias,first_name,last_name,role',
+        ]);
 
         // Status options for dropdown (excluding current status to force change)
         $statuses = array_filter(ComplaintStatus::cases(), fn ($s) => $s->value !== $complaint->statusEnum->value);
@@ -408,6 +593,18 @@ class StaffController extends Controller
             fn ($option) => $option !== ComplaintReviewStatus::NeedsInformation
         ));
         $priorityOptions = ComplaintPriority::cases();
+
+        // What kind of work this is, and therefore what the office has to
+        // attach before it can move the complaint on.
+        $workMode = $work->modeFor($complaint);
+        $documentationRequiredStatuses = array_map(
+            fn (ComplaintStatus $status): string => $status->value,
+            $work->documentationRequiredStatuses($complaint),
+        );
+
+        // Where the office stands against the deadline it took on when it
+        // verified this report.
+        $slaSummary = $sla->summary($complaint);
 
         // Only offered when the viewer can actually verify, so the page does not
         // advertise a control that would be refused.
@@ -421,13 +618,63 @@ class StaffController extends Controller
                 ->get()
             : collect();
 
+        // The conversation with the resident: what is outstanding, and which
+        // round it is on. The ask and the answer are one state, so the page
+        // never shows a fresh question box while the resident is still replying.
+        $openInformationRequest = $complaint->informationRequests
+            ->sortByDesc('id')
+            ->first(fn ($informationRequest): bool => $informationRequest->isOpen()
+                || $informationRequest->isAnswered());
+
+        $informationRounds = (int) $complaint->informationRequests->max('round');
+
+        $awaitingResident = ($openInformationRequest?->isOpen() ?? false)
+            || ($openInformationRequest === null
+                && $complaint->review_status === ComplaintReviewStatus::NeedsInformation->value);
+
+        // Verification follow-up only makes sense while the report is still
+        // being settled. Once it is verified, the work has begun.
+        $verificationOpen = in_array($complaint->statusEnum, [
+            ComplaintStatus::Submitted,
+            ComplaintStatus::UnderReview,
+        ], true);
+
+        $delegationCandidates = $departmentVerifiers
+            ->reject(fn (User $verifier): bool => $verifier->id === $user->id
+                || $verifier->id === $complaint->assigned_staff_id)
+            ->values();
+
+        $canAskForInformation = $user->canVerifyComplaints()
+            && $verificationOpen
+            && $openInformationRequest === null
+            && $informationRounds < ComplaintVerificationService::MAX_INFORMATION_ROUNDS;
+
+        $canDelegateVerification = $user->canVerifyComplaints()
+            && $verificationOpen
+            && $delegationCandidates->isNotEmpty();
+
+        // What the page is showing, so the live panel can tell whether the
+        // ticket moved while the staff member was reading it.
+        $ticketFingerprint = TicketFingerprint::for($complaint);
+
         return view('staff.complaints.show', compact(
             'complaint',
             'statuses',
             'reviewStatusOptions',
             'priorityOptions',
             'departmentVerifiers',
-            'user'
+            'openInformationRequest',
+            'informationRounds',
+            'awaitingResident',
+            'delegationCandidates',
+            'verificationOpen',
+            'canAskForInformation',
+            'canDelegateVerification',
+            'user',
+            'workMode',
+            'documentationRequiredStatuses',
+            'slaSummary',
+            'ticketFingerprint'
         ));
     }
 
@@ -595,9 +842,12 @@ class StaffController extends Controller
 
     /**
      * Update complaint status and add a public response with optional internal note.
-     * Processing and resolution updates require documentation photos as proof.
+     *
+     * What the action demands depends on the kind of work the complaint is
+     * (ComplaintWorkService): a repair is proven by a photograph of it, and
+     * the same rule applies to an administrator as to a department.
      */
-    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications): RedirectResponse
+    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications, ComplaintWorkService $work): RedirectResponse
     {
         $user = Auth::user();
 
@@ -635,16 +885,22 @@ class StaffController extends Controller
             return back()->with('error', 'Invalid status transition from '.$oldStatus->label().' to '.$newStatus->label().'.');
         }
 
-        $documentationPhotos = $this->documentationPhotos($request);
-        $documentationRequired = in_array($newStatus, [
-            ComplaintStatus::InProgress,
-            ComplaintStatus::Resolved,
-        ], true);
+        $documentationPhotos = $work->collectPhotos($request);
 
-        if ($documentationRequired && $documentationPhotos === []) {
-            return back()->withErrors([
-                'documentation_images' => 'Attach at least one documentation photo before marking this complaint as '.strtolower($newStatus->label()).'.',
-            ]);
+        // The rule: labor work is proven by a photograph, and a written
+        // message is never a substitute for one. The mode this complaint is
+        // judged by is settled now, so a later policy change cannot move the
+        // goalposts on a ticket already in flight.
+        $work->freezeMode($complaint);
+
+        try {
+            $work->assertActionAllowed(
+                $complaint,
+                $newStatus,
+                count($documentationPhotos),
+            );
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
         }
 
         if (count($documentationPhotos) > 5) {
@@ -653,30 +909,23 @@ class StaffController extends Controller
             ]);
         }
 
-        $documentationPaths = [];
-        if ($documentationPhotos !== []) {
-            try {
-                foreach ($documentationPhotos as $photo) {
-                    $path = $photo->store("complaint-updates/{$complaint->id}", 'minio');
+        // The photographs are written first, and the rows that record where
+        // and when they were taken are attached afterwards, inside the same
+        // transaction as the update they belong to.
+        try {
+            $evidence = $work->storeEvidence($documentationPhotos, $complaint, $newStatus);
+        } catch (Throwable $exception) {
+            report($exception);
 
-                    if (! is_string($path) || $path === '') {
-                        throw new \RuntimeException('The documentation photo could not be stored.');
-                    }
-
-                    $documentationPaths[] = $path;
-                }
-            } catch (Throwable $exception) {
-                Storage::disk('minio')->delete($documentationPaths);
-                report($exception);
-
-                return back()->withErrors([
-                    'documentation_images' => 'We could not save the documentation photos. Please try again.',
-                ]);
-            }
+            return back()->withErrors([
+                'documentation_images' => 'We could not save the documentation photos. Please try again.',
+            ]);
         }
 
+        $documentationPaths = $evidence['paths'];
+
         try {
-            DB::transaction(function () use ($complaint, $oldStatus, $newStatus, $validated, $user, $activityLogger, $documentationPaths): void {
+            DB::transaction(function () use ($complaint, $oldStatus, $newStatus, $validated, $user, $activityLogger, $documentationPaths, $evidence, $work): void {
                 $updates = [
                     'status' => $newStatus->value,
                 ];
@@ -692,7 +941,7 @@ class StaffController extends Controller
 
                 $complaint->update($updates);
 
-                ComplaintLog::create([
+                $log = ComplaintLog::create([
                     'complaint_id' => $complaint->id,
                     'previous_status' => $oldStatus->value,
                     'new_status' => $newStatus->value,
@@ -701,6 +950,10 @@ class StaffController extends Controller
                     'actor_id' => $user->id,
                     'is_internal' => false,
                 ]);
+
+                // Each photograph now has a row of its own: where it was
+                // taken, when, and by whom.
+                $work->attachEvidence($log, $evidence['rows'], $user);
 
                 $activityLogger->log(
                     'complaint.status_updated',
@@ -711,6 +964,10 @@ class StaffController extends Controller
                         'new_status' => $newStatus->value,
                         'public_note' => $validated['note'],
                         'documentation_count' => count($documentationPaths),
+                        'documentation_located' => count(array_filter(
+                            $evidence['rows'],
+                            fn (array $row): bool => $row['latitude'] !== null,
+                        )),
                     ],
                 );
 
@@ -765,39 +1022,5 @@ class StaffController extends Controller
         return redirect()
             ->route('staff.complaints.show', $complaint)
             ->with('status', 'Response sent and status updated successfully.');
-    }
-
-    /**
-     * Normalize gallery and camera documentation uploads.
-     *
-     * @return array<int, UploadedFile>
-     */
-    private function documentationPhotos(Request $request): array
-    {
-        $photos = $request->file('documentation_images', []);
-
-        if ($photos instanceof UploadedFile) {
-            $photos = [$photos];
-        } elseif (! is_array($photos)) {
-            $photos = [];
-        }
-
-        $cameraPhotos = $request->file('documentation_camera_photos', []);
-        if ($cameraPhotos instanceof UploadedFile) {
-            $cameraPhotos = [$cameraPhotos];
-        } elseif (! is_array($cameraPhotos)) {
-            $cameraPhotos = [];
-        }
-        $photos = array_merge($photos, $cameraPhotos);
-
-        $legacyCameraPhoto = $request->file('documentation_camera_photo');
-        if ($legacyCameraPhoto) {
-            $photos[] = $legacyCameraPhoto;
-        }
-
-        return array_values(array_filter(
-            $photos,
-            fn (mixed $photo): bool => $photo instanceof UploadedFile && $photo->isValid(),
-        ));
     }
 }

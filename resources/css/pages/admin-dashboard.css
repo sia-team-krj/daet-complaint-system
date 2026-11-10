@@ -367,6 +367,12 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__meta {
     overflow: visible;
     text-overflow: clip;
 }
+/* The work this office has let slip. It belongs to the negative family,
+ * because it is the one figure on the card that is a problem. */
+body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__overdue {
+    color: var(--status-rejected-text);
+    font-weight: 700;
+}
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__chevron {
     flex: none;
     width: 18px;

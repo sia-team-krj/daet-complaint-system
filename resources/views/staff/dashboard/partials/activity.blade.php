@@ -5,7 +5,7 @@
     <div class="dept-activity__feed" id="dept-activity-feed">
         @forelse($recentActivity as $i => $log)
             @php
-                $title = $log->display_title ?? __('staff.dashboard.activity_updated', ['actor' => $log->actor?->full_name ?? __('staff.dashboard.activity_actor_fallback'), 'ticket' => $log->complaint?->ticket_id ?? __('staff.dashboard.activity_ticket_fallback')]);
+                $title = $log->display_title ?? __('staff.dashboard.activity_updated', ['actor' => $log->actor?->staff_actor_name ?? __('staff.dashboard.activity_actor_fallback'), 'ticket' => $log->complaint?->ticket_id ?? __('staff.dashboard.activity_ticket_fallback')]);
                 $detail = $log->display_detail ?? __('staff.dashboard.activity_status_changed');
                 $note = $log->display_note ?? null;
                 $complaint = $log->complaint;

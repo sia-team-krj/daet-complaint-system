@@ -1,0 +1,662 @@
+/*
+ * Staff complaint workspace — the proof capture component.
+ *
+ * The staff-side photo picker. It is a component of its own (design system
+ * §5.36): the resident filing wizard has its own picker, and this one has a
+ * different job — it states the office's proof rule before the staff member
+ * chooses a status, and it says whether that status currently demands a
+ * photo.
+ *
+ * It shares the portal's tokens and its visual language with the resident
+ * picker (same 48px icon circle, same 44px buttons, same dashed zone) but
+ * not its markup, so the two can change independently.
+ *
+ * Tokens only — no new colours, no new radii, no new shadows.
+ */
+
+.proof-capture {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── The requirement note ──────────────────────────────────────────
+ * Neutral while the chosen status does not need a photo; the amber
+ * action-needed family once it does. The note is the rule, stated before
+ * the staff member acts, rather than a validation error after.
+ */
+
+.proof-capture__note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.proof-capture__note svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--navy-700);
+}
+
+.proof-capture__note p {
+    margin: 0;
+}
+
+.proof-capture__note strong {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.proof-capture__note span {
+    display: block;
+    margin-top: 2px;
+}
+
+.proof-capture__note--required {
+    border-color: var(--status-progress-dot);
+    background: var(--status-progress-bg);
+    color: var(--status-progress-text);
+}
+
+.proof-capture__note--required svg,
+.proof-capture__note--required strong {
+    color: var(--status-progress-text);
+}
+
+/* ── The picker ──────────────────────────────────────────────────── */
+
+.proof-capture__zone {
+    position: relative;
+    padding: 24px 16px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-align: center;
+}
+
+.proof-capture__zone:hover,
+.proof-capture__zone.is-dragging {
+    border-color: var(--gold-500);
+    background: var(--surface-soft);
+}
+
+.proof-capture__zone:focus-within {
+    border-color: var(--navy-700);
+    box-shadow: var(--ring);
+}
+
+.proof-capture__zone input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.proof-capture__icon {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-700);
+    align-items: center;
+    justify-content: center;
+}
+
+.proof-capture__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.proof-capture__heading {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.proof-capture__subheading {
+    display: block;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.proof-capture__actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.proof-capture__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--navy-700);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.proof-capture__action:hover {
+    background: var(--navy-50);
+}
+
+.proof-capture__action:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+.proof-capture__counter {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.proof-capture__counter strong {
+    color: var(--navy-700);
+    font-weight: 700;
+}
+
+.proof-capture__previews {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.proof-capture__preview {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--navy-50);
+}
+
+.proof-capture__preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.proof-capture__preview-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--navy-950) 75%, transparent);
+    color: var(--surface);
+    cursor: pointer;
+}
+
+.proof-capture__preview-remove svg {
+    width: 14px;
+    height: 14px;
+}
+
+.proof-capture__preview-remove:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+.proof-capture__error {
+    margin-top: 12px;
+    color: var(--error-text);
+    font-size: 14px;
+}
+
+/* ── The proof in the timeline ─────────────────────────────────────
+ * A photograph of the work, and where it was taken. The place is the
+ * point: a photo of a repair only means something if the location it
+ * was taken at is on the record.
+ */
+
+.proof-timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    margin: 8px 0 4px;
+}
+
+.proof-timeline__item {
+    margin: 0;
+    min-width: 0;
+}
+
+.proof-timeline__item a {
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--navy-50);
+}
+
+.proof-timeline__item img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.proof-timeline__location {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.proof-timeline__location svg {
+    flex: none;
+    margin-top: 1px;
+    color: var(--navy-700);
+}
+
+.proof-timeline__location--none {
+    color: var(--faint);
+}
+
+/* ── The deadline chip ────────────────────────────────────────────
+ * How long the office has left on a complaint. The colour is the
+ * status family the meaning belongs to: the review tint for a
+ * comfortable deadline, the action-needed amber for one about to
+ * close, the negative tint for one that has already gone.
+ */
+
+.sla-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.sla-chip--on-track {
+    background: var(--status-review-bg);
+    color: var(--status-review-text);
+}
+
+.sla-chip--due-soon {
+    background: var(--status-progress-bg);
+    color: var(--status-progress-text);
+}
+
+.sla-chip--overdue {
+    background: var(--status-rejected-bg);
+    color: var(--status-rejected-text);
+}
+
+.sla-chip--met {
+    background: var(--status-resolved-bg);
+    color: var(--status-resolved-text);
+}
+
+.sla-chip--none {
+    background: var(--surface-soft);
+    color: var(--muted);
+}
+
+/* ── Live ticket notice ─────────────────────────────────────────────
+ * The ticket changed while it was open. Amber action-needed, because the
+ * staff member is about to act on a case that has moved; the notice states
+ * who did what and offers the reload. It lives outside the form and never
+ * replaces a single keystroke.
+ */
+
+.ticket-live-note {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--status-progress-text);
+    border-radius: var(--radius-sm);
+    background: var(--status-progress-bg);
+    color: var(--status-progress-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ticket-live-note[hidden] {
+    display: none;
+}
+
+.ticket-live-note__dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+}
+
+.ticket-live-note__text {
+    flex: 1 1 240px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.ticket-live-note__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.ticket-live-note__reload,
+.ticket-live-note__dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ticket-live-note__reload {
+    background: var(--status-progress-text);
+    color: var(--status-progress-bg);
+    text-decoration: none;
+}
+
+.ticket-live-note__dismiss {
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.ticket-live-note__reload:focus-visible,
+.ticket-live-note__dismiss:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .ticket-live-note__actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .ticket-live-note__reload,
+    .ticket-live-note__dismiss {
+        flex: 1 1 auto;
+    }
+}
+
+/* ── Staff action panels ────────────────────────────────────────────
+ * The surfaces the November rewrite dropped: ask the resident for evidence,
+ * hand verification to another verifier, and moderate the public copy. They
+ * sit inside the page's `.workspace-card`, so they share its card, header
+ * and icon language; only the fields and the states are defined here.
+ *
+ * Tokens only — no new colours, radii or shadows.
+ */
+
+.staff-action-panel__section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.staff-action-panel__section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.staff-action-panel__section-title {
+    margin: 0 0 4px;
+    color: var(--navy-900);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.staff-action-panel__hint {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.staff-action-panel__state {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+}
+
+.staff-action-panel__state strong {
+    display: block;
+    color: var(--navy-900);
+    font-size: 13px;
+}
+
+.staff-action-panel__state p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.staff-action-panel__state--waiting {
+    border-color: color-mix(in srgb, var(--status-progress-dot) 32%, transparent);
+    background: var(--status-progress-bg);
+}
+
+.staff-action-panel__state--waiting strong,
+.staff-action-panel__state--waiting p {
+    color: var(--status-progress-text);
+}
+
+.staff-action-panel__quote {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-left: 3px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-line;
+}
+
+.staff-field {
+    display: block;
+    margin-bottom: 14px;
+}
+
+.staff-field > label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--faint);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.staff-field input,
+.staff-field textarea,
+.staff-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+}
+
+.staff-field textarea {
+    resize: vertical;
+    line-height: 1.55;
+}
+
+.staff-field input:focus-visible,
+.staff-field textarea:focus-visible,
+.staff-field select:focus-visible {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 1px;
+    border-color: var(--gold-500);
+}
+
+.staff-field__hint {
+    margin: 6px 0 0;
+    color: var(--faint);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+.staff-field__error {
+    margin: 6px 0 0;
+    color: var(--error-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.staff-action-panel__submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--navy-900);
+    border-radius: var(--radius-sm);
+    background: var(--navy-900);
+    color: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.staff-action-panel__submit:hover {
+    background: var(--navy-800);
+}
+
+.staff-action-panel__submit:focus-visible {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
+/* ── Moderation on a light surface ─────────────────────────────────
+ * The base recipe is the admin panel's; on the staff page the same markup
+ * is re-toned with tokens so it reads on a white card.
+ */
+
+.moderation-panel--light {
+    margin-top: 0;
+    padding: 20px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+
+.moderation-panel--light .moderation-panel__title {
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+}
+
+.moderation-panel--light .moderation-panel__lede {
+    color: var(--muted);
+}
+
+.moderation-panel--light .moderation-panel__consent {
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+    color: var(--muted);
+}
+
+.moderation-panel--light .moderation-panel__consent strong {
+    color: var(--text);
+}
+
+.moderation-panel--light .moderation-field label {
+    color: var(--faint);
+}
+
+.moderation-panel--light .moderation-field textarea,
+.moderation-panel--light .moderation-field input[type="text"] {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.moderation-panel--light .moderation-field textarea:focus,
+.moderation-panel--light .moderation-field input[type="text"]:focus {
+    border-color: var(--gold-500);
+}
+
+.moderation-panel--light .moderation-check {
+    border: 1px solid var(--line-soft);
+    background: var(--surface-soft);
+}
+
+.moderation-panel--light .moderation-check input {
+    accent-color: var(--navy-700);
+}
+
+.moderation-panel--light .moderation-check__text {
+    color: var(--muted);
+}
+
+.moderation-panel--light .moderation-photo {
+    border: 1px solid var(--line-soft);
+    background: var(--surface-soft);
+    color: var(--faint);
+}
+
+.moderation-panel--light .moderation-panel__submit {
+    border: 1px solid var(--navy-900);
+    background: var(--navy-900);
+    color: var(--surface);
+}
+
+.moderation-panel--light .moderation-panel__submit:hover {
+    background: var(--navy-800);
+}

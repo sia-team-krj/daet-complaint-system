@@ -173,5 +173,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('complaints:auto-close-resolved')
             ->dailyAt('07:30')
             ->withoutOverlapping();
+
+        // Verified work that has slipped past its deadline. The queue shows
+        // it, but a badge that nobody refreshes is not a safety net.
+        $schedule->command('complaints:flag-overdue-work')
+            ->dailyAt('07:45')
+            ->withoutOverlapping();
     })
     ->create();

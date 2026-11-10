@@ -77,4 +77,104 @@ return [
         'verify' => 'Beripika',
         'activity' => 'Aktibidad',
     ],
+
+    // The staff proof capture (design system §5.36): the photos that prove
+    // the work was done, and the rule that says when they are required.
+    'proof' => [
+        'optional_title' => 'Opsyonal para sa update na ito',
+        'optional_body' => 'Mag-attach ng larawan kung kailangan ng katibayan ang trabaho. Hanggang limang larawan — JPG, PNG o WEBP, 5 MB bawat isa.',
+        'required_title' => 'Kailangan ng larawan para sa status na ito',
+        'required_body' => 'Ang paglipat ng reklamo na ito sa :status ay nangangailangan ng kahit isang larawan bilang katibayan. Mag-attach bago ipadala ang update.',
+        'choose_title' => 'Magdagdag ng hanggang limang larawan',
+        'choose_body' => 'Pumili mula sa iyong device o kumuha gamit ang kamera ng iyong telepono.',
+        'library' => 'Photo library',
+        'camera' => 'Gumamit ng kamera',
+        'attached' => 'na larawang nakakabit',
+        'invalid' => 'Gumamit lamang ng JPG, PNG o WEBP na hindi lalampin sa 5 MB bawat isa.',
+        'too_many' => 'Maaari kang mag-attach ng :max na larawan lamang.',
+        'remove' => 'Alisin ang :name',
+        'preview' => 'Napiling larawang pang-dokumentasyon :name',
+        'timeline_alt' => 'Larawang pang-dokumentasyon :index',
+        'no_location' => 'Walang naitalang lokasyon',
+    ],
+
+    // The live ticket panel (design system §5.39): what changed while the
+    // ticket was open, and who changed it.
+    'live' => [
+        'moved' => 'Inilipat ni :actor ang reklamong ito mula :previous patungong :status.',
+        'updated' => 'In-update ni :actor ang reklamong ito.',
+        'note' => 'Nag-iwan si :actor ng internal na tala.',
+        'changed' => 'Nagbago ang reklamong ito habang nagtatrabaho ka.',
+        'refresh' => 'I-reload upang makita ang pinakabago',
+        'dismiss' => 'Isara',
+    ],
+
+    // The two verification actions the November rewrite dropped (design
+    // system §5.40): ask the resident for better evidence, and hand the
+    // decision to another verifier.
+    'verification' => [
+        'follow_up' => 'Pagpapatuloy ng beripikasyon',
+        'waiting_title' => 'Naghihintay sa residente',
+        'waiting_body' => 'Hinilingan na sila ng karagdagang ebidensya. Lalabas dito ang kanilang sagot, at mananatili sa kanila ang tiket hanggang sa makapagbigay sila.',
+        'answered_title' => 'Sumagot ang residente',
+        'answered_body' => 'Suriin ang kanilang sagot sa ibaba, pagkatapos ay itala ang desisyon sa beripikasyon sa form sa itaas.',
+        'round' => 'Tanong · pag-ikot :round ng :max',
+        'reply_title' => 'Sagot ng residente',
+        'orphan_waiting' => 'Hinilingan na ang residente ng karagdagang ebidensya. Lalabas dito ang kanilang sagot.',
+        'orphan_no_question' => 'Minarkahan ang tiket na ito bilang nangangailangan ng impormasyon. Wala pang partikular na tanong na naipadala sa residente.',
+        'ask_title' => 'Humingi ng karagdagang ebidensya sa residente',
+        'ask_body' => 'Sabihin nang eksakto kung ano ang kulang. Makikita ng residente ang tanong at makakasagot ng teksto at mga larawan. Gagamitin nito ang pag-ikot :round ng :max.',
+        'question_label' => 'Ano ang kulang?',
+        'question_placeholder' => 'Masyadong madilim ang larawan ng streetlight para mabasa ang numero ng poste. Mangyaring magpadala ng mas malapit na kuha ng poste.',
+        'question_hint' => 'Hindi bababa sa 15 karakter. Tinatanggihan ng server ang malabong tanong.',
+        'ask_submit' => 'Tanungin ang residente',
+        'rounds_exhausted' => 'Naipadala na ang reklamong ito pabalik sa residente nang dalawang beses. Ipaubaya ito sa administrator para sa pagsusuri.',
+        'delegate_title' => 'Ipasa ang beripikasyon sa ibang tagaberipika',
+        'delegate_body' => 'Tanging mga kawani sa departamentong ito na may karapatang magberipika ang nakalista. Hindi maaaring beripikahin ng itinalagang manggagawa ang sarili niyang assignment.',
+        'delegate_label' => 'Tagaberipika',
+        'delegate_choose' => 'Pumili ng tagaberipika',
+        'delegate_submit' => 'Ipasa ang beripikasyon',
+        'delegate_current' => 'Kasalukuyang nasa :name ang beripikasyon.',
+    ],
+
+    // The internal half of a status update. Written to the same immutable
+    // log as the public note, but never shown to the resident or the public.
+    'internal_note' => [
+        'label' => 'Internal na tala',
+        'optional' => '(opsyonal — hindi nakikita ng residente)',
+        'placeholder' => 'Konteksto para sa iyong opisina lamang. Halimbawa: ang reference ng kontratista, o kung bakit naantala ang crew.',
+        'hint' => 'Naka-save lamang sa internal na timeline. Hindi ito lumalabas sa pahina ng residente o sa pampublikong rehistro.',
+    ],
+
+    // Public-presentation moderation, shared by the staff and admin ticket
+    // pages. The office can withhold or redact, never publish.
+    'moderation' => [
+        'title' => 'Pampublikong presentasyon',
+        'lede' => 'Maaari mong itago ang reklamong ito o linisin ang sensitibong bahagi nito. Hindi mo ito maaaring i-publish o i-unpublish.',
+        'published' => 'Inilathala ito ng residente.',
+        'private' => 'Itinago ito ng residente.',
+        'published_body' => 'Lumalabas ito sa transparency page sa ilalim ng kanilang display alias. Maaaring itago ito ng moderation sa ibaba, ngunit walang makakabago sa desisyong iyon dito.',
+        'private_body' => 'Hindi ito lumalabas sa transparency page, at walang magagawa dito para mailagay ito roon.',
+        'hide' => 'Alisin ang reklamong ito sa pampublikong transparency page',
+        'redacted_title' => 'Kapalit na pamagat para sa pampublikong pahina',
+        'redacted_description' => 'Kapalit na paglalarawan para sa pampublikong pahina',
+        'photos' => 'Mga larawang ebidensya',
+        'restore' => 'Ibalik',
+        'withhold' => 'Itago',
+        'reason' => 'Dahilan (kinakailangan)',
+        'reason_placeholder' => 'Bakit ito itinatago o nililinis?',
+        'save' => 'I-save ang moderation',
+    ],
+
+    // The clock on the work a department owes. The office accepts a report
+    // when it verifies it, and from then the work is due.
+    'sla' => [
+        'action_start' => 'Simulan ang trabaho',
+        'action_finish' => 'Tapusin ang trabaho',
+        'days_left' => '{1} :count araw na natitira|[2,*] :count araw na natitira',
+        'days_overdue' => '{1} :count araw na lampas|[2,*] :count araw na lampas',
+        'overdue_filter' => 'Na-lampas',
+        'overdue_count' => ':count na na-lampas',
+        'no_overdue' => 'Walang na-lampas',
+    ],
 ];

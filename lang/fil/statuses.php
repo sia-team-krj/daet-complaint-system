@@ -37,4 +37,23 @@ return [
         'site_visit' => 'Binista ang lugar',
         'duplicate_match' => 'Naiulat na',
     ],
+
+    // What kind of work a complaint is. It decides what counts as proof:
+    // a repair is proven by a photograph of it, an enforcement action by a
+    // written record. See config/complaint_work_policy.php.
+    'work_mode' => [
+        'labor_required' => 'Trabaho',
+        'report_only' => 'Ulat lamang',
+        'referral' => 'Ipinasa',
+    ],
+
+    // Where a complaint stands against its deadline. The office owes work
+    // from the moment it verifies a report.
+    'sla' => [
+        'on_track' => 'Nasa track',
+        'due_soon' => 'Malapit na takdang',
+        'overdue' => 'Na-lampas',
+        'met' => 'Tapos na',
+        'not_applicable' => 'Hindi pa beripika',
+    ],
 ];
