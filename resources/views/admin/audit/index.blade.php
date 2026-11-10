@@ -1,320 +1,239 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Audit Trail - Admin')
+@section('title', __('audit.title').' - Admin')
 @section('admin-content')
+@php
+    // $auditQuery, $selectionParams, $auditActiveFilters, $actionLabelFor and
+    // $scopeCount all come from the controller, so the page and the soft-
+    // navigation fragments are drawn from exactly the same state.
+    $actionOptions = $actions->mapWithKeys(fn (string $action): array => [
+        $action => $actionLabelFor($action),
+    ]);
+@endphp
 <div class="admin-page admin-page--audit">
     <header class="admin-page-header admin-page-header--audit">
         <div>
-            <h1 class="admin-page-title">Audit trail</h1>
-            <p class="admin-page-description admin-page-description--audit">One immutable record of staff and administrator actions across every department, complaint, invitation, and account change.</p>
+            <h1 class="admin-page-title">{{ __('audit.title') }}</h1>
+            <p class="admin-page-description admin-page-description--audit">{{ __('audit.subtitle') }}</p>
         </div>
     </header>
 
-    @php
-        $auditActiveFilters = collect([
-            'department_id' => request('department_id'),
-            'actor_id' => request('actor_id'),
-            'action' => request('action'),
-            'search' => request('search'),
-        ])->filter(fn ($v) => filled($v));
-    @endphp
-    <section class="admin-filter-panel admin-filter-panel--audit" aria-label="Audit trail filters">
-        <form data-loading-submit method="GET" action="{{ route('admin.audit.index') }}" class="admin-filter-grid admin-filter-grid--audit admin-audit-filters" data-filter-form>
-            <details class="admin-audit-filters-collapsible" data-audit-filters-mobile @if($auditActiveFilters->except(['search'])->isNotEmpty()) open @endif>
+    {{-- ─── The browser: scope, search, and the roster ──────────────────────── --}}
+    <section class="admin-panel admin-audit-browser" aria-label="{{ __('audit.browse_directory') }}">
+
+        {{-- What is on screen right now. --}}
+        <div class="admin-audit-browser__scope" data-audit-scope>
+            @include('admin.audit.partials.scope')
+        </div>
+
+        {{-- Find one person without scrolling the roster. --}}
+        <div class="admin-audit-browser__bar">
+            <form class="admin-audit-browser__search" method="GET" action="{{ route('admin.audit.index', $selectionParams) }}" data-people-search data-people-endpoint="{{ route('admin.audit.people') }}">
+                <label class="admin-audit-browser__search-field">
+                    <span class="sr-only">{{ __('audit.find_person') }}</span>
+                    <svg class="admin-audit-browser__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="search" name="people_q" value="{{ $peopleQuery }}" placeholder="{{ __('audit.find_person') }}" autocomplete="off" spellcheck="false" data-people-input>
+                </label>
+                <button type="submit" class="admin-button admin-button--secondary admin-audit-browser__search-submit">{{ __('audit.search_people') }}</button>
+            </form>
+        </div>
+
+        <details class="admin-audit-browser__disclosure" data-audit-directory-mobile @if($selection['active'] || $peopleQuery !== '') open @endif>
+            <summary class="admin-audit-browser__disclosure-toggle">
+                <span class="admin-audit-browser__disclosure-icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V5l6-3 6 3v16"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/><path d="M9 17h1"/><path d="M14 17h1"/></svg>
+                </span>
+                <span class="admin-audit-browser__disclosure-label">{{ __('audit.browse_directory') }}</span>
+                <span class="admin-audit-browser__disclosure-chevron" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </span>
+            </summary>
+
+            <div class="admin-audit-browser__panes">
+                {{-- Scopes: everyone, each office, and the records with no actor. --}}
+                <nav class="admin-audit-browser__contexts" data-audit-contexts aria-label="{{ __('audit.scope') }}">
+                    @include('admin.audit.partials.contexts')
+                </nav>
+
+                {{-- People. Bounded preview per group; "See all" opens one, paged. --}}
+                <div class="admin-audit-browser__roster" id="admin-audit-browser-roster" data-audit-roster>
+                    @if($searchResults !== null)
+                        @include('admin.audit.partials.people-results', [
+                            'rows' => $searchResults['rows'],
+                            'total' => $searchResults['total'],
+                            'query' => $peopleQuery,
+                        ])
+                    @else
+                        @include('admin.audit.partials.roster', ['groups' => $groups])
+                    @endif
+                </div>
+            </div>
+        </details>
+    </section>
+
+    <section class="admin-filter-panel admin-filter-panel--audit" aria-label="{{ __('audit.filters') }}">
+        <form data-loading-submit method="GET" action="{{ route('admin.audit.index', $selectionParams) }}" class="admin-filter-grid admin-filter-grid--audit admin-audit-filters" data-filter-form>
+            <details class="admin-audit-filters-collapsible" data-audit-filters-mobile @if($auditActiveFilters->isNotEmpty()) open @endif>
                 <summary class="admin-audit-filters-toggle">
                     <span class="admin-audit-filters-toggle__icon" aria-hidden="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18"/><path d="M6 12h12"/><path d="M10 19h4"/></svg>
                     </span>
-                    <span class="admin-audit-filters-toggle__label">Filters</span>
-                    @if($auditActiveFilters->except(['search'])->isNotEmpty())
-                        <span class="admin-audit-filters-badge">{{ $auditActiveFilters->except(['search'])->count() }}</span>
+                    <span class="admin-audit-filters-toggle__label">{{ __('audit.filters') }}</span>
+                    @if($auditActiveFilters->isNotEmpty())
+                        <span class="admin-audit-filters-badge">{{ $auditActiveFilters->count() }}</span>
                     @endif
                     <span class="admin-audit-filters-toggle__chevron" aria-hidden="true">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     </span>
                 </summary>
                 <div class="admin-audit-filters-collapsible__body">
-                    <label class="admin-field admin-audit-filter-dept">
-                        <span>Department</span>
-                        <select name="department_id" class="admin-input" data-audit-department-filter>
-                            <option value="">All departments</option>
-                            @foreach($departments as $department)
-                                <option value="{{ $department->id }}" @selected((string) request('department_id') === (string) $department->id)>{{ $department->name }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-
-                    <label class="admin-field admin-audit-filter-actor">
-                        <span>Actor</span>
-                        <select name="actor_id" class="admin-input" data-audit-actor-filter>
-                            <option value="" data-placeholder="all">All staff and admins</option>
-                            @php
-                                $admins = $actors->filter(fn($a) => $a->role === 'admin');
-                                $staff = $actors->filter(fn($a) => $a->role === 'staff');
-                                $citizens = $actors->filter(fn($a) => $a->role === 'citizen');
-                            @endphp
-                            @if($admins->isNotEmpty())
-                                <optgroup label="Administrators">
-                                    @foreach($admins as $actor)
-                                        <option value="{{ $actor->id }}" data-department-id="{{ $actor->department_id ?? '' }}" data-role="{{ $actor->role }}" @selected((string) request('actor_id') === (string) $actor->id)>{{ $actor->full_name }} ({{ ucfirst($actor->role) }})</option>
-                                    @endforeach
-                                </optgroup>
-                            @endif
-                            @if($staff->isNotEmpty())
-                                <optgroup label="Staff">
-                                    @foreach($staff as $actor)
-                                        <option value="{{ $actor->id }}" data-department-id="{{ $actor->department_id ?? '' }}" data-role="{{ $actor->role }}" @selected((string) request('actor_id') === (string) $actor->id)>{{ $actor->full_name }} ({{ ucfirst($actor->role) }})</option>
-                                    @endforeach
-                                </optgroup>
-                            @endif
-                            @if($citizens->isNotEmpty())
-                                <optgroup label="Citizens">
-                                    @foreach($citizens as $actor)
-                                        <option value="{{ $actor->id }}" data-department-id="{{ $actor->department_id ?? '' }}" data-role="{{ $actor->role }}" @selected((string) request('actor_id') === (string) $actor->id)>{{ $actor->full_name }} ({{ ucfirst($actor->role) }})</option>
-                                    @endforeach
-                                </optgroup>
-                            @endif
-                        </select>
-                    </label>
-
                     <label class="admin-field admin-audit-filter-action">
-                        <span>Action</span>
+                        <span>{{ __('audit.action') }}</span>
                         <select name="action" class="admin-input">
-                            <option value="">All actions</option>
-                            @foreach($actions as $action)
-                                <option value="{{ $action }}" @selected(request('action') === $action)>{{ str($action)->replace(['.', '_'], ' ')->title() }}</option>
+                            <option value="">{{ __('audit.all_actions') }}</option>
+                            @foreach($actionOptions as $value => $label)
+                                <option value="{{ $value }}" @selected(request('action') === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
 
                     <div class="admin-filter-actions admin-audit-filter-actions">
-                        <button type="submit" class="admin-button admin-button--primary">Filter trail</button>
+                        <button type="submit" class="admin-button admin-button--primary">{{ __('audit.filter_trail') }}</button>
                         @if($auditActiveFilters->isNotEmpty())
-                            <a href="{{ route('admin.audit.index') }}" class="admin-button admin-button--secondary">Clear</a>
+                            <a href="{{ route('admin.audit.index', $selectionParams) }}" class="admin-button admin-button--secondary">{{ __('audit.clear') }}</a>
                         @endif
                     </div>
                 </div>
             </details>
 
             <label class="admin-field admin-field--wide admin-audit-filter-search">
-                <span>Search</span>
-                <input type="search" name="search" class="admin-input" value="{{ request('search') }}" placeholder="Search ticket or description">
+                <span>{{ __('audit.search') }}</span>
+                <input type="search" name="search" class="admin-input" value="{{ request('search') }}" placeholder="{{ __('audit.search_placeholder') }}">
             </label>
         </form>
     </section>
 
-    @php
-        $auditTz = config('app.timezone');
-        $auditActionLabels = [
-            'auth.email_verified' => 'Email verified',
-            'auth.login' => 'Signed in',
-            'auth.logout' => 'Signed out',
-            'auth.password_reset' => 'Password reset',
-            'complaint.assignment_updated' => 'Assignment updated',
-            'complaint.filed' => 'Complaint filed',
-            'complaint.information_provided' => 'Information provided',
-            'complaint.information_requested' => 'Information requested',
-            'complaint.internal_note_added' => 'Internal note added',
-            'complaint.moderated' => 'Moderated',
-            'complaint.moderation_flagged' => 'Flagged for review',
-            'complaint.note_added' => 'Note added',
-            'complaint.reassigned' => 'Reassigned',
-            'complaint.reviewed' => 'Review updated',
-            'complaint.status_updated' => 'Status changed',
-            'complaint.verification_delegated' => 'Verification delegated',
-            'complaint.visibility_changed' => 'Visibility changed',
-            'department.archived' => 'Department archived',
-            'department.created' => 'Department created',
-            'department.restored' => 'Department restored',
-            'department.updated' => 'Department updated',
-            'invitation.batch_issued' => 'Invitations issued',
-            'invitation.generated' => 'Invitation generated',
-            'invitation.redeemed' => 'Invitation redeemed',
-            'invitation.revoked' => 'Invitation revoked',
-            'profile.email_change_requested' => 'Email change requested',
-            'profile.password_changed' => 'Password changed',
-            'profile.updated' => 'Profile updated',
-            'staff.activated' => 'Staff activated',
-            'staff.created' => 'Staff account created',
-            'staff.deactivated' => 'Staff deactivated',
-            'staff.department_updated' => 'Staff moved',
-            'staff.verification_granted' => 'Verification granted',
-            'staff.verification_revoked' => 'Verification revoked',
-            'user.activated' => 'User activated',
-            'user.deactivated' => 'User deactivated',
-            'user.department_updated' => 'User moved',
-            'user.profile_updated' => 'User updated',
-            'user.role_updated' => 'Role changed',
-        ];
-        $auditPrevDay = null;
-    @endphp
-
-    <section class="admin-table-wrap admin-audit-timeline-wrap" aria-label="Activity log entries">
-        <table class="admin-table admin-table--audit admin-table--audit-mobile">
-            <thead>
-                <tr><th>Subject</th><th>Action</th><th>Actor</th><th>Department</th><th>Details</th><th>Date</th></tr>
-            </thead>
-            <tbody>
-                @forelse($logs as $log)
-                    @php
-                        $subject = $log->subject;
-                        $actionKey = (string) $log->action;
-                        $actionHuman = str($actionKey)->replace(['.', '_'], ' ')->title()->toString();
-                        $actionLabel = $auditActionLabels[$actionKey] ?? $actionHuman;
-                        $actionCat = 'neutral';
-                        $ak = $actionKey;
-                        if (str_contains($ak, 'moderation') || str_contains($ak, 'flagged')) $actionCat = 'warning';
-                        elseif (str_starts_with($ak, 'auth.')) $actionCat = 'auth';
-                        elseif (str_contains($ak, 'resolved')) $actionCat = 'resolved';
-                        elseif (str_contains($ak, 'delete') || str_contains($ak, 'remove') || str_contains($ak, 'revoke') || str_contains($ak, 'deactivat') || str_contains($ak, 'archived')) $actionCat = 'danger';
-                        elseif (str_contains($ak, 'create') || str_contains($ak, 'invite') || str_contains($ak, 'generated') || str_contains($ak, 'redeemed') || str_contains($ak, 'filed') || str_contains($ak, 'activat') || str_contains($ak, 'restored')) $actionCat = 'success';
-                        elseif (str_contains($ak, 'update') || str_contains($ak, 'assign') || str_contains($ak, 'status') || str_contains($ak, 'review') || str_contains($ak, 'moderated') || str_contains($ak, 'changed') || str_contains($ak, 'requested') || str_contains($ak, 'provided') || str_contains($ak, 'delegated') || str_contains($ak, 'moved') || str_contains($ak, 'note')) $actionCat = 'info';
-                        $actorName = $log->actor?->full_name ?? $log->actor_name ?? 'System';
-                        $actorRole = ucfirst((string) ($log->actor?->role ?? $log->actor_role ?? 'System'));
-                        $deptName = $log->department?->name ?? 'System-wide';
-                        $logAt = $log->created_at?->copy()->setTimezone($auditTz);
-                        $dayKey = $logAt?->toDateString();
-                        $today = now($auditTz)->toDateString();
-                        $yesterday = now($auditTz)->subDay()->toDateString();
-                        $dayLabel = $dayKey === $today ? 'Today' : ($dayKey === $yesterday ? 'Yesterday' : ($logAt?->format('M j, Y') ?? ''));
-                        $showDay = $loop->first || $dayKey !== $auditPrevDay;
-                        $auditPrevDay = $dayKey;
-                        $isComplaintSubject = $subject instanceof \App\Models\Complaint;
-                        $subjectIsActorUser = $subject instanceof \App\Models\User && $log->actor_id && (int) $subject->getKey() === (int) $log->actor_id;
-                        $showSubjectChip = $isComplaintSubject || ($subject && ! $subjectIsActorUser);
-                        $subjectMutedGeneric = $subject && ! $isComplaintSubject && $subjectIsActorUser;
-                        $detailsText = (string) $log->description;
-                        $actorInDetails = $actorName !== '' && $actorName !== 'System' && str_contains(mb_strtolower($detailsText), mb_strtolower($actorName));
-                        $metaParts = $actorInDetails ? [$actorRole] : [$actorName, $actorRole];
-                        if ($deptName !== 'System-wide') $metaParts[] = $deptName;
-                        $metaText = implode(' · ', $metaParts);
-                    @endphp
-
-                    @php
-                        $isLastInAuditPage = $loop->last;
-                        $nextDayKey = null;
-                        if (! $isLastInAuditPage) {
-                            $nextLog = $logs[$loop->index + 1] ?? null;
-                            $nextDayKey = $nextLog?->created_at?->copy()->setTimezone($auditTz)?->toDateString();
-                        }
-                        $isLastInGroup = $isLastInAuditPage || ($nextDayKey !== $dayKey);
-                    @endphp
-
-                    @if($showDay)
-                        <tr class="admin-audit-day-heading admin-audit-mobile-only" aria-hidden="true">
-                            <td colspan="6"><span class="admin-audit-day-heading__label">{{ $dayLabel }}</span></td>
-                        </tr>
-                    @endif
-
-                    <tr class="admin-audit-entry {{ $showDay ? 'admin-audit-entry--first-in-group' : '' }} {{ $isLastInGroup ? 'admin-audit-entry--last-in-group' : '' }}">
-                        <td class="admin-audit-cell--subject admin-audit-desktop-only" data-label="Subject">
-                            @if($isComplaintSubject)
-                                <a href="{{ route('admin.complaints.show', $subject) }}" class="admin-ticket-id">{{ $subject->ticket_id }}</a>
-                            @elseif($subject)
-                                <span class="admin-ticket-id">{{ class_basename($subject) }} #{{ $subject->getKey() }}</span>
-                            @else
-                                <span class="admin-muted-cell">System record</span>
-                            @endif
-                        </td>
-                        <td class="admin-audit-cell--action admin-audit-desktop-only" data-label="Action">
-                            <span class="admin-status admin-status--{{ str($log->action)->before('.')->slug() }}">{{ $actionHuman }}</span>
-                        </td>
-                        <td class="admin-audit-cell--actor admin-audit-desktop-only" data-label="Actor">
-                            <span class="admin-audit-actor">{{ $actorName }}</span>
-                            <span class="admin-audit-role">{{ $actorRole }}</span>
-                        </td>
-                        <td class="admin-audit-cell--department admin-audit-desktop-only" data-label="Department">{{ $deptName }}</td>
-                        <td class="admin-audit-cell--details admin-audit-desktop-only" data-label="Details">
-                            <div class="admin-audit-comment">
-                                {{ $log->description }}
-                                @if($log->metadata)
-                                    <details class="admin-audit-metadata">
-                                        <summary>View details</summary>
-                                        <pre>{{ json_encode($log->metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
-                                    </details>
-                                @endif
-                            </div>
-                        </td>
-                        <td class="admin-audit-cell--date admin-audit-desktop-only" data-label="Date">
-                            <span class="admin-muted-cell"><time datetime="{{ $logAt?->toIso8601String() }}">{{ $logAt?->format('M j, Y g:i A') }}</time></span>
-                        </td>
-
-                        <td class="admin-audit-cell--mobile admin-audit-mobile-only" colspan="6">
-                            <div class="admin-audit-entry__card">
-                                <div class="admin-audit-entry__row1">
-                                    <span class="admin-audit-chip admin-audit-chip--{{ $actionCat }}">{{ $actionLabel }}</span>
-                                    <span class="admin-audit-entry__row1-right">
-                                        @if($isComplaintSubject)
-                                            <a href="{{ route('admin.complaints.show', $subject) }}" class="admin-audit-entry__subject-chip admin-audit-entry__subject-chip--row1">{{ $subject->ticket_id }}</a>
-                                        @endif
-                                        <time class="admin-audit-entry__time" datetime="{{ $logAt?->toIso8601String() }}" title="{{ $logAt?->format('M j, Y g:i A') }}">{{ $logAt?->format('g:i A') }}</time>
-                                    </span>
-                                </div>
-                                <div class="admin-audit-entry__details">{{ $log->description }}</div>
-                                <div class="admin-audit-entry__meta">
-                                    <span class="admin-audit-entry__meta-text">{{ $metaText }}</span>
-                                    @if(! $isComplaintSubject && $showSubjectChip)
-                                        <span class="admin-audit-entry__subject-muted">{{ class_basename($subject) }} #{{ $subject->getKey() }}</span>
-                                    @elseif(! $isComplaintSubject && $subjectMutedGeneric)
-                                        {{-- Generic subject equals actor (e.g. User #1 signed in); details already identify the actor. Kept out of mobile row 3; desktop subject cell retains it. --}}
-                                    @endif
-                                </div>
-                                @if($log->metadata)
-                                    <details class="admin-audit-metadata admin-audit-metadata--mobile">
-                                        <summary>View details</summary>
-                                        <pre>{{ json_encode($log->metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
-                                    </details>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr class="admin-audit-empty">
-                        <td colspan="6" class="admin-empty-cell admin-audit-empty__cell">
-                            <p class="admin-audit-empty__title">No audit entries match</p>
-                            <p class="admin-audit-empty__hint">Try clearing a filter.</p>
-                            @if($auditActiveFilters->isNotEmpty())
-                                <a href="{{ route('admin.audit.index') }}" class="admin-button admin-button--secondary admin-audit-empty__clear">Clear filters</a>
-                            @endif
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </section>
-
-    @if($logs->hasPages())
-        <div class="admin-pagination admin-pagination--queue admin-pagination--audit">
-            <p class="admin-pagination__info-mobile">Page {{ $logs->currentPage() }} of {{ $logs->lastPage() }}</p>
-            {{ $logs->links() }}
-        </div>
-    @endif
+    <div data-audit-trail>
+        @include('admin.audit.partials.trail')
+    </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.querySelector('.admin-audit-filter-search input[name="search"]');
-    const filterForm = document.querySelector('.admin-audit-filters');
-    if (searchInput && filterForm) {
-        const saved = sessionStorage.getItem('auditSearchFocus');
-        if (saved === '1') {
-            searchInput.focus();
-            const len = searchInput.value.length;
-            searchInput.setSelectionRange(len, len);
-            sessionStorage.removeItem('auditSearchFocus');
+    // ─── Soft navigation ────────────────────────────────────────────────────
+    // The page is drawn once. Every scope change, page turn, filter and
+    // search is answered with rendered fragments and swapped in, so the browser
+    // never redraws the whole page and the search field keeps its focus.
+    // The URL stays the truth: it is updated through the history API, so Back,
+    // Forward, a refresh and a shared link all behave exactly as before.
+    const auditIndexPath = new URL('{{ route('admin.audit.index') }}', window.location.origin).pathname;
+    const browserEndpoint = '{{ route('admin.audit.browser') }}';
+    const peopleEndpoint = '{{ route('admin.audit.people') }}';
+
+    const scopeEl = document.querySelector('[data-audit-scope]');
+    const railEl = document.querySelector('[data-audit-contexts]');
+    const rosterEl = document.querySelector('[data-audit-roster]');
+    const trailEl = document.querySelector('[data-audit-trail]');
+
+    const jsonHeaders = { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+
+    async function fetchJson(url) {
+        const response = await fetch(url, { headers: jsonHeaders });
+        if (!response.ok) throw new Error('request failed');
+        return response.json();
+    }
+
+    function applyFragments(payload, parts) {
+        if (!payload) return;
+        if (parts.indexOf('scope') !== -1 && scopeEl) scopeEl.innerHTML = payload.scope;
+        if (parts.indexOf('rail') !== -1 && railEl) railEl.innerHTML = payload.rail;
+        if (parts.indexOf('roster') !== -1 && rosterEl) rosterEl.innerHTML = payload.roster;
+        if (parts.indexOf('trail') !== -1 && trailEl) trailEl.innerHTML = payload.trail;
+    }
+
+    function browserUrl(url) {
+        const endpoint = new URL(browserEndpoint, window.location.origin);
+        endpoint.search = url.search;
+        return endpoint.toString();
+    }
+
+    async function navigate(url, parts, push) {
+        try {
+            const payload = await fetchJson(browserUrl(url));
+            applyFragments(payload, parts);
+            if (push !== false) history.pushState({ soft: true }, '', url.toString());
+        } catch (error) {
+            // A failed request must never leave the admin looking at stale
+            // fragments: fall back to the ordinary page.
+            window.location.href = url.toString();
         }
-        let timeout;
+    }
+
+    // Any link inside the browser or the trail is answered in place.
+    document.addEventListener('click', function(event) {
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const link = event.target.closest('a[href]');
+        if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+        const url = new URL(link.getAttribute('href'), window.location.origin);
+        if (url.pathname !== auditIndexPath) return;
+
+        // Any link to this page is a change of state, not a change of page:
+        // a scope, a person, a group page or the trail's pager. Deciding by
+        // path rather than by "is this link inside a region" means a link that
+        // moves around the markup still swaps in place.
+        event.preventDefault();
+        navigate(url, ['scope', 'rail', 'roster', 'trail']);
+    });
+
+    // Back and forward move through the same history.
+    window.addEventListener('popstate', function() {
+        navigate(new URL(window.location.href), ['scope', 'rail', 'roster', 'trail'], false);
+    });
+
+    // ─── The trail's own filters ────────────────────────────────────────────
+    const filterForm = document.querySelector('[data-filter-form]');
+    const searchInput = document.querySelector('.admin-audit-filter-search input[name="search"]');
+
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // getAttribute, not .action: the form has a control named "action",
+            // and a named control shadows the form's own properties.
+            const url = new URL(filterForm.getAttribute('action'), window.location.origin);
+            const data = new FormData(filterForm);
+
+            ['action', 'search'].forEach(function(key) {
+                const value = data.get(key);
+                if (value) {
+                    url.searchParams.set(key, value);
+                } else {
+                    url.searchParams.delete(key);
+                }
+            });
+
+            // A new filter starts at the first page of the trail.
+            url.searchParams.delete('page');
+
+            navigate(url, ['scope', 'rail', 'roster', 'trail']);
+        });
+    }
+
+    if (searchInput && filterForm) {
+        let searchTimeout;
         searchInput.addEventListener('input', function() {
-            clearTimeout(timeout);
-            timeout = setTimeout(function() {
-                sessionStorage.setItem('auditSearchFocus', '1');
-                filterForm.submit();
+            window.clearTimeout(searchTimeout);
+            searchTimeout = window.setTimeout(function() {
+                filterForm.requestSubmit();
             }, 500);
         });
     }
 
     // Desktop: force <details> open (closed details hides content even with display:contents)
-    const detailsEls = document.querySelectorAll('details.admin-audit-filters-collapsible[data-audit-filters-mobile]');
+    const detailsEls = document.querySelectorAll('details.admin-audit-filters-collapsible[data-audit-filters-mobile], details.admin-audit-browser__disclosure[data-audit-directory-mobile]');
     const mq = window.matchMedia('(min-width: 641px)');
     function syncDetails() {
         detailsEls.forEach(function(d) {
@@ -325,41 +244,87 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mq.addEventListener) mq.addEventListener('change', syncDetails); else mq.addListener(syncDetails);
     syncDetails();
 
-    // Dependent filter: Department -> Actor (hidden + disabled for Safari; no auto-submit)
-    const deptSelect = document.querySelector('[data-audit-department-filter]');
-    const actorSelect = document.querySelector('[data-audit-actor-filter]');
-    if (deptSelect && actorSelect) {
-        function filterActors() {
-            const deptId = deptSelect.value;
-            const deptName = deptId ? (deptSelect.selectedOptions[0]?.textContent || 'Department') : '';
-            const placeholder = actorSelect.querySelector('option[value=""]');
-            if (placeholder) placeholder.textContent = deptId ? ('All members of ' + deptName) : 'All staff and admins';
-            let currentValid = false;
-            actorSelect.querySelectorAll('option, optgroup').forEach(function(el) {
-                if (el.tagName === 'OPTGROUP') {
-                    let anyVisible = false;
-                    el.querySelectorAll('option').forEach(function(opt) {
-                        const od = opt.getAttribute('data-department-id') || '';
-                        const show = !deptId || od === deptId;
-                        opt.hidden = !show;
-                        opt.disabled = !show;
-                        if (show) anyVisible = true;
-                        if (show && opt.selected && opt.value) currentValid = true;
-                    });
-                    el.hidden = !anyVisible;
-                    el.disabled = !anyVisible;
-                } else if (el.value !== '') {
-                    const od = el.getAttribute('data-department-id') || '';
-                    const show = !deptId || od === deptId;
-                    el.hidden = !show;
-                    el.disabled = !show;
-                    if (show && el.selected) currentValid = true;
-                }
+    // ─── People type-ahead ──────────────────────────────────────────────────
+    // The roster is rendered server-side. While the admin types, the same
+    // fragment is fetched from the JSON endpoint and swapped in, so one Blade
+    // file owns the markup. Without JavaScript the form submits and the page
+    // renders the results — the type-ahead is an enhancement, never the only
+    // path.
+    const peopleForm = document.querySelector('[data-people-search]');
+    const peopleInput = peopleForm && peopleForm.querySelector('[data-people-input]');
+    const peopleRoster = document.querySelector('[data-audit-roster]');
+
+    if (peopleForm && peopleInput && peopleRoster) {
+        let peopleTimer = null;
+        let peopleRequest = null;
+
+        // The endpoint answers with the roster for the current scope, so the
+        // scope and the trail filters travel with the query.
+        function peopleEndpointUrl(query) {
+            const url = new URL(peopleEndpoint, window.location.origin);
+            const current = new URLSearchParams(window.location.search);
+
+            ['department_id', 'actor_id', 'system', 'residents', 'search', 'action'].forEach(function(key) {
+                const value = current.get(key);
+                if (value) url.searchParams.set(key, value);
             });
-            if (!currentValid && actorSelect.value) actorSelect.value = '';
+
+            url.searchParams.set('q', query);
+
+            return url.toString();
         }
-        deptSelect.addEventListener('change', filterActors);
-        filterActors();
+
+        // The address bar mirrors the search, so the view can be shared.
+        function peoplePageUrl(query) {
+            const url = new URL(window.location.href);
+
+            if (query) {
+                url.searchParams.set('people_q', query);
+            } else {
+                url.searchParams.delete('people_q');
+            }
+
+            url.searchParams.delete('people_group');
+            url.searchParams.delete('people_page');
+
+            return url.toString();
+        }
+
+        async function refreshRoster(query) {
+            if (peopleRequest) peopleRequest.abort();
+            peopleRequest = new AbortController();
+
+            const response = await fetch(peopleEndpointUrl(query), {
+                headers: jsonHeaders,
+                signal: peopleRequest.signal,
+            });
+
+            if (!response.ok) throw new Error('people search failed');
+
+            const payload = await response.json();
+            peopleRoster.innerHTML = payload.roster;
+            history.replaceState({ soft: true }, '', peoplePageUrl(query));
+        }
+
+        peopleInput.addEventListener('input', function() {
+            window.clearTimeout(peopleTimer);
+            peopleTimer = window.setTimeout(function() {
+                refreshRoster(peopleInput.value.trim()).catch(function() {
+                    // A failed request must never blank the roster: the
+                    // server-rendered search still works through the form.
+                });
+            }, 250);
+        });
+
+        peopleForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            window.clearTimeout(peopleTimer);
+
+            refreshRoster(peopleInput.value.trim()).catch(function() {
+                // Fall back to the server-rendered search.
+                peopleForm.submit();
+            });
+        });
     }
 });
 </script>

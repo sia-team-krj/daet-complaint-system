@@ -6,6 +6,7 @@ use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use App\Enums\VerificationMethod;
+use App\Http\Controllers\Concerns\SoftNavigation;
 use App\Models\ActivityLog;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
@@ -14,18 +15,22 @@ use App\Models\User;
 use App\Models\InvitationCode;
 use App\Notifications\StaffWelcomeNotification;
 use App\Services\ActivityLogger;
+use App\Services\AuditDirectory;
 use App\Services\ComplaintModerationService;
 use App\Services\ComplaintVerificationService;
 use App\Services\EmailVerificationService;
 use App\Services\DepartmentRouter;
 use App\Services\NotificationService;
 use App\Services\StaffInvitationDelivery;
+use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -34,8 +39,13 @@ use Throwable;
 
 class AdminController extends Controller
 {
+    use SoftNavigation;
+
     /** Complaints shown per page in the admin queue. */
     public const QUEUE_PAGE_SIZE = 5;
+
+    /** Audit entries shown per page in the audit trail. */
+    public const AUDIT_PAGE_SIZE = 8;
     /**
      * Admin dashboard with system-wide overview
      */
@@ -166,6 +176,10 @@ class AdminController extends Controller
             return $department;
         });
 
+        // The audit directory caches its office list; a new office must show
+        // up there immediately, not after the cache window.
+        AuditDirectory::flush();
+
         return redirect()
             ->route('admin.departments.index')
             ->with('status', "{$department->name} created.");
@@ -212,6 +226,8 @@ class AdminController extends Controller
                 'after' => $department->only(['name', 'code', 'description']),
             ],
         );
+
+        AuditDirectory::flush();
 
         return redirect()
             ->route('admin.departments.index')
@@ -266,6 +282,8 @@ class AdminController extends Controller
 
         $department->update(['is_active' => false]);
 
+        AuditDirectory::flush();
+
         $activityLogger->log(
             'department.archived',
             "Department {$department->name} ({$department->code}) archived. It no longer receives new complaints or staff invitations.",
@@ -284,6 +302,8 @@ class AdminController extends Controller
 
         $department->update(['is_active' => true]);
 
+        AuditDirectory::flush();
+
         $activityLogger->log(
             'department.restored',
             "Department {$department->name} ({$department->code}) restored and available for routing again.",
@@ -296,23 +316,210 @@ class AdminController extends Controller
 
     public function auditIndex(Request $request): View
     {
+        $directory = app(AuditDirectory::class);
+        $snapshot = $directory->snapshot();
+
+        $scope = $this->auditScope($request);
+
+        $departmentId = $scope['department_id'];
+        $actorId = $scope['actor_id'];
+        $systemOnly = $scope['system'];
+        $residentsOnly = $scope['residents'];
+
+        $logs = $this->auditLogs($request, $scope);
+
+        // Directory browsing state. `people_q` searches people by name;
+        // `people_group` expands one group and `people_page` pages inside it.
+        // All three are view state only — they never touch the trail.
+        $peopleQuery = trim((string) $request->input('people_q', ''));
+        $expandedGroup = $request->filled('people_group')
+            ? (string) $request->input('people_group')
+            : null;
+        $expandedPage = max(1, (int) $request->input('people_page', 1));
+
+        $groups = $this->auditRosterGroups($directory, $departmentId, $expandedGroup, $expandedPage, $residentsOnly);
+
+        $searchResults = null;
+
+        if ($peopleQuery !== '') {
+            $searchResults = $directory->search($peopleQuery);
+        }
+
+        $selection = $this->auditSelection($directory, $snapshot, $scope);
+
+        $actions = ActivityLog::query()
+            ->select('action')
+            ->distinct()
+            ->orderBy('action')
+            ->pluck('action');
+
+        $activeFilters = $this->auditActiveFilters($request);
+
+        return view('admin.audit.index', [
+            'logs' => $logs,
+            'actions' => $actions,
+            'actionLabelFor' => $this->auditActionLabel(),
+            'auditActiveFilters' => $activeFilters,
+            'auditQuery' => $this->auditQuery($request),
+            'selectionParams' => $this->auditSelectionParams($scope),
+            'selection' => $selection,
+            'scopeCount' => $this->auditScopeCount($logs, $selection, $activeFilters),
+            'departmentId' => $departmentId,
+            'actorId' => $actorId,
+            'systemOnly' => $systemOnly,
+            'residentsOnly' => $residentsOnly,
+            'directory' => $this->auditDirectoryPayload($snapshot),
+            'groups' => $groups,
+            'peopleQuery' => $peopleQuery,
+            'expandedGroup' => $expandedGroup,
+            'expandedPage' => $expandedPage,
+            'searchResults' => $searchResults,
+        ]);
+    }
+
+    /**
+     * The browser fragments, for soft navigation.
+     *
+     * Answering with rendered fragments lets the scope band, the rail, the
+     * roster and the trail be swapped in place: clicking an office or turning
+     * a page never redraws the whole page, and the search field keeps its
+     * focus and its text.
+     */
+    public function auditBrowser(Request $request): JsonResponse|RedirectResponse
+    {
+        // A person gets the page; only a script gets the fragments.
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to($this->fragmentFallbackUrl($request, 'admin.audit.index'));
+        }
+
+        $directory = app(AuditDirectory::class);
+        $snapshot = $directory->snapshot();
+        $scope = $this->auditScope($request);
+
+        $logs = $this->auditLogs($request, $scope);
+        $selection = $this->auditSelection($directory, $snapshot, $scope);
+        $activeFilters = $this->auditActiveFilters($request);
+        $auditQuery = $this->auditQuery($request);
+        $selectionParams = $this->auditSelectionParams($scope);
+
+        $peopleQuery = trim((string) $request->input('people_q', ''));
+        $expandedGroup = $request->filled('people_group')
+            ? (string) $request->input('people_group')
+            : null;
+        $expandedPage = max(1, (int) $request->input('people_page', 1));
+
+        $groups = $this->auditRosterGroups(
+            $directory,
+            $scope['department_id'],
+            $expandedGroup,
+            $expandedPage,
+            $scope['residents'],
+        );
+
+        $searchResults = $peopleQuery !== '' ? $directory->search($peopleQuery) : null;
+
+        return response()->json([
+            'scope' => view('admin.audit.partials.scope', [
+                'selection' => $selection,
+                'scopeCount' => $this->auditScopeCount($logs, $selection, $activeFilters),
+            ])->render(),
+            'rail' => view('admin.audit.partials.contexts', [
+                'directory' => $this->auditDirectoryPayload($snapshot),
+                'selection' => $selection,
+                'departmentId' => $scope['department_id'],
+                'actorId' => $scope['actor_id'],
+                'systemOnly' => $scope['system'],
+                'residentsOnly' => $scope['residents'],
+                'auditQuery' => $auditQuery,
+            ])->render(),
+            'roster' => $searchResults !== null
+                ? view('admin.audit.partials.people-results', [
+                    'rows' => $searchResults['rows'],
+                    'total' => $searchResults['total'],
+                    'query' => $peopleQuery,
+                    'auditQuery' => $auditQuery,
+                    'actorId' => $scope['actor_id'],
+                ])->render()
+                : view('admin.audit.partials.roster', [
+                    'groups' => $groups,
+                    'auditQuery' => $auditQuery,
+                    'selectionParams' => $selectionParams,
+                    'actorId' => $scope['actor_id'],
+                ])->render(),
+            'trail' => view('admin.audit.partials.trail', [
+                'logs' => $logs,
+                'actionLabelFor' => $this->auditActionLabel(),
+                'auditActiveFilters' => $activeFilters,
+                'selection' => $selection,
+                'selectionParams' => $selectionParams,
+            ])->render(),
+        ]);
+    }
+
+    /**
+     * What the admin is looking at. A bad entity id is ignored, never fatal.
+     * The URL only filters the view — it never authorizes it; every request
+     * still runs the admin middleware, so a forged id cannot widen what an
+     * admin may see.
+     *
+     * @return array{department_id: int|null, actor_id: int|null, system: bool, residents: bool, actor: User|null}
+     */
+    private function auditScope(Request $request): array
+    {
         $departmentId = $request->filled('department_id') ? (int) $request->department_id : null;
         $actorId = $request->filled('actor_id') ? (int) $request->actor_id : null;
+        $systemOnly = $request->boolean('system');
+        $residentsOnly = $request->boolean('residents');
 
-        // If a mismatched actor is supplied (e.g. URL tampering or stale query), ignore actor_id
-        // instead of erroring; the actor filter is dependent on department in the UI.
+        if ($departmentId && ! Department::whereKey($departmentId)->exists()) {
+            $departmentId = null;
+        }
+
+        $actor = $actorId ? User::withTrashed()->find($actorId) : null;
+
+        if ($actorId && $actor === null) {
+            $actorId = null;
+        }
+
+        // Automated records have no actor; the two selections are exclusive.
+        if ($systemOnly) {
+            $actorId = null;
+            $actor = null;
+            $residentsOnly = false;
+        }
+
+        // Backward compatibility with links from the old dropdown filters: when
+        // both are present the actor must belong to the department, otherwise
+        // the actor is dropped rather than showing an empty trail.
         if ($departmentId && $actorId) {
-            $actorMatchesDept = User::whereKey($actorId)
+            $actorMatchesDept = User::withTrashed()->whereKey($actorId)
                 ->where('department_id', $departmentId)
                 ->exists();
             if (! $actorMatchesDept) {
                 $actorId = null;
+                $actor = null;
             }
         }
 
-        $logs = ActivityLog::with(['actor', 'department', 'subject'])
-            ->when($departmentId, fn ($query) => $query->forDepartment($departmentId))
-            ->when($actorId, fn ($query) => $query->where('actor_id', $actorId))
+        return [
+            'department_id' => $departmentId,
+            'actor_id' => $actorId,
+            'system' => $systemOnly,
+            'residents' => $residentsOnly,
+            'actor' => $actor,
+        ];
+    }
+
+    /**
+     * The trail, filtered by the scope and by the trail's own filters.
+     */
+    private function auditLogs(Request $request, array $scope)
+    {
+        return ActivityLog::with(['actor', 'department', 'subject'])
+            ->when($scope['department_id'], fn ($query) => $query->forDepartment($scope['department_id']))
+            ->when($scope['actor_id'], fn ($query) => $query->where('actor_id', $scope['actor_id']))
+            ->when($scope['system'], fn ($query) => $query->whereNull('actor_id'))
+            ->when($scope['residents'], fn ($query) => $query->where('actor_role', 'citizen'))
             ->when($request->filled('action'), fn ($query) => $query->where('action', $request->action))
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->search);
@@ -326,26 +533,321 @@ class AdminController extends Controller
                 });
             })
             ->latest('created_at')
-            ->paginate(30)
-            ->withQueryString();
+            ->paginate(self::AUDIT_PAGE_SIZE)
+            ->withQueryString()
+            // The pager must link to the page, not to the fragment endpoint
+            // that happened to render it.
+            ->withPath(route('admin.audit.index', [], false));
+    }
 
-        $departments = Department::orderBy('name')->get();
-        $actors = User::whereIn('role', ['staff', 'admin'])
-            ->orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name', 'role', 'department_id']);
-        $actions = ActivityLog::query()
-            ->select('action')
-            ->distinct()
-            ->orderBy('action')
-            ->pluck('action');
+    /**
+     * The selection the scope band states.
+     *
+     * @return array{type: string, active: bool, label: string, total: int}
+     */
+    private function auditSelection(AuditDirectory $directory, array $snapshot, array $scope): array
+    {
+        $departmentId = $scope['department_id'];
+        $actorId = $scope['actor_id'];
+        $actor = $scope['actor'];
 
-        return view('admin.audit.index', compact('logs', 'departments', 'actors', 'actions'));
+        $selection = [
+            'type' => 'everyone',
+            'active' => false,
+            'label' => __('audit.everyone'),
+            'total' => $snapshot['total'],
+        ];
+
+        if ($departmentId && $actorId) {
+            // Legacy combined URL (the old dropdown pair). Both filters still
+            // apply; the label names the person and their office, and the
+            // total is counted with both filters so it matches the trail.
+            $selection = [
+                'type' => 'actor',
+                'active' => true,
+                'label' => $actor ? $directory->personLabel($actor) : __('audit.everyone'),
+                'total' => ActivityLog::query()
+                    ->forDepartment($departmentId)
+                    ->where('actor_id', $actorId)
+                    ->count(),
+            ];
+        } elseif ($departmentId) {
+            $department = collect($snapshot['departments'])->firstWhere('id', $departmentId);
+            $selection = [
+                'type' => 'department',
+                'active' => true,
+                'label' => $department['name'] ?? __('audit.everyone'),
+                'total' => (int) ($department['count'] ?? 0),
+            ];
+        } elseif ($actorId) {
+            $selection = [
+                'type' => 'actor',
+                'active' => true,
+                'label' => $actor ? $directory->personLabel($actor) : __('audit.everyone'),
+                'total' => (int) ($snapshot['actor_counts'][$actorId] ?? 0),
+            ];
+        } elseif ($scope['residents']) {
+            $selection = [
+                'type' => 'residents',
+                'active' => true,
+                'label' => __('audit.residents'),
+                'total' => $snapshot['residents'],
+            ];
+        } elseif ($scope['system']) {
+            $selection = [
+                'type' => 'system',
+                'active' => true,
+                'label' => __('audit.automated_records'),
+                'total' => $snapshot['system'],
+            ];
+        }
+
+        return $selection;
+    }
+
+    /**
+     * The trail's own filters (search + action), which every link carries.
+     *
+     * @return array<string, mixed>
+     */
+    private function auditQuery(Request $request): array
+    {
+        return array_filter([
+            'search' => $request->input('search'),
+            'action' => $request->input('action'),
+        ], fn ($v) => filled($v));
+    }
+
+    /**
+     * @return Collection<int, mixed>
+     */
+    private function auditActiveFilters(Request $request): Collection
+    {
+        return collect($this->auditQuery($request))->filter(fn ($v) => filled($v));
+    }
+
+    /**
+     * The selection, as query parameters — what every link must carry.
+     *
+     * @return array<string, mixed>
+     */
+    private function auditSelectionParams(array $scope): array
+    {
+        return array_filter([
+            'department_id' => $scope['department_id'],
+            'actor_id' => $scope['actor_id'],
+            'system' => $scope['system'] ? 1 : null,
+            'residents' => $scope['residents'] ? 1 : null,
+        ], fn ($v) => filled($v));
+    }
+
+    /**
+     * The scope band's count: the size of the selection, or how much of it the
+     * trail's own filters still show.
+     */
+    private function auditScopeCount($logs, array $selection, Collection $activeFilters): string
+    {
+        return $activeFilters->isNotEmpty()
+            ? __('audit.entries_of', ['filtered' => $logs->total(), 'total' => $selection['total']])
+            : trans_choice('audit.entries', $selection['total']);
+    }
+
+    /**
+     * The counts the rail states.
+     *
+     * @return array<string, mixed>
+     */
+    private function auditDirectoryPayload(array $snapshot): array
+    {
+        return [
+            'total' => $snapshot['total'],
+            'system' => $snapshot['system'],
+            'residents' => $snapshot['residents'],
+            'people' => $snapshot['people'],
+            'residents_people' => $snapshot['residents_people'],
+            'offices' => $snapshot['departments'],
+        ];
+    }
+
+    /**
+     * The label for a stored action key.
+     */
+    private function auditActionLabel(): Closure
+    {
+        return function (string $action): string {
+            $key = 'audit.actions.'.$action;
+
+            return Lang::has($key)
+                ? __($key)
+                : str($action)->replace(['.', '_'], ' ')->title()->toString();
+        };
+    }
+
+    /**
+     * People search for the directory type-ahead.
+     *
+     * Answers with the rendered roster fragment, so the row markup exists in
+     * exactly one Blade file whether the page is rendered by PHP or swapped in
+     * by the browser.
+     */
+    public function auditPeople(Request $request): JsonResponse|RedirectResponse
+    {
+        // A person gets the page; only a script gets the fragments.
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to($this->fragmentFallbackUrl($request, 'admin.audit.index'));
+        }
+
+        $directory = app(AuditDirectory::class);
+
+        $query = trim((string) ($request->input('q') ?? $request->input('people_q', '')));
+        $expandedGroup = $request->filled('people_group')
+            ? (string) $request->input('people_group')
+            : null;
+        $expandedPage = max(1, (int) $request->input('people_page', 1));
+
+        $departmentId = $request->filled('department_id') ? (int) $request->department_id : null;
+        $actorId = $request->filled('actor_id') ? (int) $request->actor_id : null;
+
+        $auditQuery = array_filter([
+            'search' => $request->input('search'),
+            'action' => $request->input('action'),
+        ], fn ($v) => filled($v));
+
+        $selectionParams = array_filter([
+            'department_id' => $departmentId,
+            'actor_id' => $actorId,
+            'system' => $request->boolean('system') ? 1 : null,
+        ], fn ($v) => filled($v));
+
+        if ($query === '') {
+            $html = view('admin.audit.partials.roster', [
+                'groups' => $this->auditRosterGroups($directory, $departmentId, $expandedGroup, $expandedPage, $request->boolean('residents')),
+                'auditQuery' => $auditQuery,
+                'selectionParams' => $selectionParams,
+                'actorId' => $actorId,
+            ])->render();
+        } else {
+            $results = $directory->search($query);
+
+            $html = view('admin.audit.partials.people-results', [
+                'rows' => $results['rows'],
+                'total' => $results['total'],
+                'query' => $query,
+                'auditQuery' => $auditQuery,
+                'actorId' => $actorId,
+            ])->render();
+        }
+
+        return response()->json([
+            'query' => $query,
+            'roster' => $html,
+        ]);
+    }
+
+    /**
+     * The roster for the current scope. Drilling into an office narrows the
+     * roster to that office.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function auditRosterGroups(
+        AuditDirectory $directory,
+        ?int $departmentId,
+        ?string $expandedGroup,
+        int $page,
+        bool $residentsOnly = false,
+    ): array {
+        $groups = $directory->groups($expandedGroup, $page);
+
+        if ($departmentId) {
+            $groups = array_values(array_filter(
+                $groups,
+                fn (array $group): bool => $group['key'] === 'department-'.$departmentId,
+            ));
+        } elseif ($residentsOnly) {
+            $groups = array_values(array_filter(
+                $groups,
+                fn (array $group): bool => $group['key'] === 'residents',
+            ));
+        }
+
+        return $groups;
     }
 
     /**
      * All complaints index with filters
      */
     public function complaintsIndex(Request $request): View
+    {
+        $departments = Department::orderBy('name')->get();
+        $assignableDepartments = $this->assignableDepartments();
+        $statuses = ComplaintStatus::cases();
+        $reviewStatusOptions = ComplaintReviewStatus::cases();
+        $priorityOptions = ComplaintPriority::cases();
+
+        $complaints = $this->complaintsQueue($request);
+        $activeFilters = $this->complaintFilterLabels($request, $departments, $statuses, $reviewStatusOptions, $priorityOptions);
+        $stats = $this->complaintQueueStats();
+
+        return view('admin.complaints.index', compact(
+            'complaints',
+            'departments',
+            'assignableDepartments',
+            'statuses',
+            'reviewStatusOptions',
+            'priorityOptions',
+            'stats',
+            'activeFilters',
+        ));
+    }
+
+    /**
+     * The queue regions, for soft navigation.
+     *
+     * Answering with rendered fragments lets the filter chips, the queue and
+     * its pager be swapped in place: changing a filter or turning a page never
+     * redraws the browser. The state helpers are the same ones the page uses,
+     * so a fragment can never disagree with the page.
+     */
+    public function complaintsBrowser(Request $request): JsonResponse|RedirectResponse
+    {
+        // A person gets the page; only a script gets the fragments.
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to($this->fragmentFallbackUrl($request, 'admin.complaints.index'));
+        }
+
+        $departments = Department::orderBy('name')->get();
+        $statuses = ComplaintStatus::cases();
+        $reviewStatusOptions = ComplaintReviewStatus::cases();
+        $priorityOptions = ComplaintPriority::cases();
+
+        $complaints = $this->complaintsQueue($request);
+        $activeFilters = $this->complaintFilterLabels($request, $departments, $statuses, $reviewStatusOptions, $priorityOptions);
+
+        return response()->json([
+            'summary' => view('admin.complaints.partials.summary', [
+                'activeFilters' => $activeFilters,
+            ])->render(),
+            'list' => view('admin.complaints.partials.list', [
+                'complaints' => $complaints,
+                'activeFilters' => $activeFilters,
+            ])->render(),
+            'pagination' => view('admin.complaints.partials.pagination', [
+                'complaints' => $complaints,
+            ])->render(),
+        ]);
+    }
+
+    /**
+     * The queue, filtered. Five rows a page, as asked. A queue row is tall
+     * once it carries the subject and provenance, and a short page is what
+     * makes the next/prev controls usable on a phone rather than decorative.
+     *
+     * Held as a constant because the alternative is the number appearing in
+     * three places — this call, the view's copy, and the test that pins it —
+     * where changing one silently changes what the other two promise.
+     */
+    private function complaintsQueue(Request $request)
     {
         $review = $request->get('review');
         $priority = $request->get('priority');
@@ -397,27 +899,48 @@ class AdminController extends Controller
             $query->flagged();
         }
 
-        // Five rows a page, as asked. A queue row is tall once it carries the
-        // subject and provenance, and a short page is what makes the next/prev
-        // controls usable on a phone rather than decorative.
-        //
-        // Held as a constant because the alternative is the number appearing in
-        // three places — this call, the view's copy, and the test that pins it —
-        // where changing one silently changes what the other two promise.
-        $complaints = $query->latest()->paginate(self::QUEUE_PAGE_SIZE)->withQueryString();
-        // Two lists, because this view needs two different things. The filter has
-        // to include archived offices or a search over last year's work returns
-        // nothing; the bulk-reassign control must not offer them, because routing
-        // new work to an archived office is the thing archiving prevents.
-        $departments = Department::orderBy('name')->get();
-        $assignableDepartments = $this->assignableDepartments();
-        $statuses = ComplaintStatus::cases();
-        $reviewStatusOptions = ComplaintReviewStatus::cases();
-        $priorityOptions = ComplaintPriority::cases();
+        return $query->latest()->paginate(self::QUEUE_PAGE_SIZE)
+            ->withQueryString()
+            // The pager must link to the page, not to the fragment endpoint
+            // that happened to render it.
+            ->withPath(route('admin.complaints.index', [], false));
+    }
 
-        // Queue-wide metrics for the banner strip. Cheap aggregates; kept
-        // in the controller so the view stays a renderer, not a shop.
-        $stats = [
+    /**
+     * The labels of the filters that are on, for the chips under the filter bar.
+     *
+     * @return Collection<int, string>
+     */
+    private function complaintFilterLabels(
+        Request $request,
+        $departments,
+        array $statuses,
+        array $reviewStatusOptions,
+        array $priorityOptions,
+    ): Collection {
+        return collect([
+            'department' => $request->department === 'unassigned'
+                ? 'Unassigned'
+                : $departments->firstWhere('id', (int) $request->department)?->name,
+            'status' => collect($statuses)->firstWhere('value', $request->status)?->label(),
+            'review' => collect($reviewStatusOptions)->firstWhere('value', $request->review)?->label(),
+            'priority' => collect($priorityOptions)->firstWhere('value', $request->priority)?->label(),
+            'flagged' => $request->flagged === '1' ? 'Flagged only' : null,
+            'date_from' => $request->date_from ? 'From '.$request->date_from : null,
+            'date_to' => $request->date_to ? 'To '.$request->date_to : null,
+            'search' => $request->search ? 'Ticket "'.$request->search.'"' : null,
+        ])->filter();
+    }
+
+    /**
+     * Queue-wide metrics for the banner strip. Cheap aggregates; kept in the
+     * controller so the view stays a renderer, not a shop.
+     *
+     * @return array<string, int>
+     */
+    private function complaintQueueStats(): array
+    {
+        return [
             'total' => Complaint::count(),
             'pending_review' => Complaint::where('review_status', ComplaintReviewStatus::Pending->value)->count(),
             'in_progress' => Complaint::where('status', ComplaintStatus::InProgress->value)->count(),
@@ -426,15 +949,6 @@ class AdminController extends Controller
                 ->whereYear('updated_at', now()->year)
                 ->count(),
         ];
-
-        return view('admin.complaints.index', compact(
-            'complaints',
-            'departments',
-            'statuses',
-            'reviewStatusOptions',
-            'priorityOptions',
-            'stats'
-        ));
     }
 
     /**

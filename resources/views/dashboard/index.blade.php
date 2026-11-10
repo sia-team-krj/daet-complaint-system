@@ -36,7 +36,7 @@
   .db-card { position:relative; display:block; background:#fff; border:1px solid var(--db-line); border-radius:12px; padding:20px 24px; box-shadow:0 1px 3px rgba(15,23,42,.06); text-decoration:none; color:var(--db-ink); }
   .db-card:hover { border-color:#94a3b8; background:#f6f8fb; }
   .db-card__row1 { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
-  .db-ticket { font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:13px; font-weight:700; color:#102545; }
+  .db-ticket { font-family: var(--font-mono); font-size:13px; font-weight:700; color:#102545; }
   .db-pill { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
   .db-pill--submitted { background:#dbeafe; color:#1e40af; }
   .db-pill--verified, .db-pill--assigned { background:#e8eef8; color:#102545; }

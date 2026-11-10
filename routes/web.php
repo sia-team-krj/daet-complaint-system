@@ -60,6 +60,11 @@ Route::get('/design-system', function () {
 Route::get('/transparency/complaints', [TransparencyController::class, 'complaints'])
     ->name('transparency.complaints')
     ->middleware('throttle:60,1');
+// Must be declared before /transparency/complaints/{complaint}, or "browser"
+// would be read as a complaint id.
+Route::get('/transparency/complaints/browser', [TransparencyController::class, 'complaintsBrowser'])
+    ->name('transparency.complaints.browser')
+    ->middleware('throttle:60,1');
 Route::get('/transparency/complaints/{complaint}', [TransparencyController::class, 'show'])
     ->name('transparency.complaints.show');
 Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'publicEvidence'])
@@ -237,6 +242,7 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
             'dashboard',
         ])->name('admin.dashboard');
         Route::get('/complaints', [AdminController::class, 'complaintsIndex'])->name('admin.complaints.index');
+        Route::get('/complaints/browser', [AdminController::class, 'complaintsBrowser'])->name('admin.complaints.browser');
         Route::get('/complaints/export', [AdminController::class, 'exportComplaints'])->name('admin.complaints.export');
         Route::post('/complaints/bulk-reassign', [AdminController::class, 'bulkReassign'])->name('admin.complaints.bulk-reassign');
         Route::get('/complaints/{complaint}', [AdminController::class, 'complaintShow'])->name('admin.complaints.show');
@@ -278,6 +284,8 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
         Route::post('/invitations', [AdminInvitationController::class, 'store'])->name('admin.invitations.store');
         Route::patch('/invitations/{invitation}/revoke', [AdminInvitationController::class, 'revoke'])->name('admin.invitations.revoke');
         Route::get('/audit-trail', [AdminController::class, 'auditIndex'])->name('admin.audit.index');
+        Route::get('/audit-trail/people', [AdminController::class, 'auditPeople'])->name('admin.audit.people');
+        Route::get('/audit-trail/browser', [AdminController::class, 'auditBrowser'])->name('admin.audit.browser');
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
         Route::put('/settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
         Route::post('/settings/categories', [AdminSettingsController::class, 'storeCategory'])->name('admin.settings.categories.store');

@@ -25,6 +25,11 @@
    language-neutral keys translated on display; no raw keys on screen.
 8. **Privacy on public screens:** barangay-level only, under-3-report areas
    neutral, nothing but the report in the public payload.
+9. **A page that reloads on every click?** Don't redraw the browser — swap the
+   regions that changed. Read `docs/soft-navigation.md` (and the
+   `soft-navigation` skill) before building it: Blade partials + a JSON endpoint
+   + a client controller, the URL stays the truth, and it must still work with
+   JavaScript off. Guide §5.34.
 
 Also applicable: the repository runs a guard (`scripts/design-system-guard.php`)
 that fails on NEW hard-coded hex colors, serif declarations, or map wrappers

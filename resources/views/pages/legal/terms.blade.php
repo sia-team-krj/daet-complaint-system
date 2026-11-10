@@ -33,7 +33,7 @@
             min-height: 100vh;
             background: var(--lg-cream);
             color: var(--lg-ink);
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+            font-family: var(--font-sans);
         }
 
         .legal-root *,
@@ -88,7 +88,7 @@
 
         .legal-title {
             margin: 0;
-            font-family: "Cormorant Garamond", Georgia, serif;
+            font-family: var(--font-sans);
             font-size: clamp(30px, 5vw, 46px);
             font-weight: 700;
             line-height: 1.1;
@@ -188,7 +188,7 @@
             padding-bottom: 10px;
             color: var(--lg-navy);
             border-bottom: 1px solid var(--lg-line);
-            font-family: "Cormorant Garamond", Georgia, serif;
+            font-family: var(--font-sans);
             font-size: 24px;
             font-weight: 700;
             line-height: 1.2;
@@ -197,7 +197,7 @@
         .legal-section > h2::before {
             content: attr(data-num);
             color: var(--lg-gold);
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+            font-family: var(--font-sans);
             font-size: 12px;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
@@ -350,7 +350,7 @@
         .legal-cta h2 {
             margin: 0 0 8px;
             color: #f5f0e8;
-            font-family: "Cormorant Garamond", Georgia, serif;
+            font-family: var(--font-sans);
             font-size: 24px;
             font-weight: 700;
         }

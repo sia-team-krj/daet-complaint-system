@@ -3,8 +3,7 @@
 
 @section('content')
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-  
+    
   :root {
     --navy: #142D4F;
     --navy-mid: #1B3A61;
@@ -50,7 +49,7 @@
   }
   
   .profile-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: 36px;
     font-weight: 700;
     color: #fff;
@@ -83,14 +82,14 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: 28px;
     font-weight: 700;
     color: var(--gold);
   }
   
   .identity-name {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: 24px;
     font-weight: 700;
     color: #fff;
@@ -149,7 +148,7 @@
   }
   
   .stat-value {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: 24px;
     font-weight: 700;
     color: var(--gold);

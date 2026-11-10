@@ -1,5 +1,7 @@
 @extends($mainLayout)
 
+@section('body-class', 'admin-layout')
+
 @section('title', 'Design System — Daet Listens')
 
 {{--
@@ -345,6 +347,7 @@
         </div>
     </section>
 
+
     {{-- ═══ STATUS PILLS / DEPT BADGES / CATEGORY ICONS ═══ --}}
     <section class="ds-section" aria-labelledby="ds-meaning">
         <h2 class="ds-h2" id="ds-meaning">Colours for meaning</h2>
@@ -422,6 +425,169 @@
         <h3 class="ds-h3">Mobile rendering (iframe at 393px)</h3>
         <div class="ds-frame ds-frame--mobile">
             <iframe src="{{ route('design-system', ['embed' => 'list']) }}" title="Report rows at 393 pixels wide" loading="lazy" width="393" height="560"></iframe>
+        </div>
+    </section>
+
+    {{-- ═══ ADMIN: AUDIT BROWSER ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-audit-browser">
+        <h2 class="ds-h2" id="ds-audit-browser">Audit browser (§5.33)</h2>
+        <p class="ds-note">
+            The drill-down browser on <code>/admin/audit-trail</code>. Three bands in one card:
+            the <strong>scope</strong> (what the trail below is showing), the <strong>search</strong>
+            (the way to one person without scrolling), and the two <strong>panes</strong> — scopes on
+            the left, people on the right. The roster is bounded: every group shows 8 rows and
+            offers “See all N” (25 per page), so the page never grows with the number of residents
+            in the log. Counts are totals and ignore the search and Action filters. Selected rows
+            use <code>--navy-50</code> plus a 3px navy inset bar — never gold. On mobile the panes
+            collapse behind a “Browse departments and people” disclosure; the scope band stays
+            visible. URL: <code>?department_id=</code>, <code>?actor_id=</code>, <code>?system=1</code>,
+            <code>?people_q=</code>, <code>?people_group=&amp;people_page=</code>.
+        </p>
+        <div class="ds-frame" style="background: var(--bg); padding: 20px;">
+            <section class="admin-panel admin-audit-browser" style="margin-bottom: 0;" aria-label="Audit browser demo">
+                <div class="admin-audit-browser__scope">
+                    <span class="admin-audit-browser__scope-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V5l6-3 6 3v16"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/><path d="M9 17h1"/><path d="M14 17h1"/></svg>
+                    </span>
+                    <p class="admin-audit-browser__scope-text">
+                        <span class="admin-audit-browser__scope-label">Showing</span>
+                        <strong class="admin-audit-browser__scope-name">Engineering Office</strong>
+                        <span class="admin-audit-browser__scope-count">· 1,204 entries</span>
+                    </p>
+                    <a href="#ds-audit-browser" class="admin-audit-browser__scope-clear">Clear selection</a>
+                </div>
+
+                <div class="admin-audit-browser__bar">
+                    <form class="admin-audit-browser__search" method="GET" action="#ds-audit-browser" onsubmit="return false;">
+                        <label class="admin-audit-browser__search-field">
+                            <span class="sr-only">Find a person…</span>
+                            <svg class="admin-audit-browser__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" name="people_q" placeholder="Find a person…" autocomplete="off">
+                        </label>
+                        <button type="submit" class="admin-button admin-button--secondary admin-audit-browser__search-submit">Search</button>
+                    </form>
+                </div>
+
+                <details class="admin-audit-browser__disclosure" data-audit-directory-mobile open>
+                    <summary class="admin-audit-browser__disclosure-toggle">
+                        <span class="admin-audit-browser__disclosure-icon" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V5l6-3 6 3v16"/><path d="M9 9h1"/><path d="M14 9h1"/><path d="M9 13h1"/><path d="M14 13h1"/><path d="M9 17h1"/><path d="M14 17h1"/></svg>
+                        </span>
+                        <span class="admin-audit-browser__disclosure-label">Browse departments and people</span>
+                        <span class="admin-audit-browser__disclosure-chevron" aria-hidden="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </span>
+                    </summary>
+
+                    <div class="admin-audit-browser__panes">
+                        <nav class="admin-audit-browser__contexts" aria-label="Scope demo">
+                            <p class="admin-audit-browser__rail-head">
+                                <span class="admin-audit-browser__rail-head-label">Scope</span>
+                                <span class="admin-audit-browser__rail-head-label">People</span>
+                            </p>
+
+                            <a href="#ds-audit-browser" class="admin-audit-browser__context">
+                                <span class="admin-audit-browser__context-icon" aria-hidden="true">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                </span>
+                                <span class="admin-audit-browser__context-name">Everyone</span>
+                                <span class="admin-audit-browser__context-count">3,012</span>
+                            </a>
+
+                            <p class="admin-audit-browser__label">Offices</p>
+                            <a href="#ds-audit-browser" class="admin-audit-browser__context is-selected" aria-current="true">
+                                <span class="dept-badge" data-dept="ENG">ENG</span>
+                                <span class="admin-audit-browser__context-name">Engineering Office</span>
+                                <span class="admin-audit-browser__context-count">18</span>
+                            </a>
+                            <a href="#ds-audit-browser" class="admin-audit-browser__context">
+                                <span class="dept-badge" data-dept="GSO">GSO</span>
+                                <span class="admin-audit-browser__context-name">General Services Office</span>
+                                <span class="admin-audit-browser__context-count">14</span>
+                            </a>
+                            <a href="#ds-audit-browser" class="admin-audit-browser__context">
+                                <span class="dept-badge" data-dept="WST">WST</span>
+                                <span class="admin-audit-browser__context-name">Waste Management Office</span>
+                                <span class="admin-audit-browser__context-count">6</span>
+                            </a>
+
+                            <p class="admin-audit-browser__label">Automated</p>
+                            <a href="#ds-audit-browser" class="admin-audit-browser__context">
+                                <span class="admin-audit-browser__context-icon" aria-hidden="true">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                </span>
+                                <span class="admin-audit-browser__context-name">Automated records</span>
+                                <span class="admin-audit-browser__context-count">57 records</span>
+                            </a>
+                        </nav>
+
+                        <div class="admin-audit-browser__roster">
+                            <div class="admin-audit-browser__roster-head">
+                                <span class="admin-audit-browser__roster-head-label">People</span>
+                                <span class="admin-audit-browser__roster-head-label">Entries</span>
+                            </div>
+
+                            <section class="admin-audit-browser__group">
+                                <p class="admin-audit-browser__group-head">
+                                    <span class="admin-audit-browser__group-name">Engineering Office</span>
+                                    <span class="admin-audit-browser__group-meta">18 people</span>
+                                </p>
+                                <div class="admin-audit-browser__group-list">
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__person">
+                                        <span class="admin-audit-browser__avatar" aria-hidden="true">JD</span>
+                                        <span class="admin-audit-browser__person-name">Juan dela Cruz</span>
+                                        <span class="admin-audit-browser__person-role">Staff</span>
+                                        <span class="admin-audit-browser__person-count">86</span>
+                                    </a>
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__person is-selected" aria-current="true">
+                                        <span class="admin-audit-browser__avatar" aria-hidden="true">AL</span>
+                                        <span class="admin-audit-browser__person-name">Alize Lowe</span>
+                                        <span class="admin-audit-browser__person-role">Staff</span>
+                                        <span class="admin-audit-browser__person-count">95</span>
+                                    </a>
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__person">
+                                        <span class="admin-audit-browser__avatar" aria-hidden="true">KM</span>
+                                        <span class="admin-audit-browser__person-name">Kristel Mendez</span>
+                                        <span class="admin-audit-browser__person-role">Administrator</span>
+                                        <span class="admin-audit-browser__person-count">17</span>
+                                    </a>
+                                </div>
+                                <div class="admin-audit-browser__group-foot">
+                                    <span class="admin-audit-browser__group-shown">Showing 3 of 18</span>
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__group-more">See all 3,010</a>
+                                </div>
+                            </section>
+
+                            <section class="admin-audit-browser__group">
+                                <p class="admin-audit-browser__group-head">
+                                    <span class="admin-audit-browser__group-name">Residents</span>
+                                    <span class="admin-audit-browser__group-meta">3,010 people</span>
+                                </p>
+                                <div class="admin-audit-browser__group-list">
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__person">
+                                        <span class="admin-audit-browser__avatar" aria-hidden="true">AD</span>
+                                        <span class="admin-audit-browser__person-name">Ana Dela Cruz</span>
+                                        <span class="admin-audit-browser__person-count">6</span>
+                                    </a>
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__person">
+                                        <span class="admin-audit-browser__avatar" aria-hidden="true">PP</span>
+                                        <span class="admin-audit-browser__person-name">Pedro Penduko</span>
+                                        <span class="admin-audit-browser__person-count">8</span>
+                                    </a>
+                                </div>
+                                <div class="admin-audit-browser__group-foot">
+                                    <span class="admin-audit-browser__pager">
+                                        <span class="admin-audit-browser__pager-link is-disabled" aria-disabled="true">Previous</span>
+                                        <span class="admin-audit-browser__pager-state">Page 2 of 61</span>
+                                        <a href="#ds-audit-browser" class="admin-audit-browser__pager-link">Next</a>
+                                    </span>
+                                    <a href="#ds-audit-browser" class="admin-audit-browser__group-more">Collapse</a>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </details>
+            </section>
         </div>
     </section>
 

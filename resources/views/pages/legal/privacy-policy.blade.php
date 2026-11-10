@@ -34,7 +34,7 @@
             min-height: 100vh;
             background: var(--lg-cream);
             color: var(--lg-ink);
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+            font-family: var(--font-sans);
         }
 
         .legal-root *,
@@ -89,7 +89,7 @@
 
         .legal-title {
             margin: 0;
-            font-family: "Cormorant Garamond", Georgia, serif;
+            font-family: var(--font-sans);
             font-size: clamp(30px, 5vw, 46px);
             font-weight: 700;
             line-height: 1.1;
@@ -191,7 +191,7 @@
             padding-bottom: 10px;
             color: var(--lg-navy);
             border-bottom: 1px solid var(--lg-line);
-            font-family: "Cormorant Garamond", Georgia, serif;
+            font-family: var(--font-sans);
             font-size: 24px;
             font-weight: 700;
             line-height: 1.2;
@@ -200,7 +200,7 @@
         .legal-section > h2::before {
             content: attr(data-num);
             color: var(--lg-gold);
-            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+            font-family: var(--font-sans);
             font-size: 12px;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
@@ -351,7 +351,7 @@
         .legal-cta h2 {
             margin: 0 0 8px;
             color: #f5f0e8;
-            font-family: "Cormorant Garamond", Georgia, serif;
+            font-family: var(--font-sans);
             font-size: 24px;
             font-weight: 700;
         }
@@ -652,6 +652,17 @@
                 The portal uses a session cookie to keep you signed in and to protect forms against
                 cross-site request forgery. There is no advertising, tracking, or third-party analytics
                 cookie. Your session is stored server-side; the cookie only carries an identifier.
+            </p>
+            <p>
+                A second cookie remembers your language choice (English or Filipino) for a year, so
+                you are not asked again on every visit. It carries the language and nothing else, and
+                clearing it only means choosing the language again.
+            </p>
+            <p>
+                We do not ask for, set, or read advertising or analytics cookies, and we do not run
+                third-party tracking of any kind. Fonts, scripts and styles are served by this
+                portal itself, so visiting a page does not send your IP address to an outside
+                company.
             </p>
             <p>
                 Signing out ends the session. Because your session is server-side, clearing your browser

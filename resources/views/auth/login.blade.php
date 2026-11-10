@@ -112,8 +112,7 @@
 </div>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
+  
   :root {
     --navy:        #142D4F;
     --navy-mid:    #1B3A61;
@@ -136,7 +135,7 @@
       width: 100%;
       max-width: 100%;
       min-width: 0;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-sans);
       padding-top: var(--navbar-height);
       min-height: 100svh;
       background: var(--navy);
@@ -176,7 +175,7 @@
   }
   .auth-wm {
     position: absolute; bottom: -4%; right: 0;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(80px, 18vw, 280px); font-weight: 700;
     color: rgba(255,255,255,0.018); line-height: 1;
     user-select: none; letter-spacing: -0.02em;
@@ -207,7 +206,7 @@
   }
 
   .auth-brand-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(28px, 3.2vw, 58px); font-weight: 700;
     line-height: 1.05; color: var(--white);
     margin-bottom: clamp(12px, 2vh, 20px); letter-spacing: -0.01em;
@@ -222,7 +221,7 @@
 
   .auth-brand-desc {
     font-size: clamp(13px, 1.1vw, 15px); line-height: 1.85;
-    color: var(--text-dim); font-weight: 300;
+    color: var(--text-dim); font-weight: 400;
     max-width: 400px; margin-bottom: clamp(24px, 4vh, 48px);
   }
 
@@ -249,12 +248,12 @@
   .auth-form-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
 
   .auth-form-heading {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(28px, 2.8vw, 44px); font-weight: 700;
     color: var(--white); line-height: 1.08; margin-bottom: 8px; letter-spacing: -0.01em;
   }
   .auth-form-sub {
-    font-size: 13px; color: var(--text-dim); font-weight: 300; line-height: 1.7; margin-bottom: 32px;
+    font-size: 13px; color: var(--text-dim); font-weight: 400; line-height: 1.7; margin-bottom: 32px;
   }
   .auth-form-sub a { color: var(--gold); text-decoration: none; font-weight: 500; transition: color 0.2s; }
   .auth-form-sub a:hover { color: var(--gold-light); }
@@ -278,7 +277,7 @@
     border: 1px solid rgba(255,255,255,0.22);
     border-radius: 4px;
     padding: 13px 14px 13px 42px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     font-size: 13.5px;
     color: #ffffff;
     caret-color: #ffffff;
@@ -328,7 +327,7 @@
   .btn-submit {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
     background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    color: var(--navy); font-family: 'DM Sans', sans-serif;
+    color: var(--navy); font-family: var(--font-sans);
     font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
     padding: 15px 32px; border-radius: 4px; border: none; cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;

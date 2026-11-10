@@ -8,6 +8,9 @@ use App\Models\Department;
 use App\Services\BarangayLocator;
 use App\Services\DepartmentRouter;
 use App\Services\TransparencyFeed;
+use App\Http\Controllers\Concerns\SoftNavigation;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -26,6 +29,8 @@ use Illuminate\View\View;
  */
 class TransparencyController extends Controller
 {
+    use SoftNavigation;
+
     public const PUBLIC_COMPLAINTS_PER_PAGE = 5;
     /**
      * The public register. The component does the reading; see TransparencyFeed
@@ -37,6 +42,26 @@ class TransparencyController extends Controller
     }
 
     public function complaints(Request $request, TransparencyFeed $feed, BarangayLocator $barangays): View
+    {
+        $data = $this->transparencyComplaints($request, $feed, $barangays);
+
+        // A page beyond the last one lands on the last one.
+        if (isset($data['redirect'])) {
+            return redirect()->to($data['redirect']);
+        }
+
+        return view('pages.transparency.complaints', $data);
+    }
+
+    /**
+     * The public complaint feed.
+     *
+     * One method builds it for both the page and the soft-navigation endpoint,
+     * so a swapped-in fragment can never disagree with the page.
+     *
+     * @return array<string, mixed>
+     */
+    private function transparencyComplaints(Request $request, TransparencyFeed $feed, BarangayLocator $barangays): array
     {
         $validStatuses = collect(ComplaintStatus::cases())
             ->mapWithKeys(fn (ComplaintStatus $s) => [\Illuminate\Support\Str::slug($s->value, '_') => $s->value])
@@ -128,7 +153,7 @@ class TransparencyController extends Controller
             ->withQueryString();
 
         if ($paginator->lastPage() > 0 && $page > $paginator->lastPage()) {
-            return redirect()->to($request->fullUrlWithQuery(['page' => $paginator->lastPage()]));
+            return ['redirect' => $request->fullUrlWithQuery(['page' => $paginator->lastPage()])];
         }
 
         $reports = $paginator->getCollection()
@@ -138,7 +163,7 @@ class TransparencyController extends Controller
 
         $anyFilter = $q !== '' || $department !== '' || $category !== '' || $statusSlug !== '' || $sort !== 'reported_desc';
 
-        return view('pages.transparency.complaints', [
+        return [
             'paginator' => $paginator,
             'reports' => $reports,
             'departmentOptions' => collect($validDepartments)->sort()->values(),
@@ -156,6 +181,38 @@ class TransparencyController extends Controller
             ],
             'anyFilter' => $anyFilter,
             'total' => $paginator->total(),
+        ];
+    }
+
+    /**
+     * The feed's regions, for soft navigation.
+     *
+     * Answering with rendered fragments lets the status chips, the active
+     * filter chips and the results be swapped in place: a visitor filtering or
+     * turning a page never loses the page, the scroll position or the map
+     * behind it. The URL stays the truth, and without JavaScript every link
+     * and form is still an ordinary one.
+     */
+    public function complaintsBrowser(Request $request, TransparencyFeed $feed, BarangayLocator $barangays): JsonResponse|RedirectResponse
+    {
+        // A person gets the page; only a script gets the fragments.
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to($this->fragmentFallbackUrl($request, 'transparency.complaints'));
+        }
+
+        $data = $this->transparencyComplaints($request, $feed, $barangays);
+
+        if (isset($data['redirect'])) {
+            return response()->json(['redirect' => $data['redirect']]);
+        }
+
+        return response()->json([
+            'chips' => view('pages.transparency.partials.complaints-chips', $data)->render(),
+            'active' => view('pages.transparency.partials.complaints-active', $data)->render(),
+            'results' => view('pages.transparency.partials.complaints-results', $data)->render(),
+            // A filtered feed must not be indexed, and the rule lives in the
+            // <head> — which a fragment swap does not touch.
+            'head' => view('pages.transparency.partials.complaints-head', $data)->render(),
         ]);
     }
 

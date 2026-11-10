@@ -3,8 +3,9 @@
     Daet Listens landing page - Official Complaint Portal
     Mode: Persuade - the visitor decides and acts.
     Stack: Laravel Blade + Tailwind CSS v4
-    Visual world: navy/gold civic system, Cormorant Garamond headings,
-    DM Sans body. Code-led (no comp generator available).
+    Visual world: navy/gold civic system, Inter headings and body,
+    self-hosted (no third-party font request). Code-led (no comp generator
+    available).
     Craft-floor: no em dashes, no emojis, inline SVG icons only,
     contrast ≥4.5:1 body text, type consistency, no system display face,
     no thick coloured border-left, no bounce easing, no unicode glyph icons.
@@ -113,19 +114,19 @@
         <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-white">
                 <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-complaints" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-complaints" style="font-family: var(--font-mono);">0</span>
                     <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.complaints_filed') }}</span>
                 </div>
                 <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-resolved" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-resolved" style="font-family: var(--font-mono);">0</span>
                     <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.resolved') }}</span>
                 </div>
                 <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-avg" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-avg" style="font-family: var(--font-mono);">0</span>
                     <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.avg_response') }}</span>
                 </div>
                 <div class="group relative p-6 rounded-[12px] border border-[#C9A84C]/20 bg-[#142D4F]/50 hover:bg-gold/5 transition-colors duration-300">
-                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-barangays" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">0</span>
+                    <span class="text-[clamp(1.5rem,4vw,3rem)] font-bold text-gold leading-none tabular-nums" id="stat-barangays" style="font-family: var(--font-mono);">0</span>
                     <span class="text-xs font-bold uppercase tracking-tighter text-white/60 mt-1 block">{{ __('home.stats.barangays_served') }}</span>
                 </div>
             </div>
@@ -147,7 +148,7 @@
                     <!-- Connector line -->
                     <div class="absolute left-1/2 top-[24px] bottom-[24px] w-[1px] bg-gold/20"></div>
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">01</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: var(--font-mono);">01</div>
                         <div class="flex-1">
                             <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step1_title') }}</h3>
                             <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step1_body') }}</p>
@@ -156,7 +157,7 @@
                 </div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">02</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: var(--font-mono);">02</div>
                         <div class="flex-1">
                             <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step2_title') }}</h3>
                             <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step2_body') }}</p>
@@ -165,7 +166,7 @@
                 </div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">03</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: var(--font-mono);">03</div>
                         <div class="flex-1">
                             <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step3_title') }}</h3>
                             <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step3_body') }}</p>
@@ -174,7 +175,7 @@
                 </div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: 'IBM Plex Mono', 'Numeric', ui-monospace, monospace;">04</div>
+                        <div class="w-10 h-10 rounded-full bg-white border-2 border-gold text-gold font-bold text-xl flex items-center justify-center" style="font-family: var(--font-mono);">04</div>
                         <div class="flex-1">
                             <h3 class="font-display font-bold text-navy text-lg mb-2">{{ __('home.how.step4_title') }}</h3>
                             <p class="text-sm text-navy/60 leading-1.6">{{ __('home.how.step4_body') }}</p>

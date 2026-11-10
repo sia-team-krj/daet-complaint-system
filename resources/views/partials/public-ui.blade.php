@@ -160,6 +160,17 @@
         .status-pill.rejected    .status-pill__dot { background: var(--status-rejected-dot); }
         .status-pill.closed      { background: var(--status-closed-bg);   color: var(--status-closed-text); }
         .status-pill.closed      .status-pill__dot { background: var(--status-closed-dot); }
+        /* Review statuses ride the same four families — no new colours:
+           pending is in flight but stable, needs-information is action
+           needed, duplicate is cooling off, escalated is negative. */
+        .status-pill.pending     { background: var(--status-review-bg);    color: var(--status-review-text); }
+        .status-pill.pending     .status-pill__dot { background: var(--status-review-dot); }
+        .status-pill.needs_information { background: var(--status-progress-bg); color: var(--status-progress-text); }
+        .status-pill.needs_information .status-pill__dot { background: var(--status-progress-dot); }
+        .status-pill.duplicate    { background: var(--status-closed-bg);   color: var(--status-closed-text); }
+        .status-pill.duplicate    .status-pill__dot { background: var(--status-closed-dot); }
+        .status-pill.escalated    { background: var(--status-rejected-bg); color: var(--status-rejected-text); }
+        .status-pill.escalated    .status-pill__dot { background: var(--status-rejected-dot); }
 
         .progress {
             display: flex;

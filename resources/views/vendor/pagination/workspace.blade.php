@@ -8,16 +8,16 @@
     paginates identically at five rows per page.
 --}}
 @if ($paginator->hasPages())
-    <nav class="admin-pager" role="navigation" aria-label="{{ $ariaLabel ?? 'Pagination' }}">
+    <nav class="admin-pager" role="navigation" aria-label="{{ $ariaLabel ?? (__('pagination.label', [], null) ?: 'Pagination') }}">
         @if ($paginator->onFirstPage())
             <span class="admin-pager-step is-disabled" aria-disabled="true" aria-label="Previous page">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                <span>Previous</span>
+                <span>{{ __('pagination.previous', [], null) ?: 'Previous' }}</span>
             </span>
         @else
             <a class="admin-pager-step" href="{{ $paginator->previousPageUrl() }}" rel="prev" aria-label="Previous page">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                <span>Previous</span>
+                <span>{{ __('pagination.previous', [], null) ?: 'Previous' }}</span>
             </a>
         @endif
 
@@ -41,12 +41,12 @@
 
         @if ($paginator->hasMorePages())
             <a class="admin-pager-step" href="{{ $paginator->nextPageUrl() }}" rel="next" aria-label="Next page">
-                <span>Next</span>
+                <span>{{ __('pagination.next', [], null) ?: 'Next' }}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </a>
         @else
             <span class="admin-pager-step is-disabled" aria-disabled="true" aria-label="Next page">
-                <span>Next</span>
+                <span>{{ __('pagination.next', [], null) ?: 'Next' }}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </span>
         @endif

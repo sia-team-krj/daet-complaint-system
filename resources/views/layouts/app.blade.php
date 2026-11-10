@@ -31,9 +31,8 @@
     <title>@yield('title', 'Daet Listens - LGU Daet')</title>
 
     {{-- Fonts: loaded here once for ALL pages --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {{-- Fonts are self-hosted (public/fonts/inter) — no third-party request,
+         so a visitor's IP address never leaves the Municipality's server. --}}
 
     {{-- Must come before @vite: the module is deferred, this is not. --}}
     @include('partials.leaflet-bootstrap')

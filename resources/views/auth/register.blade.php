@@ -4,8 +4,7 @@
 
 <style>
 
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
+  
   :root {
     --navy:        #142D4F;
     --navy-mid:    #1B3A61;
@@ -32,7 +31,7 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     position: relative;
     background: var(--navy);
     overflow: visible;
@@ -74,7 +73,7 @@
   }
   .auth-wm {
     position: absolute; bottom: -4%; right: -1%;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(80px, 18vw, 280px); font-weight: 700;
     color: rgba(255,255,255,0.018); line-height: 1;
     pointer-events: none; user-select: none; letter-spacing: -0.02em;
@@ -108,14 +107,14 @@
 
   .auth-brand-title {
     text-align:center;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(28px, 3.2vw, 56px); font-weight: 700;
     line-height: 1.05; color: var(--white);
     margin-bottom: clamp(12px, 2vh, 18px); letter-spacing: -0.01em;
   }
   .auth-brand-title .gold-line { color: var(--gold); font-style: italic; display: block; }
   .auth-brand-divider { width: 48px; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); margin-bottom: clamp(12px, 2vh, 20px); }
-  .auth-brand-desc { font-size: clamp(13px, 1.1vw, 15px); line-height: 1.85; color: var(--text-dim); font-weight: 300; max-width: 400px; margin-bottom: clamp(24px, 4vh, 40px); }
+  .auth-brand-desc { font-size: clamp(13px, 1.1vw, 15px); line-height: 1.85; color: var(--text-dim); font-weight: 400; max-width: 400px; margin-bottom: clamp(24px, 4vh, 40px); }
 
   /* Benefits */
   .auth-benefits { display: flex; flex-direction: column; gap: clamp(12px, 1.8vh, 20px); }
@@ -128,8 +127,8 @@
     transition: background 0.2s, border-color 0.2s;
   }
   .auth-benefit:hover .auth-benefit-icon { background: rgba(201,168,76,0.2); border-color: rgba(201,168,76,0.45); }
-  .auth-benefit-title { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 2px; }
-  .auth-benefit-desc { font-size: 11.5px; color: rgba(255,255,255,0.32); line-height: 1.6; font-weight: 300; }
+  .auth-benefit-title { font-family: var(--font-sans); font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 2px; }
+  .auth-benefit-desc { font-size: 11.5px; color: rgba(255,255,255,0.32); line-height: 1.6; font-weight: 400; }
 
   /* ─── Form panel (RIGHT) ─── */
   .auth-form-panel {
@@ -147,8 +146,8 @@
 
   .auth-form-eyebrow { display: inline-flex; align-items: center; gap: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
   .auth-form-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
-  .auth-form-heading { font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 2.8vw, 42px); font-weight: 700; color: var(--white); line-height: 1.08; margin-bottom: 8px; letter-spacing: -0.01em; }
-  .auth-form-sub { font-size: 13px; color: var(--text-dim); font-weight: 300; line-height: 1.7; margin-bottom: 28px; }
+  .auth-form-heading { font-family: var(--font-sans); font-size: clamp(28px, 2.8vw, 42px); font-weight: 700; color: var(--white); line-height: 1.08; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .auth-form-sub { font-size: 13px; color: var(--text-dim); font-weight: 400; line-height: 1.7; margin-bottom: 28px; }
   .auth-form-sub a { color: var(--gold); text-decoration: none; font-weight: 500; transition: color 0.2s; }
   .auth-form-sub a:hover { color: var(--gold-light); }
 
@@ -166,7 +165,7 @@
     border: 1px solid rgba(255,255,255,0.22);
     border-radius: 4px;
     padding: 12px 14px 12px 42px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     font-size: 13px;
     color: #ffffff;
     caret-color: #ffffff;
@@ -192,7 +191,7 @@
   .field-terms-label a { color: var(--gold); text-decoration: none; font-weight: 500; }
   .field-terms-label a:hover { color: var(--gold-light); }
 
-  .btn-submit { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; padding: 15px 32px; border-radius: 4px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 24px rgba(201,168,76,0.28); margin-bottom: 22px; }
+  .btn-submit { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--navy); font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; padding: 15px 32px; border-radius: 4px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 24px rgba(201,168,76,0.28); margin-bottom: 22px; }
   .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(201,168,76,0.45); }
   .btn-submit:active { transform: translateY(0); }
 

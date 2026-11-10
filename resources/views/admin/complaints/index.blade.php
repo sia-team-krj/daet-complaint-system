@@ -57,21 +57,8 @@
     @include('admin.partials.flash')
 
     {{-- ════════════ FILTER CARD ════════════ --}}
-    @php
-        $activeFilters = collect([
-            'department' => request('department') === 'unassigned'
-                ? 'Unassigned'
-                : $departments->firstWhere('id', (int) request('department'))?->name,
-            'status' => collect($statuses)->firstWhere('value', request('status'))?->label(),
-            'review' => collect($reviewStatusOptions)->firstWhere('value', request('review'))?->label(),
-            'priority' => collect($priorityOptions)->firstWhere('value', request('priority'))?->label(),
-            'flagged' => request('flagged') === '1' ? 'Flagged only' : null,
-            'date_from' => request('date_from') ? 'From '.request('date_from') : null,
-            'date_to' => request('date_to') ? 'To '.request('date_to') : null,
-            'search' => request('search') ? 'Ticket "'.request('search').'"' : null,
-        ])->filter();
-    @endphp
-
+    {{-- $activeFilters comes from the controller, so the chips and the soft-
+         navigation fragments are drawn from exactly the same state. --}}
     <section aria-labelledby="queue-filters-title" class="tr-container queue-section">
         <span id="queue-filters-title" class="sr-only">Complaint filters</span>
         <form data-loading-submit method="GET" action="{{ route('admin.complaints.index') }}" class="tr-card tr-filters" id="filter-bar" role="search" data-filter-form>
@@ -149,119 +136,22 @@
             </div>
         </form>
 
-        @if($activeFilters->isNotEmpty())
-            <div class="admin-filter-summary" role="status">
-                <span class="admin-filter-summary__label">Filtering by</span>
-                @foreach($activeFilters as $key => $value)
-                    @php $remaining = request()->except($key); @endphp
-                    <a href="{{ route('admin.complaints.index', $remaining) }}" class="admin-filter-summary__chip">{{ $value }}<span aria-hidden="true"> ×</span><span class="sr-only">Remove this filter</span></a>
-                @endforeach
-                <a href="{{ route('admin.complaints.index') }}" class="admin-filter-summary__clear">Clear all</a>
-            </div>
-        @endif
+        {{-- The chips are swapped when a filter changes; the container stays. --}}
+        <div data-queue-summary>
+            @include('admin.complaints.partials.summary', ['activeFilters' => $activeFilters])
+        </div>
     </section>
 
     {{-- ════════════ QUEUE LIST ════════════ --}}
     <form data-loading-submit method="POST" action="{{ route('admin.complaints.bulk-reassign') }}" data-bulk-form class="tr-container admin-queue-bulk">
         @csrf
         <section class="queue-list" aria-labelledby="complaint-queue-title">
-            <div class="tr-register-head">
-                <h2 id="complaint-queue-title" class="tr-h2">Complaint queue — {{ $complaints->total() }} {{ $complaints->total() === 1 ? 'complaint' : 'complaints' }}</h2>
-                @if($complaints->hasPages())
-                    <p class="tr-results">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }}</p>
-                @endif
+            <div data-queue-list>
+                @include('admin.complaints.partials.list', [
+                    'complaints' => $complaints,
+                    'activeFilters' => $activeFilters,
+                ])
             </div>
-
-            <div class="admin-queue-select-all-mobile" data-bulk-select-all-mobile>
-                <label class="admin-queue-select-all-mobile__label">
-                    <input type="checkbox" class="admin-queue-checkbox" data-select-all="complaint-checkboxes" aria-label="Select all complaints on this page">
-                    <span>Select all</span>
-                </label>
-            </div>
-
-            <ul class="report-list admin-list" id="complaint-table-body">
-                <li class="admin-list-head admin-queue-desktop-only" aria-hidden="true">
-                    <span class="admin-list-head__check"><input type="checkbox" class="admin-queue-checkbox" data-select-all="complaint-checkboxes" data-select-all-desktop aria-label="Select all complaints on this page"></span>
-                    <span>Complaint</span>
-                    <span>Department</span>
-                    <span>State</span>
-                    <span>Priority</span>
-                    <span>Waiting</span>
-                </li>
-
-                @forelse($complaints as $complaint)
-                    @php
-                        $statusKey = \Illuminate\Support\Str::slug((string) $complaint->status, '_');
-                        $reviewKey = \Illuminate\Support\Str::slug((string) $complaint->review_status, '_');
-                        $qPriority = $complaint->confirmedPriorityEnum?->label() ?? 'Pending';
-                        $qPrioritySlug = str($complaint->confirmedPriorityEnum?->value ?? 'pending')->slug();
-                        $qWaiting = $complaint->created_at?->diffForHumans(short: true, syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) ?? '—';
-                    @endphp
-                    <li class="admin-queue-item"
-                        data-report-row
-                        data-report-id="{{ $complaint->ticket_id }}"
-                        data-department="{{ $complaint->department?->name ?? '' }}"
-                        data-category="{{ $complaint->category }}"
-                        data-status="{{ $statusKey }}"
-                        data-search="{{ \Illuminate\Support\Str::lower($complaint->ticket_id.' '.$complaint->title.' '.($complaint->user?->full_name ?? '').' '.$complaint->category) }}"
-                        data-iso-date="{{ $complaint->created_at?->toAtomString() ?? '' }}">
-                        <div class="admin-queue-card admin-queue-card--row">
-                            <label class="admin-queue-check">
-                                <input type="checkbox" class="admin-queue-checkbox" name="complaint_ids[]" value="{{ $complaint->id }}" data-complaint-checkbox aria-label="Select {{ $complaint->ticket_id }}">
-                                <span class="admin-queue-check__box" aria-hidden="true"></span>
-                            </label>
-                            <a href="{{ route('admin.complaints.show', $complaint) }}" class="admin-queue-link" wire:navigate>
-                                <span class="admin-queue__complaint">
-                                    @include('pages.transparency.partials.category-icon', ['category' => $complaint->category])
-                                    <span class="admin-queue__text">
-                                        <span class="admin-queue__title">{{ \Illuminate\Support\Str::limit($complaint->title, 90) }}</span>
-                                        <span class="admin-queue__meta"><span class="ticket-id">{{ $complaint->ticket_id }}</span><span aria-hidden="true"> · </span>{{ str($complaint->category)->replace('_', ' ')->title() }}<span aria-hidden="true"> · </span>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</span>
-                                    </span>
-                                </span>
-                                <span class="admin-queue-cell admin-queue-cell--dept">
-                                    @if($complaint->department)
-                                        <span class="dept-badge" data-dept="{{ $complaint->department->code }}">{{ $complaint->department->code }}</span>
-                                        <span class="admin-queue-deptname">{{ $complaint->department->name }}</span>
-                                    @else
-                                        <span class="admin-queue__unassigned">Unassigned</span>
-                                    @endif
-                                </span>
-                                <span class="admin-queue-cell admin-queue-cell--state">
-                                    <span class="status-pill {{ $statusKey }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->statusEnum->label() }}</span>
-                                    <span class="status-pill {{ $reviewKey }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->reviewStatusEnum->label() }}</span>
-                                    @if($complaint->isModerationFlagged())
-                                        <span class="status-pill rejected"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->moderationLabel() }}</span>
-                                    @endif
-                                </span>
-                                <span class="admin-queue-cell admin-queue-cell--priority">
-                                    <span class="staff-priority staff-priority--{{ $qPrioritySlug }}">{{ $qPriority }}</span>
-                                    @if($complaint->confirmedPriorityEnum !== null && $complaint->confirmedPriorityEnum->value !== $complaint->suggested_priority)
-                                        <span class="admin-queue-subtext">Suggested: {{ str($complaint->suggested_priority)->title() }}</span>
-                                    @endif
-                                </span>
-                                <span class="admin-queue-cell admin-queue-cell--age">
-                                    <span class="admin-queue-agevalue">{{ $qWaiting }}</span>
-                                    <span class="admin-queue-subtext">{{ $complaint->created_at?->format('M j, Y') }}</span>
-                                </span>
-                            </a>
-                        </div>
-                    </li>
-                @empty
-                    <li>
-                        <div class="empty-state">
-                            <span class="empty-state__icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h5"/></svg>
-                            </span>
-                            @if($activeFilters->isNotEmpty())
-                                <strong>No complaints match these filters.</strong>
-                                <p><a href="{{ route('admin.complaints.index') }}" class="tr-button">Clear the filters</a></p>
-                            @else
-                                <strong>No complaints have been filed yet.</strong>
-                            @endif
-                        </div>
-                    </li>
-                @endforelse
-            </ul>
         </section>
 
         {{-- Bulk reassignment bar — appears only when something is selected --}}
@@ -287,12 +177,9 @@
         </div>
     </form>
 
-    @if($complaints->hasPages())
-        <div class="tr-container tr-pagination">
-            <p class="tr-showing">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }} · 5 per page</p>
-            <div class="admin-pagination">{{ $complaints->links('pagination::workspace') }}</div>
-        </div>
-    @endif
+    <div data-queue-pagination>
+        @include('admin.complaints.partials.pagination', ['complaints' => $complaints])
+    </div>
 </div>
 
 <style>
@@ -469,7 +356,10 @@
         text-overflow: ellipsis;
     }
 
-    .admin-queue__deptname { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* The office name. The rule used to say `.admin-queue__deptname` while the
+       markup says `.admin-queue-deptname`, so it never matched and the name
+       rendered unstyled at body size. */
+    .admin-queue-deptname { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .admin-queue__unassigned { font-size: 13px; color: var(--faint); font-weight: 600; }
     .admin-queue-subtext { display: block; margin-top: 4px; font-size: 11px; color: var(--faint); white-space: nowrap; }
     .admin-queue-cell { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 0; }
@@ -643,20 +533,185 @@
     }
 
     @media (max-width: 640px) {
-        .admin-queue-link { grid-template-columns: 1fr; }
         .tr-admin-banner-row { align-items: flex-start; }
+
+        /* ── The phone row ──────────────────────────────────────────────────
+           The shared pattern (guide §5.35) owns the label column and the
+           type scale; this block only decides how the queue's own pieces sit
+           inside it. One column, the checkbox beside the title, the icon
+           beside the title instead of floating in a corner, and the values
+           stacked as labelled pairs. */
+        .admin-queue-card {
+            padding: 14px 16px;
+        }
+
+        .admin-queue-card--row { min-height: 0; }
+
+        .admin-queue-link {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+        }
+
+        .admin-queue__complaint {
+            align-items: flex-start;
+            gap: 10px;
+            padding-bottom: 2px;
+        }
+
+        .admin-queue__title {
+            font-size: 15px;
+            line-height: 1.35;
+        }
+
+        /* The icon is a companion of the title, not a badge in the corner:
+           the shared report-row puts it last on a phone, which in this row
+           would throw it to the far edge. */
+        .admin-queue__complaint .cat-icon {
+            order: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .admin-queue__complaint .cat-icon svg { width: 15px; height: 15px; }
+
+        /* The office name shares the line with its badge and truncates
+           instead of dropping to a second line. */
+        body.role-admin.admin-layout .admin-queue-cell--dept .admin-phone-values {
+            flex-wrap: nowrap;
+        }
+
+        body.role-admin.admin-layout .admin-queue-deptname {
+            flex: 1 1 auto;
+            min-width: 0;
+            margin-top: 0;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* The select-all control was white on a light page — unreadable. */
+        body.role-admin.admin-layout .admin-queue-select-all-mobile__label {
+            color: var(--muted);
+        }
+
+        body.role-admin.admin-layout .admin-queue-select-all-mobile {
+            margin-bottom: 4px;
+        }
+
+        /* The queue heading: one line, and the page count beside it. */
+        .tr-register-head {
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .admin-queue-bulk .tr-h2,
+        .admin-queue-bulk .queue-list .tr-h2 {
+            font-size: 17px;
+            line-height: 1.3;
+        }
+
+        .admin-queue-bulk .tr-results {
+            font-size: 13px;
+        }
     }
 </style>
 @endsection
 
 @push('scripts')
 <script>
-    (() => {
-        const form = document.querySelector('[data-bulk-form]');
-        if (!form) return;
+(() => {
+    // ─── Soft navigation ────────────────────────────────────────────────────
+    // The queue is drawn once. Changing a filter, turning a page or removing
+    // a chip swaps the changed regions in place instead of redrawing the
+    // browser. The URL stays the truth, so Back, Forward, a refresh and a
+    // shared link behave exactly as before — and with JavaScript off every
+    // link and form is still an ordinary link and form.
+    const pagePath = new URL('{{ route('admin.complaints.index') }}', window.location.origin).pathname;
+    const endpoint = '{{ route('admin.complaints.browser') }}';
 
-        const selectAlls = [...form.querySelectorAll('[data-select-all="complaint-checkboxes"]')];
-        const checkboxes = [...form.querySelectorAll('[data-complaint-checkbox]')];
+    const summaryEl = document.querySelector('[data-queue-summary]');
+    const listEl = document.querySelector('[data-queue-list]');
+    const paginationEl = document.querySelector('[data-queue-pagination]');
+    const filterForm = document.querySelector('[data-filter-form]');
+
+    const jsonHeaders = { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+
+    async function navigate(url, parts, push) {
+        try {
+            const target = new URL(endpoint, window.location.origin);
+            target.search = url.search;
+
+            const response = await fetch(target, { headers: jsonHeaders });
+            if (!response.ok) throw new Error('request failed');
+
+            const payload = await response.json();
+            if (parts.indexOf('summary') !== -1 && summaryEl) summaryEl.innerHTML = payload.summary;
+            if (parts.indexOf('list') !== -1 && listEl) listEl.innerHTML = payload.list;
+            if (parts.indexOf('pagination') !== -1 && paginationEl) paginationEl.innerHTML = payload.pagination;
+
+            if (push !== false) history.pushState({ soft: true }, '', url.toString());
+
+            // The rows were replaced: tell anything that tracks them.
+            document.dispatchEvent(new CustomEvent('queue:refreshed'));
+        } catch (error) {
+            // Never leave the admin looking at a half-updated queue.
+            window.location.href = url.toString();
+        }
+    }
+
+    const queueParts = ['summary', 'list', 'pagination'];
+
+    // The filter chips, the pager and the filter bar's own links.
+    document.addEventListener('click', function(event) {
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const link = event.target.closest('a[href]');
+        if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+
+        const url = new URL(link.getAttribute('href'), window.location.origin);
+        if (url.pathname !== pagePath) return;
+
+        // Any link to this page is a change of state, not a change of page.
+        event.preventDefault();
+        navigate(url, queueParts);
+    });
+
+    // The filter form: the same URL a submit would have produced.
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // getAttribute, not .action: a control named "action" would shadow
+            // the form's own property.
+            const url = new URL(filterForm.getAttribute('action'), window.location.origin);
+            const data = new FormData(filterForm);
+
+            ['search', 'department', 'status', 'review', 'priority', 'flagged', 'date_from', 'date_to'].forEach(function(key) {
+                const value = data.get(key);
+                if (value) {
+                    url.searchParams.set(key, value);
+                } else {
+                    url.searchParams.delete(key);
+                }
+            });
+
+            // A new filter starts at the first page of the queue.
+            url.searchParams.delete('page');
+
+            navigate(url, queueParts);
+        });
+    }
+
+    // Back and forward move through the same history.
+    window.addEventListener('popstate', function() {
+        navigate(new URL(window.location.href), queueParts, false);
+    });
+
+    // ─── Bulk reassignment ──────────────────────────────────────────────────
+    const form = document.querySelector('[data-bulk-form]');
+    if (form) {
         const bar = form.querySelector('[data-bulk-bar]');
         const count = form.querySelector('[data-bulk-count]');
         const noun = form.querySelector('[data-bulk-noun]');
@@ -665,60 +720,73 @@
         const clear = form.querySelector('[data-bulk-clear]');
         const note = form.querySelector('[data-bulk-note]');
 
-        if (!selectAlls.length || !checkboxes.length || !bar) return;
+        if (bar) {
+            // Live lookups: the rows are swapped when the filters change, and
+            // delegation picks up the new checkboxes without a re-bind.
+            const checkboxes = () => [...form.querySelectorAll('[data-complaint-checkbox]')];
+            const selectAlls = () => [...form.querySelectorAll('[data-select-all="complaint-checkboxes"]')];
 
-        const selected = () => checkboxes.filter((checkbox) => checkbox.checked);
+            const syncBulk = () => {
+                const boxes = checkboxes();
+                const chosen = boxes.filter((checkbox) => checkbox.checked);
+                const destination = department?.selectedOptions?.[0]?.textContent?.trim();
 
-        const syncBulk = () => {
-            const chosen = selected();
-            const destination = department?.selectedOptions?.[0]?.textContent?.trim();
+                bar.hidden = chosen.length === 0;
+                count.textContent = String(chosen.length);
+                noun.textContent = chosen.length === 1 ? 'complaint selected' : 'complaints selected';
+                submit.disabled = !destination || chosen.length === 0;
+                submit.textContent = destination
+                    ? `Reassign ${chosen.length} to ${destination}`
+                    : 'Reassign selected';
 
-            bar.hidden = chosen.length === 0;
-            count.textContent = String(chosen.length);
-            noun.textContent = chosen.length === 1 ? 'complaint selected' : 'complaints selected';
-            submit.disabled = !destination || chosen.length === 0;
-            submit.textContent = destination
-                ? `Reassign ${chosen.length} to ${destination}`
-                : 'Reassign selected';
+                if (note) {
+                    note.textContent = chosen.length === 0
+                        ? ''
+                        : destination === 'Unassigned'
+                            ? 'Ownership will be cleared. The case returns to the unassigned queue.'
+                            : `Ownership moves to ${destination}. The resident sees the update; the change is logged.`;
+                }
 
-            if (note) {
-                note.textContent = chosen.length === 0
-                    ? ''
-                    : destination === 'Unassigned'
-                        ? 'Ownership will be cleared. The case returns to the unassigned queue.'
-                        : `Ownership moves to ${destination}. The resident sees the update; the change is logged.`;
-            }
+                selectAlls().forEach((el) => {
+                    el.checked = chosen.length === boxes.length && boxes.length > 0;
+                    el.indeterminate = chosen.length > 0 && chosen.length < boxes.length;
+                });
+            };
 
-            selectAlls.forEach((el) => {
-                el.checked = chosen.length === checkboxes.length && checkboxes.length > 0;
-                el.indeterminate = chosen.length > 0 && chosen.length < checkboxes.length;
+            form.addEventListener('change', function(event) {
+                const target = event.target;
+
+                if (target.matches('[data-select-all="complaint-checkboxes"]')) {
+                    checkboxes().forEach((checkbox) => { checkbox.checked = target.checked; });
+                }
+
+                syncBulk();
             });
-        };
 
-        selectAlls.forEach((selectAll) => selectAll.addEventListener('change', () => {
-            checkboxes.forEach((checkbox) => { checkbox.checked = selectAll.checked; });
+            department?.addEventListener('change', syncBulk);
+
+            clear?.addEventListener('click', function() {
+                checkboxes().forEach((checkbox) => { checkbox.checked = false; });
+                syncBulk();
+            });
+
+            // A swapped list carries no selection; reset the bar.
+            document.addEventListener('queue:refreshed', syncBulk);
+
+            // The selects that apply themselves.
+            document.querySelectorAll('[data-filter-auto]').forEach((field) => {
+                field.addEventListener('change', function() { field.form?.requestSubmit(); });
+            });
+
+            const queueFilterDetails = document.querySelectorAll('details.admin-queue-filters-collapsible[data-queue-filters-mobile]');
+            const qmq = window.matchMedia('(min-width: 641px)');
+            function syncQueueDetails() { queueFilterDetails.forEach(function(d){ if (qmq.matches) d.open = true; }); }
+            if (qmq.addEventListener) qmq.addEventListener('change', syncQueueDetails); else qmq.addListener(syncQueueDetails);
+            syncQueueDetails();
+
             syncBulk();
-        }));
-
-        checkboxes.forEach((checkbox) => checkbox.addEventListener('change', syncBulk));
-        department?.addEventListener('change', syncBulk);
-
-        clear?.addEventListener('click', () => {
-            checkboxes.forEach((checkbox) => { checkbox.checked = false; });
-            syncBulk();
-        });
-
-        document.querySelectorAll('[data-filter-auto]').forEach((field) => {
-            field.addEventListener('change', () => field.form?.requestSubmit());
-        });
-
-        const queueFilterDetails = document.querySelectorAll('details.admin-queue-filters-collapsible[data-queue-filters-mobile]');
-        const qmq = window.matchMedia('(min-width: 641px)');
-        function syncQueueDetails() { queueFilterDetails.forEach(function(d){ if (qmq.matches) d.open = true; }); }
-        if (qmq.addEventListener) qmq.addEventListener('change', syncQueueDetails); else qmq.addListener(syncQueueDetails);
-        syncQueueDetails();
-
-        syncBulk();
-    })();
+        }
+    }
+})();
 </script>
 @endpush

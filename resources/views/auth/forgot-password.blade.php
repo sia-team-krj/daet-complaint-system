@@ -65,8 +65,7 @@
 </div>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
+  
   :root {
     --navy:        #142D4F;
     --navy-mid:    #1B3A61;
@@ -81,7 +80,7 @@
   .auth-root, .auth-root * { box-sizing: border-box; }
 
   .auth-root {
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     padding-top: var(--navbar-height);
     min-height: 100svh;
     background: var(--navy);
@@ -122,7 +121,7 @@
   }
   .auth-wm {
     position: absolute; bottom: -4%; right: 0;
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(80px, 18vw, 280px); font-weight: 700;
     color: rgba(255,255,255,0.018); line-height: 1;
     user-select: none; letter-spacing: -0.02em;
@@ -156,12 +155,12 @@
   .auth-form-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
 
   .auth-form-heading {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: clamp(28px, 2.8vw, 44px); font-weight: 700;
     color: var(--white); line-height: 1.08; margin-bottom: 8px; letter-spacing: -0.01em;
   }
   .auth-form-sub {
-    font-size: 13px; color: var(--text-dim); font-weight: 300; line-height: 1.7; margin-bottom: 32px;
+    font-size: 13px; color: var(--text-dim); font-weight: 400; line-height: 1.7; margin-bottom: 32px;
   }
 
   .field-group { margin-bottom: 24px; }
@@ -180,7 +179,7 @@
     width: 100%; background: rgba(255,255,255,0.04);
     border: 1px solid rgba(201,168,76,0.18); border-radius: 4px;
     padding: 13px 14px 13px 42px;
-    font-family: 'DM Sans', sans-serif; font-size: 13.5px; color: var(--white);
+    font-family: var(--font-sans); font-size: 13.5px; color: var(--white);
     outline: none; transition: border-color 0.22s, background 0.22s, box-shadow 0.22s;
   }
   .field-input::placeholder { color: rgba(255,255,255,0.2); }
@@ -198,7 +197,7 @@
   .btn-submit {
     width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
     background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    color: var(--navy); font-family: 'DM Sans', sans-serif;
+    color: var(--navy); font-family: var(--font-sans);
     font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
     padding: 15px 32px; border-radius: 4px; border: none; cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;

@@ -3189,6 +3189,12 @@ tr:hover td { background: rgba(255,255,255,0.02); }
        `overflow-x: auto` wrapper inside it never had anything to scroll — the
        columns were simply cut off at the screen edge. */
     min-width: 0;
+    /* The column needs the same permission. An implicit `auto` track is sized
+       by the content's max-content, so the page grew to the table's width and
+       the body clipped it: the right-hand third of every table was gone on a
+       phone. `minmax(0, 1fr)` lets the track shrink to the container and
+       leaves the table to scroll inside its own wrapper. */
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-page--narrow {

@@ -102,6 +102,14 @@ gold text on white** (use `--gold-700` or navy).
 Font: **Inter** (`--font-sans`) with `font-feature-settings "tnum"` on ticket IDs
 and all counters. Mono for IDs: `--font-mono`.
 
+**Inter is self-hosted** (`public/fonts/inter/*.woff2`, `@font-face` in
+`app.css`, weights 400–800). **LOCKED: no third-party font request.** A page
+must never pull a font from an outside host — that hands the visitor's IP
+address and User-Agent to a third party, on a municipal portal, on every page
+view. The retired faces (Cormorant Garamond, DM Sans, IBM Plex Mono) are gone
+from the layouts and from every page: `--font-mono` is the system mono stack,
+and no page declares a serif.
+
 | Role | Size / weight / tracking |
 |---|---|
 | h1 (banner) | 34px / 700 / −0.02em · 28px mobile |
@@ -805,6 +813,191 @@ Implementation contract (for future use):
 Demo: `/design-system` → "Busy / loading actions" (all major variants, reduced-
 motion note).
 
+### 5.33 Audit browser — `.admin-audit-browser`
+
+Purpose: let an administrator browse the audit trail by entity — one office, one
+person, or everyone — instead of rebuilding a dropdown query each time. It is
+the primary navigator on `/admin/audit-trail`; search + Action stay secondary
+filters below it. The trail itself is unchanged. Admin-only surface.
+
+**The browser is bounded.** The log grows with the municipality (every resident
+filing is a row), so the roster never renders everyone: each group shows a
+short preview and opens on demand. A component that renders 20,000 people is a
+component that stops working.
+
+Anatomy — three bands in one card:
+- **Scope band** (`.admin-audit-browser__scope`, always visible): a type icon,
+  `Showing`, the selection name, and the count (`<n> entries`, or `<filtered> of
+  <total> entries` when a filter is active). `Clear selection` returns to
+  Everyone. The band is `--navy-50` so the eye lands on "what am I looking at".
+- **Search band** (`.admin-audit-browser__bar`): `Find a person…` + a `Search`
+  button. It searches **people**, not the trail — two different questions, two
+  different inputs. The form works without JavaScript; the type-ahead only
+  replaces the page load.
+- **Panes** (`.admin-audit-browser__panes`, ≥641px: two columns):
+  - *Scope rail* (`.admin-audit-browser__contexts`, a `<nav>`): a `Scope |
+    Entries` head — **every number says what it counts, and counts itself**
+    ("1 entry", "3 entries") — then `Everyone`, a `Residents` section with the
+    `All residents` scope, a `Departments` section with one row per office
+    (`.dept-badge` + name + count), and an `Automated` section with the records
+    that have no actor. Office names truncate with an ellipsis + `title`
+    tooltip. A standing line under the rail explains that office totals include
+    the resident filings routed to that office, so an office total never
+    silently disagrees with the sum of the people under it.
+  - *Roster* (`.admin-audit-browser__roster`): a `People | Entries` column head,
+    then groups (`.admin-audit-browser__group`) — offices, then `Administration`
+    (office-less admins), then `Residents`. A person row is avatar/initials +
+    name + role + count; the role appears only where it varies (inside an
+    office, staff and admins share a list). Soft-deleted accounts are marked
+    `Former account`.
+
+Variants / states:
+- **Everyone** (default): no query string; the roster shows every group.
+- **Office** (`?department_id=`): the roster narrows to that office.
+- **Person** (`?actor_id=`): the roster stays whole and the person row is
+  selected.
+- **Residents** (`?residents=1`): everything a resident did — the filings they
+  made. The trail filters on the actor's role and the roster narrows to the
+  residents group.
+- **Automated** (`?system=1`): the records with no actor.
+- **Legacy combined** (`?department_id=&actor_id=`, the old dropdown pair): both
+  filters still apply, the label names the person and their office, and both
+  rows are marked selected. New links never generate this form.
+- **Group expanded** (`?people_group=&people_page=`): one group opens in place,
+  **25 people to a page** — never a dump — with Previous/Next and `Collapse`.
+- **People search** (`?people_q=`): the roster is replaced by the matches
+  (server-side, top 20, people with activity only) with the office shown
+  beside each name.
+- **Search / Action**: preserved across entity links; clearing an entity does
+  not clear them; the filter's `Clear` keeps the entity.
+- **Empty**: "No entries for this selection" + `Show everyone`; with active
+  filters: "No audit entries match" + `Clear filters`; "Nobody matches “x”"
+  for a people search with no hits.
+
+Selected state: `--navy-50` background, `--navy-900` text, 700 weight, and a
+3px **navy** inset bar (`--navy-700`) — never a gold side bar (§4 lock).
+`aria-current="true"` accompanies `.is-selected`.
+
+Responsive: two panes at ≥641px; at ≤640px the panes collapse into a
+`<details>` toggle labelled "Browse departments and people" (mirroring the
+Filters disclosure) and the person rows stack the role under the name. The
+scope band and the search band always stay visible. The `<details>` is forced
+open on desktop (same `display: contents` + JS contract as
+`.admin-audit-filters-collapsible`) and opens by default when an entity is
+selected or a search is running.
+
+Accessibility: the rail is a `<nav>` with its own label; rows are real links so
+middle-click/open-in-new-tab work; selected rows expose `aria-current`; the
+count column carries a screen-reader unit; touch targets are ≥44px; focus uses
+`--ring` / `--ring-inset`.
+
+Tokens: `--surface`, `--bg`, `--line`, `--line-soft`, `--navy-50`,
+`--navy-100`, `--navy-700`, `--navy-800`, `--navy-900`, `--gold-500`,
+`--text`, `--muted`, `--faint`, `--radius-sm`, `--radius-pill`, `--radius-lg`,
+`--shadow-card`, `--ring`, `--ring-inset`, `--font-sans`, `--status-*` (via
+`.dept-badge`). No new tokens.
+
+Why: an audit trail is investigated by entity ("what did this office do?", "what
+did this person do?"), not by rebuilding a dropdown query each time. The URL
+mirrors the selection so the view is bookmarkable, shareable and refresh-safe.
+The URL only filters the view; `role:admin` middleware still authorizes every
+request and the controller re-validates every ID. Counts are cached for 60
+seconds (one aggregate instead of one per page view) and the roster is sliced,
+so the page costs the same whether the log holds 300 entries or 3,000,000.
+
+Demo: `/design-system` → "Audit browser" (scope band, search band, rail,
+roster with a bounded group and an expanded group).
+
+### 5.34 Soft navigation — regions swapped without a reload
+
+Purpose: a GET-filtered page (a directory, a queue, an audit trail) should not
+redraw the whole browser when the admin changes a scope, turns a page or types
+in a search. The page is drawn **once**; the regions that changed are swapped in
+place. Full write-up: `docs/soft-navigation.md`. Skill:
+`.opencode/skills/soft-navigation/` (the operational recipe, for applying this
+to another page).
+
+Anatomy — four parts, identical on every page:
+- **Partials** (`resources/views/<area>/partials/`): one Blade file per region.
+  The page includes them and the endpoint renders them, so **one markup per
+  list** however the page is drawn.
+- **A JSON endpoint** next to the page route, in the **same middleware group**:
+  it renders the partials for the state in the query string and returns them as
+  an object of HTML strings.
+- **Swap targets**: the regions carry a `data-*` attribute — the contract
+  between the view and the script.
+- **A client controller**: fetch → swap `innerHTML` → `history.pushState`.
+
+Rules (LOCKED):
+- **The URL is the truth.** A soft navigation writes the URL; it never owns it.
+  Refresh, Back, Forward, a bookmark and a shared link behave as before.
+- **The server renders everything.** The browser never builds markup.
+- **Graceful degradation.** With JavaScript off, links and forms are real
+  links and real forms. A failed request falls back to a real navigation —
+  never stale fragments.
+- **Never redraw what the user is typing in.** Inputs live outside the swapped
+  regions, so focus and the caret survive.
+- **The page and the endpoint share the controller's state helpers**, so a
+  fragment can never disagree with the page.
+
+Pitfalls that break it (each one is a real trap in this codebase):
+- `form.action` is shadowed by a control named `action` → use
+  `form.getAttribute('action')`.
+- Laravel's paginator links inherit the **current request** URL → a fragment
+  rendered by the endpoint would link back to the endpoint; pin it with
+  `->withPath(route('x.index', [], false))`.
+- `route()` returns an absolute URL → compare `.pathname`, not the whole URL.
+- A prevented submit leaves the shared loader spinning → the loader clears
+  itself on the next tick, or mark the form `data-loading-managed`.
+- A stale `page` after a new filter → delete `page` when the filter changes.
+
+Demo: `/admin/audit-trail` — every scope change, page turn, filter and search
+swaps in place; the URL still carries everything.
+
+### 5.35 Admin phone card — `.admin-phone-card` / `.admin-phone-cell`
+
+Purpose: every admin list has to work on a phone, and a row that loses its
+column headers stops being readable — "WST", "Pending", "1d" say nothing on
+their own. This is the shared shape an admin row takes below 640px: one card,
+one label column, one type scale. Sized here once, so every admin page reads
+the same.
+
+Anatomy:
+- **`.admin-phone-card`** — the row's content: a 28px checkbox column and the
+  content column, aligned to the **top** so the checkbox sits beside the title
+  instead of floating in a gutter.
+- **`.admin-phone-cell`** — a value cell. It carries a `data-label`
+  ("Department"), rendered as an 84px column: 10px/700 uppercase, `--muted`,
+  `+0.08em`. The value takes the rest of the row.
+- **`.admin-phone-values`** — the values inside a cell (pills, badges). They
+  share one line and wrap. **On a desktop the wrapper is `display: contents`**,
+  so adopting the pattern cannot change the page's desktop layout.
+
+Adopting it — three steps:
+1. the row's content gets `.admin-phone-card`;
+2. every value cell gets `.admin-phone-cell` plus a `data-label`;
+3. the values inside a cell are wrapped in `.admin-phone-values`.
+
+**The label must be the same word the desktop column header uses.** The two are
+one fact shown twice; the header is the desktop half, the `data-label` is the
+phone half.
+
+**Before any of it: the page's column must be allowed to shrink.**
+`.admin-page` is a grid, and an implicit `auto` track is sized by the content's
+max-content — so a table that is deliberately wider than a phone stretched the
+page, and the body (`overflow-x: clip`) cut the right-hand third off every
+table. `.admin-page { grid-template-columns: minmax(0, 1fr) }` lets the track
+shrink to the container and leaves the table to scroll inside its own wrapper.
+This is a page-level fix: it repairs every admin list at once.
+
+Why: the phone is where the municipal queue is actually worked. The label is
+the whole difference between a scannable card and a pile of anonymous values —
+and a shared class is the only way "scannable" means the same thing on every
+admin page.
+
+Demo: `/admin/complaints` (the queue rows) and `/admin/audit-trail` (the trail
+cards) on a 393px viewport.
+
 ## 6. The z-index contract — **LOCKED**
 
 | Layer | z-index |
@@ -1012,6 +1205,118 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+
+- 2026-11-10 · Public transparency feed (`/transparency/complaints`) · **soft
+  navigation**: the status chips (with their per-status totals), the active
+  filter chips and the results (count, list, pager) are three Blade partials;
+  `transparency.complaints.browser` renders them for the URL's state and the
+  page swaps them in, so a visitor filtering, chipping or paging never loses
+  the page, the scroll position or the text they typed. Same rules as §5.34:
+  the URL is the truth, the server renders everything, the page and the
+  fragments share one controller method, and without JavaScript every link and
+  form is still an ordinary navigation. **A broken script was fixed with it:**
+  the page declared `const btn` and `const panel` twice, so the whole IIFE
+  threw `Identifier 'btn' has already been declared` — the filter disclosure,
+  the self-applying selects and the search box had never worked. Files:
+  `TransparencyController::complaints` + `complaintsBrowser` and the shared
+  `transparencyComplaints()` method, `routes/web.php`,
+  `resources/views/pages/transparency/partials/complaints-{chips,active,results}.blade.php`,
+  `resources/views/pages/transparency/complaints.blade.php`. New tokens: none.
+
+- 2026-11-10 · Every page · **no third-party request**. The layouts loaded
+  Cormorant Garamond, Inter and IBM Plex Mono from Google Fonts, so every page
+  view sent the visitor's IP address and User-Agent to a third party — on a
+  municipal portal, and while the privacy policy promises there is no
+  tracking. Inter was **already self-hosted** (`public/fonts/inter`), the mono
+  is the system stack, and the serif was retired by this guide in the first
+  place. The Google Fonts link is gone from `layouts/app` and `layouts/guest`,
+  and the seven pages that still asked for the retired faces (login, register,
+  change-password, forgot-password, reset-password, the profile page, the
+  complaint tracker) now use `--font-sans` / `--font-mono`. Measured: **zero
+  third-party requests** on the home page, the transparency feed, the auth
+  pages, the tracker and the legal pages. The privacy policy now also names the
+  language cookie and states that fonts, scripts and styles are served by the
+  portal itself. New tokens: none.
+
+- 2026-11-10 · Admin pages · **the phone card, shared**: a new component, §5.35
+  "Admin phone card" — `.admin-phone-card` / `.admin-phone-cell` /
+  `.admin-phone-values` in `admin-workspace.css`. Every admin row can adopt it:
+  the row's content gets the card class, each value cell gets the cell class and
+  a `data-label` (the same word its desktop column header uses), and the values
+  inside a cell are wrapped so they share one line. The label column is 84px,
+  10px/700 uppercase `--muted`; the values wrap. On a desktop the wrapper is
+  `display: contents`, so adopting it cannot change the desktop layout. Two
+  page-level fixes came with it: `.admin-page` is now
+  `grid-template-columns: minmax(0, 1fr)` (an implicit `auto` track was sized by
+  a wide table, so the body clipped the right-hand third of every admin table on
+  a phone), and the review-status pills (`pending`, `needs_information`,
+  `duplicate`, `escalated`) got the variants they were missing — they had been
+  rendering as bare bold text with no pill, on every screen. Applied to the
+  complaints queue first. New tokens: none.
+
+- 2026-11-10 · Admin complaints queue (`/admin/complaints`) · **soft navigation**:
+  the filter chips, the queue and its pager are now three Blade partials;
+  `admin.complaints.browser` renders them for the URL's state and the page
+  swaps them in, so changing a filter, applying the search, removing a chip or
+  turning a page never redraws the browser. The bulk bar's JavaScript now
+  listens by delegation, so the new checkboxes are picked up without a re-bind
+  and the bar resets when the rows are replaced. Same rules as §5.34: the URL is
+  the truth, the server renders everything, and without JavaScript every link
+  and form is still an ordinary navigation. Files:
+  `AdminController::complaintsBrowser` + the shared `complaintsQueue()`,
+  `complaintFilterLabels()` and `complaintQueueStats()` helpers, `routes/web.php`,
+  `resources/views/admin/complaints/partials/{summary,list,pagination}.blade.php`,
+  the client controller in `resources/views/admin/complaints/index.blade.php`.
+  New tokens: none.
+
+- 2026-11-10 · Admin audit trail (`/admin/audit-trail`) · **soft navigation**:
+  the scope band, the rail, the roster and the trail are now four Blade
+  partials; `admin.audit.browser` renders them for a URL's state and the page
+  swaps them in, so changing a scope, turning a page, filtering or searching
+  never redraws the browser. The URL stays the truth (`pushState`), the state
+  helpers are shared with the page, and without JavaScript every link and form
+  still works as an ordinary navigation. Why: an index that reloads on every
+  click throws away the admin's place and costs seconds on a municipal
+  connection. Files: `AdminController::auditBrowser` + the shared
+  `auditScope()`/`auditLogs()`/`auditSelection()` helpers, `routes/web.php`,
+  `resources/views/admin/audit/partials/{scope,contexts,roster,trail}.blade.php`,
+  the client controller in `resources/views/admin/audit/index.blade.php`.
+  New tokens: none. Also documented as §5.34 "Soft navigation" and captured in
+  `docs/soft-navigation.md` + the `soft-navigation` skill, so the pattern can
+  be applied to another page.
+
+- 2026-11-10 · Admin audit trail (`/admin/audit-trail`) · **drill-down browser**
+  replaces the Department/Actor dropdowns. Why: the old dependent selectors hid the
+  roster, had no counts, and made inspecting one office/person a dropdown round-trip.
+  What: new `.admin-audit-browser` card in three bands — scope band (what the trail
+  is showing, with `Clear selection`), search band (`Find a person…`, server-side
+  type-ahead over people), and two panes (scope rail: Everyone / Offices / Automated;
+  roster: people grouped by office, Administration, Residents). Entity selection via
+  `?department_id=` / `?actor_id=` / `?system=1`; search + Action stay as secondary
+  filters and survive entity switches; the left rail carries a `Scope | Entries` head
+  and its own `Residents` scope (`?residents=1`, the entries residents made) beside
+  Everyone, the offices and the automated records; department counts include resident
+  filings (hint); mobile collapses the panes behind "Browse departments and people"
+  and keeps the scope band and search visible; empty states distinguish "no match" from
+  "nothing recorded for this selection". **The roster is bounded**: 8 rows per group
+  with "See all N" (25 per page, `?people_group=&people_page=`) so the page does not
+  grow with the number of residents in the log — 3,000 residents measured 2.87 MB /
+  347 ms before, 179 KB / 62 ms after. Files: `app/Services/AuditDirectory.php`
+  (cached snapshot: counts + roster ids, sliced on demand), `AdminController::auditIndex`
+  + `auditPeople` (JSON fragment for the type-ahead), `resources/views/admin/audit/`
+  (index + partials: one row markup shared by the roster, the expanded group and the
+  search results), `resources/css/pages/admin-workspace.css`, `lang/{en,fil}/audit.php`,
+  `resources/views/pages/design-system.blade.php`. Reuses existing tokens; no new
+  tokens; no gold side bars (selected state uses a navy inset bar).
+  Verify: Playwright (headed Chromium, seeded data) at 1310×900 and 393×852, `en`
+  and `fil`: Everyone / Engineering Office / Juan dela Cruz / Automated records /
+  search + office / legacy combined office+actor / expanded group / people search —
+  scope counts, selection highlight, preserved `search`, translated action labels and
+  table headers, the "Showing 8 of N · See all N" affordance, empty state and mobile
+  disclosure all render; temporary screenshots in `/tmp/opencode/audit-ui/`.
+  `php scripts/design-system-guard.php` — no new violations in touched files.
+  `php artisan test --filter=ActivityLogTest` — green (see the PR for the exact list).
+  Screenshots NOT captured in the repo (waived by owner, 2026-11-09).
 
 - 2026-11-09 · Staff department dashboard (`staff.dashboard`) — footer anchoring + mobile bottom
   nav / complaint-card layout fix (follow-up to the 2026-11-09 pass 3):

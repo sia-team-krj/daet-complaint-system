@@ -153,6 +153,62 @@ class TransparencyPageTest extends TestCase
         $this->assertSame(2, substr_count($response->getContent(), '<section'));
     }
 
+    /**
+     * The public feed's regions, for soft navigation.
+     *
+     * A visitor filtering or paging the feed keeps the page, the scroll
+     * position and the text they typed — the changed regions are swapped in
+     * instead. The endpoint must answer with the same markup the page renders,
+     * and the fragments must never carry more than the page does.
+     */
+    public function test_the_public_feed_browser_endpoint_returns_the_swappable_regions(): void
+    {
+        $department = Department::where('code', 'ENG')->firstOrFail();
+        $resident = User::factory()->create(['role' => 'citizen']);
+
+        Complaint::factory()->create([
+            'user_id' => $resident->id,
+            'department_id' => $department->id,
+            'title' => 'A public complaint for the feed',
+            'description' => 'A public description of a complaint.',
+            'barangay' => 'Barangay VI (Centro)',
+            'status' => ComplaintStatus::Submitted->value,
+            'is_public' => true,
+        ]);
+
+        // getJson: a script asks for fragments, a person gets the page.
+        $response = $this->getJson(route('transparency.complaints.browser'));
+
+        $response->assertOk()->assertJsonStructure(['chips', 'active', 'results']);
+
+        $payload = $response->json();
+
+        $this->assertStringContainsString('cf-chip', (string) $payload['chips']);
+        $this->assertStringContainsString('cf-results', (string) $payload['results']);
+        $this->assertStringContainsString('A public complaint for the feed', (string) $payload['results']);
+
+        // The fragment is the public payload: no resident identity in it.
+        $this->assertStringNotContainsString($resident->email, (string) $payload['results']);
+    }
+
+    /**
+     * The fragment endpoint is a machine endpoint: a person who types its URL
+     * gets the page, not a wall of JSON.
+     */
+    public function test_the_fragment_endpoint_sends_a_person_to_the_page(): void
+    {
+        $this->get(route('transparency.complaints.browser', ['page' => 2]))
+            ->assertRedirect(route('transparency.complaints', ['page' => 2]));
+
+        $this->get(route('transparency.complaints.browser'))
+            ->assertRedirect(route('transparency.complaints'));
+
+        // A script still gets the fragments.
+        $this->getJson(route('transparency.complaints.browser'))
+            ->assertOk()
+            ->assertJsonStructure(['chips', 'active', 'results', 'head']);
+    }
+
     public function test_public_complaint_detail_exposes_safe_updates_documentation_and_dates(): void
     {
         $department = Department::where('code', 'ENG')->firstOrFail();

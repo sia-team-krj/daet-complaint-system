@@ -3,8 +3,7 @@
 @section('content')
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
+  
   :root {
     --navy:        #142D4F;
     --navy-mid:    #1B3A61;
@@ -20,7 +19,7 @@
   *, *::before, *::after { box-sizing: border-box; }
 
   .track-root {
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     background: var(--cream);
     min-height: calc(100svh - var(--navbar-height));
     display: flex;
@@ -40,7 +39,7 @@
   }
 
   .track-card h2 {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-sans);
     font-size: 28px;
     font-weight: 700;
     color: var(--navy);
@@ -64,7 +63,7 @@
     border: 1.5px solid rgba(11,31,58,0.15);
     border-radius: 8px;
     font-size: 15px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     outline: none;
     transition: border-color 0.2s;
   }
@@ -81,7 +80,7 @@
     border-radius: 8px;
     font-size: 15px;
     font-weight: 600;
-    font-family: 'DM Sans', sans-serif;
+    font-family: var(--font-sans);
     cursor: pointer;
     transition: background 0.2s;
   }

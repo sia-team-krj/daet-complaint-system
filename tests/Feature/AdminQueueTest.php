@@ -47,6 +47,54 @@ class AdminQueueTest extends TestCase
         ], $attributes));
     }
 
+    /**
+     * A queue row that loses its column headers on a phone says nothing:
+     * "WST", "Pending", "1d" are not facts. The shared phone card (guide §5.35)
+     * gives every value cell a label, and the label has to be the same word the
+     * desktop column header uses.
+     */
+    public function test_every_queue_row_states_what_each_value_is_on_a_phone(): void
+    {
+        $this->complaint();
+
+        $html = $this->queue();
+
+        $this->assertStringContainsString('admin-phone-card', $html);
+        $this->assertStringContainsString('admin-phone-cell', $html);
+        $this->assertStringContainsString('admin-phone-values', $html);
+
+        foreach (['Department', 'State', 'Priority', 'Waiting'] as $label) {
+            $this->assertStringContainsString(
+                'data-label="'.$label.'"',
+                $html,
+                'The queue row dropped its "'.$label.'" label on a phone.',
+            );
+        }
+    }
+
+    /**
+     * The queue's regions, for soft navigation.
+     *
+     * The page swaps these in instead of redrawing the browser, so the
+     * endpoint must answer with the same markup the page renders — and the
+     * pager inside a fragment must link to the page, never back to the
+     * endpoint that rendered it.
+     */
+    public function test_the_queue_browser_endpoint_returns_the_swappable_regions(): void
+    {
+        $this->complaint();
+
+        $response = $this->actingAs($this->admin)->getJson(route('admin.complaints.browser'));
+
+        $response->assertOk()->assertJsonStructure(['summary', 'list', 'pagination']);
+
+        $payload = $response->json();
+
+        $this->assertStringContainsString('name="complaint_ids[]"', (string) $payload['list']);
+        $this->assertStringContainsString('complaint-table-body', (string) $payload['list']);
+        $this->assertStringNotContainsString('/complaints/browser', (string) $payload['pagination']);
+    }
+
     private function queue(array $query = []): string
     {
         return $this->actingAs($this->admin)
