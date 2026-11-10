@@ -290,7 +290,7 @@
     @if($complaints->hasPages())
         <div class="tr-container tr-pagination">
             <p class="tr-showing">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }} · 5 per page</p>
-            <div class="tr-pagination-nav">{{ $complaints->links() }}</div>
+            <div class="admin-pagination">{{ $complaints->links('pagination::workspace') }}</div>
         </div>
     @endif
 </div>

@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Admin complaints queue — desktop Previous/Next pagination buttons
+
+- Page / component: `resources/views/admin/complaints/index.blade.php`.
+- Why (the problem found): the queue pagination used `{{ $complaints->links() }}` which renders Laravel's default Bootstrap-style pagination. No CSS targeted `.tr-pagination-nav`, so the Previous/Next buttons were unstyled/invisible on desktop and users could not navigate between pages of complaints.
+- What changed: replaced `{{ $complaints->links() }}` with `{{ $complaints->links('pagination::workspace') }}` which renders the project's shared operator pagination view (`.admin-pager` with styled Previous/Next buttons and page numbers), and changed the wrapper to `.admin-pagination` so existing admin-pager CSS applies.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted markup fix; reuses existing `pagination::workspace` view and existing tokens; no new hard-coded hex/serif/map-isolation issues introduced).
+
 ## 2026-11-10: Admin dashboard — stat card links now use correct status enum values
 
 - Page / component: `resources/views/admin/dashboard/index.blade.php`.
