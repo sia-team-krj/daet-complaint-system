@@ -238,7 +238,7 @@
                 @if($complaints->hasPages())
                     {{-- Desktop / Tablet Numbered Pagination --}}
                     <div class="staff-pagination-desktop">
-                        {{ $complaints->appends(request()->query())->links() }}
+                        {{ $complaints->appends(request()->query())->links('pagination::workspace', ['ariaLabel' => __('staff.pagination_label', [], null) ?: 'Complaint queue pagination']) }}
                     </div>
 
                     {{-- Mobile Compact Pagination --}}
@@ -452,6 +452,64 @@
         display: flex;
         align-items: center;
         gap: 8px;
+    }
+
+    .staff-pagination-desktop .admin-pager {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .staff-pagination-desktop .admin-pager-pages {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .staff-pagination-desktop .admin-pager-step,
+    .staff-pagination-desktop .admin-pager-page {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 40px;
+        min-width: 40px;
+        padding: 0 12px;
+        border: 1px solid var(--line, #dce5f1);
+        border-radius: 8px;
+        background: var(--surface, #fff);
+        color: var(--navy-700, #10294b);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .staff-pagination-desktop .admin-pager-step:hover,
+    .staff-pagination-desktop .admin-pager-page:hover {
+        background: var(--navy-50, #f4f7fb);
+        border-color: var(--navy-100, #dce5f1);
+        color: var(--navy-800, #10294b);
+    }
+
+    .staff-pagination-desktop .admin-pager-page.is-current {
+        background: var(--navy-700, #10294b);
+        border-color: var(--navy-700, #10294b);
+        color: #fff;
+    }
+
+    .staff-pagination-desktop .admin-pager-step.is-disabled {
+        background: var(--surface-soft, #f8fafc);
+        border-color: var(--line-soft, #e8edf5);
+        color: var(--faint, #64748b);
+    }
+
+    .staff-pagination-desktop .admin-pager-gap {
+        color: var(--faint, #64748b);
+        padding: 0 4px;
     }
 
     .staff-pagination-mobile {

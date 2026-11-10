@@ -15,6 +15,14 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
 - Definition of Done checklist: passed (targeted markup removal; no new hard-coded hex/serif/map-isolation issues introduced).
 
+## 2026-11-10: Staff complaint queue — desktop pagination controls
+
+- Page / component: `resources/views/staff/complaints/index.blade.php` (staff complaint queue pagination).
+- Why (the problem found): desktop/tablet view had no usable Prev/Next (and inconsistent) pagination controls for moving between queue pages.
+- What changed: switched desktop pagination to the shared workspace paginator view (`pagination::workspace`) and added light, token-aligned styles for `admin-pager` controls within `.staff-pagination-desktop`, so Previous/Next and page numbers are clearly available on desktop while mobile keeps the existing compact controls.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-10).
+- Definition of Done checklist: passed (targeted pagination UI fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
 ## 2026-11-09: Transparency complaint detail — reduce gap above back link
 
 - Page / component: `resources/views/pages/transparency/show.blade.php` (`.pt`, `.pt-back-row`).
