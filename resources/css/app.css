@@ -4605,9 +4605,14 @@ body:has(.staff-create-page) .admin-content {
 }
 
 .admin-panel-heading {
-    min-height: 62px;
-    padding: 15px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 56px;
+    padding: 12px 18px;
     border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .admin-panel-title {
@@ -4628,15 +4633,15 @@ body:has(.staff-create-page) .admin-content {
 
 .admin-detail-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+    grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.7fr);
     align-items: start;
-    gap: 24px;
+    gap: 20px;
 }
 
 .admin-detail-main,
 .admin-detail-aside {
     display: grid;
-    gap: 20px;
+    gap: 16px;
 }
 
 .admin-breadcrumb {
@@ -4659,21 +4664,36 @@ body:has(.staff-create-page) .admin-content {
 
 .admin-detail-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    grid-template-columns: 150px 1fr;
+    gap: 8px 16px;
     margin: 0;
 }
 
 .admin-detail-list div {
-    display: grid;
-    gap: 5px;
+    display: contents;
+}
+
+.admin-detail-list dt {
+    grid-column: 1;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .admin-detail-list dd {
+    grid-column: 2;
     margin: 0;
     color: rgba(255, 255, 255, 0.82);
     font-size: 13px;
     line-height: 1.5;
+    min-width: 0;
 }
 
 .admin-prose-block {

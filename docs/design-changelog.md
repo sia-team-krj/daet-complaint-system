@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Admin complaint detail — tighten layout, fix blank aside space
+
+- Page / component: `resources/css/app.css` (`.admin-detail-layout`, `.admin-detail-list`, `.admin-panel-heading`, `.admin-detail-list dt/dd`) and `resources/css/pages/admin-workspace.css` (tablet breakpoint).
+- Why (the problem found): the complaint detail page used a 2-column grid with a fixed `minmax(320px, 0.8fr)` aside that left a large blank empty space when the aside content (update form, audit history) didn't fill it. The `.admin-detail-list` used `repeat(2, minmax(0, 1fr))` creating equal-width columns that misaligned long labels/values. Panel headings had oversized `min-height: 62px` and `padding: 15px 18px` creating uneven vertical space.
+- What changed: narrowed the aside to `minmax(260px, 0.7fr)` and reduced gap to 20px; rewrote `.admin-detail-list` as a label column (150px) + value column (1fr) with `display: contents` on row wrappers so dt/dd align cleanly; changed `.admin-panel-heading` to flex `justify-content: space-between` with tighter `min-height: 56px` and `padding: 12px 18px`; added a `@media (max-width: 1024px)` breakpoint that collapses the detail layout to a single column, eliminating blank aside space on tablets/smaller screens.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted CSS fix; uses existing design tokens only — no new hard-coded hex/serif/map-isolation issues; design-system guard reports no NEW violations in touched files).
+
 ## 2026-11-10: Admin dashboard — department card responsiveness fix (long names)
 
 - Page / component: `resources/css/pages/admin-dashboard.css` (`.dept-department-card`, `.dept-department-grid`).

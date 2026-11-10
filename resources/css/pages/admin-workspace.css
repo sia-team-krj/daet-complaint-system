@@ -1608,6 +1608,23 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
 }
 
 /* ─── Phone: shared drawer + single-column admin pages ───────────────────── */
+@media (max-width: 1024px) {
+    body.role-admin.admin-layout .admin-detail-layout,
+    body.role-admin.admin-layout .admin-two-column-layout,
+    body.role-admin.admin-layout .admin-two-column-layout--invitation {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.role-admin.admin-layout .admin-detail-list {
+        grid-template-columns: 1fr;
+    }
+
+    body.role-admin.admin-layout .admin-panel-heading {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 767px) {
     body.role-admin.admin-layout .admin-shell {
         display: block;
