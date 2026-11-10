@@ -11,7 +11,7 @@
                 $complaint = $log->complaint;
                 $complaintUrl = $complaint ? route('staff.complaints.show', $complaint) : null;
             @endphp
-            <div class="dept-activity-item {{ $i >= 3 ? 'dept-activity-item--extra' : '' }}">
+            <div class="dept-activity-item {{ $i >= 4 ? 'dept-activity-item--extra' : '' }}">
                 <span class="dept-activity-item__dot" aria-hidden="true"></span>
                 <div class="dept-activity-item-main">
                     <div class="dept-activity-item__copy">
@@ -32,7 +32,7 @@
             <p class="dept-activity__empty">{{ __('staff.dashboard.no_activity') }}</p>
         @endforelse
     </div>
-    @if($recentActivity->count() > 3)
+    @if($recentActivity->count() > 4)
         <button type="button" class="dept-activity__more" aria-expanded="false" aria-controls="dept-activity-feed">
             {{ __('staff.dashboard.show_more') }}
         </button>

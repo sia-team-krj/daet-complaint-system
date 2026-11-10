@@ -142,7 +142,7 @@ class StaffController extends Controller
             } else {
                 $group['logs'][] = $log;
             }
-            if ($recentActivity->count() >= 5) {
+            if ($recentActivity->count() >= 4) {
                 break;
             }
         }

@@ -23,6 +23,14 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
 - Definition of Done checklist: passed (targeted markup removal; no new hard-coded hex/serif/map-isolation issues introduced).
 
+## 2026-11-10: Staff dashboard — limit Department Activity to 4 items
+
+- Page / component: `app/Http/Controllers/StaffController.php`, `resources/views/staff/dashboard/partials/activity.blade.php` (staff dashboard Department Activity).
+- Why (the problem found): the dashboard showed up to 5 recent department activity items with a show-more threshold at 3, making the section longer than desired.
+- What changed: limited recent activity collection to 4 items in the controller and aligned the dashboard partial to show 4 items without a show-more toggle (extras/toggle now apply only above 4).
+- Verification screenshots: NOT captured (waived by owner, 2026-11-10).
+- Definition of Done checklist: passed (targeted limit/UI fix; no new hard-coded hex/serif/map-isolation issues introduced).
+
 ## 2026-11-10: Staff complaint queue — desktop pagination controls
 
 - Page / component: `resources/views/staff/complaints/index.blade.php` (staff complaint queue pagination).
