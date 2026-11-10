@@ -16,6 +16,7 @@ use App\Models\InvitationCode;
 use App\Notifications\StaffWelcomeNotification;
 use App\Services\ActivityLogger;
 use App\Support\QueueFingerprint;
+use App\Support\TicketFingerprint;
 use App\Services\AuditDirectory;
 use App\Services\ComplaintModerationService;
 use App\Services\ComplaintSlaService;
@@ -1093,6 +1094,68 @@ class AdminController extends Controller
     }
 
     /**
+     * Live complaint state for the admin ticket page.
+     *
+     * Mirrors StaffController::complaintState(): a machine endpoint that
+     * answers a script with a fingerprint diff, and sends a human who opens
+     * the URL in the address bar to the ticket page. An admin can see any
+     * complaint, so there is no department check here.
+     *
+     * The endpoint never rewrites the page: an admin mid-update keeps every
+     * word they typed.
+     */
+    public function complaintState(Complaint $complaint, Request $request): JsonResponse|RedirectResponse
+    {
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to(route('admin.complaints.show', $complaint));
+        }
+
+        Gate::authorize('viewRealIdentity', $complaint);
+
+        $complaint->load(['logs.actor:id,display_alias,first_name,last_name,role']);
+
+        $fingerprint = TicketFingerprint::for($complaint);
+        $rendered = (string) $request->query('fingerprint', '');
+
+        if ($fingerprint === $rendered) {
+            return response()->json(['fingerprint' => $fingerprint, 'changed' => false]);
+        }
+
+        $newest = $complaint->logs->sortByDesc('id')->first();
+        $previous = $newest?->previous_status !== null
+            ? ComplaintStatus::tryFrom($newest->previous_status)
+            : null;
+        $movedTo = $newest !== null
+            ? ComplaintStatus::tryFrom((string) $newest->new_status)
+            : null;
+
+        $message = match (true) {
+            $newest === null => __('staff.live.changed'),
+            $newest->is_internal && $newest->actor !== null => __('staff.live.note', [
+                'actor' => $newest->actor->staff_actor_name,
+            ]),
+            $newest->actor === null => __('staff.live.changed'),
+            $previous !== null && $movedTo !== null && $previous !== $movedTo => __('staff.live.moved', [
+                'actor' => $newest->actor->staff_actor_name,
+                'previous' => $previous->label(),
+                'status' => $movedTo->label(),
+            ]),
+            default => __('staff.live.updated', ['actor' => $newest->actor->staff_actor_name]),
+        };
+
+        return response()->json([
+            'fingerprint' => $fingerprint,
+            'changed' => true,
+            'status' => $complaint->status,
+            'status_label' => $complaint->statusEnum->label(),
+            'status_key' => Str::slug((string) $complaint->status, '_'),
+            'actor' => $newest?->actor?->staff_actor_name,
+            'occurred_at' => $newest?->created_at?->toAtomString(),
+            'message' => $message,
+        ]);
+    }
+
+    /**
      * Show single complaint details (admin view)
      */
     public function complaintShow(Complaint $complaint, ComplaintWorkService $work): View
@@ -1127,6 +1190,10 @@ class AdminController extends Controller
             $work->documentationRequiredStatuses($complaint),
         );
 
+        // What the page is showing, so the live panel can tell whether the
+        // ticket moved while the administrator was reading it.
+        $ticketFingerprint = TicketFingerprint::for($complaint);
+
         return view('admin.complaints.show', compact(
             'complaint',
             'statuses',
@@ -1135,7 +1202,8 @@ class AdminController extends Controller
             'reviewStatusOptions',
             'priorityOptions',
             'workMode',
-            'documentationRequiredStatuses'
+            'documentationRequiredStatuses',
+            'ticketFingerprint'
         ));
     }
 

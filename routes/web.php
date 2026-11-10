@@ -250,6 +250,7 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
         Route::get('/complaints/export', [AdminController::class, 'exportComplaints'])->name('admin.complaints.export');
         Route::post('/complaints/bulk-reassign', [AdminController::class, 'bulkReassign'])->name('admin.complaints.bulk-reassign');
         Route::get('/complaints/{complaint}', [AdminController::class, 'complaintShow'])->name('admin.complaints.show');
+        Route::get('/complaints/{complaint}/state', [AdminController::class, 'complaintState'])->name('admin.complaints.state');
         Route::put('/complaints/{complaint}', [AdminController::class, 'complaintUpdate'])->name('admin.complaints.update');
         Route::post('/complaints/{complaint}/verification/request-information', [ComplaintVerificationController::class, 'requestInformation'])
             ->name('admin.complaints.verification.request-information');

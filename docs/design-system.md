@@ -1478,6 +1478,25 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 
 Every UI task appends here: **(date · page · what changed).**
 
+- 2026-11-10 · Staff surfaces + admin complaint detail · **resident identity
+  masked everywhere except admin, and the reveal is policy-backed.** The public
+  register and the staff detail's resident card were already masked, but the
+  staff timeline, the dashboard activity fallback and the live ticket state
+  (`staff.complaints.state`, JSON/messages) could expose a resident actor's real
+  name — and staff queries loaded the full resident record (email/contact) onto
+  staff surfaces. A resident is now reported by the same staff-safe alias on
+  every staff screen and in the live ticket payload: `User::staff_actor_name`
+  resolves citizens to `staff_safe_name` and keeps staff/admin actors real so
+  the office still knows who acted. Staff controllers eager-load only the
+  columns staff need (`user:id,display_alias,barangay` and restricted actor
+  fields). Admins continue to see real identity, and the admin complaint detail
+  now enforces it through `ComplaintPolicy::viewRealIdentity`
+  (`Gate::authorize`) as defense-in-depth. Files: `app/Models/User.php`,
+  `app/Http/Controllers/{StaffController,AdminController}.php`,
+  `resources/views/staff/complaints/show.blade.php`,
+  `resources/views/staff/dashboard/partials/activity.blade.php`,
+  `tests/Feature/StaffIdentityMaskingTest.php` (new). New tokens: none.
+
 - 2026-11-10 · Staff queue, staff complaint detail, admin dashboard · **the
   clock on the work a department owes.** A report became the office's
   responsibility the moment it was verified, and nothing in the system noticed

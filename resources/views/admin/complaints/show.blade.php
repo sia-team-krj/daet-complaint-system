@@ -1,6 +1,11 @@
 @extends('admin.layouts.app')
 
 @section('title', $complaint->ticket_id . ' - Admin')
+
+@push('styles')
+    @include('partials.public-ui')
+@endpush
+
 @section('admin-content')
 <div class="admin-page">
     <nav class="admin-breadcrumb" aria-label="Breadcrumb">
@@ -30,6 +35,30 @@
         </section>
     @endif
 
+    {{-- ════════════ LIVE TICKET ════════════
+         Another hand may move this case while it is open. The panel
+         polls a fingerprint and, when it differs, says who changed what.
+         It never replaces the form: an administrator mid-update keeps
+         every word they typed. --}}
+    <div data-live-ticket
+         data-endpoint="{{ route('admin.complaints.state', $complaint) }}"
+         data-fingerprint="{{ $ticketFingerprint }}"
+         data-interval="20000">
+
+        <div class="ticket-live-note" data-live-ticket-notice role="status" aria-live="polite" hidden>
+            <span class="ticket-live-note__dot" aria-hidden="true"></span>
+            <p class="ticket-live-note__text" data-live-ticket-message></p>
+            <div class="ticket-live-note__actions">
+                <a class="ticket-live-note__reload" data-live-ticket-refresh href="{{ route('admin.complaints.show', $complaint) }}">
+                    {{ __('staff.live.refresh') }}
+                </a>
+                <button type="button" class="ticket-live-note__dismiss" data-live-ticket-dismiss>
+                    {{ __('staff.live.dismiss') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="admin-detail-layout">
         <div class="admin-detail-main">
             <section class="admin-panel" aria-labelledby="complaint-summary-title">
@@ -38,7 +67,8 @@
                         <span class="admin-ticket-id">{{ $complaint->ticket_id }}</span>
                         <h1 id="complaint-summary-title" class="admin-panel-title">{{ $complaint->title }}</h1>
                     </div>
-                    <span class="admin-status admin-status--{{ str($complaint->status)->slug() }}">{{ $complaint->statusEnum->label() }}</span>
+                    @php $statusKey = \Illuminate\Support\Str::slug((string) $complaint->status, '_'); @endphp
+                    <span class="status-pill admin-status admin-status--{{ $statusKey }}" data-ticket-status-pill data-ticket-status-label>{{ $complaint->statusEnum->label() }}</span>
                 </div>
                 <div class="admin-panel-body">
                     <dl class="admin-detail-list">

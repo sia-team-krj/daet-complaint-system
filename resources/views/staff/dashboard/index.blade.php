@@ -29,13 +29,6 @@
         ['key' => 'resolved', 'label' => __('staff.stats.resolved_this_month'), 'value' => $stats['resolvedThisMonth'] ?? 0, 'icon' => 'check', 'href' => route('staff.complaints.index', ['status' => 'resolved']), 'tone' => 'green'],
         ['key' => 'avg', 'label' => __('staff.stats.avg_days_open'), 'value' => $avgNum, 'unit' => $avgUnit, 'icon' => 'calendar', 'href' => null, 'tone' => 'sky'],
     ];
-    $pCounts = $priorityCounts ?? [];
-    $filters = [
-        ['key' => '', 'label' => __('staff.dashboard.all'), 'count' => $pCounts['all'] ?? null],
-        ['key' => 'pending', 'label' => __('staff.dashboard.pending_verification'), 'count' => $pCounts['pending'] ?? null],
-        ['key' => 'needs_review', 'label' => __('staff.dashboard.needs_review'), 'count' => $pCounts['needs_review'] ?? null],
-        ['key' => 'possible_duplicate', 'label' => __('staff.dashboard.possible_duplicate'), 'count' => $pCounts['possible_duplicate'] ?? null],
-    ];
     $activeFilter = $priorityFilter ?? request('priority_filter', '');
 @endphp
 
@@ -106,14 +99,6 @@
                                 <input id="priority-q" type="search" name="q" value="{{ $prioritySearch }}" placeholder="{{ __('staff.dashboard.search_placeholder') }}" autocomplete="off">
                             </label>
                             <button type="submit" class="dept-filters__submit">{{ __('staff.dashboard.search') }}</button>
-                        </div>
-                        <div class="dept-chips" role="group" aria-label="{{ __('staff.dashboard.filters') }}">
-                            @foreach($filters as $filter)
-                                @php
-                                    $isActive = ($activeFilter ?? '') === $filter['key'] || ($filter['key'] === '' && ($activeFilter ?? '') === '');
-                                @endphp
-                                <button type="submit" name="priority_filter" value="{{ $filter['key'] }}" class="dept-chip-filter {{ $isActive ? 'is-selected' : '' }}" @if($isActive) aria-pressed="true" @else aria-pressed="false" @endif>{{ $filter['label'] }} @if(is_numeric($filter['count']))<span class="dept-chip__count">{{ $filter['count'] }}</span>@endif</button>
-                            @endforeach
                         </div>
                     </form>
 

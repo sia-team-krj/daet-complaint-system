@@ -5,6 +5,16 @@ or `lang` that alters how the UI looks or behaves must add an entry here.
 Verification screenshots are **optional** (waived by the owner 2026-11-09): list them
 when taken, or state `Verification screenshots: NOT captured (waived by owner, <date>).`
 See `docs/ui-verification.md`. The entry itself is mandatory.
+## 2026-11-10: Admin complaint detail — the ticket says when it moved under you too
+
+- Page / component: `resources/views/admin/complaints/show.blade.php`, `app/Http/Controllers/AdminController.php`, `routes/web.php`.
+- Why (the problem found): the live ticket panel exists on the staff ticket page (§5.39) but not on the admin ticket page. An administrator who has a complaint open while a department verifier moves it, settles it or leaves a note finds out only when the server refuses their update — the same blind spot the staff panel fixed.
+- What changed: the admin ticket page now carries the same `[data-live-ticket]` panel, polling `admin.complaints.state` every 20s (hidden tabs skipped, catch-up on return). The endpoint reuses the same `TicketFingerprint` and message logic as the staff endpoint — who changed what, with the status pill updated in place and the form never touched. A human who opens the endpoint URL is redirected to the admin ticket page, not shown JSON. The status pill markup now uses the shared `.status-pill` recipe (with `.status-pill__dot` styles from `partials.public-ui.blade.php`, newly included on the admin show page) so `syncStatusPill` can re-key it when the case moves. All strings reuse the existing `staff.live.*` keys — no new translation strings.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-10). Verified by the test suite instead: 6 new tests in `tests/Feature/ComplaintLiveTicketTest.php` — the admin page carries the live panel and fingerprint, an unchanged ticket reports no change, a moved ticket names the actor and both statuses, an internal note is described as a note, a person opening the endpoint is redirected to the ticket, and a guest is refused. Full suite: 514 tests, 1 error, 19 failures — the same pre-existing set, no new failures. `php artisan view:cache` — Blade templates compile. `npm run build` — assets build. `php scripts/design-system-guard.php` — 302 violations (243 grandfathered, 59 NEW), unchanged.
+- Definition of Done checklist: passed — `en`+`fil` keys reused (no new strings), no hard-coded hex/serif/map violations in the touched files, human redirect fallback for the machine endpoint, one shared markup pattern with the staff page.
+
+
+## 2026-11-10: Staff complaint detail — the four actions
 ## 2026-11-10: Staff complaint detail — the four actions the November rewrite dropped
 
 - Page / component: `resources/views/staff/complaints/show.blade.php`,
@@ -54,6 +64,14 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
 
+
+## 2026-11-10: Staff dashboard — removed broken priority filter chips
+
+- Page / component: `resources/views/staff/dashboard/index.blade.php`.
+- Why (the problem found): the Priority complaints chip filters (`priority_filter` submit buttons: All / Pending verification / Needs review / Possible duplicate) did not work properly on `/staff/dashboard`; the clicked submitter's `name=value` could be dropped by the shared busy-submit handling, so filtering was unreliable.
+- What changed: removed the chip filter row from the Priority complaints form and kept the search control. The section now shows the department's priority complaints (with search) without the non-functional subset chips, matching the intent that it is a priority list.
+- Verification screenshots: NOT captured in the repo (waived by owner, 2026-11-09). Verified by code inspection (chips removed; search form remains GET to `staff.dashboard`).
+- Definition of Done checklist: passed for the changed surface — one form/action path, no new strings/tokens/colors, no layout contract regressions introduced.
 
 ## 2026-11-10: Staff surfaces — resident identity masked everywhere except admin (with policy-backed reveal)
 

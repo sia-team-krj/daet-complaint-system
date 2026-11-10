@@ -133,7 +133,7 @@ class StaffController extends Controller
             ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
             ->oldest('created_at')
-            ->limit(3)
+            ->limit(5)
             ->get();
 
         $rawActivity = ComplaintLog::with([
