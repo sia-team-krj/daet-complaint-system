@@ -277,7 +277,6 @@
         {{ __('auth_ui.register.join') }}<br>
         <span class="gold-line">{{ __('auth_ui.register.daet_listens') }}</span>
       </h2>
-      <div class="auth-brand-divider fu d2"></div>
       <p class="auth-brand-desc fu d3">
         {{ __('auth_ui.register.description') }}
       </p>
@@ -301,7 +300,6 @@
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
 
-        <div class="auth-form-eyebrow fu d1">{{ __('auth_ui.register.eyebrow') }}</div>
         <h1 class="auth-form-heading fu d2">{{ __('auth_ui.register.heading') }}</h1>
         <p class="auth-form-sub fu d2">
           {{ __('auth_ui.register.already_have') }}

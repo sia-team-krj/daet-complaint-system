@@ -63,10 +63,6 @@
             </div>
 
             <div class="admin-sidebar-nav__bottom">
-                <p class="admin-sidebar-section-label">{{ __('nav.language') }}</p>
-                <div class="admin-sidebar-language">
-                    @include('layouts.partials.language-switcher', ['variant' => 'compact'])
-                </div>
                 <ul>
                     <li>
                         <a href="{{ route('settings', ['tab' => 'preferences']) }}" class="{{ request()->routeIs('settings*') ? 'is-active' : '' }}" @if(request()->routeIs('settings*')) aria-current="page" @endif>

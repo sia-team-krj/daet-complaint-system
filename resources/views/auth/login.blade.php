@@ -27,7 +27,6 @@
         {{ __('auth_ui.login.welcome_back') }}<br>
         <span class="gold-line">{{ __('auth_ui.login.to_daet_listens') }}</span>
       </h2>
-      <div class="auth-brand-divider fu d2"></div>
 
       <p class="auth-brand-desc fu d3">
         {{ __('auth_ui.login.description') }}
@@ -39,7 +38,6 @@
     <div class="auth-form-panel">
       <div class="auth-form-wrap">
 
-        <div class="auth-form-eyebrow fu d1">{{ __('auth_ui.login.eyebrow') }}</div>
         <h1 class="auth-form-heading fu d2">{{ __('auth_ui.common.sign_in') }}</h1>
         <p class="auth-form-sub fu d2">
           {{ __('auth_ui.login.no_account') }}

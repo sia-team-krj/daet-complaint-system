@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Staff & admin navbars — remove desktop language switcher
+
+- Page / component: `resources/views/staff/partials/sidebar.blade.php`, `resources/views/admin/partials/sidebar.blade.php`.
+- Why (the problem found): user requested removal of the language changer from the desktop staff and admin navbars only (mobile kept intact).
+- What changed: removed the `{{ __('nav.language') }}` label and `<div class="staff-sidebar-language">` / `<div class="admin-sidebar-language">` containing `@include('layouts.partials.language-switcher', ['variant' => 'compact'])` from both sidebars. Mobile language switcher (`variant => 'mobile'` in drawers) untouched.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted markup removal; no new hard-coded hex/serif/map-isolation issues introduced).
+
 ## 2026-11-09: Auth pages — remove divider and eyebrow elements
 
 - Page / component: `resources/views/auth/register.blade.php`, `resources/views/auth/login.blade.php`.
