@@ -250,6 +250,15 @@ hex|resources/views/layouts/partials/language-switcher.blade.php|#e2c06a|1
 hex|resources/views/layouts/partials/language-switcher.blade.php|#ffffff|2
 hex|resources/views/layouts/partials/site-footer.blade.php|#060f1e|2
 hex|resources/views/layouts/partials/site-footer.blade.php|#e2c06a|3
+hex|resources/views/mail/complaint-update.blade.php|#0b1f3a|7
+hex|resources/views/mail/complaint-update.blade.php|#12294d|1
+hex|resources/views/mail/complaint-update.blade.php|#4b5563|2
+hex|resources/views/mail/complaint-update.blade.php|#6b7280|2
+hex|resources/views/mail/complaint-update.blade.php|#9ca3af|3
+hex|resources/views/mail/complaint-update.blade.php|#c9a84c|4
+hex|resources/views/mail/complaint-update.blade.php|#e2c06a|1
+hex|resources/views/mail/complaint-update.blade.php|#f5f0e8|2
+hex|resources/views/mail/complaint-update.blade.php|#ffffff|3
 hex|resources/views/mail/password-reset.blade.php|#0b1f3a|5
 hex|resources/views/mail/password-reset.blade.php|#12294d|1
 hex|resources/views/mail/password-reset.blade.php|#4b5563|1
@@ -377,6 +386,7 @@ serif|resources/views/auth/reset-password.blade.php|declared
 serif|resources/views/complaints/create.blade.php|declared
 serif|resources/views/complaints/show.blade.php|declared
 serif|resources/views/complaints/track.blade.php|declared
+serif|resources/views/mail/complaint-update.blade.php|declared
 serif|resources/views/mail/password-reset.blade.php|declared
 serif|resources/views/mail/staff-invitation.blade.php|declared
 serif|resources/views/mail/staff-welcome.blade.php|declared

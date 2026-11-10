@@ -11,6 +11,7 @@ return [
     'reset_status' => 'If an account exists for that email, a password reset link is on its way.',
     'registration_created' => 'Your account was created. Enter the verification code we sent to your email.',
     'registration_created_error' => 'Your account was created, but we could not send the verification email. Use the resend option to try again.',
+    'email_unique' => 'That email address is already registered. Sign in instead, or use a different email.',
     'email_verified_and_updated' => 'Your email address was verified and updated successfully.',
     'email_verified' => 'Your email address was verified successfully.',
     'start_email_change_before_resend' => 'Start an email change before requesting a new code.',

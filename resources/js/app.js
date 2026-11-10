@@ -53,6 +53,160 @@ const initializePasswordRequirements = () => {
     });
 };
 
+// Password visibility toggles (docs/design-system.md §5.41). Binds to
+// [data-password-visibility-toggle] — the eye button inside .field-wrap on the
+// auth password fields. The button stays hidden until the input has text; from
+// then on it flips the input between type="password" and type="text", and the
+// stacked eye/eye-off SVGs cross-fade via aria-pressed (CSS). Emptied fields
+// re-mask automatically. The localized label (data-label-show / data-label-hide)
+// and tabindex follow the same state.
+const initializePasswordToggles = () => {
+    document.querySelectorAll('[data-password-visibility-toggle]').forEach((btn) => {
+        if (btn.dataset.initialized === 'true') return;
+        const input = document.getElementById(btn.getAttribute('data-password-visibility-toggle'));
+        if (!input) return;
+        btn.dataset.initialized = 'true';
+
+        const sync = () => {
+            const hasValue = input.value.length > 0;
+            if (!hasValue && input.type !== 'password') input.type = 'password';
+            if (!hasValue && btn.getAttribute('aria-pressed') === 'true') {
+                btn.setAttribute('aria-pressed', 'false');
+                btn.setAttribute('aria-label', btn.dataset.labelShow || 'Show password');
+            }
+            btn.classList.toggle('is-visible', hasValue);
+            btn.tabIndex = hasValue ? 0 : -1;
+        };
+
+        input.addEventListener('input', sync);
+        sync();
+
+        btn.addEventListener('click', () => {
+            const revealing = input.type === 'password';
+            input.type = revealing ? 'text' : 'password';
+            btn.setAttribute('aria-pressed', String(revealing));
+            btn.setAttribute('aria-label', revealing
+                ? (btn.dataset.labelHide || 'Hide password')
+                : (btn.dataset.labelShow || 'Show password'));
+
+            input.focus({ preventScroll: true });
+        });
+    });
+};
+
+// Registration live validation (docs/design-system.md §12 · 2026-11-10).
+// Flashes per-field errors while typing — never for the email field: email
+// stays submit-only so this form cannot be used as an oracle for whether an
+// address is registered (account enumeration). The inline rules mirror the
+// server ones (AuthController@register) exactly; this is UX, the server stays
+// authoritative and still re-validates everything. A field only shows its
+// error after it has been touched (blur) — typing into a pristine field never
+// yells at you. The barangay allow-list is read from the suggestions already
+// rendered in the DOM, so there is no second list to drift.
+const initializeRegisterLiveValidation = () => {
+    const form = document.querySelector('form[data-live-validate]');
+    if (!form || form.dataset.liveValidationBound === 'true') return;
+    form.dataset.liveValidationBound = 'true';
+
+    const msg = {
+        required: form.dataset.msgRequired || 'This field is required.',
+        firstNameRegex: form.dataset.msgFirstNameRegex,
+        lastNameRegex: form.dataset.msgLastNameRegex,
+        phoneRegex: form.dataset.msgPhoneRegex,
+        barangayInvalid: form.dataset.msgBarangayInvalid,
+        passwordMin8: form.dataset.msgPasswordMin8,
+        passwordConfirmed: form.dataset.msgPasswordConfirmed,
+        termsAccepted: form.dataset.msgTermsAccepted,
+    };
+    const barangayOptions = Array.from(form.querySelectorAll('#barangay-suggestions [data-search-value]'))
+        .map((li) => li.dataset.searchValue);
+    const passwordInput = form.querySelector('[name="password"]');
+    const touched = new Set();
+
+    const namePattern = /^[\p{L}\s\-.]+$/u;
+
+    const validators = {
+        first_name: (value) => {
+            const v = value.trim();
+            if (!v) return msg.required;
+            return namePattern.test(v) ? null : msg.firstNameRegex;
+        },
+        last_name: (value) => {
+            const v = value.trim();
+            if (!v) return msg.required;
+            return namePattern.test(v) ? null : msg.lastNameRegex;
+        },
+        // NOTE: no email validator here on purpose — see the block comment.
+        phone: (value) => {
+            const v = value.trim();
+            if (!v) return null; // nullable server-side
+            return /^09\d{9}$/.test(v) ? null : msg.phoneRegex;
+        },
+        barangay: (value) => {
+            const v = value.trim();
+            if (!v) return null; // nullable server-side
+            return barangayOptions.includes(v) ? null : msg.barangayInvalid;
+        },
+        password: (value) => {
+            if (!value) return msg.required;
+            const ok = value.length >= 8 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /\d/.test(value);
+            return ok ? null : msg.passwordMin8;
+        },
+        password_confirmation: (value) => {
+            if (!value) return msg.required;
+            return passwordInput && value !== passwordInput.value ? msg.passwordConfirmed : null;
+        },
+        terms: (_value, input) => (input.checked ? null : msg.termsAccepted),
+    };
+
+    const setError = (input, message) => {
+        const error = form.querySelector(`[data-error-for="${input.name}"]`);
+        if (!error) return;
+        const invalid = Boolean(message);
+        error.textContent = message || '';
+        error.hidden = !invalid;
+        input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+        input.closest('.field-group')?.classList.toggle('field-group--invalid', invalid);
+    };
+
+    const validate = (input) => {
+        const validator = validators[input.name];
+        if (!validator) return true;
+        const message = validator(input.value, input);
+        setError(input, touched.has(input.name) ? message : null);
+        return !message;
+    };
+
+    Object.keys(validators).forEach((name) => {
+        const input = form.querySelector(`[name="${name}"]`);
+        if (!input) return;
+
+        input.addEventListener('input', () => {
+            validate(input);
+            if (name === 'password' && touched.has('password_confirmation')) {
+                validate(form.querySelector('[name="password_confirmation"]'));
+            }
+        });
+        input.addEventListener('focusout', () => {
+            touched.add(name);
+            validate(input);
+        });
+        input.addEventListener('change', () => {
+            if (input.type === 'checkbox') touched.add(name);
+            validate(input);
+        });
+    });
+
+    form.addEventListener('submit', () => {
+        Object.keys(validators).forEach((name) => touched.add(name));
+        Object.keys(validators).forEach((name) => {
+            const input = form.querySelector(`[name="${name}"]`);
+            if (input) validate(input);
+        });
+        // Never preventDefault: native constraints + the server stay authoritative.
+    });
+};
+
 const initializeBarangaySearch = () => {
     document.querySelectorAll('[data-barangay-search]').forEach((search) => {
         const input = search.querySelector('[data-barangay-input]');
@@ -276,11 +430,15 @@ const initializeSubmitGuards = () => {
 const initializeRegistrationFields = () => {
     initializePasswordRequirements();
     initializeBarangaySearch();
+    // Live inline errors on the register form — everything except email (§12).
+    initializeRegisterLiveValidation();
     initializeSubmitGuards();
 };
 
 const initializeSharedComponents = () => {
     initializeRegistrationFields();
+    // Password eye toggles on the auth password fields (§5.41).
+    initializePasswordToggles();
     // Staff-only: finds nothing on a resident page.
     initializeProofCaptures();
     // Staff- and admin-only: finds nothing on a resident page.

@@ -10,6 +10,7 @@ return [
     'complaints_found' => '{1} 1 complaint found|[2,*] :count complaints found',
     'back_to_queue' => 'Back to queue',
     'review' => 'Review',
+    'pagination_label' => 'Complaint queue pagination',
     'stats' => [
         'pending_review' => 'Pending verification',
         'in_progress' => 'In progress',
@@ -135,6 +136,7 @@ return [
         'delegate_choose' => 'Choose a verifier',
         'delegate_submit' => 'Hand over verification',
         'delegate_current' => 'Verification currently sits with :name.',
+        'read_only_body' => 'Only a department verifier or an administrator can record a review decision or set the confirmed priority on this ticket.',
     ],
 
     // The internal half of a status update. Written to the same immutable
@@ -164,6 +166,14 @@ return [
         'reason' => 'Reason (required)',
         'reason_placeholder' => 'Why is this being withheld or cleaned up?',
         'save' => 'Save moderation',
+    ],
+
+    'flag_notice' => [
+        'title' => 'This complaint needs attention',
+        'score' => 'Score :score/100',
+        'similar' => ':percent% similar',
+        'hidden_public' => 'Hidden from the public transparency page.',
+        'compare' => 'Compare with :ticket',
     ],
 
     // The clock on the work a department owes. The office accepts a report

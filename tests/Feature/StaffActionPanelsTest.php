@@ -107,6 +107,41 @@ class StaffActionPanelsTest extends TestCase
             ->assertDontSee('name="verifying_staff_id"', false);
     }
 
+    public function test_a_regular_staff_member_does_not_get_the_review_form(): void
+    {
+        $complaint = $this->complaint();
+
+        $this->actingAs($this->regularStaff)
+            ->get(route('staff.complaints.show', $complaint))
+            ->assertOk()
+            ->assertDontSee('name="review_status"', false)
+            ->assertDontSee('name="confirmed_priority"', false)
+            ->assertDontSee('name="verification_method"', false)
+            ->assertDontSee('Save review decision')
+            ->assertSee('Only a department verifier or an administrator can record a review decision');
+
+        $this->actingAs($this->verifier)
+            ->get(route('staff.complaints.show', $complaint))
+            ->assertOk()
+            ->assertSee('name="review_status"', false)
+            ->assertSee('Save review decision');
+    }
+
+    public function test_a_regular_staff_member_cannot_post_a_review_decision(): void
+    {
+        $complaint = $this->complaint();
+
+        $this->actingAs($this->regularStaff)
+            ->put(route('staff.complaints.review', $complaint), [
+                'review_status' => 'verified',
+                'confirmed_priority' => 'urgent',
+                'verification_method' => 'desk',
+            ])
+            ->assertSessionHasErrors('verification');
+
+        $this->assertSame('pending', $complaint->fresh()->review_status);
+    }
+
     public function test_an_open_request_shows_the_question_and_waits_for_the_resident(): void
     {
         $complaint = $this->complaint();

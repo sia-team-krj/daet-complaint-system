@@ -7,6 +7,7 @@ use App\Models\Complaint;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +27,7 @@ class ComplaintVerificationController extends Controller
     public function __construct(
         private readonly ComplaintVerificationService $verification,
         private readonly NotificationService $notifications,
+        private readonly ComplaintUpdateDelivery $ticketUpdates,
     ) {}
 
     /**
@@ -72,6 +74,14 @@ class ComplaintVerificationController extends Controller
             ],
             $complaint,
         );
+
+        // The question also goes to the resident's inbox — a bell the
+        // resident never opens is not a question they can answer.
+        try {
+            $this->ticketUpdates->informationRequested($complaint, $informationRequest);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
 
         return back()->with('status', "The resident has been asked for more evidence on {$complaint->ticket_id}.");
     }

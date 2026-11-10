@@ -597,44 +597,68 @@
     box-shadow: var(--shadow-card);
 }
 
+.moderation-panel--light .moderation-panel__header {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
 .moderation-panel--light .moderation-panel__title {
     color: var(--navy-900);
     font-family: var(--font-sans);
+    font-size: 18px;
+    line-height: 1.3;
 }
 
 .moderation-panel--light .moderation-panel__lede {
     color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
 }
 
 .moderation-panel--light .moderation-panel__consent {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--line-soft);
     border-radius: var(--radius-sm);
     background: var(--surface-soft);
     color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
 }
 
 .moderation-panel--light .moderation-panel__consent strong {
     color: var(--text);
 }
 
+.moderation-panel--light .moderation-field {
+    margin-top: 16px;
+}
+
 .moderation-panel--light .moderation-field label {
-    color: var(--faint);
-}
-
-.moderation-panel--light .moderation-field textarea,
-.moderation-panel--light .moderation-field input[type="text"] {
-    border: 1px solid var(--line);
-    background: var(--surface);
+    display: block;
+    margin-bottom: 6px;
     color: var(--text);
-}
-
-.moderation-panel--light .moderation-field textarea:focus,
-.moderation-panel--light .moderation-field input[type="text"]:focus {
-    border-color: var(--gold-500);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .moderation-panel--light .moderation-check {
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
     border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
     background: var(--surface-soft);
+    cursor: pointer;
+}
+
+.moderation-panel--light .moderation-check label,
+.moderation-panel--light label.moderation-check {
+    margin-bottom: 0;
+    font-weight: 500;
 }
 
 .moderation-panel--light .moderation-check input {
@@ -642,19 +666,67 @@
 }
 
 .moderation-panel--light .moderation-check__text {
-    color: var(--muted);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.moderation-panel--light .moderation-field textarea,
+.moderation-panel--light .moderation-field input[type="text"] {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: none;
+}
+
+.moderation-panel--light .moderation-field textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+.moderation-panel--light .moderation-field textarea:focus,
+.moderation-panel--light .moderation-field input[type="text"]:focus {
+    border-color: var(--gold-500);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 20%, transparent);
 }
 
 .moderation-panel--light .moderation-photo {
     border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
     background: var(--surface-soft);
-    color: var(--faint);
+    color: var(--muted);
+}
+
+.moderation-required {
+    color: var(--error-text);
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+.moderation-panel--light .moderation-field--required textarea,
+.moderation-panel--light .moderation-field--required input[type="text"] {
+    border-color: color-mix(in srgb, var(--error-text) 35%, var(--line));
 }
 
 .moderation-panel--light .moderation-panel__submit {
+    margin-top: 18px;
+    min-height: 44px;
+    padding: 0 18px;
     border: 1px solid var(--navy-900);
+    border-radius: var(--radius-sm);
     background: var(--navy-900);
     color: var(--surface);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .moderation-panel--light .moderation-panel__submit:hover {

@@ -10,6 +10,7 @@ return [
     'complaints_found' => '{1} 1 reklamo ang natagpuan|[2,*] :count na reklamo ang natagpuan',
     'back_to_queue' => 'Bumalik sa pila',
     'review' => 'Suriin',
+    'pagination_label' => 'Paging ng pila ng reklamo',
     'stats' => [
         'pending_review' => 'Naghihintay ng beripikasyon',
         'in_progress' => 'Isinasagawa',
@@ -135,6 +136,7 @@ return [
         'delegate_choose' => 'Pumili ng tagaberipika',
         'delegate_submit' => 'Ipasa ang beripikasyon',
         'delegate_current' => 'Kasalukuyang nasa :name ang beripikasyon.',
+        'read_only_body' => 'Tanging ang tagaberipika ng departamento o administrator ang maaaring magtala ng desisyon sa beripikasyon o magtakda ng nakumpirmang prayoridad sa tiket na ito.',
     ],
 
     // The internal half of a status update. Written to the same immutable
@@ -164,6 +166,14 @@ return [
         'reason' => 'Dahilan (kinakailangan)',
         'reason_placeholder' => 'Bakit ito itinatago o nililinis?',
         'save' => 'I-save ang moderation',
+    ],
+
+    'flag_notice' => [
+        'title' => 'Kailangang tingnan ang reklamong ito',
+        'score' => 'Iskor :score/100',
+        'similar' => ':percent% katulad',
+        'hidden_public' => 'Nakatago mula sa pampublikong transparency page.',
+        'compare' => 'Ikumpara sa :ticket',
     ],
 
     // The clock on the work a department owes. The office accepts a report

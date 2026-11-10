@@ -17,6 +17,8 @@ return [
         'send_reset_link' => 'Ipadala ang Reset Link',
         'update_password' => 'I-update ang Password',
         'email_placeholder' => 'ang@example.com',
+        'show_password' => 'Ipakita ang password',
+        'hide_password' => 'Itago ang password',
     ],
 
     'titles' => [
@@ -71,7 +73,9 @@ return [
         'phone_regex' => 'Ilagay ang wastong 11-digit na mobile na numero ng PH simula sa 09 (hal. 09171234567).',
         'barangay_invalid' => 'Ang piniling barangay ay hindi valid.',
         'password_confirmed' => 'Ang pagkumpirma ng password ay hindi nagkatugma.',
+        'password_min_8' => 'Ang password ay dapat hindi bababa sa 8 karakter, na may malaki at maliit na titik at numero.',
         'terms_accepted' => 'Kailangan mong sumang-ayon sa Mga Tuntunin at Kundisyon at sa Patakaran sa Privacy.',
+        'required' => 'Kailangan punan ang field na ito.',
         'terms_prefix' => 'Sumasang-ayon ako sa',
         'terms' => 'Mga Tuntunin at Kundisyon',
         'and' => 'at',

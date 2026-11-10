@@ -210,6 +210,8 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password
     ->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
         Route::get('/activity', [StaffController::class, 'activityIndex'])->name('staff.activity.index');
+        Route::get('/verification', [StaffController::class, 'verificationIndex'])->name('staff.verification.index');
+        Route::get('/verification/browser', [StaffController::class, 'verificationBrowser'])->name('staff.verification.browser');
         Route::get('/complaints', [StaffController::class, 'complaintsIndex'])->name('staff.complaints.index');
         Route::get('/complaints/browser', [StaffController::class, 'complaintsBrowser'])->name('staff.complaints.browser');
         // The live ticket panel's machine endpoint. It answers a fingerprint,

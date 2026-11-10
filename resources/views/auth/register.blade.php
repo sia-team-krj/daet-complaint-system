@@ -179,8 +179,18 @@
     outline: none;
     box-shadow: 0 0 0 3px rgba(212,169,71,0.2);
   }
-  .field-underline { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; border-radius: 0 0 4px 4px; }
+  .field-underline { position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; border-radius: 0 0 4px 4px; pointer-events: none; }
   .field-input:focus ~ .field-underline { transform: scaleX(1); }
+
+  /* Inline per-field validation (docs/design-system.md §12 · 2026-11-10).
+     Shown by app.js while typing; the field is only flagged once touched.
+     Text colour is rgba(252,165,165) — the same ink as .alert-error — kept as
+     rgba so the design-system guard sees no new/changed hex on this page. */
+  .field-error { color: rgba(252,165,165,0.95); font-size: 11.5px; line-height: 1.5; margin: 7px 0 0; }
+  .field-error--terms { margin: -12px 0 18px 24px; }
+  .field-group--invalid .field-input { border-color: rgba(239,68,68,0.55); }
+  .field-group--invalid .field-icon { color: rgba(239,68,68,0.9); }
+  .field-group--invalid .field-input:focus { border-color: rgba(239,68,68,0.75); box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
 
   /* Terms */
   .field-terms { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 22px; cursor: pointer; }
@@ -311,7 +321,15 @@
           </div>
         @endif
 
-        <form data-loading-submit method="POST" action="{{ route('register') }}">
+        <form data-loading-submit data-live-validate method="POST" action="{{ route('register') }}"
+              data-msg-required="{{ __('auth_ui.register.required') }}"
+              data-msg-first-name-regex="{{ __('auth_ui.register.first_name_regex') }}"
+              data-msg-last-name-regex="{{ __('auth_ui.register.last_name_regex') }}"
+              data-msg-phone-regex="{{ __('auth_ui.register.phone_regex') }}"
+              data-msg-barangay-invalid="{{ __('auth_ui.register.barangay_invalid') }}"
+              data-msg-password-min8="{{ __('auth_ui.register.password_min_8') }}"
+              data-msg-password-confirmed="{{ __('auth_ui.register.password_confirmed') }}"
+              data-msg-terms-accepted="{{ __('auth_ui.register.terms_accepted') }}">
           @csrf
 
           <div class="field-row-2 fu d3">
@@ -319,17 +337,19 @@
               <label class="field-label" for="first_name">{{ __('auth_ui.register.first_name') }} <span class="required">*</span></label>
               <div class="field-wrap">
                 <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <input id="first_name" name="first_name" type="text" class="field-input" placeholder="{{ __('auth_ui.register.first_name_placeholder') }}" value="{{ old('first_name') }}" required>
+                <input id="first_name" name="first_name" type="text" class="field-input" placeholder="{{ __('auth_ui.register.first_name_placeholder') }}" value="{{ old('first_name') }}" required aria-describedby="error-first_name">
                 <div class="field-underline"></div>
               </div>
+              <p class="field-error" id="error-first_name" data-error-for="first_name" role="status" aria-live="polite" hidden></p>
             </div>
             <div class="field-group">
               <label class="field-label" for="last_name">{{ __('auth_ui.register.last_name') }} <span class="required">*</span></label>
               <div class="field-wrap">
                 <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <input id="last_name" name="last_name" type="text" class="field-input" placeholder="{{ __('auth_ui.register.last_name_placeholder') }}" value="{{ old('last_name') }}" required>
+                <input id="last_name" name="last_name" type="text" class="field-input" placeholder="{{ __('auth_ui.register.last_name_placeholder') }}" value="{{ old('last_name') }}" required aria-describedby="error-last_name">
                 <div class="field-underline"></div>
               </div>
+              <p class="field-error" id="error-last_name" data-error-for="last_name" role="status" aria-live="polite" hidden></p>
             </div>
           </div>
 
@@ -346,9 +366,10 @@
             <label class="field-label" for="phone">{{ __('auth_ui.register.contact_number') }}</label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.91-.82a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-              <input id="phone" name="phone" type="tel" class="field-input" placeholder="{{ __('auth_ui.register.phone_placeholder') }}" value="{{ old('phone') }}">
+              <input id="phone" name="phone" type="tel" class="field-input" placeholder="{{ __('auth_ui.register.phone_placeholder') }}" value="{{ old('phone') }}" aria-describedby="error-phone">
               <div class="field-underline"></div>
             </div>
+            <p class="field-error" id="error-phone" data-error-for="phone" role="status" aria-live="polite" hidden></p>
           </div>
 
           <div class="field-group has-suggestions fu d4">
@@ -367,7 +388,7 @@
                 aria-haspopup="listbox"
                 aria-expanded="false"
                 aria-controls="barangay-suggestions"
-                aria-describedby="barangay-status"
+                aria-describedby="barangay-status error-barangay"
                 autocomplete="off"
                 spellcheck="false"
                 data-barangay-input
@@ -385,16 +406,19 @@
                 @endforeach
               </ul>
             </div>
-            <span id="barangay-status" class="barangay-search-status" aria-live="polite">{{ __('auth_ui.register.barangay_status') }}</span>
+            <span id="barangay-status" class="sr-only" aria-live="polite">{{ __('auth_ui.register.barangay_status') }}</span>
+            <p class="field-error" id="error-barangay" data-error-for="barangay" role="status" aria-live="polite" hidden></p>
           </div>
 
           <div class="field-group fu d4">
             <label class="field-label" for="password">{{ __('auth_ui.common.password') }} <span class="required">*</span></label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-              <input id="password" name="password" type="password" class="field-input" placeholder="{{ __('auth_ui.register.password_placeholder') }}" required autocomplete="new-password">
+              <input id="password" name="password" type="password" class="field-input" placeholder="{{ __('auth_ui.register.password_placeholder') }}" required autocomplete="new-password" aria-describedby="error-password">
+              @include('auth.partials.password-toggle', ['target' => 'password'])
               <div class="field-underline"></div>
             </div>
+            <p class="field-error" id="error-password" data-error-for="password" role="status" aria-live="polite" hidden></p>
             @include('auth.partials.password-requirements', ['passwordTarget' => 'password'])
           </div>
 
@@ -402,9 +426,11 @@
             <label class="field-label" for="password_confirmation">{{ __('auth_ui.common.confirm_password') }} <span class="required">*</span></label>
             <div class="field-wrap">
               <span class="field-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-              <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="{{ __('auth_ui.register.confirm_password_placeholder') }}" required autocomplete="new-password">
+              <input id="password_confirmation" name="password_confirmation" type="password" class="field-input" placeholder="{{ __('auth_ui.register.confirm_password_placeholder') }}" required autocomplete="new-password" aria-describedby="error-password_confirmation">
+              @include('auth.partials.password-toggle', ['target' => 'password_confirmation'])
               <div class="field-underline"></div>
             </div>
+            <p class="field-error" id="error-password_confirmation" data-error-for="password_confirmation" role="status" aria-live="polite" hidden></p>
           </div>
 
           <label class="field-terms fu d4">
@@ -413,9 +439,10 @@
                 resident has already filled in. rel="noopener" because the target is
                 a new browsing context.
             --}}
-            <input type="checkbox" name="terms" required>
+            <input type="checkbox" name="terms" required aria-describedby="error-terms">
             <span class="field-terms-label">{{ __('auth_ui.register.terms_prefix') }} <span class="required">*</span> <a href="{{ route('terms') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.terms') }}</a> {{ __('auth_ui.register.and') }} <a href="{{ route('privacy') }}" target="_blank" rel="noopener">{{ __('auth_ui.register.privacy') }}</a> {{ __('auth_ui.register.terms_suffix') }}</span>
           </label>
+          <p class="field-error field-error--terms" id="error-terms" data-error-for="terms" role="status" aria-live="polite" hidden></p>
 
           <button type="submit" class="btn-submit fu d5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>

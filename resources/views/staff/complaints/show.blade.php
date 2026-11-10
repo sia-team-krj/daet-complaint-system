@@ -96,6 +96,44 @@
             </div>
         @endif
 
+        @if($complaint->isModerationFlagged() || $complaint->hidden_from_public)
+            <section class="tr-card" aria-labelledby="complaint-flag-notice-title" style="margin-bottom: 16px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--status-progress-dot, #f59e0b) 35%, var(--line-soft, #DCE5F1)); background: var(--status-progress-bg, #FEF3C7); color: var(--status-progress-text, #92400E);">
+                <div style="display:flex; align-items:flex-start; gap:12px;">
+                    <span aria-hidden="true" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:999px; background: rgba(245,158,11,0.18); color: var(--status-progress-text, #92400E); flex-shrink:0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </span>
+                    <div style="min-width:0; display:grid; gap:6px;">
+                        <h2 id="complaint-flag-notice-title" style="margin:0; font-size:14px; font-weight:700; color: var(--navy-900, #142D50);">{{ __('staff.flag_notice.title') }}</h2>
+                        <p style="margin:0; font-size:13px; line-height:1.5;">
+                            @if($complaint->isModerationFlagged())
+                                <strong>{{ $complaint->moderationLabel() }}</strong>
+                                @if(! is_null($complaint->spam_score))
+                                    · {{ __('staff.flag_notice.score', ['score' => $complaint->spam_score]) }}
+                                @endif
+                                @if($complaint->duplicate_of_id && $complaint->duplicateOf)
+                                    · {{ __('staff.flag_notice.similar', ['percent' => (int) round(($complaint->similarity_score ?? 0) * 100)]) }}
+                                @endif
+                            @endif
+                            @if($complaint->hidden_from_public)
+                                @if($complaint->isModerationFlagged())<br>@endif
+                                <strong>{{ __('staff.flag_notice.hidden_public') }}</strong>
+                            @endif
+                        </p>
+                        @if($complaint->isModerationFlagged() && is_array($complaint->spam_reasons) && count($complaint->spam_reasons))
+                            <ul style="margin:2px 0 0; padding-left:18px; font-size:12px; line-height:1.45; color: var(--navy-900, #142D50);">
+                                @foreach($complaint->spam_reasons as $reason)
+                                    <li>{{ $reason }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                        @if($complaint->duplicate_of_id && $complaint->duplicateOf)
+                            <a href="{{ route('staff.complaints.show', $complaint->duplicateOf) }}" style="font-size:12px; font-weight:600; color: var(--navy-900, #142D50); text-decoration: underline;">{{ __('staff.flag_notice.compare', ['ticket' => $complaint->duplicateOf->ticket_id]) }}</a>
+                        @endif
+                    </div>
+                </div>
+            </section>
+        @endif
+
         {{-- Breadcrumb Back Link --}}
         <nav class="pt-back-row" style="background: transparent; padding: 0 0 16px;">
             <a href="{{ route('staff.dashboard') }}" class="pt-back" style="color: #10294B; font-weight: 600; font-size: 13px;">
@@ -134,6 +172,29 @@
             {{-- MAIN COLUMN: Description, Location, Evidence, Review Form --}}
             <div class="staff-detail-col-main" style="display: flex; flex-direction: column; gap: 20px; min-width: 0;">
                 
+                {{-- 1. Resident Information Card --}}
+                <div class="tr-card workspace-card">
+                    <div class="workspace-card__header">
+                        <div class="workspace-card__icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <h2>Resident information</h2>
+                    </div>
+                    @php $residentAlias = $complaint->user?->staff_safe_name ?? 'Resident unavailable'; @endphp
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #10294B; color: #E9B943; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0;">
+                            {{ strtoupper(substr($residentAlias, 0, 1)) }}
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 14px; color: #142D50;">{{ $residentAlias }}</strong>
+                            <span style="font-size: 11px; color: #64748B;">Identity protected · Staff view</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 11px; color: #64748B; line-height: 1.45; margin: 0; border-top: 1px solid var(--line-soft, #DCE5F1); padding-top: 8px;">
+                        Strict privacy controls apply. Personal contact details remain confidential.
+                    </p>
+                </div>
+
                 {{-- 1. Complaint Description Card --}}
                 <div class="tr-card workspace-card">
                     <div class="workspace-card__header">
@@ -167,6 +228,72 @@
                         <div style="height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748B; gap: 6px; background: #F8FAFC; font-size: 13px;">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                             <span>No exact location coordinates provided</span>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- 3. Activity History Timeline Card --}}
+                <div class="tr-card workspace-card">
+                    <div class="workspace-card__header">
+                        <div class="workspace-card__icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <h2>Activity history timeline</h2>
+                    </div>
+
+                    @if($complaint->logs->isEmpty())
+                        <p style="color: #64748B; font-size: 13px; margin: 0; text-align: center; padding: 12px 0;">No activity logs recorded yet.</p>
+                    @else
+                        <div style="position: relative; padding-left: 18px; display: flex; flex-direction: column; gap: 16px;">
+                            <div style="position: absolute; left: 4px; top: 6px; bottom: 6px; width: 2px; background: #E2E8F0;"></div>
+                            @foreach($complaint->logs->sortByDesc('created_at') as $log)
+                                <div style="position: relative; font-size: 12px;">
+                                    <div style="position: absolute; left: -18px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: {{ $log->is_internal ? '#D97706' : '#10294B' }}; border: 2px solid #FFFFFF;"></div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
+                                        <strong style="color: #142D50;">{{ $log->actor->staff_actor_name ?? 'System' }}</strong>
+                                        <span style="font-size: 10px; color: #64748B;">{{ $log->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    @if($log->previous_status && $log->new_status)
+                                        <div style="display: inline-block; padding: 2px 6px; background: #F1F5F9; border-radius: 10px; font-size: 10px; font-weight: 600; color: #10294B; margin-bottom: 4px;">
+                                            {{ $log->previous_status }} &rarr; {{ $log->new_status }}
+                                        </div>
+                                    @endif
+                                    @if($log->comment)
+                                        <p style="margin: 3px 0; color: #334155; line-height: 1.45;">{{ $log->comment }}</p>
+                                    @endif
+
+                                    {{-- The proof this update carried, and where each
+                                         photograph was taken. A photo of a repair
+                                         only means something if the place it was
+                                         taken is on the record. --}}
+                                    @if($log->documentation_images)
+                                        @php $evidenceRows = $log->documentation_evidence; @endphp
+                                        <div class="proof-timeline">
+                                            @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                                                @php $evidenceRow = $evidenceRows[$documentationIndex] ?? null; @endphp
+                                                <figure class="proof-timeline__item">
+                                                    <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
+                                                        <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('staff.proof.timeline_alt', ['index' => $documentationIndex + 1]) }}" loading="lazy">
+                                                    </a>
+                                                    @if($evidenceRow?->hasLocation())
+                                                        <figcaption class="proof-timeline__location">
+                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                            <span>{{ $evidenceRow->locationLabel() }}</span>
+                                                        </figcaption>
+                                                    @else
+                                                        <figcaption class="proof-timeline__location proof-timeline__location--none">
+                                                            {{ __('staff.proof.no_location') }}
+                                                        </figcaption>
+                                                    @endif
+                                                </figure>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                    <span style="font-size: 10px; color: {{ $log->is_internal ? '#D97706' : '#15803D' }}; font-weight: 600;">
+                                        {{ $log->is_internal ? 'Internal Staff Note' : 'Public Update' }}
+                                    </span>
+                                </div>
+                            @endforeach
                         </div>
                     @endif
                 </div>
@@ -214,6 +341,7 @@
                         </div>
                     </div>
 
+                    @if($user->canVerifyComplaints())
                     <form method="POST" action="{{ route('staff.complaints.review', $complaint) }}" style="display: flex; flex-direction: column; gap: 16px;">
                         @csrf
                         @method('PUT')
@@ -249,8 +377,17 @@
                         </div>
                         <button type="submit" class="tr-button" style="width: 100%; justify-content: center; min-height: 44px; background: #10294B; color: #FFFFFF; font-weight: 700; border-radius: 6px; font-size: 13px;">
                             Save review decision
-                        </button>
+                            </button>
                     </form>
+                    @else
+                    {{-- The page never advertises a control the service would
+                         refuse: non-verifiers see the state of the review, not
+                         a form that bounces them. The server refuses the write
+                         too — ComplaintVerificationService::authorize. --}}
+                    <div class="staff-action-panel__state" style="margin: 0;">
+                        <p style="margin: 0;">{{ __('staff.verification.read_only_body') }}</p>
+                    </div>
+                    @endif
                 </div>
 
                 {{-- 5. Verification follow-up — the two actions the November
@@ -353,39 +490,19 @@
             {{-- SIDE COLUMN: Resident Info, Official Response, Activity Timeline --}}
             <div class="staff-detail-col-side" style="display: flex; flex-direction: column; gap: 20px; min-width: 0;">
                 
-                {{-- 1. Resident Information Card --}}
-                <div class="tr-card workspace-card">
-                    <div class="workspace-card__header">
-                        <div class="workspace-card__icon">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <h2>Resident information</h2>
-                    </div>
-                    @php $residentAlias = $complaint->user?->staff_safe_name ?? 'Resident unavailable'; @endphp
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #10294B; color: #E9B943; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0;">
-                            {{ strtoupper(substr($residentAlias, 0, 1)) }}
-                        </div>
-                        <div>
-                            <strong style="display: block; font-size: 14px; color: #142D50;">{{ $residentAlias }}</strong>
-                            <span style="font-size: 11px; color: #64748B;">Identity protected · Staff view</span>
-                        </div>
-                    </div>
-                    <p style="font-size: 11px; color: #64748B; line-height: 1.45; margin: 0; border-top: 1px solid var(--line-soft, #DCE5F1); padding-top: 8px;">
-                        Strict privacy controls apply. Personal contact details remain confidential.
-                    </p>
-                </div>
-
                 {{-- 2. Public presentation — moderation, not publication. The
                      resident's visibility choice is theirs alone; the office can
-                     withhold or redact the public copy. Shared with the admin
-                     ticket page so the two cannot drift. --}}
-                <x-moderation-panel
-                    class="moderation-panel--light"
-                    :complaint="$complaint"
-                    :action="route('staff.complaints.moderate', $complaint)"
-                    id-prefix="staff"
-                />
+                     withhold or redact the public copy. Shown only to verifiers
+                     so field staff handling on-site work do not alter public
+                     presentation. --}}
+                @if($user->canVerifyComplaints())
+                    <x-moderation-panel
+                        class="moderation-panel--light"
+                        :complaint="$complaint"
+                        :action="route('staff.complaints.moderate', $complaint)"
+                        id-prefix="staff"
+                    />
+                @endif
 
                 {{-- 3. Official Response Form Card (when verified) --}}
                 @if($complaint->isVerified() && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Rejected && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Closed)
@@ -451,71 +568,7 @@
                     </div>
                 @endif
 
-                {{-- 3. Activity History Timeline Card --}}
-                <div class="tr-card workspace-card">
-                    <div class="workspace-card__header">
-                        <div class="workspace-card__icon">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        </div>
-                        <h2>Activity history timeline</h2>
-                    </div>
 
-                    @if($complaint->logs->isEmpty())
-                        <p style="color: #64748B; font-size: 13px; margin: 0; text-align: center; padding: 12px 0;">No activity logs recorded yet.</p>
-                    @else
-                        <div style="position: relative; padding-left: 18px; display: flex; flex-direction: column; gap: 16px;">
-                            <div style="position: absolute; left: 4px; top: 6px; bottom: 6px; width: 2px; background: #E2E8F0;"></div>
-                            @foreach($complaint->logs->sortByDesc('created_at') as $log)
-                                <div style="position: relative; font-size: 12px;">
-                                    <div style="position: absolute; left: -18px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: {{ $log->is_internal ? '#D97706' : '#10294B' }}; border: 2px solid #FFFFFF;"></div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                                        <strong style="color: #142D50;">{{ $log->actor->staff_actor_name ?? 'System' }}</strong>
-                                        <span style="font-size: 10px; color: #64748B;">{{ $log->created_at->diffForHumans() }}</span>
-                                    </div>
-                                    @if($log->previous_status && $log->new_status)
-                                        <div style="display: inline-block; padding: 2px 6px; background: #F1F5F9; border-radius: 10px; font-size: 10px; font-weight: 600; color: #10294B; margin-bottom: 4px;">
-                                            {{ $log->previous_status }} &rarr; {{ $log->new_status }}
-                                        </div>
-                                    @endif
-                                    @if($log->comment)
-                                        <p style="margin: 3px 0; color: #334155; line-height: 1.45;">{{ $log->comment }}</p>
-                                    @endif
-
-                                    {{-- The proof this update carried, and where each
-                                         photograph was taken. A photo of a repair
-                                         only means something if the place it was
-                                         taken is on the record. --}}
-                                    @if($log->documentation_images)
-                                        @php $evidenceRows = $log->documentation_evidence; @endphp
-                                        <div class="proof-timeline">
-                                            @foreach($log->documentation_images as $documentationIndex => $documentationPath)
-                                                @php $evidenceRow = $evidenceRows[$documentationIndex] ?? null; @endphp
-                                                <figure class="proof-timeline__item">
-                                                    <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
-                                                        <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('staff.proof.timeline_alt', ['index' => $documentationIndex + 1]) }}" loading="lazy">
-                                                    </a>
-                                                    @if($evidenceRow?->hasLocation())
-                                                        <figcaption class="proof-timeline__location">
-                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                                            <span>{{ $evidenceRow->locationLabel() }}</span>
-                                                        </figcaption>
-                                                    @else
-                                                        <figcaption class="proof-timeline__location proof-timeline__location--none">
-                                                            {{ __('staff.proof.no_location') }}
-                                                        </figcaption>
-                                                    @endif
-                                                </figure>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    <span style="font-size: 10px; color: {{ $log->is_internal ? '#D97706' : '#15803D' }}; font-weight: 600;">
-                                        {{ $log->is_internal ? 'Internal Staff Note' : 'Public Update' }}
-                                    </span>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
 
             </div>
 

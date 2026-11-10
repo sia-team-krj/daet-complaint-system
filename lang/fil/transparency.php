@@ -95,6 +95,7 @@ return [
             'location' => 'Lugar',
             'status' => 'Estado',
             'reported' => 'Nai-file',
+            'department_pending' => 'Wala pang departamento',
         ],
         'barangay' => 'Barangay',
     ],

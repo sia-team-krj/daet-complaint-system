@@ -20,6 +20,7 @@ use App\Support\TicketFingerprint;
 use App\Services\AuditDirectory;
 use App\Services\ComplaintModerationService;
 use App\Services\ComplaintSlaService;
+use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
 use App\Services\ComplaintWorkService;
 use App\Services\EmailVerificationService;
@@ -1210,7 +1211,7 @@ class AdminController extends Controller
     /**
      * Update complaint status, department, or staff assignment
      */
-    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintWorkService $work): RedirectResponse
+    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintWorkService $work, ComplaintUpdateDelivery $ticketUpdates): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['nullable', Rule::enum(ComplaintStatus::class)],
@@ -1479,6 +1480,25 @@ class AdminController extends Controller
 
             if ($assignedStaff !== null && (int) $assignedStaff->id !== (int) $oldAssignedStaffId) {
                 $notifications->complaintAssigned($complaint, $assignedStaff, Auth::user());
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        // The resident gets the same news by email, best-effort for the same
+        // reason. A review decision takes precedence over the status change
+        // it may ride on, matching the in-app notifications above.
+        try {
+            $reviewChangedForEmail = $reviewInputProvided
+                && isset($updates['review_status'])
+                && (string) $updates['review_status'] !== $oldReviewStatus->value;
+            $statusChangedForEmail = isset($updates['status'])
+                && (string) $updates['status'] !== $oldStatus->value;
+
+            if ($reviewChangedForEmail) {
+                $ticketUpdates->reviewUpdated($complaint, ComplaintReviewStatus::from($updates['review_status']));
+            } elseif ($statusChangedForEmail) {
+                $ticketUpdates->statusChanged($complaint, ComplaintStatus::from($updates['status']), $validated['staff_note'] ?? null);
             }
         } catch (Throwable $exception) {
             report($exception);

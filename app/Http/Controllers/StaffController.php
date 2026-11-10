@@ -6,7 +6,6 @@ use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use App\Enums\VerificationMethod;
-use App\Mail\ComplaintUpdatedMail;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
 use App\Models\User;
@@ -14,6 +13,7 @@ use App\Http\Controllers\Concerns\SoftNavigation;
 use App\Services\ActivityLogger;
 use App\Services\ComplaintModerationService;
 use App\Services\ComplaintSlaService;
+use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
 use App\Services\ComplaintWorkService;
 use App\Services\NotificationService;
@@ -25,7 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -87,38 +87,24 @@ class StaffController extends Controller
             'avgDays' => $this->calculateAvgResolutionDays($departmentId),
         ];
 
-        $priorityFilter = $request->string('priority_filter')->toString();
         $prioritySearch = $request->string('q')->toString();
 
-        $openPriorityBase = (clone $baseQuery)->whereIn('status', [
-            ComplaintStatus::Submitted->value,
-            ComplaintStatus::UnderReview->value,
-            ComplaintStatus::InProgress->value,
-        ]);
+        // Priority work is only complaints the office has verified. Anything
+        // still pending review (including spam/duplicate-flagged reports) must
+        // be settled by a verifier before it can appear here.
+        $openPriorityBase = (clone $baseQuery)
+            ->whereIn('status', [
+                ComplaintStatus::Submitted->value,
+                ComplaintStatus::UnderReview->value,
+                ComplaintStatus::InProgress->value,
+            ])
+            ->where('review_status', ComplaintReviewStatus::Verified->value);
+
         $priorityCounts = [
             'all' => (clone $openPriorityBase)->count(),
-            'pending' => (clone $openPriorityBase)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
-            'needs_review' => (clone $openPriorityBase)->where('review_status', ComplaintReviewStatus::NeedsInformation->value)->count(),
-            'possible_duplicate' => (clone $openPriorityBase)->where(function ($query) {
-                $query->where('review_status', ComplaintReviewStatus::Duplicate->value)
-                    ->orWhereNotNull('duplicate_of_id')
-                    ->orWhereIn('spam_status', ['review', 'spam']);
-            })->count(),
         ];
 
         $priorityQuery = (clone $openPriorityBase)->with(['user:id,display_alias,barangay']);
-
-        if ($priorityFilter === 'pending') {
-            $priorityQuery->where('review_status', ComplaintReviewStatus::Pending->value);
-        } elseif ($priorityFilter === 'needs_review') {
-            $priorityQuery->where('review_status', ComplaintReviewStatus::NeedsInformation->value);
-        } elseif ($priorityFilter === 'possible_duplicate') {
-            $priorityQuery->where(function ($query) {
-                $query->where('review_status', ComplaintReviewStatus::Duplicate->value)
-                    ->orWhereNotNull('duplicate_of_id')
-                    ->orWhereIn('spam_status', ['review', 'spam']);
-            });
-        }
 
         if ($prioritySearch !== '') {
             $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $prioritySearch).'%';
@@ -130,7 +116,6 @@ class StaffController extends Controller
         }
 
         $priorityComplaints = $priorityQuery
-            ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
             ->oldest('created_at')
             ->limit(5)
@@ -174,7 +159,6 @@ class StaffController extends Controller
             'priorityCounts',
             'recentActivity',
             'user',
-            'priorityFilter',
             'prioritySearch'
         ));
     }
@@ -326,17 +310,6 @@ class StaffController extends Controller
         $complaints = $this->complaintsQueue($request, $user, $sla);
         $queueFingerprint = QueueFingerprint::for($complaints);
 
-        $stats = [
-            'new' => Complaint::where('department_id', $user->department_id)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
-            'inProgress' => Complaint::where('department_id', $user->department_id)->where('status', ComplaintStatus::InProgress->value)->count(),
-            'resolvedThisMonth' => Complaint::where('department_id', $user->department_id)
-                ->where('status', ComplaintStatus::Resolved->value)
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->count(),
-            'avgDays' => $this->calculateAvgResolutionDays($user->department_id),
-        ];
-
         $reviewStatusOptions = ComplaintReviewStatus::cases();
         $priorityOptions = ComplaintPriority::cases();
 
@@ -346,7 +319,6 @@ class StaffController extends Controller
 
         return view('staff.complaints.index', compact(
             'department',
-            'stats',
             'complaints',
             'status',
             'reviewStatus',
@@ -475,16 +447,123 @@ class StaffController extends Controller
         $complaints = $this->complaintsQueue($request, Auth::user(), $sla);
         $slaSummaries = $this->slaSummariesFor($complaints);
 
+        $total = $complaints->total();
+        $perPage = $complaints->perPage();
+        $currentPage = $complaints->currentPage();
+        $from = $total > 0 ? ($currentPage - 1) * $perPage + 1 : 0;
+        $to = min($currentPage * $perPage, $total);
+
         return response()->json([
             'list' => view('staff.complaints.partials.list', [
                 'complaints' => $complaints,
                 'slaSummaries' => $slaSummaries,
             ])->render(),
-            'pagination' => view('staff.complaints.partials.pagination', [
-                'complaints' => $complaints,
-            ])->render(),
+            'pagination' => view('staff.complaints.partials.pagination', compact('complaints', 'total', 'perPage', 'currentPage', 'from', 'to'))->render(),
             'fingerprint' => QueueFingerprint::for($complaints),
         ]);
+    }
+
+    /**
+     * Verification queue for staff who can verify complaints.
+     *
+     * A separate page from the general complaints queue so verifiers can
+     * manage items that need verification or are waiting on the resident.
+     */
+    public function verificationIndex(Request $request, ComplaintSlaService $sla): View
+    {
+        $user = Auth::user();
+        abort_unless($user->canVerifyComplaints(), 403, 'Only a department verifier or an administrator can access the verification queue.');
+
+        $request = $this->constrainVerificationReview($request);
+
+        $department = $user->department;
+        $review = $request->get('review', ComplaintReviewStatus::Pending->value);
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $priority = $request->get('priority');
+        $overdue = $request->get('overdue') === '1';
+
+        $complaints = $this->complaintsQueue($request, $user, $sla);
+        $queueFingerprint = QueueFingerprint::for($complaints);
+        $slaSummaries = $this->slaSummariesFor($complaints);
+
+        $base = Complaint::where('department_id', $user->department_id);
+        $counts = [
+            'pending' => (clone $base)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
+            'needs_information' => (clone $base)->where('review_status', ComplaintReviewStatus::NeedsInformation->value)->count(),
+        ];
+
+        $priorityOptions = ComplaintPriority::cases();
+
+        return view('staff.verification.index', compact(
+            'department',
+            'complaints',
+            'review',
+            'counts',
+            'search',
+            'status',
+            'priority',
+            'priorityOptions',
+            'slaSummaries',
+            'queueFingerprint',
+            'user',
+            'overdue'
+        ));
+    }
+
+    /**
+     * The verification queue's regions, for the live queue.
+     */
+    public function verificationBrowser(Request $request, ComplaintSlaService $sla): JsonResponse|RedirectResponse
+    {
+        $user = Auth::user();
+        if (! $user->canVerifyComplaints()) {
+            abort(403, 'Only a department verifier or an administrator can access the verification queue.');
+        }
+
+        $request = $this->constrainVerificationReview($request);
+
+        if (! $this->wantsFragments($request)) {
+            return redirect()->to($this->fragmentFallbackUrl($request, 'staff.verification.index'));
+        }
+
+        $complaints = $this->complaintsQueue($request, $user, $sla);
+        $slaSummaries = $this->slaSummariesFor($complaints);
+
+        $total = $complaints->total();
+        $perPage = $complaints->perPage();
+        $currentPage = $complaints->currentPage();
+        $from = $total > 0 ? ($currentPage - 1) * $perPage + 1 : 0;
+        $to = min($currentPage * $perPage, $total);
+
+        return response()->json([
+            'list' => view('staff.complaints.partials.list', [
+                'complaints' => $complaints,
+                'slaSummaries' => $slaSummaries,
+            ])->render(),
+            'pagination' => view('staff.complaints.partials.pagination', compact('complaints', 'total', 'perPage', 'currentPage', 'from', 'to'))->render(),
+            'fingerprint' => QueueFingerprint::for($complaints),
+        ]);
+    }
+
+    /**
+     * Keep the verification page focused on verification review states.
+     */
+    private function constrainVerificationReview(Request $request): Request
+    {
+        $allowed = [
+            ComplaintReviewStatus::Pending->value,
+            ComplaintReviewStatus::NeedsInformation->value,
+        ];
+
+        $review = $request->get('review');
+        if (! in_array($review, $allowed, true)) {
+            $review = ComplaintReviewStatus::Pending->value;
+        }
+
+        $request->merge(['review' => $review]);
+
+        return $request;
     }
 
     /**
@@ -580,6 +659,7 @@ class StaffController extends Controller
             'logs.evidences',
             'reviewedBy',
             'verifyingStaff',
+            'duplicateOf',
             'informationRequests.requester:id,display_alias,first_name,last_name,role',
         ]);
 
@@ -681,7 +761,7 @@ class StaffController extends Controller
     /**
      * Review complaint legitimacy and confirm the operational priority.
      */
-    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications): RedirectResponse
+    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintUpdateDelivery $ticketUpdates): RedirectResponse
     {
         $user = Auth::user();
 
@@ -770,6 +850,12 @@ class StaffController extends Controller
             } catch (Throwable $exception) {
                 report($exception);
             }
+
+            try {
+                $ticketUpdates->reviewUpdated($complaint, $reviewStatus);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }
 
         return redirect()
@@ -796,6 +882,10 @@ class StaffController extends Controller
 
         if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
             return back()->with('error', 'You cannot moderate complaints outside your department.');
+        }
+
+        if (! $user->canVerifyComplaints()) {
+            abort(403, 'Only a department verifier or an administrator can moderate public presentation.');
         }
 
         $validated = $request->validate([
@@ -847,7 +937,7 @@ class StaffController extends Controller
      * (ComplaintWorkService): a repair is proven by a photograph of it, and
      * the same rule applies to an administrator as to a department.
      */
-    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications, ComplaintWorkService $work): RedirectResponse
+    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications, ComplaintWorkService $work, ComplaintUpdateDelivery $ticketUpdates): RedirectResponse
     {
         $user = Auth::user();
 
@@ -1008,13 +1098,7 @@ class StaffController extends Controller
         // abort the request after the status was already saved and before the
         // in-app notification was created, leaving the resident with neither.
         try {
-            $recipient = $complaint->user;
-
-            if ($recipient?->email) {
-                Mail::to($recipient->email)->send(
-                    new ComplaintUpdatedMail($complaint, $newStatus->value, $validated['note'])
-                );
-            }
+            $ticketUpdates->statusChanged($complaint, $newStatus, $validated['note']);
         } catch (Throwable $exception) {
             report($exception);
         }

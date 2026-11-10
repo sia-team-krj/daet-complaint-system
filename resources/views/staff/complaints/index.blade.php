@@ -14,48 +14,6 @@
         </div>
     </header>
 
-    {{-- ════════════ STAT STRIP (Compact) ════════════ --}}
-    <div class="tr-container" style="max-width: none; padding: 0 24px;">
-        <div class="tr-stats" role="list" aria-label="{{ __('staff.queue') }}">
-            <div class="tr-stat" role="listitem">
-                <span class="tr-stat__icon tr-stat__icon--navy">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>
-                </span>
-                <span>
-                    <span class="tr-stat__value">{{ $stats['new'] ?? 0 }}</span>
-                    <span class="tr-stat__label">{{ __('staff.stats.pending_review') }}</span>
-                </span>
-            </div>
-            <div class="tr-stat" role="listitem">
-                <span class="tr-stat__icon tr-stat__icon--amber">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>
-                </span>
-                <span>
-                    <span class="tr-stat__value">{{ $stats['inProgress'] ?? 0 }}</span>
-                    <span class="tr-stat__label">{{ __('staff.stats.in_progress') }}</span>
-                </span>
-            </div>
-            <div class="tr-stat" role="listitem">
-                <span class="tr-stat__icon tr-stat__icon--green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                </span>
-                <span>
-                    <span class="tr-stat__value">{{ $stats['resolvedThisMonth'] ?? 0 }}</span>
-                    <span class="tr-stat__label">{{ __('staff.stats.resolved_this_month') }}</span>
-                </span>
-            </div>
-            <div class="tr-stat" role="listitem">
-                <span class="tr-stat__icon tr-stat__icon--sky">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                </span>
-                <span>
-                    <span class="tr-stat__value">{{ $stats['avgDays'] ?? '—' }}</span>
-                    <span class="tr-stat__label">{{ __('staff.stats.avg_days_open') }}</span>
-                </span>
-            </div>
-        </div>
-    </div>
-
     {{-- ════════════ FILTER BAR ════════════ --}}
     <section aria-labelledby="queue-filters-title" class="tr-register" style="max-width: none;">
         <div class="tr-container" style="max-width: none; padding: 0 24px;">
@@ -77,7 +35,7 @@
                     </label>
                     <div class="tr-selects">
                         <div class="tr-select tr-select--department">
-                            <select name="status" class="staff-queue-filter-select" aria-label="Status" onchange="this.form.submit()">
+                            <select name="status" class="staff-queue-filter-select" aria-label="Status">
                                 <option value="">All statuses</option>
                                 @foreach(['Submitted', 'Under Review', 'In Progress', 'Resolved', 'Rejected'] as $value)
                                     <option value="{{ $value }}" @selected(($status ?? '') === $value)>{{ $value }}</option>
@@ -86,7 +44,7 @@
                             <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                         <div class="tr-select tr-select--category">
-                            <select name="review" aria-label="Review status" onchange="this.form.submit()">
+                            <select name="review" aria-label="Review status">
                                 <option value="">All review statuses</option>
                                 @foreach($reviewStatusOptions as $reviewOption)
                                     <option value="{{ $reviewOption->value }}" @selected(($reviewStatus ?? '') === $reviewOption->value)>{{ $reviewOption->label() }}</option>
@@ -95,7 +53,7 @@
                             <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                         <div class="tr-select tr-select--sort">
-                            <select name="priority" aria-label="Priority" onchange="this.form.submit()">
+                            <select name="priority" aria-label="Priority">
                                 <option value="">All priorities</option>
                                 @foreach($priorityOptions as $priorityOption)
                                     <option value="{{ $priorityOption->value }}" @selected(($priority ?? '') === $priorityOption->value)>{{ $priorityOption->label() }}</option>
@@ -157,33 +115,7 @@
     .staff-content .transparency-page { padding-top: 0; }
     .staff-content .tr-banner { padding-top: 48px; }
 
-    .transparency-page .tr-stats,
     .transparency-page .tr-container { width: 100%; }
-
-    /* Compact Stat Cards */
-    .transparency-page .tr-stats {
-        margin-top: -24px;
-        gap: 12px;
-    }
-    .transparency-page .tr-stat {
-        padding: 10px 14px;
-        gap: 10px;
-    }
-    .transparency-page .tr-stat__value {
-        font-size: 18px;
-        line-height: 1.1;
-    }
-    .transparency-page .tr-stat__label {
-        font-size: 11px;
-    }
-    .transparency-page .tr-stat__icon {
-        width: 30px;
-        height: 30px;
-    }
-    .transparency-page .tr-stat__icon svg {
-        width: 15px;
-        height: 15px;
-    }
 
     .staff-queue-item {
         border: 1px solid var(--line-soft, #DCE5F1);

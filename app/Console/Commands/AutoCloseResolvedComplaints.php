@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
+use App\Services\ComplaintUpdateDelivery;
 use App\Services\NotificationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class AutoCloseResolvedComplaints extends Command
 
     protected $description = 'Automatically close resolved complaints after 7 days without resident confirmation.';
 
-    public function handle(NotificationService $notifications): int
+    public function handle(NotificationService $notifications, ComplaintUpdateDelivery $ticketUpdates): int
     {
         $days = max(1, (int) $this->option('days'));
         $cutoff = now()->subDays($days);
@@ -104,6 +105,12 @@ class AutoCloseResolvedComplaints extends Command
                             ComplaintStatus::Closed->label(),
                             null,
                         );
+                    } catch (Throwable $exception) {
+                        report($exception);
+                    }
+
+                    try {
+                        $ticketUpdates->autoClosed($complaint, $days);
                     } catch (Throwable $exception) {
                         report($exception);
                     }

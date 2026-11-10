@@ -11,6 +11,7 @@ return [
     'reset_status' => 'Kung may account ang email na iyon, ang link ng pag-reset ng password ay on its way.',
     'registration_created' => 'Ang account mo ay gawa. Ilagay ang code na ipinadala natin sa iyong email.',
     'registration_created_error' => 'Ang account mo ay gawa, ngunit hindi natin nagagamit ng email. Gamitin ang opsyon sa pag-resend.',
+    'email_unique' => 'Naka-rehistro na ang email address na ito. Mag-sign in na lang, o gumamit ng ibang email.',
     'email_verified_and_updated' => 'Ang iyong email address ay naka-verify at na-update na.',
     'email_verified' => 'Ang iyong email address ay naka-verify na.',
     'start_email_change_before_resend' => 'Magsimulang mag-change ng email bago mag-hingi ng bagong code.',

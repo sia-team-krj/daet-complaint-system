@@ -56,6 +56,13 @@
         .ds-grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
         @media (max-width: 900px) { .ds-grid-2 { grid-template-columns: 1fr; } }
 
+        /* Password visibility toggle demo — the auth (dark) surface (§5.41) */
+        .ds-password-demo { max-width: 360px; background: #142D4F; border-radius: 12px; padding: 20px; }
+        .ds-password-demo__label { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 8px; font-family: var(--font-sans); }
+        .ds-password-demo__icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(201,168,76,.85); pointer-events: none; display: inline-flex; }
+        .ds-password-demo__input { background: #1F3D60; border: 1px solid rgba(255,255,255,.22); border-radius: 4px; padding: 12px 14px 12px 42px; font-family: var(--font-sans); font-size: 13px; color: #ffffff; caret-color: #ffffff; outline: none; transition: border-color .2s, box-shadow .2s; }
+        .ds-password-demo__input:focus { border-color: #D4A947; box-shadow: 0 0 0 3px rgba(212,169,71,.2); }
+
         .ds-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .ds-table th, .ds-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
         .ds-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: var(--navy-50); }
@@ -347,6 +354,20 @@
         </div>
     </section>
 
+
+    {{-- ═══ PASSWORD VISIBILITY TOGGLE (§5.41) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-password-toggle">
+        <h2 class="ds-h2" id="ds-password-toggle">Password visibility toggle — §5.41</h2>
+        <p class="ds-note">Auth (dark) password fields only. A 44px button at the right edge of the field, invisible until the input has text — then it springs in. It flips the input between <code>type="password"</code> and <code>type="text"</code>; two stacked feather glyphs (<code>eye</code>/<code>eye-off</code>) cross-fade off <code>aria-pressed</code>, and the accessible name flips with them (<code>auth_ui.common.show_password</code> / <code>auth_ui.common.hide_password</code>, en+fil). Markup comes from <code>auth.partials.password-toggle</code>; behaviour from <code>initializePasswordToggles()</code> in <code>app.js</code>. The input keeps its left icon; <code>.field-wrap:has(.field-toggle) .field-input</code> reserves the right gutter so text never runs under the button. The settings page keeps its light “Show”/“Hide” text button — different surface, not merged. Try it (type into the field):</p>
+        <div class="ds-password-demo">
+            <label class="ds-password-demo__label" for="ds-password-demo">Password</label>
+            <div class="field-wrap" style="position:relative;">
+                <span class="ds-password-demo__icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                <input id="ds-password-demo" type="password" class="field-input ds-password-demo__input" value="" placeholder="Type to reveal the eye…" autocomplete="off" spellcheck="false" style="width:100%; box-sizing:border-box;">
+                @include('auth.partials.password-toggle', ['target' => 'ds-password-demo'])
+            </div>
+        </div>
+    </section>
 
     {{-- ═══ STATUS PILLS / DEPT BADGES / CATEGORY ICONS ═══ --}}
     <section class="ds-section" aria-labelledby="ds-meaning">

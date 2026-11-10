@@ -1773,6 +1773,54 @@ body:has(.settings-page) > main {
 .settings-password-wrap { position: relative; display: block; }
 .settings-password-wrap .admin-input { padding-right: 88px; }
 .settings-password-toggle { width: auto; position: absolute; top: 50%; right: 6px; transform: translateY(-50%); min-height: 32px; padding: 6px 10px; font-size: 12px; }
+/* Password visibility toggle — auth (dark) password fields (docs/design-system.md §5.41).
+   Gold rgba values are the auth surface palette (same family the auth pages
+   declare page-locally); the button inherits nothing from the light bundle.
+   Hidden until the field has text (`.is-visible`, set by app.js from the
+   input's value); the two eye SVGs stack and cross-fade on toggle. */
+.field-wrap { position: relative; }
+.field-wrap:has(.field-toggle) .field-input { padding-right: 52px; }
+.field-underline { pointer-events: none; }
+.field-toggle {
+    position: absolute; right: 2px; top: 50%; z-index: 2;
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    background: transparent; border: 0; border-radius: var(--radius-sm);
+    color: rgba(201,168,76,0.85);
+    cursor: pointer; padding: 0;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    /* Hidden until app.js adds .is-visible when the input has text. */
+    opacity: 0; visibility: hidden;
+    transform: translateY(-50%) scale(0.5);
+    transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+                color 0.18s ease, background-color 0.18s ease, visibility 0s linear 0.18s;
+}
+.field-toggle.is-visible {
+    opacity: 1; visibility: visible;
+    transform: translateY(-50%) scale(1);
+    transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
+                color 0.18s ease, background-color 0.18s ease, visibility 0s;
+}
+.field-toggle:hover { color: rgba(226,192,106,1); background: rgba(201,168,76,0.10); }
+.field-toggle:focus-visible { outline: none; color: rgba(226,192,106,1); box-shadow: 0 0 0 3px rgba(212,169,71,0.35); }
+.field-wrap:focus-within .field-toggle { color: rgba(226,192,106,0.95); }
+.field-toggle[aria-pressed="true"] { color: rgba(226,192,106,1); }
+
+/* The two eye SVGs stack in the same grid cell; aria-pressed drives which is shown.
+   Swap = a small pop-in rotation, not an instant cut. */
+.field-toggle__icon {
+    grid-area: 1 / 1;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.field-toggle__icon--show { opacity: 1; transform: scale(1) rotate(0deg); }
+.field-toggle__icon--hide { opacity: 0; transform: scale(0.4) rotate(-45deg); }
+.field-toggle[aria-pressed="true"] .field-toggle__icon--show { opacity: 0; transform: scale(0.4) rotate(45deg); }
+.field-toggle[aria-pressed="true"] .field-toggle__icon--hide { opacity: 1; transform: scale(1) rotate(0deg); }
+
+@media (prefers-reduced-motion: reduce) {
+    .field-toggle, .field-toggle__icon { transition: none; }
+}
 .settings-unsaved-bar { position: sticky; bottom: 16px; z-index: 20; display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: #102545; color: #ffffff; border-radius: 8px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25); font-size: 14px; }
 .settings-unsaved-bar.is-visible { display: flex; }
 .settings-unsaved-bar .admin-button { min-height: 36px; }
@@ -5843,15 +5891,6 @@ body:has(.staff-create-page) .admin-content {
 .barangay-suggestion[aria-selected="true"] {
     color: var(--color-navy);
     background: var(--color-gold);
-}
-
-.barangay-search-status {
-    display: block;
-    min-height: 1.3em;
-    margin-top: 6px;
-    color: rgba(255, 255, 255, 0.42);
-    font-size: 10px;
-    line-height: 1.3;
 }
 
 @media (max-width: 480px) {

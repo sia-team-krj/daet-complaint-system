@@ -95,6 +95,7 @@ return [
             'location' => 'Location',
             'status' => 'Status',
             'reported' => 'Reported',
+            'department_pending' => 'Department pending',
         ],
         'barangay' => 'Barangay',
     ],

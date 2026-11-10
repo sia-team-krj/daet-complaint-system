@@ -17,6 +17,8 @@ return [
         'send_reset_link' => 'Send Reset Link',
         'update_password' => 'Update Password',
         'email_placeholder' => 'your@email.com',
+        'show_password' => 'Show password',
+        'hide_password' => 'Hide password',
     ],
 
     'titles' => [
@@ -71,7 +73,9 @@ return [
         'phone_regex' => 'Enter a valid 11-digit PH mobile number starting with 09 (e.g. 09171234567).',
         'barangay_invalid' => 'The selected barangay is not valid.',
         'password_confirmed' => 'Password confirmation does not match.',
+        'password_min_8' => 'Password must be at least 8 characters, with upper and lower case letters and a number.',
         'terms_accepted' => 'You must agree to the Terms and Conditions and the Privacy Policy.',
+        'required' => 'This field is required.',
         'terms_prefix' => 'I agree to the',
         'terms' => 'Terms and Conditions',
         'and' => 'and',

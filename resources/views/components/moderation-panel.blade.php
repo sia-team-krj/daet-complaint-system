@@ -16,8 +16,10 @@
     `moderation-panel--light`. Docs: docs/design-system.md §5.40.
 --}}
 <div {{ $attributes->merge(['class' => 'moderation-panel']) }}>
-    <h3 class="moderation-panel__title">{{ __('staff.moderation.title') }}</h3>
-    <p class="moderation-panel__lede">{{ __('staff.moderation.lede') }}</p>
+    <div class="moderation-panel__header">
+        <h3 class="moderation-panel__title">{{ __('staff.moderation.title') }}</h3>
+        <p class="moderation-panel__lede">{{ __('staff.moderation.lede') }}</p>
+    </div>
 
     <p class="moderation-panel__consent">
         <strong>{{ $complaint->is_public ? __('staff.moderation.published') : __('staff.moderation.private') }}</strong>
@@ -73,9 +75,12 @@
             </div>
         @endif
 
-        <div class="moderation-field">
-            <label for="{{ $idPrefix }}-moderation_reason">{{ __('staff.moderation.reason') }}</label>
-            <textarea id="{{ $idPrefix }}-moderation_reason" name="moderation_reason" rows="2" maxlength="1000"
+        <div class="moderation-field moderation-field--required">
+            <label for="{{ $idPrefix }}-moderation_reason">
+                {{ __('staff.moderation.reason') }}
+                <span class="moderation-required" aria-hidden="true">*</span>
+            </label>
+            <textarea id="{{ $idPrefix }}-moderation_reason" name="moderation_reason" rows="3" maxlength="1000" aria-required="true"
                       placeholder="{{ __('staff.moderation.reason_placeholder') }}">{{ old('moderation_reason', $complaint->moderation_reason) }}</textarea>
         </div>
 

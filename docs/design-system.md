@@ -1256,6 +1256,10 @@ Behaviour:
   box replaces it. Round 2 is the cap, and the page says so.
 - Moderation is available to every staff member in the department, not only
   verifiers, because it is a content decision rather than a verification one.
+- The review form itself (review decision / confirmed priority / verification
+  method) is verifier-only, like the follow-up: a non-verifier sees the
+  read-only state line (`staff.verification.read_only_body`), never a Save
+  button the service would refuse.
 - The internal note is written to the immutable log with `is_internal = true`
   and never rendered on the resident page, the public timeline or the
   transparency register.
@@ -1269,6 +1273,70 @@ Why: a staff member should not have to guess where the office's powers live,
 and the resident's consent should not look like one of them. One card grammar
 for the actions, one shared moderation markup, and no control for a decision
 that is not the office's to make.
+
+### 5.41 Password visibility toggle — `.field-toggle`
+
+Purpose: let a person read back what they typed into a password field before
+submitting — the single most common cause of "wrong password" on the sign-in
+and registration screens, and of typos in the two confirm fields. The auth
+(dark) password fields carried no affordance at all; the settings page had
+only an undocumented text "Show"/"Hide" button, which read as another action
+rather than a field affordance.
+
+Anatomy: `<button type="button" class="field-toggle"
+data-password-visibility-toggle="<input id>">` placed inside `.field-wrap`,
+to the right of the password `.field-input` and before `.field-underline`.
+Two feather glyphs (`eye` and `eye-off`) stack in the same grid cell and
+cross-fade with a small pop rotation on toggle; `aria-pressed` on the button
+is the only state CSS needs. Rendered via
+`resources/views/auth/partials/password-toggle.blade.php`
+(`@include('auth.partials.password-toggle', ['target' => '…'])`) — never
+copy-pasted inline.
+
+Visibility: **the button does not exist for the user until there is
+something to reveal.** It renders invisible (`opacity: 0; visibility: hidden;
+transform: … scale(0.5)`, `tabindex="-1"`); `app.js` adds `.is-visible` from
+the input's `input` event. Emptying the field re-masks it and re-hides the
+button. No eye floating over an empty box, ever.
+
+Variants / states:
+- **Hidden** (empty field): not tabbable, not clickable.
+- **Reveal-ready** (field has text, `aria-pressed="false"`): `eye` glyph,
+  accessible name is `auth_ui.common.show_password` (en + fil). Spring scale-in
+  when it first appears.
+- **Revealed** (`aria-pressed="true"`): input is `type="text"`; the
+  accessible name flips to `auth_ui.common.hide_password`; the glyphs
+  rotate/scale across. Focus returns to the input after every toggle.
+- Hover: gold ink (`rgba(226,192,106,1)`) on a faint gold wash
+  (`rgba(201,168,76,0.10)`); focus-visible: 3px `--ring`-family gold ring;
+  resting ink `rgba(201,168,76,0.85)`. 44px × 44px target, `z-index: 2`
+  above the input, `touch-action: manipulation`,
+  `-webkit-tap-highlight-color: transparent`. Under
+  `prefers-reduced-motion: reduce` all transitions drop.
+- The wrap's input gets `padding-right: 52px` from
+  `.field-wrap:has(.field-toggle) .field-input` — nothing else in the wrap
+  moves, and non-password fields keep their padding.
+- `.field-underline` is `pointer-events: none` (it was a decorative 2px strip
+  at the field's bottom edge; it must never eat a tap meant for the toggle).
+
+Tokens / colours: none new. The gold rgba values are the auth surface's own
+palette (the same family the auth pages declare page-locally); the button
+inherits nothing from the light portal and introduces no new hex. The
+settings-page text toggle (`.settings-password-toggle`, light surface,
+"Show"/"Hide") remains as-is — different surface, different idiom; do not
+merge them.
+
+Behaviour contract: bound in `resources/js/app.js` by
+`initializePasswordToggles()` (`[data-password-visibility-toggle]`,
+initialized-guard, re-bound on `livewire:navigated` / `pageshow`). Switching
+`type` never resubmits the form and never triggers validation. Emptying the
+input re-masks and re-hides the button automatically. The `.is-visible`
+class is the only visibility state; `aria-pressed` is the only icon state.
+
+Why: the eye is the one icon every password-field user worldwide already
+knows; a labelled toggle inside the field costs no horizontal space, and the
+mirror pair of names (show/hide) keeps screen-reader users in the same state
+as sighted users.
 
 ## 6. The z-index contract — **LOCKED**
 
@@ -1477,6 +1545,68 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+
+- 2026-11-10 · Register · **inline errors while you type — except email,
+  forever.** The create-account form only complained after submit, and one
+  complaint rendered a raw key (`auth.email_unique`, missing in `en`+`fil` —
+  added, alongside `transparency.register.table.department_pending` and
+  `staff.pagination_label`, the same raw-key class found by scanning). Each
+  field now validates live once touched (blur) and clears live while typing:
+  first/last name regex, PH mobile regex, the barangay allow-list (read from
+  the rendered suggestions), password strength, confirmation match, terms.
+  The **email field has no live validator on purpose** — inline or
+  background uniqueness checks turn the page into an account-enumeration
+  oracle; email errors appear only after submit, from the server. Inline ink
+  for `.field-error` is rgba(252,165,165,·) (the `.alert-error` red, kept as
+  rgba so the allowlist count for `#fca5a5` doesn't move). The static
+  "Type a barangay…" hint line is gone (now `.sr-only`, still the combobox's
+  live region). New tokens: none.
+
+- 2026-11-10 · Auth · **password fields now show what you typed — the eye
+  toggle.** Sign in, create account, reset and set-new-password all rendered
+  password inputs with no way to read them back; mistyped passwords were the
+  cost. A shared eye toggle (`auth.partials.password-toggle`, §5.41) now sits
+  at the right edge of every auth password field — and stays hidden until
+  there is something to reveal. Once the field has text it springs in; it
+  flips the input between `type="password"`/`type="text"`, cross-fades two
+  stacked feather glyphs (`eye`/`eye-off`) via `aria-pressed`, and flips the
+  accessible name with it (`auth_ui.common.show_password` /
+  `hide_password`, en+fil). Emptying the field re-masks and re-hides it.
+  44px target, `z-index: 2` above the input, `.field-underline` is now
+  `pointer-events: none` so it can never eat a tap meant for the toggle.
+  Behaviour lives in `app.js` (`initializePasswordToggles()`); the field
+  keeps its gold left icon and reserves 52px on the right via
+  `.field-wrap:has(.field-toggle) .field-input`. The settings page keeps its
+  light "Show"/"Hide" text button (different surface). New tokens: none.
+
+- 2026-11-10 · Staff ticket · **the review form is verifier-only.** The
+  "Review and verification form" on the staff ticket page was rendered for
+  every department account, verified or not — the server always refused a
+  non-verifier's save, but the page advertised a control it would bounce.
+  It now renders only for accounts with verification rights; non-verifiers
+  get a read-only state line (`staff.verification.read_only_body`, en+fil).
+  The official response form and the moderation panel remain open to every
+  department staff member (worker flow and content decision per §5.40).
+  Files: `resources/views/staff/complaints/show.blade.php`,
+  `lang/{en,fil}/staff.php`, `tests/Feature/StaffActionPanelsTest.php`
+  (two new tests: page-level absence, server-side refusal pinned).
+  New tokens: none.
+
+- 2026-11-10 · Staff queue · **the filters wait for Apply.** The status /
+  review / priority selects no longer submit on `change`; the queue only
+  re-queries when the Apply button (or Enter in search) is used. Files:
+  `resources/views/staff/complaints/index.blade.php`. New tokens: none.
+
+- 2026-11-10 · Staff queue · **the stat strip is gone.** The staff complaint
+  queue (`/staff/complaints`) no longer renders the `.tr-stats` strip
+  (pending verification / in progress / resolved this month / avg time open);
+  the banner runs straight into the filter bar, matching Shell B's flat
+  pattern. The controller no longer computes or passes `stats` for this page
+  (the dashboard computes its own; the `staff.stats.*` keys remain in use
+  there). Owner-requested removal — the strip duplicated the dashboard's stat
+  cards and cost four aggregates per queue load. Files:
+  `resources/views/staff/complaints/index.blade.php`,
+  `app/Http/Controllers/StaffController.php`. New tokens: none.
 
 - 2026-11-10 · Staff surfaces + admin complaint detail · **resident identity
   masked everywhere except admin, and the reveal is policy-backed.** The public
