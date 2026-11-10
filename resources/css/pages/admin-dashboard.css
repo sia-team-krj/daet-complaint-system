@@ -311,7 +311,7 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-text-link:focus-visible 
 /* ─── Department cards ───────────────────────────────────────────────────── */
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 12px;
     width: 100%;
 }
@@ -320,11 +320,15 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
         grid-template-columns: 1fr;
     }
 }
+@media (min-width: 1024px) and (max-width: 1399px) {
+    body.role-admin.admin-layout.page-admin-dashboard .dept-department-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 12px;
+    display: flex;
     align-items: center;
+    gap: 12px;
     padding: 16px;
     background: var(--surface);
     border: 1px solid var(--dept-card-border);
@@ -346,26 +350,31 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-department-card:focus-vi
     border-radius: var(--radius-lg);
 }
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__row {
-    display: contents;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
     min-width: 0;
 }
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__name {
+    flex: 1;
+    min-width: 0;
     font-size: 15px;
     font-weight: 700;
     color: var(--dept-ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
     line-height: 1.2;
 }
 body.role-admin.admin-layout.page-admin-dashboard .dept-department-card__meta {
+    flex-shrink: 0;
+    min-width: 0;
     font-size: 12px;
     color: var(--dept-muted);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
     line-height: 1.4;
 }
 

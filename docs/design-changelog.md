@@ -7,6 +7,14 @@ when taken, or state `Verification screenshots: NOT captured (waived by owner, <
 See `docs/ui-verification.md`. The entry itself is mandatory.
 
 
+## 2026-11-10: Admin dashboard — department card responsiveness fix (long names)
+
+- Page / component: `resources/css/pages/admin-dashboard.css` (`.dept-department-card`, `.dept-department-grid`).
+- Why (the problem found): department cards used `grid-template-columns: minmax(0, 1fr) auto` with `display: contents` on the inner row. Long department names (e.g. "Municipal Planning and Development Office") broke the layout — `display: contents` promoted badge/name/meta as separate grid items so ellipsis truncation never applied, and names overflowed or pushed cards out of alignment.
+- What changed: rewrote the card as a flex row (badge | truncating name | meta) with `flex: 1` + `min-width: 0` + `text-overflow: ellipsis` on the name so long names truncate cleanly instead of breaking the card. Made the grid responsive with `repeat(auto-fill, minmax(240px, 1fr))`, a 3-column cap at 1024–1399px, and 1 column ≤767px.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-09).
+- Definition of Done checklist: passed (targeted CSS fix; uses existing tokens only — `--surface`, `--dept-card-border`, `--dept-card-shadow`, `--dept-ink`, `--dept-muted`, `--dept-active-border`, `--radius-lg`, `--shadow-lift`, `--ring-inset`; no new hard-coded hex/serif/map-isolation issues; guard reports no NEW violations in touched files).
+
 ## 2026-11-10: Admin complaints queue — desktop Previous/Next pagination buttons
 
 - Page / component: `resources/views/admin/complaints/index.blade.php`.
