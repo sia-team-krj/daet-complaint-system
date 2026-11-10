@@ -47,6 +47,14 @@ See `docs/ui-verification.md`. The entry itself is mandatory.
 - Verification screenshots: NOT captured (waived by owner, 2026-11-09).
 - Definition of Done checklist: passed (targeted markup removal; no new hard-coded hex/serif/map-isolation issues introduced).
 
+## 2026-11-10: Admin dashboard — link Unassigned card to unassigned complaints
+
+- Page / component: `resources/views/admin/dashboard/index.blade.php` (Unassigned stat card).
+- Why (the problem found): clicking “Unassigned” linked to `status=Submitted` instead of filtering for complaints with no assigned department.
+- What changed: changed the Unassigned card href to `admin.complaints.index` with `['department' => 'unassigned']`, matching the complaints index unassigned filter.
+- Verification screenshots: NOT captured (waived by owner, 2026-11-10).
+- Definition of Done checklist: passed (targeted bugfix).
+
 ## 2026-11-10: Staff dashboard — limit Department Activity to 4 items
 
 - Page / component: `app/Http/Controllers/StaffController.php`, `resources/views/staff/dashboard/partials/activity.blade.php` (staff dashboard Department Activity).
