@@ -176,7 +176,7 @@
                         <div class="fc-card__body">
                             <div data-wizard-step="describe" role="group" aria-labelledby="step-describe-heading">
                                 <h2 class="fc-step-title" id="step-describe-heading" tabindex="-1">Give your report a short title</h2>
-                                <p class="fc-step-help">Summarize the problem in one sentence.</p>
+                                <p class="fc-step-help fc-step-help--dup">Summarize the problem in one sentence.</p>
                                 <div class="fc-field">
                                     <label for="title">Short title <span aria-hidden="true">*</span></label>
                                     <p class="fc-field__hint">Summarize the problem in one sentence.</p>
@@ -200,10 +200,10 @@
 
                             <div data-wizard-step="photos" role="group" aria-labelledby="step-photos-heading">
                                 <h2 class="fc-step-title" id="step-photos-heading" tabindex="-1">Add photo evidence</h2>
-                                <p class="fc-step-help" id="photos-step-help">Required. Add up to five clear photos taken at the issue location.</p>
+                                <p class="fc-step-help fc-step-help--dup" id="photos-step-help">Required. Add up to five clear photos taken at the issue location.</p>
                                 <div class="fc-field">
                                     <label for="images-input" id="photos-field-label">Photo evidence <span aria-hidden="true" id="photos-required-mark">*</span></label>
-                                    <p class="fc-field__hint" id="photo-tips-hint">Required. Add up to five clear photos taken at the issue location. GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
+                                    <p class="fc-field__hint" id="photo-tips-hint"><span id="photo-tips-lead">{{ __('complaint_create.wizard.photos_required_help') }}</span> GPS from any photo is used when available; add a landmark or map point as a fallback. JPG, PNG, or WEBP, up to 5 MB each.</p>
                                     <button type="button" class="fc-toggle" id="photo-tips-toggle" aria-expanded="false" aria-controls="photo-tips-hint">{{ __('complaint_create.wizard.photo_tips') }}</button>
                                     <div class="upload-zone" id="upload-zone">
                                         <input type="file" name="images[]" id="images-input" accept="image/jpeg,image/png,image/webp" multiple>
@@ -238,7 +238,7 @@
                         <div class="fc-card__body">
                             <div data-wizard-step="where" role="group" aria-labelledby="step-where-heading">
                                 <h2 class="fc-step-title" id="step-where-heading" tabindex="-1">Where is the issue?</h2>
-                                <p class="fc-step-help">Prefilled from your account. Change it if the problem is somewhere else.</p>
+                                <p class="fc-step-help fc-step-help--dup">Prefilled from your account. Change it if the problem is somewhere else.</p>
                                 <div class="fc-field">
                                     <label for="barangay">Which barangay <span aria-hidden="true">*</span></label>
                                     <p class="fc-field__hint">Prefilled from your account. Change it if the problem is somewhere else.</p>
@@ -270,7 +270,7 @@
 
                             <div data-wizard-step="pin" role="group" aria-labelledby="step-pin-heading">
                                 <h2 class="fc-step-title" id="step-pin-heading" tabindex="-1">Drop a map pin</h2>
-                                <p class="fc-step-help">{{ __('complaint_create.map.help') }}</p>
+                                <p class="fc-step-help fc-step-help--dup">{{ __('complaint_create.map.help') }}</p>
                                 <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
                                 <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
                                 <div id="complaint-map" class="filing-map fc-map" aria-label="Map for selecting the complaint location"></div>
@@ -347,7 +347,7 @@
                         <div class="fc-card__body">
                             <div data-wizard-step="visibility" role="group" aria-labelledby="step-visibility-heading">
                                 <h2 class="fc-step-title" id="step-visibility-heading" tabindex="-1">Who can see this</h2>
-                                <p class="fc-step-help">You decide this. No member of staff can change it later.</p>
+                                <p class="fc-step-help fc-step-help--dup">You decide this. No member of staff can change it later.</p>
                                 <fieldset class="visibility-choice" @disabled(old('visibility', 'private') === 'public')>
                                     <legend class="fc-sr-only">Who can see this complaint</legend>
 
@@ -496,6 +496,7 @@
             'continue' => __('complaint_create.buttons.continue'),
             'submit' => __('complaint_create.buttons.submit'),
             'change' => __('complaint_create.buttons.change'),
+            'saveAndReview' => __('complaint_create.buttons.save_and_review'),
         ],
         'hints' => [
             'group' => __('complaint_create.hints.group'),
@@ -585,7 +586,7 @@
 
                 let i18n = {
                     steps: { group: 'Problem type', category: 'Category', describe: 'Details', photos: 'Photos', where: 'Location', pin: 'Map pin', visibility: 'Privacy', review: 'Review' },
-                    buttons: { back: 'Back', next: 'Next', skip: 'Skip', continue: 'Continue', submit: 'Submit complaint', change: 'Change' },
+                    buttons: { back: 'Back', next: 'Next', skip: 'Skip', continue: 'Continue', submit: 'Submit complaint', change: 'Change', saveAndReview: 'Save & review' },
                     hints: { group: 'Please choose a problem type.', category: 'Please choose what fits best.', describe: 'Add a short title and at least 20 characters of detail.', photos: 'Add at least one photo.', where: 'Choose your barangay.', review: 'Please tick the box to confirm.' },
                     map: { outside: 'That point is outside Daet. Place the pin inside the city.', previousOutside: 'Your previous pin was outside Daet and was removed. Place a new pin, or skip this step.' },
                     progressStep: 'Step {n} of {total}',
@@ -763,6 +764,11 @@
                 const currentUserId = '{{ auth()->id() ?? 'guest' }}';
                 const draftKey = `wizard:v1:${currentUserId}`;
                 let currentKey = 'group';
+                // One-shot edit from the review summary: the Next/Back buttons
+                // return straight to the review step instead of walking every
+                // visible step again. Cleared the moment it is used or the
+                // resident submits.
+                let editingSingleStep = false;
                 let submitting = false;
 
                 let categoryToDepartment = {};
@@ -1596,15 +1602,31 @@
                     // Photos step text: required vs optional-but-encouraged (proof_optional). No redesign.
                     const photosHelp = document.getElementById('photos-step-help');
                     const photosReqMark = document.getElementById('photos-required-mark');
+                    const photoTipsLead = document.getElementById('photo-tips-lead');
                     if (photosHelp && photosReqMark) {
                         if (policy.photos_required) {
                             photosReqMark.style.display = '';
-                            if (i18n.photosRequiredHelp) photosHelp.textContent = i18n.photosRequiredHelp;
+                            if (i18n.photosRequiredHelp) {
+                                photosHelp.textContent = i18n.photosRequiredHelp;
+                                if (photoTipsLead) photoTipsLead.textContent = i18n.photosRequiredHelp;
+                            }
                         } else if (policy.show_photos_step) {
                             photosReqMark.style.display = 'none';
-                            if (i18n.photosOptionalHelp) photosHelp.textContent = i18n.photosOptionalHelp;
+                            if (i18n.photosOptionalHelp) {
+                                photosHelp.textContent = i18n.photosOptionalHelp;
+                                if (photoTipsLead) photoTipsLead.textContent = i18n.photosOptionalHelp;
+                            }
                         }
                     }
+
+                    // Review-summary Edit buttons for steps the intake policy
+                    // hides would be dead affordances (their targets are
+                    // display:none, so jumping there went nowhere). Hide them
+                    // with the same policy switch that hides the steps.
+                    const photosEdit = document.querySelector('button[data-edit-step="photos"]');
+                    if (photosEdit) photosEdit.hidden = !policy.show_photos_step;
+                    const locationEdit = document.querySelector('button[data-edit-step="where"]');
+                    if (locationEdit) locationEdit.hidden = !policy.show_location_steps;
 
                     if (!wizardOn) {
                         document.querySelectorAll('[data-wizard-step]').forEach((el) => {
@@ -1711,6 +1733,9 @@
                                 if (currentKey === 'pin') {
                                     const hasPin = Boolean(latitudeInput?.value && longitudeInput?.value);
                                     btnNext.textContent = hasPin ? i18n.buttons.continue : i18n.buttons.skip;
+                                } else if (editingSingleStep) {
+                                    // One-shot edit from the review summary.
+                                    btnNext.textContent = i18n.buttons.saveAndReview || 'Save & review';
                                 } else {
                                     btnNext.textContent = i18n.buttons.next;
                                 }
@@ -1806,6 +1831,11 @@
 
                 btnBack?.addEventListener('click', () => {
                     hideHint();
+                    if (editingSingleStep) {
+                        editingSingleStep = false;
+                        goToStep('review');
+                        return;
+                    }
                     prevStep();
                 });
 
@@ -1819,6 +1849,11 @@
                         return;
                     }
                     hideHint();
+                    if (editingSingleStep) {
+                        editingSingleStep = false;
+                        goToStep('review');
+                        return;
+                    }
                     nextStep();
                 });
 
@@ -1985,10 +2020,41 @@
                         goToStep('group');
                     });
                 });
+                // Desktop is a flat form: the summary row's Edit jumps to the
+                // matching section — scroll there, flash the section with a gold
+                // halo, and focus its first field. The wizard (mobile) instead
+                // enters one-shot edit mode (editingSingleStep): Next/Back then
+                // return straight to the review summary.
+                const editTargets = {
+                    category: '#filing-category',
+                    describe: '[data-wizard-step="describe"]',
+                    photos: '[data-wizard-step="photos"]',
+                    where: '[data-wizard-step="where"]',
+                    pin: '[data-wizard-step="pin"]',
+                    visibility: '[data-wizard-step="visibility"]',
+                };
+                const scrollToStep = (key) => {
+                    const selector = editTargets[key] || '#filing-review';
+                    const target = document.querySelector(selector);
+                    if (!target) return;
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    target.classList.remove('fc-edit-flash');
+                    void target.offsetWidth; // restart the halo animation
+                    target.classList.add('fc-edit-flash');
+                    window.setTimeout(() => target.classList.remove('fc-edit-flash'), 1900);
+                    const focusTarget = target.querySelector('input, textarea, select, button');
+                    window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 300);
+                };
                 document.querySelectorAll('[data-edit-step]').forEach((btn) => {
                     btn.addEventListener('click', () => {
                         const key = btn.getAttribute('data-edit-step');
-                        if (key) goToStep(key);
+                        if (!key) return;
+                        if (isWizardMode()) {
+                            editingSingleStep = true;
+                            goToStep(key);
+                        } else {
+                            scrollToStep(key);
+                        }
                     });
                 });
 

@@ -54,6 +54,7 @@ return [
         'continue' => 'Magpatuloy',
         'submit' => 'Isumite ang reklamo',
         'change' => 'Baguhin',
+        'save_and_review' => 'I-save at suriin',
     ],
 
     'chip' => [

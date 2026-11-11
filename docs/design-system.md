@@ -1554,6 +1554,31 @@ Every UI task appends here: **(date · page · what changed).**
 
 - 2026-11-11 · My Complaints `/complaints` · **status chip text centered.** The status chips (`All`, `Open`, `Submitted`, …) rendered their text flush-left inside the pill on larger screens. Added `display: inline-flex; align-items: center; justify-content: center;` to `.status-chip` (shared in `component-styles.blade.php`) and to the mobile override in `complaints/index.blade.php` so the label is centered in its padding box on every breakpoint. New tokens: none.
 
+- 2026-11-11 · Complaint create · **the duplicate intro lines are gone.**
+  The wizard step-intro (`fc-step-help`) repeated, verbatim, the field
+  hint beneath it — title ("Summarize the problem in one sentence."),
+  photos, barangay, the pin map note, and the visibility lede. Desktop
+  showed both copies; mobile showed one (wizard-on hides the field hint).
+  The five duplicated lines now carry `fc-step-help--dup`, hidden ≥768px —
+  desktop keeps the field hint, mobile wizard keeps its step-intro. The
+  photos lead-in is policy-aware again (`#photo-tips-lead` switches between
+  `photos_required_help` / `photos_optional_help`), so desktop never claims
+  "Required" for noise complaints either. New tokens: none.
+
+- 2026-11-11 · Complaint create · **the summary's Edit buttons work on every
+  screen.** Desktop's Edit buttons were silently dead
+  (`goToStep()` returns early outside wizard mode). On desktop they now
+  smooth-scroll to the section the row belongs to, flash it with a gold
+  halo (`.fc-edit-flash`, token-only, `prefers-reduced-motion` respected)
+  and land focus on its first field. On mobile, Edit now enters a one-shot
+  edit mode: the pair "Save & review" returns straight to the summary
+  without walking every step again — and Back does the same. The
+  Category/Department/Location Edit buttons were hidden on desktop by a
+  stale base rule (`.fc-summary__edit--wizard{display:none}`); the summary
+  now shows an Edit affordance at every width, and the Photos/Location
+  Edit buttons hide themselves when the intake policy hides their step.
+  New tokens: none; new string: `buttons.save_and_review` (en+fil).
+
 - 2026-11-11 · Complaint create · **every category can be submitted again.**
   Two defects in one flow, both shipped in the intake-policy feature: the
   wizard's submit handler demanded ≥1 photo before allowing submit no matter
