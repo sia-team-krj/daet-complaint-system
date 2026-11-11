@@ -1554,6 +1554,14 @@ Every UI task appends here: **(date · page · what changed).**
 
 - 2026-11-11 · My Complaints `/complaints` · **status chip text centered.** The status chips (`All`, `Open`, `Submitted`, …) rendered their text flush-left inside the pill on larger screens. Added `display: inline-flex; align-items: center; justify-content: center;` to `.status-chip` (shared in `component-styles.blade.php`) and to the mobile override in `complaints/index.blade.php` so the label is centered in its padding box on every breakpoint. New tokens: none.
 
+- 2026-11-11 · Navbar · **Administrator badge sits by the logo; bell by the
+  hamburger.** On mobile (≤640px authenticated) the bar read
+  logo → bell → badge → hamburger. The badge (`.nav-identity-bar`, the only
+  Administrator indicator shown on mobile) now renders right after the
+  logo inside `navbar-flex` and before the bell DOM-wise; the bell remains
+  immediately left of the hamburger. Desktop unchanged — the badge renders
+  ≤640px only (display:none everywhere else). New tokens: none.
+
 - 2026-11-11 · Complaint create · **the duplicate intro lines are gone.**
   The wizard step-intro (`fc-step-help`) repeated, verbatim, the field
   hint beneath it — title ("Summarize the problem in one sentence."),

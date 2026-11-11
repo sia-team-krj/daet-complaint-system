@@ -24,6 +24,16 @@
         @endif
       </a>
 
+      {{-- The Administrator badge is a direct child of the bar so that at ≤640px
+           (the only width it renders — see .nav-identity-bar display rules) it
+           sits immediately after the logo, while the bell stays immediately left
+           of the hamburger. At ≥641px it is display:none. --}}
+      @if($navRole === 'admin')
+        <span class="nav-identity-bar nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
+          <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+        </span>
+      @endif
+
       <ul class="nav-links">
         @if(auth()->user()->role === 'citizen')
           <li><a href="{{ route('complaints.index') }}" wire:navigate class="nav-link {{ request()->routeIs('complaints.index', 'complaints.show', 'complaints.create') ? 'is-active' : '' }}" @if(request()->routeIs('complaints.index', 'complaints.show', 'complaints.create')) aria-current="page" @endif>{{ __('nav.my_complaints') }}</a></li>
@@ -36,14 +46,9 @@
       {{-- The bell is a direct child of the bar, NOT a member of .nav-actions.
            That list is hidden below 1241px in favour of the compact menu, so a
            bell inside it disappeared on tablet and phone. Placed here it stays
-           visible at every width and still sits immediately left of whichever
-           account control that width uses. --}}
+           visible at every width and sits immediately left of the hamburger on
+           mobile, directly beside the logo on wide screens. --}}
       @include('layouts.partials.notification-bell')
-      @if($navRole === 'admin')
-        <span class="nav-identity-bar nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
-          <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
-        </span>
-      @endif
       <button
         type="button"
         class="mobile-drawer-toggle"
