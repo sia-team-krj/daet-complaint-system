@@ -1546,6 +1546,30 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 
 Every UI task appends here: **(date · page · what changed).**
 
+- 2026-11-11 · Complaint detail `/complaints/{id}` · **resident ticket page rebuilt: updates on top, conditional photos/location, section separation.** The resident complaint detail page now shows the staff updates/timeline card at the top of the page (full-width on all screens, previously tucked in the right column on desktop) so the latest status is seen first. The photos and location cards are shown only when the complaint's category intake policy requires them (`Complaint::intakePolicy()` → `photos_required`, `intakeLocationApplicable()`) or when actual data exists — otherwise they are removed entirely so the page isn't one wall of text. Cards use `--surface` with `1px var(--line)` borders and `--shadow-card`, with `var(--line-soft)` hairline dividers between sections, matching the design system card language. Desktop keeps the two-column layout (details left, photos/location right); mobile stacks single-column. Files: `resources/views/complaints/show.blade.php`. New tokens: none.
+
+- 2026-11-11 · My Complaints `/complaints` · **File-a-complaint CTA horizontal with the H1 + P.** The "File a complaint" button (`tr-banner__cta`) rendered stacked below the greeting text; it now sits beside the H1/subtitle on desktop (`flex` row, `space-between`, `flex-wrap: wrap`) so the page reads as one horizontal banner line. Scoped to `body.page-complaints-index` only — staff/admin workspaces and the transparency register keep their existing stacked banner. Mobile still stacks (CTA full-width under the text) because the CTA is `width: 100%` there. Files: `resources/views/complaints/index.blade.php`. New tokens: none.
+
+- 2026-11-11 · My Complaints `/complaints` · **pagination: 3 rows per page on mobile, 5 on desktop.** The resident's complaint list always rendered every match on one page (`paginate(10)`), so the Next/Prev controls in `.tr-pagination` never appeared even when a queue grew long. It now paginates at 3 per page on mobile and 5 per page on larger screens (detected server-side from the User-Agent): 5 or fewer complaints show flat with no pager; a 6th complaint flips the page and the Next/Prev buttons (plus numbered pages) show on mobile and desktop. `withQueryString()` keeps search/filter/status in the URL across pages. The duplicate top "Showing X of Y" summary was removed; the single bottom summary (e.g. "Showing 1–3 of 6") stays. Files: `app/Http/Controllers/ComplaintController.php`, `resources/views/complaints/index.blade.php`, `resources/views/vendor/pagination/resident.blade.php` (new). New tokens: none.
+
+- 2026-11-11 · My Complaints `/complaints` · **status chip text centered.** The status chips (`All`, `Open`, `Submitted`, …) rendered their text flush-left inside the pill on larger screens. Added `display: inline-flex; align-items: center; justify-content: center;` to `.status-chip` (shared in `component-styles.blade.php`) and to the mobile override in `complaints/index.blade.php` so the label is centered in its padding box on every breakpoint. New tokens: none.
+
+- 2026-11-11 · Complaint create · **every category can be submitted again.**
+  Two defects in one flow, both shipped in the intake-policy feature: the
+  wizard's submit handler demanded ≥1 photo before allowing submit no matter
+  what the intake policy said, and the server then read `$imagePaths[0]` off an
+  empty array and 500'd. Business Permits and Other Concerns (sensitive_intake
+  / follow_up_optional — photo step hidden, zero photos allowed at intake) were
+  unsubmittable; Noise Complaint and Stray Animals (proof_optional — photos
+  optional) were the same failure the moment the gate hit them with an empty
+  selection. The submit gate now reads `currentIntakePolicy().photos_required`,
+  so only physical_required is photo-gated; `$imagePath` is nullable and every
+  reader (evidence gallery, success page, detail page) is null-safe. Also fixed
+  the leaked `{n}`/`{total}` placeholders in the progress counter's first
+  paint, and the landmark toggle button now follows the intake policy like the
+  rest of that field already did — `+ Add a landmark` with `*` (required) for
+  proof_optional, `+ Add a landmark (optional)` otherwise. New tokens: none.
+
 - 2026-11-10 · Register · **inline errors while you type — except email,
   forever.** The create-account form only complained after submit, and one
   complaint rendered a raw key (`auth.email_unique`, missing in `en`+`fil` —

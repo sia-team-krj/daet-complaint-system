@@ -183,6 +183,23 @@
         }
         .mc-file-cta { text-transform:none; letter-spacing:0; font-size:14px; border-radius:var(--radius-sm); padding:11px 18px; }
         .mc-file-cta__icon { display:none; width:18px; height:18px; flex-shrink:0; }
+
+        /* ── Banner: CTA horizontal with H1 + P on desktop ── */
+        body.page-complaints-index .tr-banner__row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        body.page-complaints-index .tr-banner__text {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        body.page-complaints-index .tr-banner__cta {
+            flex: 0 0 auto;
+        }
+
         .report-row__category-mobile,
         .report-row__sep-mobile,
         .report-row__date-mobile { display:none; }
@@ -236,7 +253,7 @@
             body.page-complaints-index .mc-content { padding-bottom:32px; }
             body.page-complaints-index .tr-register-head { align-items:baseline; margin-top:24px; gap:8px; }
             body.page-complaints-index .tr-h2 { font-size:20px; font-weight:600; }
-            body.page-complaints-index .mc-heading-desktop, body.page-complaints-index #results-summary { display:none; }
+            body.page-complaints-index .mc-heading-desktop { display:none; }
             body.page-complaints-index .mc-heading-mobile { display:inline; }
             body.page-complaints-index .mc-count-mobile { display:block; margin:0; margin-left:auto; font-size:13px; line-height:1.4; color:var(--muted); white-space:nowrap; }
 
@@ -314,7 +331,7 @@
             }
             body.page-complaints-index #filter-bar .tr-chips::-webkit-scrollbar { display:none; }
             body.page-complaints-index #filter-bar .status-chip {
-                scroll-snap-align:start; display:inline-flex; align-items:center;
+                scroll-snap-align:start; display:inline-flex; align-items:center; justify-content:center;
                 min-height:36px; height:36px; padding:0 14px; white-space:nowrap; flex-shrink:0;
                 position:relative; font-size:13px; text-decoration:none;
             }
@@ -479,15 +496,18 @@
                 $hour = now('Asia/Manila')->hour;
                 $greetingKey = $hour < 12 ? 'dashboard.greeting_morning' : ($hour < 17 ? 'dashboard.greeting_afternoon' : 'dashboard.greeting_evening');
             @endphp
-            <h1 class="tr-h1 mc-hero-h1"><span class="mc-hero-desktop">{{ __($greetingKey) }}, <span>{{ auth()->user()->first_name }}.</span></span><span class="mc-hero-mobile">{{ __('my_complaints.banner_title') }}</span></h1>
-            <p class="tr-privacy mc-hero-sub-desktop">{{ __('my_complaints.banner_sub') }}</p>
-            <p class="mc-hero-greeting">{{ __($greetingKey) }}, {{ auth()->user()->first_name }}</p>
-
-            <div class="tr-banner__cta">
-                <a href="{{ route('complaints.create') }}" wire:navigate class="btn-nav-cta mc-file-cta">
-                    <svg class="mc-file-cta__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    {{ __('my_complaints.file_cta') }}
-                </a>
+            <div class="tr-banner__row">
+                <div class="tr-banner__text">
+                    <h1 class="tr-h1 mc-hero-h1"><span class="mc-hero-desktop">{{ __($greetingKey) }}, <span>{{ auth()->user()->first_name }}.</span></span><span class="mc-hero-mobile">{{ __('my_complaints.banner_title') }}</span></h1>
+                    <p class="tr-privacy mc-hero-sub-desktop">{{ __('my_complaints.banner_sub') }}</p>
+                    <p class="mc-hero-greeting">{{ __($greetingKey) }}, {{ auth()->user()->first_name }}</p>
+                </div>
+                <div class="tr-banner__cta">
+                    <a href="{{ route('complaints.create') }}" wire:navigate class="btn-nav-cta mc-file-cta">
+                        <svg class="mc-file-cta__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        {{ __('my_complaints.file_cta') }}
+                    </a>
+                </div>
             </div>
 
             <p class="tr-updated mc-updated">
@@ -526,9 +546,6 @@
         <div class="tr-container">
             <div class="tr-register-head">
                 <h2 class="tr-h2" id="register-heading"><span class="mc-heading-desktop">{{ __('my_complaints.register_heading') }}</span><span class="mc-heading-mobile">{{ __('my_complaints.list_heading_mobile') }}</span></h2>
-                <p class="tr-results" id="results-summary" aria-live="polite">
-                    {{ __('my_complaints.results', ['visible' => $complaints->total(), 'total' => $counts['all']]) }}
-                </p>
                 <p class="mc-count-mobile" aria-hidden="true">{{ trans_choice('my_complaints.count', $complaints->total()) }}</p>
             </div>
 
@@ -663,10 +680,10 @@
 
             @if($complaints->total() > 0)
                 <div class="tr-pagination">
-                    <p class="tr-showing mc-showing">{{ __('my_complaints.showing', ['from' => $complaints->firstItem(), 'to' => $complaints->lastItem(), 'total' => $complaints->total()]) }}</p>
+                    <p class="tr-showing mc-showing" aria-live="polite">{{ __('my_complaints.showing', ['from' => $complaints->firstItem(), 'to' => $complaints->lastItem(), 'total' => $complaints->total()]) }}</p>
                     @if($complaints->hasPages())
                         <div class="tr-pagination-nav">
-                            {{ $complaints->onEachSide(1)->links() }}
+                            {{ $complaints->onEachSide(1)->links('pagination::resident') }}
                         </div>
                     @endif
                 </div>

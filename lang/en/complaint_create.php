@@ -92,6 +92,7 @@ return [
         'choose_gallery' => 'Choose from gallery',
         'photo_tips' => 'Photo tips',
         'landmark_toggle' => '+ Add a landmark (optional)',
+        'landmark_toggle_required' => '+ Add a landmark',
         'why_toggle' => 'Why we ask',
         'edit' => 'Edit',
         'what_next' => 'What happens next',

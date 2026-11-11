@@ -406,12 +406,45 @@
     background: var(--line-soft); border-radius: 6px;
   }
 
-  /* ── Timeline (Right Column) ── */
+  /* ── Timeline (now full-width at top on all screens) ── */
   .timeline-card {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 8px; overflow: hidden;
-    position: sticky; top: 80px;
+  }
+
+  /* ── Section separation ── */
+  .updates-top {
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: 24px;
+  }
+  .section-divider {
+    margin: 24px 0;
+    border: none;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  /* ── Detail cards: light surface with hairline border ── */
+  .detail-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px; overflow: hidden;
+  }
+  .detail-card + .detail-card { margin-top: 16px; }
+
+  .detail-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .detail-card-title {
+    font-family: var(--font-sans);
+    font-size: 18px; font-weight: 700;
+    color: var(--navy-900);
+  }
+  .detail-card-body {
+    padding: 24px;
   }
   .timeline-header {
     display: flex; align-items: center; gap: 10px;
@@ -601,6 +634,10 @@
       $needsInfoQuestion = $openRequest?->question
           ?? ($reviewerNote !== '' ? $reviewerNote : __('complaint_show.action.fallback_question'));
       $showNeedsInfo = $openRequest !== null || $needsInfo;
+
+      $pcsPolicy = $complaint->intakePolicy();
+      $pcsShowPhotos = (($pcsPolicy['photos_required'] ?? false) || ($pcsPolicy['photos_allowed'] ?? false)) && $complaint->evidence_image_count > 0;
+      $pcsShowLocation = $complaint->intakeLocationApplicable() || $complaint->latitude !== null || $complaint->longitude !== null || filled($complaint->barangay) || filled($complaint->address_text);
     @endphp
 
     @if($showNeedsInfo)
@@ -678,6 +715,59 @@
         </form>
       </section>
     @endif
+
+    {{-- ── Updates / Timeline — moved to top on all screens ── --}}
+    <section class="updates-top" aria-labelledby="updates-top-heading">
+      <div class="timeline-card" id="pcs-updates">
+        <h2 class="pcs-section-title pcs-mobile-only" id="updates-top-heading"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>{{ __('complaint_show.updates.title') }}</h2>
+        <div class="timeline-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+          <div class="timeline-title">{{ __('complaint_show.updates.staff_responses') }}</div>
+        </div>
+        <div class="timeline-body">
+          @php
+            $publicLogs = $complaint->logs->where('is_internal', false)->sortByDesc('created_at');
+          @endphp
+          @if($publicLogs->isEmpty())
+            <div style="text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px;">
+              Your complaint has been received and is being reviewed.
+            </div>
+          @else
+            <div class="timeline">
+              @foreach($publicLogs as $log)
+                <div class="timeline-item">
+                  <div class="timeline-status">
+                    @if($log->previous_status && $log->new_status)
+                      Status changed: {{ $log->previous_status }} → {{ $log->new_status }}
+                    @elseif($log->new_status)
+                      Status: {{ $log->new_status }}
+                    @endif
+                  </div>
+                  @if($log->comment)
+                    <div class="timeline-note">{{ $log->comment }}</div>
+                  @endif
+
+                  @if($log->documentation_images)
+                    <div class="timeline-evidence" aria-label="Documentation photos">
+                      @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                        <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
+                          <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
+                        </a>
+                      @endforeach
+                    </div>
+                  @endif
+
+                  <div class="timeline-meta">
+                    <span class="timeline-actor">Responded by {{ $complaint->department->name ?? 'LGU' }} Staff</span>
+                    <span class="timeline-time">{{ $log->created_at->diffForHumans() }}</span>
+                  </div>
+                </div>
+              @endforeach
+            </div>
+          @endif
+        </div>
+      </div>
+    </section>
 
     {{-- Latest-update inset removed: the progress timeline already shows the
          newest staff response, and a duplicate here read as a separate state. --}}
@@ -927,36 +1017,37 @@
           </div>
         </div>
 
-        {{-- Attached Photos --}}
+      </div>
+
+      {{-- ── Right Column: Photos & Location (desktop, only if applicable) ── --}}
+      @if($pcsShowPhotos || $pcsShowLocation)
+      <div class="fu d4">
+        {{-- Photos (only when category requires them or images exist) --}}
+        @if($pcsShowPhotos)
         <div class="detail-card pcs-card--photos" style="margin-bottom: 24px;">
           <div class="detail-card-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             <span class="detail-card-title">{{ __('complaint_show.report.photos_label') }} @if($complaint->evidence_image_count > 1)<small>({{ $complaint->evidence_image_count }})</small>@endif</span>
           </div>
           <div class="detail-card-body" style="padding: 0;">
-            @if($complaint->evidence_images)
-              <p class="pcs-counter pcs-mobile-only" data-pcs-counter aria-live="polite">{{ __('complaint_show.report.counter', ['current' => 1, 'total' => count($complaint->evidence_images)]) }}</p>
-              <div class="image-gallery" data-count="{{ count($complaint->evidence_images) }}" data-pcs-gallery>
-                @foreach($complaint->evidence_images as $imageIndex => $imagePath)
-                  @php
-                    $imageUrl = route('complaints.evidence', [$complaint, $imageIndex]);
-                  @endphp
-                  <a class="image-wrap" href="{{ $imageUrl }}" target="_blank" rel="noopener" data-pcs-photo data-pcs-index="{{ $imageIndex }}" aria-label="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}">
-                    <img src="{{ $imageUrl }}" alt="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span style="display: none; padding: 24px; text-align: center; color: var(--muted); font-size: 12px;">Image unavailable</span>
-                  </a>
-                @endforeach
-              </div>
-            @else
-              <div class="no-image">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <div>{{ __('complaint_show.report.no_photos') }}</div>
-              </div>
-            @endif
+            <p class="pcs-counter pcs-mobile-only" data-pcs-counter aria-live="polite">{{ __('complaint_show.report.counter', ['current' => 1, 'total' => count($complaint->evidence_images)]) }}</p>
+            <div class="image-gallery" data-count="{{ count($complaint->evidence_images) }}" data-pcs-gallery>
+              @foreach($complaint->evidence_images as $imageIndex => $imagePath)
+                @php
+                  $imageUrl = route('complaints.evidence', [$complaint, $imageIndex]);
+                @endphp
+                <a class="image-wrap" href="{{ $imageUrl }}" target="_blank" rel="noopener" data-pcs-photo data-pcs-index="{{ $imageIndex }}" aria-label="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}">
+                  <img src="{{ $imageUrl }}" alt="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                  <span style="display: none; padding: 24px; text-align: center; color: var(--muted); font-size: 12px;">Image unavailable</span>
+                </a>
+              @endforeach
+            </div>
           </div>
         </div>
+        @endif
 
-        {{-- Location Map --}}
+        {{-- Location (only when category requires it or data exists) --}}
+        @if($pcsShowLocation)
         <div class="detail-card pcs-card--location">
           <div class="detail-card-header">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -991,61 +1082,9 @@
             @endif
           </div>
         </div>
-
+        @endif
       </div>
-
-      {{-- ── Right Column: Timeline ── --}}
-      <div class="fu d4">
-        <div class="timeline-card" id="pcs-updates">
-          <h2 class="pcs-section-title pcs-mobile-only"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>{{ __('complaint_show.updates.title') }}</h2>
-          <div class="timeline-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
-            <div class="timeline-title">{{ __('complaint_show.updates.staff_responses') }}</div>
-          </div>
-          <div class="timeline-body">
-            @php
-              $publicLogs = $complaint->logs->where('is_internal', false)->sortByDesc('created_at');
-            @endphp
-            @if($publicLogs->isEmpty())
-              <div style="text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px;">
-                Your complaint has been received and is being reviewed.
-              </div>
-            @else
-              <div class="timeline">
-                @foreach($publicLogs as $log)
-                  <div class="timeline-item">
-                    <div class="timeline-status">
-                      @if($log->previous_status && $log->new_status)
-                        Status changed: {{ $log->previous_status }} → {{ $log->new_status }}
-                      @elseif($log->new_status)
-                        Status: {{ $log->new_status }}
-                      @endif
-                    </div>
-                    @if($log->comment)
-                      <div class="timeline-note">{{ $log->comment }}</div>
-                    @endif
-
-                    @if($log->documentation_images)
-                      <div class="timeline-evidence" aria-label="Documentation photos">
-                        @foreach($log->documentation_images as $documentationIndex => $documentationPath)
-                          <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
-                            <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
-                          </a>
-                        @endforeach
-                      </div>
-                    @endif
-
-                    <div class="timeline-meta">
-                      <span class="timeline-actor">Responded by {{ $complaint->department->name ?? 'LGU' }} Staff</span>
-                      <span class="timeline-time">{{ $log->created_at->diffForHumans() }}</span>
-                    </div>
-                  </div>
-                @endforeach
-              </div>
-            @endif
-          </div>
-        </div>
-      </div>
+      @endif
 
     </div>
 

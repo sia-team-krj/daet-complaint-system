@@ -92,6 +92,7 @@ return [
         'choose_gallery' => 'Pumili mula sa gallery',
         'photo_tips' => 'Mga tip sa larawan',
         'landmark_toggle' => '+ Magdagdag ng palatandaan (opsyonal)',
+        'landmark_toggle_required' => '+ Magdagdag ng palatandaan',
         'why_toggle' => 'Bakit namin tinatanong',
         'edit' => 'Ayusin',
         'what_next' => 'Ano ang susunod',

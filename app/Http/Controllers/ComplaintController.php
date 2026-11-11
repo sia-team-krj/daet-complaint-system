@@ -163,7 +163,7 @@ class ComplaintController extends Controller
             default => $query->latest(),
         };
 
-        $complaints = $query->paginate(10)->withQueryString();
+        $complaints = $query->paginate($this->complaintsPerPage($request))->withQueryString();
         $statuses = ComplaintStatus::cases();
 
         $departmentOptions = (clone $base)
@@ -482,6 +482,20 @@ class ComplaintController extends Controller
         if (! $complaint->isPubliclyVisible() || $complaint->spam_status === 'spam') {
             abort(404);
         }
+    }
+
+    /**
+     * Report-rows per page: 3 on a phone, 5 on a larger screen.
+     *
+     * Detected from the User-Agent so the resident gets fewer, taller cards on
+     * a small screen and more per page on desktop — without any client-side
+     * re-layout fighting the server's page count.
+     */
+    private function complaintsPerPage(Request $request): int
+    {
+        $ua = (string) $request->userAgent();
+
+        return preg_match('/(mobile|android|iphone|ipad|iemobile)/i', $ua) ? 3 : 5;
     }
 
     /**
@@ -871,7 +885,11 @@ class ComplaintController extends Controller
                 ->withErrors(['images' => 'We could not save the photos. Please try again.']);
         }
 
-        $imagePath = $imagePaths[0];
+        // Complaints filed under a no-photo intake policy (sensitive_intake /
+        // follow_up_optional, e.g. business_permit / others) legitimately have
+        // no evidence photos at all — the photo step is hidden and optional.
+        // The first image, if any, is still the headline image.
+        $imagePath = $imagePaths[0] ?? null;
         /*
          * Resolve the location that will actually be stored, and say plainly in
          * the audit trail which of the possible sources it came from. A department

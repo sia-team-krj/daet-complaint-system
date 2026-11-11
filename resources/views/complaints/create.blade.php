@@ -43,7 +43,7 @@
         <main class="fc-container fc-stack">
             <div class="fc-progress wizard-progress-header" id="wizard-progress-header">
                 <div class="fc-progress__meta">
-                    <span class="fc-progress__step" id="wizard-step-counter">{{ __('complaint_create.progress.step', ['n' => 1, 'total' => 8]) }}</span>
+                    <span class="fc-progress__step" id="wizard-step-counter">{{ str_replace(['{n}', '{total}'], ['1', '8'], __('complaint_create.progress.step')) }}</span>
                     <span class="fc-progress__name" id="wizard-step-label">{{ __('complaint_create.steps.group') }}</span>
                 </div>
                 <div class="fc-progress__segments" id="wizard-segments" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="1" aria-label="{{ __('complaint_create.steps.group') }}">
@@ -513,6 +513,8 @@
         'progressStep' => __('complaint_create.progress.step'),
         'liveStep' => __('complaint_create.live.step'),
         'chipGoesTo' => __('complaint_create.chip.goes_to'),
+        'landmarkToggle' => __('complaint_create.wizard.landmark_toggle'),
+        'landmarkToggleRequired' => __('complaint_create.wizard.landmark_toggle_required'),
         'descMore' => __('complaint_create.wizard.desc_more'),
         'descGood' => __('complaint_create.wizard.desc_good'),
         'takePhoto' => __('complaint_create.wizard.take_photo'),
@@ -589,6 +591,8 @@
                     progressStep: 'Step {n} of {total}',
                     liveStep: 'Step {n} of {total}: {name}',
                     chipGoesTo: 'Goes to {office}',
+                    landmarkToggle: '+ Add a landmark (optional)',
+                    landmarkToggleRequired: '+ Add a landmark',
                 };
 
                 try {
@@ -1576,9 +1580,11 @@
                             landmarkField.hidden = false;
                             landmarkField.classList.add('is-open');
                             landmarkToggle?.setAttribute('aria-expanded', 'true');
+                            if (landmarkToggle) landmarkToggle.textContent = i18n.landmarkToggleRequired || '+ Add a landmark';
                             addressInput?.setAttribute('required', 'required');
                             if (addressReqMark) addressReqMark.textContent = ' *';
                         } else {
+                            if (landmarkToggle) landmarkToggle.textContent = i18n.landmarkToggle || '+ Add a landmark (optional)';
                             addressInput?.removeAttribute('required');
                             if (addressReqMark && i18n.optionalMark) addressReqMark.textContent = i18n.optionalMark;
                         }
@@ -2010,7 +2016,12 @@
                     }
                     if (categoryTileError) categoryTileError.hidden = true;
 
-                    if (selectedPhotos.length === 0 && !window.__HAS_LOCATION_CONFLICT__) {
+                    // The intake policy decides whether photos gate submission.
+                    // business_permit (sensitive_intake) and others (follow_up_optional)
+                    // hide the photo step entirely — demanding a photo here made their
+                    // complaints unsubmittable, and the wizard bounced to step 1.
+                    const photosRequired = currentIntakePolicy().photos_required !== false;
+                    if (photosRequired && selectedPhotos.length === 0 && !window.__HAS_LOCATION_CONFLICT__) {
                         event.preventDefault();
                         showUploadError('Add at least one clear photo before submitting.');
                         if (isWizardMode()) {
