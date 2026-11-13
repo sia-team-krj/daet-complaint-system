@@ -191,6 +191,67 @@ body.page-complaint-show .show-root {
         color: var(--cat-other-fg);
     }
 
+    /* The work is paused. A violet of its own: the status families are
+     * spoken for, and "waiting" must not be mistaken for "late" (amber) or
+     * "out of the office" (slate). */
+    body.page-complaint-show .hold-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 26px;
+        padding: 0 10px;
+        border-radius: var(--radius-xs);
+        background: var(--hold-bg);
+        color: var(--hold-text);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    body.page-complaint-show .hold-notice {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 0 0 4px;
+        padding: 12px 14px;
+        border: 1px solid var(--hold-dot);
+        border-radius: var(--radius-sm);
+        background: var(--hold-bg);
+    }
+
+    body.page-complaint-show .hold-notice__chip {
+        flex: none;
+        padding: 2px 8px;
+        border-radius: var(--radius-pill);
+        background: var(--hold-dot);
+        color: var(--surface);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    body.page-complaint-show .hold-notice__body {
+        flex: 1 1 240px;
+        min-width: 0;
+        margin: 0;
+        color: var(--navy-900);
+        font-size: 13px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    body.page-complaint-show .hold-notice__meta {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
     body.page-complaint-show .pcs-meta {
         margin: 12px 0 0;
         font-size: 13px;

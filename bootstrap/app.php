@@ -81,6 +81,9 @@ return Application::configure(basePath: dirname(__DIR__))
             "admin" => \App\Http\Middleware\AdminMiddleware::class,
             "force.password.change" => \App\Http\Middleware\ForcePasswordChange::class,
             "email.verified" => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            // The analytics is parked: the code stays, the routes refuse, and
+            // nothing in the interface points at it.
+            "analytics.paused" => \App\Http\Middleware\AnalyticsPaused::class,
         ]);
 
         // Resolve the resident's language after the session and cookies are
@@ -178,6 +181,13 @@ return Application::configure(basePath: dirname(__DIR__))
         // it, but a badge that nobody refreshes is not a safety net.
         $schedule->command('complaints:flag-overdue-work')
             ->dailyAt('07:45')
+            ->withoutOverlapping();
+
+        // The office marked the work done and the resident has not said
+        // whether it was fixed. The case is not closed until they do, so they
+        // are asked — before the automatic closer would close it for them.
+        $schedule->command('complaints:remind-resolution')
+            ->dailyAt('08:15')
             ->withoutOverlapping();
     })
     ->create();

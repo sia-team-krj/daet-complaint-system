@@ -154,7 +154,7 @@ class ComplaintLiveTicketTest extends TestCase
         $complaint = $this->complaint(ComplaintStatus::UnderReview);
         $outsider = User::factory()->create([
             'role' => 'staff',
-            'department_id' => Department::where('code', 'HLTH')->firstOrFail()->id,
+            'department_id' => Department::where('code', 'MENRO')->firstOrFail()->id,
         ]);
 
         $this->actingAs($outsider)

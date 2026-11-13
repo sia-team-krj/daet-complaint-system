@@ -803,6 +803,7 @@ html:not(.js) .tile-grid {
 .tile__icon--neighborhood { background: var(--cat-noise-bg); color: var(--cat-noise-fg); }
 .tile__icon--noise { background: var(--cat-noise-bg); color: var(--cat-noise-fg); }
 .tile__icon--business { background: var(--cat-business-bg); color: var(--cat-business-fg); }
+.tile__icon--personnel { background: var(--cat-personnel-bg); color: var(--cat-personnel-fg); }
 .tile__icon--stray { background: var(--cat-stray-bg); color: var(--cat-stray-fg); }
 .tile__icon--other { background: var(--cat-other-bg); color: var(--cat-other-fg); }
 

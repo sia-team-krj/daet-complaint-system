@@ -10,12 +10,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DepartmentSeeder::class,
+            ComplaintCategorySeeder::class,
             UserSeeder::class,
             DemoComplaintSeeder::class,
             PreGeneratedComplaintSeeder::class,
-            // Runs last: it attaches notifications to complaints and staff that
-            // the earlier seeders create.
             DemoNotificationSeeder::class,
+            DemoFeedbackSeeder::class,
         ]);
     }
 }

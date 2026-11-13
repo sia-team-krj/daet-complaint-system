@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Complaint;
 use App\Models\User;
+use App\Services\ComplaintPrivacyService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -88,6 +89,63 @@ class ComplaintModerationService
         return $updates;
     }
 
+    /**
+     * A redacted copy for a report that names somebody, built from what the
+     * office ticked must not appear.
+     *
+     * The public register carries barangay-level detail, so the barangay
+     * stays. What the office ticked is removed from the office's own text
+     * (when it appears in it). If the party's name was ticked and could not
+     * be proven gone, the whole copy is replaced with a generic one that
+     * carries no identifying detail at all — an office must never publish
+     * text it has not checked.
+     *
+     * @return array{title: string, description: string, replaced: list<string>, generated: bool}
+     */
+    public function redactionDraft(Complaint $complaint, bool $stripParty, bool $stripPosition): array
+    {
+        $neutral = ComplaintPrivacyService::namedPartyKind($complaint->category) === 'person'
+            ? 'a member of personnel'
+            : 'an establishment';
+
+        $title = (string) $complaint->title;
+        $description = (string) $complaint->description;
+        $replaced = [];
+
+        if ($stripParty) {
+            $this->strikeOut($complaint->named_party, 'the name of the party', $neutral, $title, $description, $replaced);
+        }
+
+        if ($stripPosition) {
+            $this->strikeOut($complaint->named_party_position, 'their position', $neutral, $title, $description, $replaced);
+        }
+
+        // The whole point of redaction is that the name is gone. If it was
+        // ticked and could not be proven gone, do not ship prose that may
+        // still identify them — ship a safe generic copy instead, and say so.
+        if ($stripParty && ! in_array('the name of the party', $replaced, true)) {
+            $barangay = $this->clean($complaint->barangay) ?? 'the municipality';
+            $person = ComplaintPrivacyService::namedPartyKind($complaint->category) === 'person';
+
+            $title = $person
+                ? "A member of personnel in {$barangay} was reported to the office"
+                : "An establishment in {$barangay} was reported to the office";
+            $description = $person
+                ? "A member of personnel in {$barangay} was reported to the office. The identity of that member and the details that would identify them are withheld from the public record."
+                : "An establishment in {$barangay} was reported to the office. The identity of the establishment and the details that would identify it are withheld from the public record.";
+            $replaced[] = 'the copy — replaced with a safe generic one, because the name could not be removed automatically';
+
+            return ['title' => $title, 'description' => $description, 'replaced' => $replaced, 'generated' => true];
+        }
+
+        return [
+            'title' => mb_strimwidth($title, 0, 255, ''),
+            'description' => mb_strimwidth($description, 0, 5000, ''),
+            'replaced' => $replaced,
+            'generated' => $replaced === [],
+        ];
+    }
+
     /** A short sentence describing what was withheld, for the audit trail. */
     public function summary(Complaint $complaint, array $updates): string
     {
@@ -127,6 +185,28 @@ class ComplaintModerationService
         $value = trim($value);
 
         return $value === '' ? null : $value;
+    }
+
+    /**
+     * Remove every occurrence of a string from the copy, case-insensitively,
+     * and record the label when it removed anything.
+     */
+    private function strikeOut(mixed $needle, string $label, string $neutral, string &$title, string &$description, array &$replaced): void
+    {
+        $needle = $this->clean(is_string($needle) ? $needle : null);
+
+        if ($needle === null || mb_strlen($needle) < 2) {
+            return;
+        }
+
+        $before = $title."\n".$description;
+        $pattern = '/'.preg_quote($needle, '/').'/iu';
+        $title = preg_replace($pattern, $neutral, $title) ?? $title;
+        $description = preg_replace($pattern, $neutral, $description) ?? $description;
+
+        if (($title."\n".$description) !== $before) {
+            $replaced[] = $label;
+        }
     }
 
     /**

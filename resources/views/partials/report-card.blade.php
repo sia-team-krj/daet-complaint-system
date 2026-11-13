@@ -2,7 +2,7 @@
   $statusEnum = $complaint->statusEnum;
   $statusValue = $statusEnum->value;
   $reviewValue = $complaint->reviewStatusEnum->value;
-  $categoryLabels = collect(\App\Services\DepartmentRouter::getCategoryOptions())->flatten()->pluck('label', 'value');
+  $categoryLabels = collect(\App\Services\DepartmentRouter::categoryLabels());
   $categoryLabel = $categoryLabels->get($complaint->category, ucwords(str_replace('_',' ', (string)$complaint->category)));
   $createdAt = $complaint->created_at->copy()->setTimezone('Asia/Manila');
   $isResolved = in_array($statusValue, ['Resolved','Closed']);

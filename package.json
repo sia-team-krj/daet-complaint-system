@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build --outDir public/.build-next && rm -rf public/build && mv public/.build-next public/build",
         "dev": "vite"
     },
     "devDependencies": {

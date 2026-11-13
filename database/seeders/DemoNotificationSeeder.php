@@ -2,161 +2,124 @@
 
 namespace Database\Seeders;
 
-use App\Enums\ComplaintStatus;
-use App\Enums\InformationRequestStatus;
 use App\Models\Complaint;
-use App\Models\ComplaintInformationRequest;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 /**
- * Demo notifications so the bell, dropdown feed and full page can be looked at
- * without having to drive the whole verification workflow by hand.
+ * Notifications for the presentation cast: a verifier with a queue, field
+ * staff with work waiting, the Mayor's Office with a publication request,
+ * and residents with updates and asks on their own tickets.
  *
- * Every notification points at a complaint that already exists and every
- * information request is real, so nothing here can disagree with the state the
- * rest of the demo data is in. Re-running is safe: rows are matched on their
- * natural key rather than duplicated.
+ * Every notification points at a real seeded complaint, so nothing in the
+ * bell disagrees with the state of the data it names.
  */
 class DemoNotificationSeeder extends Seeder
 {
+    private function complaintByTitle(string $title): ?Complaint
+    {
+        return Complaint::where('title', $title)->first();
+    }
+
     public function run(): void
     {
         $this->command->info('Seeding demo notifications...');
 
         $admin = User::where('role', 'admin')->first();
+        $verifier = User::where('email', 'verifier@daetlistens.gov.ph')->first();
+        $juan = User::where('email', 'engineering@daetlistens.gov.ph')->first();
+        $ana = User::where('email', 'mayor@daetlistens.gov.ph')->first();
+        $carlos = User::where('email', 'menro@daetlistens.gov.ph')->first();
+
         $pedro = User::where('email', 'pedro@gmail.com')->first();
+        $nena = User::where('email', 'nena@gmail.com')->first();
         $jose = User::where('email', 'jose@gmail.com')->first();
+        $maria = User::where('email', 'maria.santos@gmail.com')->first();
+        $carmen = User::where('email', 'carmen.delarosa@gmail.com')->first();
 
-        if ($admin === null || $pedro === null || $jose === null) {
-            $this->command->warn('  Skipped: run UserSeeder first.');
-
-            return;
-        }
-
-        // The seeded department staff hold can_verify, so they are the ones who
-        // would realistically receive verification work.
-        $verifier = User::where('role', 'staff')->where('can_verify', true)->first();
-
-        $pothole = $this->complaint('Pothole near the market entrance');
-        $flooded = $this->complaint('Flooded pedestrian path after rainfall');
-        $streetlight = $this->complaint('Streetlight not working at the barangay hall');
-        $noise = $this->complaint('Late-night noise near the public plaza');
-        $spam = $this->complaint('FREE MONEY click here now!!!');
+        $streetlight = $this->complaintByTitle('Streetlight out at the barangay hall waiting area');
+        $spam = $this->complaintByTitle('FREE MONEY!!! click here now!!!');
+        $pothole = $this->complaintByTitle('Pothole along the national road near the Salcedo junction');
+        $flooded = $this->complaintByTitle('Flooded pedestrian lane after heavy rain in Pandan');
+        $garbage = $this->complaintByTitle('Hindi kinokolekta ang basura sa tabi ng health center');
+        $plasticApproved = $this->complaintByTitle('Sari-sari store along the national highway using single-use plastics');
+        $plasticPending = $this->complaintByTitle('Dry goods store in Mantagbac giving out plastic sachets and bags');
+        $overdueRoad = $this->complaintByTitle('Malaking butas sa national highway malapit sa waiting shed');
+        $holdRoad = $this->complaintByTitle('Uneven pavement and depression on the Bagasbas feeder road');
+        $water = $this->complaintByTitle('Matagal nang hindi umaandar ang suplay ng tubig ng bayan sa Cobangbang');
 
         $created = 0;
 
-        if ($verifier !== null) {
-            $created += $this->notify(
-                $verifier,
-                Notification::COMPLAINT_NEEDS_VERIFICATION,
-                "{$flooded?->ticket_id} is waiting to be verified",
-                $flooded,
-                ['review_status' => 'pending'],
-                minutesAgo: 12,
-            );
+        // ── Verifier (Engineering): two tickets waiting on verification ──
+        $created += $this->notify($verifier, Notification::COMPLAINT_NEEDS_VERIFICATION,
+            "{$streetlight?->ticket_id} is waiting to be verified", $streetlight,
+            ['review_status' => 'pending'], minutesAgo: 60 * 20);
+        $created += $this->notify($admin, Notification::COMPLAINT_NEEDS_VERIFICATION,
+            "{$spam?->ticket_id} was flagged and is waiting to be verified", $spam,
+            ['review_status' => 'pending'], minutesAgo: 60 * 3);
+        $created += $this->notify($verifier, Notification::COMPLAINT_INFORMATION_PROVIDED,
+            "The resident replied about {$pothole?->ticket_id}", $pothole,
+            ['ticket_id' => $pothole?->ticket_id, 'round' => 1], minutesAgo: 60 * 24 * 6, read: true);
 
-            $created += $this->notify(
-                $verifier,
-                Notification::COMPLAINT_VERIFICATION_DELEGATED,
-                "Verification of {$pothole?->ticket_id} was handed to you",
-                $pothole,
-                ['ticket_id' => $pothole?->ticket_id],
-                minutesAgo: 95,
-            );
+        // ── Engineering field staff: overdue work and a fresh assignment ──
+        $created += $this->notify($juan, Notification::COMPLAINT_WORK_OVERDUE,
+            "{$overdueRoad?->ticket_id} is overdue — pothole repair past its target date", $overdueRoad,
+            ['ticket_id' => $overdueRoad?->ticket_id, 'days_overdue' => 4], minutesAgo: 60 * 2);
+        $created += $this->notify($admin, Notification::COMPLAINT_WORK_OVERDUE,
+            "{$overdueRoad?->ticket_id} is overdue and still unassigned crew-wise", $overdueRoad,
+            ['ticket_id' => $overdueRoad?->ticket_id], minutesAgo: 60 * 24 * 2, read: true);
+        $created += $this->notify($juan, Notification::COMPLAINT_ASSIGNED,
+            "You were assigned {$holdRoad?->ticket_id}", $holdRoad,
+            ['ticket_id' => $holdRoad?->ticket_id], minutesAgo: 60 * 24 * 22, read: true);
 
-            $created += $this->notify(
-                $verifier,
-                Notification::COMPLAINT_INFORMATION_PROVIDED,
-                "The resident replied about {$streetlight?->ticket_id}",
-                $streetlight,
-                ['ticket_id' => $streetlight?->ticket_id, 'round' => 1],
-                minutesAgo: 40,
-                read: true,
-            );
+        // ── MENRO: an answer overdue from the resident on the open request ──
+        $created += $this->notify($carlos, Notification::COMPLAINT_INFORMATION_STALE,
+            "{$garbage?->ticket_id} has been waiting on the resident for 5 days", $garbage,
+            ['ticket_id' => $garbage?->ticket_id, 'days' => 5], minutesAgo: 60);
 
-            $created += $this->notify(
-                $verifier,
-                Notification::COMPLAINT_INFORMATION_STALE,
-                "{$spam?->ticket_id} has been waiting on the resident for 5 days",
-                $spam,
-                [
-                    'ticket_id' => $spam?->ticket_id,
-                    'days' => 5,
-                    // Matches the sweep command's dedupe key so re-running the
-                    // seeder does not collide with a real sweep.
-                    'request_id' => $this->openRequestFor($spam, $verifier)?->id,
-                ],
-                minutesAgo: 60 * 24 * 3,
-            );
-        }
+        // ── Residents: updates on their own tickets ──
+        $created += $this->notify($pedro, Notification::COMPLAINT_STATUS_CHANGED,
+            "{$overdueRoad?->ticket_id} is now In Progress", $overdueRoad,
+            ['ticket_id' => $overdueRoad?->ticket_id, 'status' => 'In Progress', 'review_status' => 'verified'],
+            minutesAgo: 60 * 24 * 10, read: true);
+        $created += $this->notify($pedro, Notification::COMPLAINT_INFORMATION_REQUESTED,
+            "The department needs more information about {$garbage?->ticket_id}", $garbage,
+            ['ticket_id' => $garbage?->ticket_id, 'round' => 1], minutesAgo: 60 * 24 * 5, read: true);
+        $created += $this->notify($nena, Notification::COMPLAINT_STATUS_CHANGED,
+            "{$flooded?->ticket_id} is now Resolved", $flooded,
+            ['ticket_id' => $flooded?->ticket_id, 'status' => 'Resolved', 'review_status' => 'verified'],
+            minutesAgo: 60 * 24 * 29, read: true);
+        $created += $this->notify($jose, Notification::COMPLAINT_INFORMATION_REQUESTED,
+            "The department needs more information about {$pothole?->ticket_id}", $pothole,
+            ['ticket_id' => $pothole?->ticket_id, 'round' => 1], minutesAgo: 60 * 24 * 7, read: true);
+        $created += $this->notify($maria, Notification::COMPLAINT_PUT_ON_HOLD,
+            "{$holdRoad?->ticket_id} is on hold — waiting for asphalt materials, expected November 20", $holdRoad,
+            ['ticket_id' => $holdRoad?->ticket_id, 'hold_reason' => 'awaiting_materials', 'expected_resume_at' => '2026-11-20'],
+            minutesAgo: 60 * 24 * 6, read: true);
+        $created += $this->notify($carmen, Notification::COMPLAINT_STATUS_CHANGED,
+            "{$water?->ticket_id} is now Under Review", $water,
+            ['ticket_id' => $water?->ticket_id, 'status' => 'Under Review', 'review_status' => 'verified'],
+            minutesAgo: 60 * 24 * 4, read: true);
 
-        $created += $this->notify(
-            $pedro,
-            Notification::COMPLAINT_STATUS_CHANGED,
-            "{$noise?->ticket_id} is now Resolved",
-            $noise,
-            ['ticket_id' => $noise?->ticket_id, 'status' => 'Resolved', 'review_status' => 'verified'],
-            minutesAgo: 25,
-        );
-
-        $created += $this->notify(
-            $pedro,
-            Notification::COMPLAINT_STATUS_CHANGED,
-            "{$pothole?->ticket_id} is now In Progress",
-            $pothole,
-            ['ticket_id' => $pothole?->ticket_id, 'status' => 'In Progress', 'review_status' => 'verified'],
-            minutesAgo: 300,
-            read: true,
-        );
-
-        $created += $this->notify(
-            $jose,
-            Notification::COMPLAINT_INFORMATION_REQUESTED,
-            "The department needs more information about {$streetlight?->ticket_id}",
-            $streetlight,
-            [
-                'ticket_id' => $streetlight?->ticket_id,
-                'round' => 1,
-                'question' => 'The streetlight photo is too dark to read the pole number. Please send a closer shot.',
-            ],
-            minutesAgo: 55,
-        );
-
-        $created += $this->notify(
-            $admin,
-            Notification::COMPLAINT_NEEDS_VERIFICATION,
-            "{$spam?->ticket_id} was flagged and is waiting to be verified",
-            $spam,
-            ['review_status' => 'pending'],
-            minutesAgo: 8,
-        );
-
-        $created += $this->notify(
-            $admin,
-            Notification::COMPLAINT_INFORMATION_STALE,
-            "{$flooded?->ticket_id} has been waiting on the resident for 4 days",
-            $flooded,
-            ['ticket_id' => $flooded?->ticket_id, 'days' => 4, 'request_id' => null],
-            minutesAgo: 60 * 24 * 2,
-            read: true,
-        );
+        // ── Mayor's Office: a publication decision waiting on Ana ──
+        $created += $this->notify($ana, Notification::COMPLAINT_PUBLICATION_REQUESTED,
+            "MENRO asked to publish {$plasticPending?->ticket_id}", $plasticPending,
+            ['ticket_id' => $plasticPending?->ticket_id, 'category' => 'plastic_usage'],
+            minutesAgo: 60 * 24 * 2);
+        $created += $this->notify($ana, Notification::COMPLAINT_PUBLICATION_APPROVED,
+            "Public release of {$plasticApproved?->ticket_id} approved", $plasticApproved,
+            ['ticket_id' => $plasticApproved?->ticket_id], minutesAgo: 60 * 24 * 8, read: true);
 
         $this->command->info("Demo notifications completed ({$created} created).");
     }
 
-    private function complaint(string $title): ?Complaint
-    {
-        return Complaint::where('title', $title)->latest('id')->first();
-    }
-
     /**
-     * Create one notification, or return false if this demo row already exists.
+     * Create one notification, backdated so the feed shows a believable
+     * spread. Returns 1 if created, 0 if skipped.
      */
     private function notify(
-        User $recipient,
+        ?User $recipient,
         string $type,
         string $title,
         ?Complaint $subject,
@@ -164,17 +127,17 @@ class DemoNotificationSeeder extends Seeder
         int $minutesAgo,
         bool $read = false,
     ): int {
-        if ($subject === null) {
+        if ($recipient === null || $subject === null) {
             return 0;
         }
 
-        $existing = Notification::where('user_id', $recipient->id)
+        $exists = Notification::where('user_id', $recipient->id)
             ->where('type', $type)
             ->where('subject_type', $subject->getMorphClass())
             ->where('subject_id', $subject->id)
-            ->first();
+            ->exists();
 
-        if ($existing !== null) {
+        if ($exists) {
             return 0;
         }
 
@@ -187,8 +150,6 @@ class DemoNotificationSeeder extends Seeder
             'context' => array_filter($context, fn ($value) => $value !== null),
         ]);
 
-        // Backdated so the feed shows a believable spread rather than five
-        // notifications stamped in the same second.
         $notification->forceFill([
             'created_at' => now()->subMinutes($minutesAgo),
             'updated_at' => now()->subMinutes($minutesAgo),
@@ -196,38 +157,5 @@ class DemoNotificationSeeder extends Seeder
         ])->save();
 
         return 1;
-    }
-
-    /**
-     * A genuine open request, so the "waiting on resident" filter and the
-     * overdue treatment in the queue have something real to point at.
-     */
-    private function openRequestFor(?Complaint $complaint, User $verifier): ?ComplaintInformationRequest
-    {
-        if ($complaint === null) {
-            return null;
-        }
-
-        $existing = ComplaintInformationRequest::where('complaint_id', $complaint->id)->first();
-
-        if ($existing !== null) {
-            return $existing;
-        }
-
-        $request = ComplaintInformationRequest::create([
-            'complaint_id' => $complaint->id,
-            'requested_by' => $verifier->id,
-            'question' => 'The photo is too dark to identify the damaged part. Please resend in daylight.',
-            'status' => InformationRequestStatus::Open->value,
-            'round' => 1,
-        ]);
-
-        $request->forceFill(['created_at' => now()->subDays(5)])->save();
-
-        if ($complaint->review_status !== 'needs_information') {
-            $complaint->update(['review_status' => 'needs_information']);
-        }
-
-        return $request;
     }
 }

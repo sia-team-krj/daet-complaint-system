@@ -335,6 +335,13 @@
     color: var(--muted);
 }
 
+/* The office paused the work. The clock is paused with it, so this is its
+ * own family rather than the amber of "due soon" or the red of "late". */
+.sla-chip--on-hold {
+    background: var(--hold-bg);
+    color: var(--hold-text);
+}
+
 /* ── Live ticket notice ─────────────────────────────────────────────
  * The ticket changed while it was open. Amber action-needed, because the
  * staff member is about to act on a case that has moved; the notice states
@@ -628,7 +635,23 @@
 }
 
 .moderation-panel--light .moderation-panel__consent strong {
+    display: block;
+    margin-bottom: 3px;
     color: var(--text);
+}
+
+/* The note under a field carries the same boxed treatment as the consent
+ * line: what the resident will read, and what the date is for, are things
+ * the office needs to see, not captions. */
+.moderation-panel--light .moderation-panel__hint {
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
 }
 
 .moderation-panel--light .moderation-field {
@@ -731,4 +754,305 @@
 
 .moderation-panel--light .moderation-panel__submit:hover {
     background: var(--navy-800);
+}
+
+.moderation-panel--light .moderation-panel__section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.moderation-panel--light .moderation-panel__section--quick {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+}
+
+.moderation-panel--light .moderation-panel__section-head {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.moderation-panel--light .moderation-panel__section-title {
+    margin: 0;
+    color: var(--navy-900);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.moderation-panel--light .moderation-photo {
+    gap: 12px;
+    padding: 10px 12px;
+    color: var(--text);
+}
+
+.moderation-panel--light .moderation-photo__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.moderation-panel--light .moderation-photo__action {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy-700);
+    white-space: nowrap;
+}
+
+.moderation-panel--light .moderation-photo--withheld .moderation-photo__action--restore {
+    color: var(--gold-700);
+}
+
+.moderation-panel--light .moderation-panel__submit--secondary {
+    background: var(--surface);
+    color: var(--navy-900);
+    border-color: var(--line);
+}
+
+.moderation-panel--light .moderation-panel__submit--secondary:hover {
+    background: var(--navy-50);
+}
+
+/* The reason chips, on the light surface. */
+.moderation-panel--light .reason-chip {
+    border-color: var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.moderation-panel--light .reason-chip:hover {
+    background: var(--surface-soft);
+    border-color: var(--navy-300);
+}
+
+.moderation-panel--light .reason-chip:has(input:checked) {
+    background: var(--navy-900);
+    border-color: var(--navy-900);
+    color: var(--surface);
+}
+
+.moderation-panel--light .reason-chip:has(input:focus-visible) {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
+.moderation-panel--light .moderation-field__label {
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* ── The hold panel ──────────────────────────────────────────────────
+ * Its own identity: the office pausing the work is not a moderation
+ * decision, so it carries the hold tint rather than borrowing one.
+ */
+
+.hold-panel__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hold-panel__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: var(--hold-bg);
+    color: var(--hold-text);
+}
+
+.hold-panel__state {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.hold-panel__state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: var(--hold-bg);
+    color: var(--hold-text);
+}
+
+.hold-panel__state-icon--idle {
+    background: var(--surface-soft);
+    color: var(--muted);
+}
+
+/* ── Complaint location card ────────────────────────────────────────
+ * The map is the location; the footer carries the one action that turns
+ * "where" into "go there". The exact coordinates are deliberately not
+ * printed: the pin is the record, and the directions link hands it to
+ * Google Maps without a second readout a screenshot could capture.
+ */
+
+.location-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--line-soft);
+    background: var(--surface-soft);
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.location-card__meta strong {
+    color: var(--navy-900);
+}
+
+.location-card__directions {
+    margin-top: 0;
+    min-height: 44px;
+}
+
+.location-card__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 32px 24px;
+    background: var(--surface-soft);
+    text-align: center;
+}
+
+.location-card__empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-700);
+}
+
+.location-card__empty strong {
+    color: var(--text);
+    font-size: 14px;
+}
+
+.location-card__empty p {
+    margin: 0;
+    max-width: 44ch;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+@media (max-width: 599px) {
+    .location-card__footer {
+        padding: 12px 16px;
+    }
+
+    .location-card__directions {
+        width: 100%;
+    }
+}
+
+/* ── The publication checklist (reports that name somebody) ──────────
+   The ordered gate a report must pass before it can appear on the
+   transparency page, shown to the office handling it. Same visual family
+   as the moderation panels it sits beside. No new colours.
+   ──────────────────────────────────────────────────────────────────── */
+.publication-checklist__steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 2px 0 0;
+}
+
+.publication-checklist__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--faint);
+}
+
+.publication-checklist__item.is-done {
+    color: var(--text);
+}
+
+.publication-checklist__item.is-blocked .publication-checklist__label {
+    color: var(--error-text);
+}
+
+.publication-checklist__icon {
+    flex: 0 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--faint);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.publication-checklist__item.is-done .publication-checklist__icon {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.publication-checklist__item.is-blocked .publication-checklist__icon {
+    border-color: var(--error-text);
+    color: var(--error-text);
+}
+
+.publication-checklist__label {
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.publication-checklist__verdict {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.publication-checklist__verdict.is-approved {
+    border-color: var(--success);
+    color: var(--text);
+}
+
+.publication-checklist__verdict.is-declined {
+    border-color: var(--error-text);
+    color: var(--error-text);
 }

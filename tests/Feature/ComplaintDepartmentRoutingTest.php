@@ -18,7 +18,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
 
     private User $citizen;
     private User $engineeringStaff;
-    private User $gsoStaff;
+    private User $menroStaff;
     private User $admin;
 
     protected function setUp(): void
@@ -35,9 +35,9 @@ class ComplaintDepartmentRoutingTest extends TestCase
             'role' => 'staff',
             'department_id' => Department::where('code', 'ENG')->first()->id,
         ]);
-        $this->gsoStaff = User::factory()->create([
+        $this->menroStaff = User::factory()->create([
             'role' => 'staff',
-            'department_id' => Department::where('code', 'GSO')->first()->id,
+            'department_id' => Department::where('code', 'MENRO')->first()->id,
         ]);
         $this->admin = User::factory()->create(['role' => 'admin']);
     }
@@ -68,31 +68,39 @@ class ComplaintDepartmentRoutingTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function garbage_category_resolves_to_gso(): void
+    public function garbage_category_resolves_to_menro(): void
     {
         $dept = DepartmentRouter::resolve('garbage');
         $this->assertNotNull($dept);
-        $this->assertEquals('GSO', $dept->code);
+        $this->assertEquals('MENRO', $dept->code);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function sanitation_category_resolves_to_gso(): void
+    public function sanitation_category_resolves_to_menro(): void
     {
         $dept = DepartmentRouter::resolve('sanitation');
         $this->assertNotNull($dept);
-        $this->assertEquals('GSO', $dept->code);
+        $this->assertEquals('MENRO', $dept->code);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function business_permit_category_resolves_to_bpls(): void
+    public function plastic_usage_category_resolves_to_menro(): void
+    {
+        $dept = DepartmentRouter::resolve('plastic_usage');
+        $this->assertNotNull($dept);
+        $this->assertEquals('MENRO', $dept->code);
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function the_withdrawn_business_permit_category_resolves_to_the_mayors_office(): void
     {
         $dept = DepartmentRouter::resolve('business_permit');
         $this->assertNotNull($dept);
-        $this->assertEquals('BPLO', $dept->code);
+        $this->assertEquals('OM', $dept->code);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function noise_complaint_category_resolves_to_pnp(): void
+    public function noise_complaint_category_resolves_to_the_mayors_office(): void
     {
         $dept = DepartmentRouter::resolve('noise_complaint');
         $this->assertNotNull($dept);
@@ -100,19 +108,42 @@ class ComplaintDepartmentRoutingTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function stray_animals_category_resolves_to_agriculture(): void
+    public function a_set_aside_category_falls_back_to_the_mayors_office(): void
     {
-        $dept = DepartmentRouter::resolve('stray_animals');
-        $this->assertNotNull($dept);
-        $this->assertEquals('HLTH', $dept->code);
+        // Park maintenance, stray animals and the catch-all are kept in the
+        // system but no office owns them yet, so they land at the general desk.
+        foreach (['park_maintenance', 'stray_animals', 'others'] as $category) {
+            $dept = DepartmentRouter::resolve($category);
+            $this->assertNotNull($dept);
+            $this->assertEquals('OM', $dept->code, "Category {$category} should fall back to the Mayor's Office.");
+        }
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
-    public function unknown_category_falls_back_to_gso(): void
+    public function the_retired_categories_are_no_longer_offered_to_residents(): void
+    {
+        $offered = collect(DepartmentRouter::getCategoryOptions())->flatten(1)->pluck('value');
+
+        foreach (['noise_complaint', 'park_maintenance', 'stray_animals', 'business_permit', 'staff_treatment'] as $retired) {
+            $this->assertFalse($offered->contains($retired), "{$retired} should no longer be offered.");
+        }
+
+        // They keep their names, so the complaints already filed under them
+        // still render properly on the public register.
+        $labels = DepartmentRouter::categoryLabels();
+        $this->assertSame('Noise Complaint', $labels['noise_complaint']);
+        $this->assertSame('Stray Animals', $labels['stray_animals']);
+        $this->assertSame('Park / Public Area Maintenance', $labels['park_maintenance']);
+        $this->assertSame('Business Permit Issues', $labels['business_permit']);
+        $this->assertSame('How You Were Treated at the LGU', $labels['staff_treatment']);
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function unknown_category_falls_back_to_the_mayors_office(): void
     {
         $dept = DepartmentRouter::resolve('unknown_category');
         $this->assertNotNull($dept);
-        $this->assertEquals('GSO', $dept->code);
+        $this->assertEquals('OM', $dept->code);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -160,7 +191,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->assertNotNull($log);
         $this->assertNull($log->previous_status);
         $this->assertEquals('Submitted', $log->new_status);
-        $this->assertStringContainsString('General Services Office', $log->comment);
+        $this->assertStringContainsString('Municipal Environment and Natural Resource Office', $log->comment);
         $this->assertEquals($this->citizen->id, $log->actor_id);
     }
 
@@ -185,7 +216,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
             'user_id' => $this->citizen->id,
         ]);
 
-        $this->actingAs($this->gsoStaff)
+        $this->actingAs($this->menroStaff)
             ->get(route('staff.complaints.show', $complaint))
             ->assertForbidden();
     }
@@ -209,9 +240,9 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->actingAs($this->citizen);
 
         $this->post(route('complaints.store'), [
-            'category' => 'business_permit',
-            'title' => 'Business permit issue',
-            'description' => 'Need help with my business permit renewal.',
+            'category' => 'others',
+            'title' => 'A general concern for the barangay',
+            'description' => 'There is something in the barangay that needs attention from the office.',
             'image' => $this->complaintEvidence(),
             'urgency' => 'Low',
             'terms' => '1',
@@ -224,7 +255,7 @@ class ComplaintDepartmentRoutingTest extends TestCase
 
         $response->assertOk()
             ->assertSee($complaint->ticket_id)
-            ->assertSee('Business Permit and Licensing Office');
+            ->assertSee("Mayor's Office");
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -232,13 +263,26 @@ class ComplaintDepartmentRoutingTest extends TestCase
     {
         $options = DepartmentRouter::getCategoryOptions();
 
-        $this->assertArrayHasKey('Engineering', $options);
-        $this->assertArrayHasKey('General Services', $options);
-        $this->assertArrayHasKey('Business Permits', $options);
-        $this->assertArrayHasKey('Peace & Order', $options);
-        $this->assertArrayHasKey('Agriculture', $options);
+        // The group key is the office name the resident is told about, so it
+        // has to match the name in the department directory.
+        $this->assertArrayHasKey('Engineering Office', $options);
+        $this->assertArrayHasKey('Municipal Environment and Natural Resource Office', $options);
+        $this->assertArrayHasKey("Mayor's Office", $options);
 
-        $this->assertEquals('road_damage', $options['Engineering'][0]['value']);
-        $this->assertEquals('Road Damage', $options['Engineering'][0]['label']);
+        $this->assertEquals('road_damage', $options['Engineering Office'][0]['value']);
+        $this->assertEquals('Road Damage', $options['Engineering Office'][0]['label']);
+
+        $this->assertContains(
+            'plastic_usage',
+            array_column($options['Municipal Environment and Natural Resource Office'], 'value'),
+        );
+
+        // The withdrawn categories are not offered any more.
+        $offered = collect($options)
+            ->flatten(1)
+            ->pluck('value')
+            ->all();
+        $this->assertNotContains('business_permit', $offered);
+        $this->assertNotContains('staff_treatment', $offered);
     }
 }

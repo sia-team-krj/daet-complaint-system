@@ -79,6 +79,18 @@ return [
         'activity' => 'Aktibidad',
     ],
 
+    // Ang sariling trail ng tanggapan — ang ginawa ng lahat dito, laban sa
+    // "aking aktibidad", na ang ginawa ng miyong kasapi.
+    'activity' => [
+        'department_title' => 'Aktibidad ng tanggapan',
+        'department_lede' => '{1}:count na aksyon ang naitala.|{2,*}:count na aksyon ang naitala.',
+        'department_feed_title' => 'Ang ginawa ng tanggapan',
+        'department_feed_lede' => 'Bawat aksyon na ginawa ng sinuman sa tanggapan na ito, pinakabago muna.',
+        'metric_actions' => 'Mga naitalang aksyon',
+        'metric_complaints' => 'Mga reklamong hinawakan',
+        'metric_last' => 'Huling aktibidad',
+    ],
+
     // The staff proof capture (design system §5.36): the photos that prove
     // the work was done, and the rule that says when they are required.
     'proof' => [
@@ -137,6 +149,10 @@ return [
         'delegate_submit' => 'Ipasa ang beripikasyon',
         'delegate_current' => 'Kasalukuyang nasa :name ang beripikasyon.',
         'read_only_body' => 'Tanging ang tagaberipika ng departamento o administrator ang maaaring magtala ng desisyon sa beripikasyon o magtakda ng nakumpirmang prayoridad sa tiket na ito.',
+        'minimize' => 'Ilihim',
+        'show' => 'Pakita ang form',
+        'minimize_label' => 'Ilihim ang form ng beripikasyon',
+        'show_label' => 'Pakita ang form ng beripikasyon',
     ],
 
     // The internal half of a status update. Written to the same immutable
@@ -166,6 +182,15 @@ return [
         'reason' => 'Dahilan (kinakailangan)',
         'reason_placeholder' => 'Bakit ito itinatago o nililinis?',
         'save' => 'I-save ang moderation',
+        'quick_title' => 'Isulat ang nai-redact na kopya para sa akin',
+        'quick_lede' => 'I-check ang lahat ng hindi dapat lumabas sa pampublikong kopya. Sumusulat kami ng nai-redact na pamagat at paglalarawan na walang nito — isang ligtas na draft na susuriin at aayusin mo bago i-save. Walang ilalathala hanggang aprubahan ng tanggapan ng Alkalde.',
+        'quick_party' => 'Ang pangalan ng partido',
+        'quick_position' => 'Ang kanyang posisyon o tanggapan',
+        'quick_submit' => 'Isulat ang nai-redact na kopya',
+        'quick_done' => 'Napunan na ang nai-redact na kopya sa ibaba. Walang pampubliko pa rito — suriin, ayusin kung may kailangang ayusin, tapos i-save.',
+        'quick_nothing' => 'Mag-check ng kahit isang bagay na iiwanan.',
+        'redacted_state_ready' => 'May naka-save nang nai-redact na pampublikong kopya. Maaari mo itong suriin at ayusin sa ibaba.',
+        'redacted_state_empty' => 'Iwanang blangko ang mga field para panatilihin ang orihinal na pampublikong teksto, o magsulat ng kapalit na nai-redact sa ibaba.',
     ],
 
     'flag_notice' => [
@@ -174,6 +199,29 @@ return [
         'similar' => ':percent% katulad',
         'hidden_public' => 'Nakatago mula sa pampublikong transparency page.',
         'compare' => 'Ikumpara sa :ticket',
+    ],
+
+    // Getting the field team to the pin. The coordinates stay out of the
+    // visible copy: the map carries the position, and one tap hands it to
+    // Google Maps with the staff member's current location as the origin.
+    'location' => [
+        'title' => 'Lokasyon ng reklamo',
+        'directions' => 'Kumuha ng direksyon',
+        'directions_aria' => 'Kumuha ng direksyon sa Google Maps (magbubukas sa bagong tab)',
+        'map_aria' => 'Mapang nagpapakita ng naka-pin na lokasyon ng reklamong ito',
+        'map_unavailable' => 'Hindi makuha ang mapa. Ang Kumuha ng direksyon ay magbubukas pa rin ng naka-pin na lokasyon sa Google Maps.',
+        'no_pin_title' => 'Walang eksaktong pin ang reklamong ito',
+        'no_pin_body' => 'Nagbigay ang residente ng barangay o address, ngunit walang naitalang GPS point, kaya walang mapupuntahan.',
+        'barangay_label' => 'Barangay',
+    ],
+
+    // Ang queue: anong trabaho ang ipinapakita, at paano ito inaayos.
+    'queue_scope' => [
+        'scope_open' => 'Buhay na trabaho',
+        'scope_finished' => 'Tapos na',
+        'all_statuses' => 'Lahat ng estado',
+        'empty_finished_title' => 'Wala pang tapos',
+        'empty_finished_body' => 'Lalabas dito ang mga tinanggihan, tapos na at nakatolong na reklamo. Wala pang tapos sa saklaw na ito.',
     ],
 
     // The clock on the work a department owes. The office accepts a report
@@ -186,5 +234,79 @@ return [
         'overdue_filter' => 'Na-lampas',
         'overdue_count' => ':count na na-lampas',
         'no_overdue' => 'Walang na-lampas',
+    ],
+
+    // Mga ulat na binabanggit ang isang tao. Nanatili ang pangalan sa
+    // tanggapan; ang paglathala ay pasya ng tanggapan ng Alkalde.
+    'publication' => [
+        'title' => 'Binabanggit ng ulat na ito ang isang tao',
+        'lede' => 'Nakikita ng tanggapang ito lamang ang pangalan sa ibaba. Hindi ito ipapakita sa pampublikong pahina. Iipublish lamang ang ulat pagkatapos na ito ay maayos, beripikado, nai-redact, at aprubahan ng tanggapan ng Alkalde.',
+        'named_party' => 'Tungkol sa kanino',
+        'named_party_hint' => 'Nakikita ng tanging tanggapan na humahawlak sa ulat na ito ang pangalan na ito.',
+        'not_requested' => 'Hindi pa hinihingi',
+        'not_requested_body' => 'Pribado ang ulat na ito. Hilinging ipalabas ito sa tanggapan ng Alkalde kapag maayos na ito, beripikado, at nai-redact.',
+        'pending_body' => 'Naghihingi na sa tanggapan ng Alkalde. Nai-update na ang naghihintay.',
+        'approved_body' => 'Nalathala sa transparency page sa nai-redact nitong anyo.',
+        'declined_body' => 'Desidisyon ng tanggapan ng Alkalde na alintataman sa privacy ito. Pribado pa rin, at nai-update na ang naghihintay.',
+        'note' => 'Tala ng desisyon',
+        'request_note' => 'Tala para sa tanggapan ng Alkalde',
+        'request_note_placeholder' => 'Ano ang ginawa, at ano ang nai-redact.',
+        'request' => 'Hilinging ipalabas ito ng tanggapan ng Alkalde',
+        'request_blocked' => 'Ayusin, beripikaho, at i-redact muna ito.',
+        'approve' => 'Aprubahan ang paglathala',
+        'approve_blocked' => 'Hindi pa handa ang ulat na ito. Ayusin muna nito, beripikahin at i-redact ang mga sensitibong bahagi ng tanggapan.',
+        'decline' => 'Huwag ipalabas — manatiling pribado',
+        'decline_note' => 'Bakit hindi ito ipinapublish',
+        'decline_note_placeholder' => 'Ipinapasa sa naghihintay ang sulat na ito.',
+        'queue_title' => 'Mga desisyon sa paglathala',
+        'queue_lede' => 'Mga ulat na binabanggit ang isang tao, naghihintay ng pasya kung ilalathala.',
+        'queue_empty' => 'Walang naghihintay ng desisyon.',
+        'queue_empty_body' => 'Lalabas dito ang mga ulat na binabanggit ang isang tao kapag hiningi ng tanggapan na ipalabas.',
+        'open' => 'Buksan ang ulat',
+        'review_title' => 'Desisyon sa paglathala',
+        'review_lede' => 'Hiningi ng tanggapan sa tanggapan ng Alkalde na ipalabas ang ulat na ito. Ang nai-redact na kopya sa ibaba ang babasahin ng residente; hindi ipapakita rito ang pangalan ng tinutukso.',
+        'review_back' => 'Bumalik sa mga desisyon sa paglathala',
+        'review_copy_title' => 'Ano ang ilalathala',
+        'review_copy_hint' => 'Ang nai-redact na pamagat at paglalarawan, eksaktong tulad ng lalabas sa transparency page.',
+        'review_panel_lede' => 'Ang nai-redact na kopya ang babasahin ng residente. Nanatili sa tanggapan na humahawak ng ulat ang pangalan ng tinutukso.',
+        'checklist_title' => 'Checklist para sa paglathala',
+        'checklist_lede' => 'Ang kailangang mangyari bago lumabas ang ulat na ito sa transparency page.',
+        'checklist_settled' => 'Naayos o isininara na ng inyong tanggapan',
+        'checklist_verified' => 'Beripikado bilang totoo ang impormasyon',
+        'checklist_redacted' => 'Nai-redact ang mga sensitibong bahagi',
+        'checklist_asked' => 'Hiniling na ng inyong tanggapan sa tanggapan ng Alkalde na ipalabas ito',
+        'checklist_approved' => 'Aprubado na ng tanggapan ng Alkalde ang paglathala',
+        'checklist_waiting_body' => 'Naghihintay sa tanggapan ng Alkalde. Kayo at ang nagsampa ay sasabihan kapag nagdesisyon na sila.',
+        'checklist_published_body' => 'Aprubado — maaaring lumabas ang ulat na ito sa transparency page sa nai-redact nitong anyo.',
+        'checklist_declined_body' => 'Tinanggihan — mananatiling pribado ang ulat na ito magpakailanman.',
+    ],
+
+    // Pagpigil sa trabaho. Maaaring totoo at wasto ang isang reklamo pero
+    // hindi pa maisasagawa ngayon — walang pondo, walang materyales, o traba-
+    // ho ng ibang tanggapan.
+    'hold' => [
+        'title' => 'Ipagilan ang trabaho',
+        'lede' => 'Maaaring totoo at wasto ang isang reklamo pero hindi pa maisasagawa ngayon. Sabihin kung bakit, ipaalam ito sa naghihintay, at nakatigil ang oras ng takdang habang naghihintay.',
+        'on_hold' => 'Naka-hold',
+        'held_for' => '{1}Naka-hold nang :count araw.|{2,*}Naka-hold nang :count araw.',
+        'expected_on' => 'Inaasahang magpapatuloy sa :date.',
+        'told_the_resident' => 'Ipinagalaatan sa naghihintay',
+        'internal_note' => 'Tala sa loob ng tanggapan',
+        'internal_note_placeholder' => 'Nakikita lamang ito ng tanggapan.',
+        'note' => 'Babaguhin ng naghihintay',
+        'note_placeholder' => 'Wala pang available na aspaltal para sa bahagi ng kalsadang ito; ang schedule ay sa susunod na quarter.',
+        'note_hint' => 'Binabasa ito ng naghihintay, at gayundin ang pampublikong pahina. Huwag isama rito ang anumang tumutukoy sa isang tao.',
+        'chip_public' => 'Nakikita ito ng naghihintay',
+        'chip_internal' => 'Tanggapan lamang',
+        'reason' => 'Bakit ipinigil ang trabaho?',
+        'reason_placeholder' => 'Pumili ng dahilan',
+        'reason_hint' => 'Naitatala ang dahilan para sa administrator. Ang naghihintay ay babasa ng iyong paliwanag sa ibaba.',
+        'expected_resume' => 'Inaasahang magpapatuloy sa',
+        'expected_resume_hint' => 'Nakikita ng naghihintay ang petsang ito, kaya alam nila kung kailan mag-aasahan ng update. Iwan kung hindi pa masasabi ng tanggapan.',
+        'resume_note' => 'Tala para sa naghihintay',
+        'resume_note_placeholder' => 'Dumating na ang materyales; babalik ang crew sa site sa Lunes.',
+        'resume' => 'Alisin ang hold at ipagpatuloy',
+        'not_on_hold' => 'Hindi naka-hold ang reklamong ito. May pananagutan ang tanggapan dito batay sa karaniwang takdang.',
+        'put_on_hold' => 'Ipanatili ang trabaho',
     ],
 ];

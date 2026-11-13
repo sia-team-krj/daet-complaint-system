@@ -8,6 +8,7 @@
     name (the office in search results, the role inside an office group).
 --}}
 @php
+    $actorId = $actorId ?? null;
     $isSelected = $actorId !== null && (int) $actorId === (int) $row['id'];
     $secondary = $secondary ?? ($row['role'] ?? '');
 @endphp

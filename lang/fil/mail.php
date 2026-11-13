@@ -28,4 +28,7 @@ return [
     'ticket_autoclose_subject' => 'Isinara na ang inyong reklamo :ticket',
     'ticket_autoclose_headline' => 'Awtomatikong isinara ang inyong reklamo',
     'ticket_autoclose_summary' => 'Ito ay minarkahang Resolved :days araw ang nakalipas at walang sagot mula sa inyo, kaya awtomatiko itong isinara.',
+    'ticket_remind_subject' => 'Naayos na ang inyong reklamo :ticket — pakikumpirma',
+    'ticket_remind_headline' => 'Pakikumpirma na ang inyong reklamo',
+    'ticket_remind_summary' => 'Minarkahan na ng tanggapan ang inyong reklamo bilang Resolved :days araw ang nakalipas. Kung hindi natapos ang trabaho o hindi ito tapos nang maayos, pakisabi — nananatiling bukas ang kaso hanggang kumpirmahin ninyo ito.',
 ];

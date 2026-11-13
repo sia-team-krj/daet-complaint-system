@@ -40,19 +40,7 @@
                 ]) }}</span>
 
                 @if($group['pages'] > 1)
-                    <span class="admin-audit-browser__pager">
-                        @if($group['page'] > 1)
-                            <a class="admin-audit-browser__pager-link" href="{{ $groupUrl(['people_group' => $group['key'], 'people_page' => $group['page'] - 1]) }}">{{ __('audit.previous') }}</a>
-                        @else
-                            <span class="admin-audit-browser__pager-link is-disabled" aria-disabled="true">{{ __('audit.previous') }}</span>
-                        @endif
-                        <span class="admin-audit-browser__pager-state">{{ __('audit.page_of', ['current' => $group['page'], 'last' => $group['pages']]) }}</span>
-                        @if($group['page'] < $group['pages'])
-                            <a class="admin-audit-browser__pager-link" href="{{ $groupUrl(['people_group' => $group['key'], 'people_page' => $group['page'] + 1]) }}">{{ __('audit.next') }}</a>
-                        @else
-                            <span class="admin-audit-browser__pager-link is-disabled" aria-disabled="true">{{ __('audit.next') }}</span>
-                        @endif
-                    </span>
+                    @include('admin.audit.partials.group-pager', ['group' => $group])
                 @endif
 
                 <a class="admin-audit-browser__group-more" href="{{ $groupUrl() }}">{{ __('audit.collapse') }}</a>

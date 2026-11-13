@@ -104,6 +104,8 @@
     const buildMap = (payload) => {
         const mapElement = document.getElementById('transparency-map');
         if (!mapElement) return;
+        // Map wrappers own their stacking context (design-system z-index contract).
+        mapElement.setAttribute('style', 'isolation: isolate; z-index: 0;');
         if (!payload) { setStatus(TRANSPARENCY_STRINGS.mapUnavailableLoad); return; }
         const points = payload.points;
         const center = payload.center;

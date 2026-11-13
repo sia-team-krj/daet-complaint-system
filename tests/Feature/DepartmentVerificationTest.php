@@ -32,7 +32,7 @@ class DepartmentVerificationTest extends TestCase
 
         $this->seed(DepartmentSeeder::class);
         $this->department = Department::where('code', 'ENG')->firstOrFail();
-        $this->otherDepartment = Department::where('code', 'GSO')->firstOrFail();
+        $this->otherDepartment = Department::where('code', 'MENRO')->firstOrFail();
 
         $this->verifier = $this->staff(canVerify: true);
         $this->regularStaff = $this->staff();

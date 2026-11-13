@@ -510,8 +510,8 @@
             min-height: 52px;
             padding: 14px 24px;
             border-radius: 14px;
-            background: #d4a947;
-            color: #0b1a33;
+            background: var(--gold-500);
+            color: var(--navy-900);
             font-family: var(--font-sans);
             font-size: 15px;
             font-weight: 700;

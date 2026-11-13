@@ -10,7 +10,7 @@
         color: rgba(255,255,255,.85); font-size: 14px; font-weight: 600;
         text-decoration: none; margin-bottom: 4px;
     }
-    .tr-back:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+    .tr-back:hover { color: var(--surface); text-decoration: underline; text-underline-offset: 3px; }
     .tr-back:focus-visible { outline: none; box-shadow: var(--ring); border-radius: 4px; }
 
     /* Filter card */
@@ -38,7 +38,7 @@
     .cf-count-badge {
         display: inline-flex; align-items: center; justify-content: center;
         min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
-        background: var(--navy-700); color: #fff; font-size: 11px; font-weight: 700;
+        background: var(--navy-700); color: var(--surface); font-size: 11px; font-weight: 700;
     }
 
     .cf-chips-row {
@@ -53,11 +53,11 @@
         border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
         color: var(--navy-700); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap;
     }
-    .cf-chip--active { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
+    .cf-chip--active { background: var(--navy-700); color: var(--surface); border-color: var(--navy-700); }
     .cf-chip:focus-visible { outline: none; box-shadow: var(--ring); }
 
     .cf-panel { width: 100%; box-sizing: border-box; margin-top: 12px; padding: 16px;
-        background: #f8fafc; border-radius: 12px; border: 1px solid var(--line-soft); }
+        background: var(--surface-soft); border-radius: 12px; border: 1px solid var(--line-soft); }
     .cf-panel[hidden] { display: none; }
     .cf-panel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     @media (max-width: 767px) { .cf-panel-grid { grid-template-columns: 1fr; } }
@@ -71,7 +71,7 @@
     .cf-panel-actions { display: flex; gap: 12px; margin-top: 12px; align-items: center; }
     .cf-apply {
         height: 48px; padding: 0 20px; border: none; border-radius: var(--radius-sm);
-        background: var(--navy-700); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer;
+        background: var(--navy-700); color: var(--surface); font-weight: 600; font-size: 14px; cursor: pointer;
     }
     .cf-apply:focus-visible { outline: none; box-shadow: var(--ring); }
     .cf-clear { color: var(--muted); font-size: 14px; font-weight: 600; text-decoration: none; padding: 0 8px; }
@@ -210,7 +210,7 @@
     }
     .page-btn:hover { background: var(--navy-50); }
     .page-btn:focus-visible { outline: none; box-shadow: var(--ring); }
-    .page-btn--current { background: var(--navy-700); color: #fff; border-color: var(--navy-700); }
+    .page-btn--current { background: var(--navy-700); color: var(--surface); border-color: var(--navy-700); }
     .page-btn--disabled { color: var(--faint); background: var(--navy-50); cursor: not-allowed; pointer-events: none; }
     .page-numbers { display: flex; gap: 6px; }
     .page-mobile-label { display: none; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }

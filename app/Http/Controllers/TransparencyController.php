@@ -7,6 +7,7 @@ use App\Models\Complaint;
 use App\Models\Department;
 use App\Services\BarangayLocator;
 use App\Services\DepartmentRouter;
+use App\Services\FeedbackService;
 use App\Services\TransparencyFeed;
 use App\Http\Controllers\Concerns\SoftNavigation;
 use Illuminate\Http\JsonResponse;
@@ -41,7 +42,7 @@ class TransparencyController extends Controller
         return view('pages.transparency.index');
     }
 
-    public function complaints(Request $request, TransparencyFeed $feed, BarangayLocator $barangays): View
+    public function complaints(Request $request, TransparencyFeed $feed, BarangayLocator $barangays, FeedbackService $feedback): View
     {
         $data = $this->transparencyComplaints($request, $feed, $barangays);
 
@@ -49,6 +50,17 @@ class TransparencyController extends Controller
         if (isset($data['redirect'])) {
             return redirect()->to($data['redirect']);
         }
+
+        // What the residents say about the portal, and what they are asking
+        // for. A suggestion is here only after the administration read it.
+        $data['feedbackOfficeAverages'] = $feedback->officeAverages();
+        $data['feedbackSuggestions'] = \App\Models\Feedback::query()
+            ->published()
+            ->suggestions()
+            ->with(['user:id,display_alias'])
+            ->latest('published_at')
+            ->limit(10)
+            ->get();
 
         return view('pages.transparency.complaints', $data);
     }
@@ -67,10 +79,9 @@ class TransparencyController extends Controller
             ->mapWithKeys(fn (ComplaintStatus $s) => [\Illuminate\Support\Str::slug($s->value, '_') => $s->value])
             ->all();
 
-        $categoryKeys = collect(DepartmentRouter::getCategoryOptions())
-            ->flatten(1)
-            ->pluck('value')
-            ->all();
+        // The retired categories stay valid filters: the complaints filed under
+        // them still exist and must stay findable.
+        $categoryKeys = array_keys(DepartmentRouter::categoryLabels());
 
         $validDepartments = Department::query()->pluck('name')->all();
 
@@ -117,7 +128,7 @@ class TransparencyController extends Controller
             $like = '%'.$escaped.'%';
             $query->where(function ($sub) use ($like): void {
                 $sub->where('ticket_id', 'like', $like)
-                    ->orWhere('title', 'like', $like)
+                    ->orWhereRaw('coalesce(redacted_title, title) like ?', [$like])
                     ->orWhereHas('department', fn ($d) => $d->where('name', 'like', $like));
             });
         }
@@ -149,7 +160,7 @@ class TransparencyController extends Controller
             $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
         }
 
-        $paginator = $query->paginate(self::PUBLIC_COMPLAINTS_PER_PAGE, ['id', 'ticket_id', 'title', 'category', 'department_id', 'status', 'barangay', 'created_at', 'verification_method'], 'page', $page)
+        $paginator = $query->paginate(self::PUBLIC_COMPLAINTS_PER_PAGE, ['id', 'ticket_id', 'title', 'redacted_title', 'category', 'department_id', 'status', 'barangay', 'created_at', 'verification_method'], 'page', $page)
             ->withQueryString();
 
         if ($paginator->lastPage() > 0 && $page > $paginator->lastPage()) {
@@ -167,7 +178,7 @@ class TransparencyController extends Controller
             'paginator' => $paginator,
             'reports' => $reports,
             'departmentOptions' => collect($validDepartments)->sort()->values(),
-            'categoryOptions' => collect(DepartmentRouter::getCategoryOptions())->flatten(1)->map(fn ($c) => ['key' => $c['value'], 'label' => $c['label']])->values(),
+            'categoryOptions' => collect(DepartmentRouter::categoryLabels())->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
             'statusOptions' => collect(ComplaintStatus::cases())->map(fn (ComplaintStatus $s) => ['key' => \Illuminate\Support\Str::slug($s->value, '_'), 'label' => $s->label()])->values(),
             'statusCounts' => collect($statusCounts)->mapWithKeys(function ($count, $statusValue) {
                 return [\Illuminate\Support\Str::slug($statusValue, '_') => (int) $count];

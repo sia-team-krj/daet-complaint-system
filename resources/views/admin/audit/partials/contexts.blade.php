@@ -28,17 +28,30 @@
                         <span class="admin-audit-browser__context-count">{{ $directory['residents_people'] }}<span class="sr-only"> {{ trans_choice('audit.people_unit', $directory['residents_people']) }}</span></span>
                     </a>
 
-                    <p class="admin-audit-browser__label">{{ __('audit.departments') }}</p>
-                    @foreach($directory['offices'] as $office)
-                        <a href="{{ route('admin.audit.index', array_merge($auditQuery, ['department_id' => $office['id']])) }}"
-                           class="admin-audit-browser__context{{ $departmentId === $office['id'] ? ' is-selected' : '' }}"
-                           title="{{ $office['name'] }}"
-                           @if($departmentId === $office['id']) aria-current="true" @endif>
-                            <span class="dept-badge" data-dept="{{ $office['code'] }}">{{ $office['code'] }}</span>
-                            <span class="admin-audit-browser__context-name">{{ $office['name'] }}</span>
-                            <span class="admin-audit-browser__context-count">{{ $office['people'] }}<span class="sr-only"> {{ trans_choice('audit.people_unit', $office['people']) }}</span></span>
-                        </a>
-                    @endforeach
+                    @php
+                        $officePeople = collect($directory['offices'])->sum('people');
+                    @endphp
+                    <details class="admin-audit-browser__office-disclosure" @if($departmentId) open @endif>
+                        <summary class="admin-audit-browser__office-disclosure-toggle">
+                            <span class="admin-audit-browser__office-disclosure-label">{{ __('audit.offices') }}</span>
+                            <span class="admin-audit-browser__office-disclosure-count">{{ trans_choice('audit.people_count', $officePeople) }}</span>
+                            <span class="admin-audit-browser__office-disclosure-chevron" aria-hidden="true">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </span>
+                        </summary>
+                        <div class="admin-audit-browser__office-list">
+                            @foreach($directory['offices'] as $office)
+                                <a href="{{ route('admin.audit.index', array_merge($auditQuery, ['department_id' => $office['id']])) }}"
+                                   class="admin-audit-browser__context{{ $departmentId === $office['id'] ? ' is-selected' : '' }}"
+                                   title="{{ $office['name'] }}"
+                                   @if($departmentId === $office['id']) aria-current="true" @endif>
+                                    <span class="dept-badge" data-dept="{{ $office['code'] }}">{{ $office['code'] }}</span>
+                                    <span class="admin-audit-browser__context-name">{{ $office['name'] }}</span>
+                                    <span class="admin-audit-browser__context-count">{{ $office['people'] }}<span class="sr-only"> {{ trans_choice('audit.people_unit', $office['people']) }}</span></span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </details>
 
                     <p class="admin-audit-browser__label">{{ __('audit.automated') }}</p>
                     <a href="{{ route('admin.audit.index', array_merge($auditQuery, ['system' => 1])) }}"

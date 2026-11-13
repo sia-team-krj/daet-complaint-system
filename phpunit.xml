@@ -19,6 +19,16 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!--
+            A cached config (bootstrap/cache/config.php) bakes APP_ENV and
+            DB_DATABASE in from .env. Laravel loads that cache even while the
+            suite runs, which would point the suite at the DEVELOPMENT database
+            — where RefreshDatabase would wipe it — and would switch CSRF
+            enforcement back on, failing every form post with a 419. Pointing
+            the cache at a path that does not exist keeps the suite on the
+            values below no matter what a deploy step cached.
+        -->
+        <env name="APP_CONFIG_CACHE" value="bootstrap/cache/config.testing.php"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

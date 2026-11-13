@@ -148,14 +148,35 @@ outcomes (rejected), cooling-off (closed). Adding a new status = 3 new tokens
 (`--status-x-bg/text/dot`) + one `.status-pill.x` rule + one step mapping in the
 progress helper. Never reuse `resolved`'s green for anything new.
 
+**On hold** — the work is paused, not late: `--hold-bg` #f5f3ff / `--hold-text`
+#5b21b6 / `--hold-dot` #7c3aed, as `.status-pill.hold` and `.sla-chip--on-hold`.
+**Why:** it is a marker on a complaint, not a status — the work has not stopped,
+it is paused — so it needs its own family. Violet is unused by every other
+meaning here, and reusing amber would make "waiting" read as "due soon" and
+"late" at the same time. The dashboard tile uses the matching
+`--dept-icon-violet-bg/fg`.
+
 ### 3.2 Department badges — 11px/700 uppercase, radius 6px, padding 2px 6px
 `.dept-badge[data-dept="ENG"]` etc., using the existing `--dept-<CODE>`/tints
 (portal already uses them) — see `app.css` §"Department color identifiers".
 
-ENG `--dept-ENG` #B45309 / tint rgba(180,83,9,.16) · HLTH #0F766E · GSO #475569 ·
-MPDO #1D4ED8 · WST #15803D · SWDO #7C3AED · BPLO #0E7490 · OM #A16207 ·
-fallback = slate. **Why:** the whole portal already speaks these codes; a new
+ENG `--dept-ENG` #B45309 / tint rgba(180,83,9,.16) · HRMO #1D4ED8 ·
+MENRO #15803D · BPLO #0E7490 · OM #A16207 · fallback = slate.
+**Why:** the whole portal already speaks these codes; a new
 department = one `--dept-<CODE>` pair + one `[data-dept]` line.
+
+Five offices only — the municipality folded Health, General Services, Municipal
+Planning and Development, and Social Welfare and Development away, and Waste
+Management became the Municipal Environment and Natural Resource Office. The
+palette follows the offices: the closed offices' tokens are gone, and the code
+that replaces one of them keeps its colour (WST → MENRO stays green), so a
+badge never changes colour just because an office was renamed.
+
+> The values above are the **documented** palette (the 700-weight tones printed
+> on `/design-system`). `resources/css/app.css` carries the live `--dept-*`
+> tokens in the matching 500-weight tones (`--dept-ENG #F59E0B`,
+> `--dept-HRMO #3B82F6`, `--dept-MENRO #22C55E`, `--dept-BPLO #06B6D4`,
+> `--dept-OM #EAB308`). Same five codes, same hue family, one weight apart.
 
 ### 3.3 Category icon circles — 36px, 18px line icon (1.8 stroke)
 | key | icon | bg token | fg token |
@@ -165,6 +186,7 @@ department = one `--dept-<CODE>` pair + one `[data-dept]` line.
 | `flooding` | droplet | `--cat-flood-bg` #e0f2fe | `--cat-flood-fg` #0369a1 |
 | `garbage` / `sanitation` (waste) | trash | `--cat-waste-bg` #dcfce7 | `--cat-waste-fg` #15803d |
 | `streetlight` | lightbulb | `--cat-streetlight-bg` #fef9c3 | `--cat-streetlight-fg` #a16207 |
+| `staff_treatment` (personnel) | users | `--cat-personnel-bg` #fce7f3 | `--cat-personnel-fg` #be185d |
 | anything else | file | `--cat-other-bg` #e2e8f0 | `--cat-other-fg` #475569 |
 
 Map by **category key**, never by translated label — a label change must not break
@@ -820,10 +842,13 @@ person, or everyone — instead of rebuilding a dropdown query each time. It is
 the primary navigator on `/admin/audit-trail`; search + Action stay secondary
 filters below it. The trail itself is unchanged. Admin-only surface.
 
-**The browser is bounded.** The log grows with the municipality (every resident
-filing is a row), so the roster never renders everyone: each group shows a
-short preview and opens on demand. A component that renders 20,000 people is a
-component that stops working.
+**The browser is bounded before it is exhaustive.** The log grows with the
+municipality (every resident filing is a row), so “Everyone” does not dump the
+people directory into the page. It renders counts and the people search first;
+person rows appear only after an office/scope is chosen, a group is expanded,
+or a name is searched. Once rows are on screen they are bounded and open on
+demand. A component that renders 20,000 people is a component that stops
+working.
 
 Anatomy — three bands in one card:
 - **Scope band** (`.admin-audit-browser__scope`, always visible): a type icon,
@@ -836,26 +861,30 @@ Anatomy — three bands in one card:
   replaces the page load.
 - **Panes** (`.admin-audit-browser__panes`, ≥641px: two columns):
   - *Scope rail* (`.admin-audit-browser__contexts`, a `<nav>`): a `Scope |
-    Entries` head — **every number says what it counts, and counts itself**
-    ("1 entry", "3 entries") — then `Everyone`, a `Residents` section with the
-    `All residents` scope, a `Departments` section with one row per office
-    (`.dept-badge` + name + count), and an `Automated` section with the records
-    that have no actor. Office names truncate with an ellipsis + `title`
-    tooltip. A standing line under the rail explains that office totals include
-    the resident filings routed to that office, so an office total never
-    silently disagrees with the sum of the people under it.
-  - *Roster* (`.admin-audit-browser__roster`): a `People | Entries` column head,
-    then groups (`.admin-audit-browser__group`) — offices, then `Administration`
-    (office-less admins), then `Residents`. A person row is avatar/initials +
-    name + role + count; the role appears only where it varies (inside an
-    office, staff and admins share a list). Soft-deleted accounts are marked
-    `Former account`.
+    People` head — every number says what it counts and counts itself — then
+    `Everyone`, an `All residents` scope, an `Offices` disclosure with one row
+    per office (`.dept-badge` + name + people count), and an `Automated`
+    section with the records with no actor. The office disclosure is closed
+    unless one is selected; it opens to the office list in place. Office names
+    truncate with an ellipsis + `title` tooltip. A standing line under the rail
+    explains that office totals include the resident filings routed to that
+    office, so an office total never silently disagrees with the sum of the
+    people under it.
+  - *Roster* (`.admin-audit-browser__roster`): the prompt that points to the
+    scope, or the people who belong to it. In its grouped form it shows
+    offices, then `Administration` (office-less admins), then `Residents`; a
+    person row is avatar/initials + name + people count; the role appears only
+    where it varies (inside an office, staff and admins share a list).
+    Soft-deleted accounts are marked `Former account`.
 
 Variants / states:
-- **Everyone** (default): no query string; the roster shows every group.
-- **Office** (`?department_id=`): the roster narrows to that office.
-- **Person** (`?actor_id=`): the roster stays whole and the person row is
-  selected.
+- **Everyone** (default): no query string; the browser renders the counts,
+  the rail and the prompt — not the people who have acted.
+- **Office** (`?department_id=`): the trail narrows to that office and the
+  roster shows its people; the office disclosure opens on its own.
+- **Person** (`?actor_id=`): the trail narrows to that person’s actions and the
+  roster is replaced by a selected-person prompt — there is no reason to
+  repeat the same name in a roster row as well.
 - **Residents** (`?residents=1`): everything a resident did — the filings they
   made. The trail filters on the actor's role and the roster narrows to the
   residents group.
@@ -864,7 +893,8 @@ Variants / states:
   filters still apply, the label names the person and their office, and both
   rows are marked selected. New links never generate this form.
 - **Group expanded** (`?people_group=&people_page=`): one group opens in place,
-  **25 people to a page** — never a dump — with Previous/Next and `Collapse`.
+  **five people to a page** — never a dump — with the shared operator pager,
+  a page summary and `Collapse`.
 - **People search** (`?people_q=`): the roster is replaced by the matches
   (server-side, top 20, people with activity only) with the office shown
   beside each name.
@@ -887,9 +917,10 @@ open on desktop (same `display: contents` + JS contract as
 selected or a search is running.
 
 Accessibility: the rail is a `<nav>` with its own label; rows are real links so
-middle-click/open-in-new-tab work; selected rows expose `aria-current`; the
-count column carries a screen-reader unit; touch targets are ≥44px; focus uses
-`--ring` / `--ring-inset`.
+middle-click/open-in-new-tab work; selected rows and disclosure summaries carry
+accessible names; the count column carries a screen-reader unit; the office
+disclosure is a real `<details>` summary, so it opens and closes by keyboard;
+touch targets are ≥44px; focus uses `--ring` / `--ring-inset`.
 
 Tokens: `--surface`, `--bg`, `--line`, `--line-soft`, `--navy-50`,
 `--navy-100`, `--navy-700`, `--navy-800`, `--navy-900`, `--gold-500`,
@@ -905,8 +936,9 @@ request and the controller re-validates every ID. Counts are cached for 60
 seconds (one aggregate instead of one per page view) and the roster is sliced,
 so the page costs the same whether the log holds 300 entries or 3,000,000.
 
-Demo: `/design-system` → "Audit browser" (scope band, search band, rail,
-roster with a bounded group and an expanded group).
+Demo: `/design-system` → "Audit browser" (scope band, search band, rail with the
+collapsed office disclosure, and the bounded/expanded roster shown only after
+choosing a scope).
 
 ### 5.34 Soft navigation — regions swapped without a reload
 
@@ -1263,6 +1295,14 @@ Behaviour:
 - The internal note is written to the immutable log with `is_internal = true`
   and never rendered on the resident page, the public timeline or the
   transparency register.
+- **Quick redaction** (privacy-gated reports only, verifier-only like the
+  rest of the panel): the panel offers to write the redacted title and
+  description from the parts the office ticked must not appear. Ticking
+  files a safe draft into the fields — either the office's own text with
+  the ticked spans removed, or, when the name cannot be proven gone, a
+  generic copy that carries no identifying detail at all. Nothing is
+  written until the office reviews, adjusts and saves; a saved copy is
+  never silently replaced.
 
 Tokens: `--navy-900`, `--navy-800`, `--gold-500`, `--surface`,
 `--surface-soft`, `--line`, `--line-soft`, `--text`, `--muted`, `--faint`,
@@ -1300,7 +1340,8 @@ the input's `input` event. Emptying the field re-masks it and re-hides the
 button. No eye floating over an empty box, ever.
 
 Variants / states:
-- **Hidden** (empty field): not tabbable, not clickable.
+- **Hidden** (empty field): not tabbable, not clickable, not tappable
+  (`pointer-events: none`).
 - **Reveal-ready** (field has text, `aria-pressed="false"`): `eye` glyph,
   accessible name is `auth_ui.common.show_password` (en + fil). Spring scale-in
   when it first appears.
@@ -1316,6 +1357,16 @@ Variants / states:
 - The wrap's input gets `padding-right: 52px` from
   `.field-wrap:has(.field-toggle) .field-input` — nothing else in the wrap
   moves, and non-password fields keep their padding.
+- **Alignment is the field's, not the line box's.** Inside a toggle wrap the
+  password input is `display: block`, so the wrap's height is the input's
+  height; the 44px button is pinned `top: 0; bottom: 0` with
+  `margin-block: auto` and `right: 2px`. An inline input leaves descender
+  space under the field, and a `top: 50%` button then sits a few pixels low.
+  The auto block margins keep the glyph's centre on the input's centre when
+  the auth pages' padding or font size changes.
+- The hidden state is inert from the moment the field is cleared:
+  `pointer-events: none` on `.field-toggle`, restored to `auto` by
+  `.is-visible`, so a fade-out cannot swallow a stray tap.
 - `.field-underline` is `pointer-events: none` (it was a decorative 2px strip
   at the field's bottom edge; it must never eat a tap meant for the toggle).
 
@@ -1338,8 +1389,411 @@ knows; a labelled toggle inside the field costs no horizontal space, and the
 mirror pair of names (show/hide) keeps screen-reader users in the same state
 as sighted users.
 
-## 6. The z-index contract — **LOCKED**
+### 5.42 Staff location card & directions — `.location-card`
 
+Purpose: get a field team from the ticket to the pin in one tap, without
+printing the exact coordinate pair on the page. The embedded Leaflet map shows
+the place; the single action in the footer hands that place to Google Maps as
+the destination, with the staff member's current location as the origin. The
+card is present for every complaint: with a pin it shows the map and the
+directions action, without one it shows an honest no-pin state and no action.
+
+Anatomy:
+- **`.location-card`** — the workspace card, clipped (`overflow: hidden`, no
+  padding).
+- **`.map-container`** — 280px high at every breakpoint,
+  `isolation: isolate; z-index: 0` (the §6 map contract). Carries
+  `data-latitude`, `data-longitude`, `data-map-unavailable`, `role="region"`
+  and the translated map label.
+- **`.location-card__footer`** — a `--surface-soft` strip with a hairline top:
+  left, `Barangay: <name>` (the complaint's barangay, falling back to the
+  resident's profile); right, **Get directions**.
+- **`.location-card__directions`** — the shared `.tr-button` (white surface,
+  `1px --line`, navy text, 44px minimum). At ≤599px it becomes full width
+  under the barangay line.
+- **`.location-card__empty`** — a 48px `--navy-50` circle with the pin icon, a
+  14px/700 title and a 13px `--muted` body. Shown when the complaint has no GPS
+  point; the card still renders, but there is no directions action because
+  there is no destination.
+
+States:
+- **Pin present:** map + directions.
+- **No pin:** honest empty state, no directions link.
+- **Map library unavailable:** the map container says so; the directions action
+  remains usable.
+- **No barangay:** the footer shows only the directions action.
+
+Behaviour / contract:
+- The directions href is
+  `https://www.google.com/maps/dir/?api=1&destination=<lat>,<lng>` (six
+  decimals, no thousands separators). No `origin` is sent, so Google Maps
+  starts from the device's current location and our page never asks for
+  geolocation permission. The link opens in a new tab with
+  `rel="noopener noreferrer"`.
+- **The exact coordinate pair is not rendered.** The coordinates live only in
+  the map's data attributes and the directions href; the visible card shows the
+  map and the barangay.
+- The map re-measures on build, resize, orientationchange and intersection,
+  using `invalidateSize({ animate: false })`; `whenLeafletReady` supplies the
+  `onUnavailable` message.
+
+Tokens: `--surface`, `--surface-soft`, `--line-soft`, `--line`, `--navy-50`,
+`--navy-700`, `--navy-900`, `--muted`, `--text`, `--radius-sm`,
+`--radius-lg`, `--shadow-card`, `--ring`, `--z-map` (0). **No new colours.**
+
+Why: the ticket already said *where*; it did not offer *go there*. A field
+worker on a phone should not have to retype a coordinate pair from a screenshot
+— and the office should not have to print that pair on every ticket for the
+convenience. One action, one destination, no permission prompt.
+
+### 5.43 Department analytics — `.an-*` (staff + admin)
+
+Purpose: give a department and the municipal administrator one honest picture
+of the work — how much arrived, how much finished, how long it took, what is
+late, what people are saying it about, and how the load sits across the team —
+without turning unequal offices into a league table.
+
+Surfaces:
+- **Staff** `/staff/analytics` — the signed-in staff member's own department.
+  The office comes from the session, never from the URL.
+- **Admin comparison** `/admin/analytics` — every **active** office,
+  alphabetically, each against its own previous period, with a fairness note
+  above the table. Archived offices are deliberately absent.
+- **Admin department** `/admin/analytics/departments/{department}` — one
+  office's full report, active or archived, including the per-staff breakdown.
+- **Print** `/…/print` uses `layouts/print`; **CSV** `/…/export` streams one row
+  per report filed in the period.
+- Navigation: staff sidebar → **Analytics**; admin sidebar → **Analytics**;
+  admin department-directory rows → **Analytics**.
+
+Anatomy:
+- **`.an-page`** — the analytics shell. Admin variants use
+  `.an-page--admin`; the page header is `.an-header` with `.an-kicker`,
+  `.an-title`, `.an-header__department` (department badge) and
+  `.an-header__actions` (CSV + print).
+- **`.an-period`** — the URL-backed period bar. `.an-period__chip` links are
+  the presets **This month · Last 7 days · Last 30 days · Last 90 days · Year
+  to date**; an active custom range adds a **Custom range** chip. The
+  `.an-period__custom` GET form holds two native date inputs and **Apply**.
+  It states the current range and the previous range it is compared with.
+- **`.an-stats` / `.an-stat`** — the period summary strip: filed, resolved,
+  open now, overdue now, average completion, on-time completion. Variants
+  `.an-stat--attention` (overdue > 0) and `.an-stat--calm` (overdue = 0)
+  only change the top rule. `.an-delta` adds an arrow and a
+  “vs previous period” label; **direction is context, never a verdict** —
+  there is no red/green pass/fail styling.
+- **`.an-grid`** — layout. `.an-grid--trend` is the trend chart plus status
+  donut; `.an-grid--two` is categories/barangays and aging/quality. Cards are
+  `.an-card` with `.an-card__head`, `.an-card__title`, `.an-card__sub`.
+- **`.an-chart`** — one inline SVG per trend: two polylines (filed, resolved),
+  a four-step grid, dots only when there are ≤14 buckets, an x-label every
+  `ceil(count / 7)` buckets, and one focusable hit band per bucket. Hovering,
+  tapping or focusing a band updates `.an-inspect` with that bucket's exact
+  filed/resolved numbers; the data table repeats them. Bucket size follows the
+  period: daily ≤31 days, weekly ≤120, monthly beyond.
+- **`.an-donut`** — the status mix of reports **filed in the period**, drawn
+  with SVG circles and `stroke-dasharray`. The legend is a set of real
+  buttons; choosing one marks that segment active and writes its label, count
+  and percent into `.an-inspect`. Zero-count statuses remain visible but dimmed.
+- **`.an-bars`** — the top six categories and top eight barangays, plus the
+  open-work aging buckets (`.an-bars__fill--aging`). Each row is a full-width
+  button revealing its count and share through `.an-inspect`. Bar length is
+  relative to the largest row, with a 2% floor so a one-report row remains
+  visible.
+- **`.an-quality`** — verified, needs information, duplicate and rejected
+  counts for reports filed in the period.
+- **`.an-mini-grid` / `.an-mini`** — team size, assigned open, unassigned open
+  and open per staff.
+- **`.an-table--workload`** — administrator-only per-staff table (open,
+  in progress, resolved, overdue, average days), followed by
+  `.an-table-note` reminding the reader to balance work, not rank people.
+  On ≤720px it becomes stacked cards using `data-label`.
+- **`.an-table--comparison`** — the alphabetical office table: team, open,
+  filed, resolved, average days, on-time and overdue, with each office's delta
+  against its own previous period. No score, no order-by-performance.
+- **`.an-feed`** — the latest 20 complaint-log entries for the office inside
+  the period. The eight most recent render first; the rest stay behind a
+  real `<details>` disclosure. Each item carries the actor, ticket link,
+  status transition, internal-note marker and relative time.
+- **`.an-fairness`** — the context note. It is a full `aside` above the
+  comparison table, not a tooltip or footnote.
+- **`.an-inspect`** — the shared one-line readout updated by an interaction. It
+  is `--surface-soft`, a `--line-soft` hairline and tabular numbers; it never
+  becomes a second counter or duplicates a table. Print hides it.
+- **`.an-empty`**, **`.an-note`**, **`.an-archived`** — honest empty,
+  counting-rule and archived-office states.
+
+Counting rules (must stay identical across page, fragment, print and CSV):
+- A report belongs to the period it was **filed** in (`created_at`).
+- It is **resolved** only when its status is **Resolved** or **Closed**.
+  **Rejected never counts as completed.**
+- Completion time uses `COALESCE(resolved_at, closed_at, updated_at)`.
+- **On-time** is measured only for **verified** completions, against
+  `ComplaintSlaService::resolveDays()` for the confirmed/suggested priority.
+- The open backlog is current state (Submitted, Under Review, In Progress),
+  not a period count.
+- The comparison hides archived offices; their history stays reachable through
+  the department-directory link.
+- Staff responses never query per-staff rows (`$withStaff = false`), so the
+  breakdown cannot leak through hidden markup.
+
+States / behaviour:
+- **Default period:** this month. The URL is the truth:
+  `?period=month|7d|30d|90d|ytd|custom` and, for custom,
+  `&from=Y-m-d&to=Y-m-d`. Invalid, backwards, impossible or future-clamped
+  ranges fall back to this month instead of erroring.
+- **Soft navigation:** `resources/js/analytics.js` binds `[data-analytics]`,
+  fetches the same period + content fragments from the surface's `browser`
+  route, swaps `[data-analytics-period]` and `[data-analytics-content]`, and
+  pushes the URL. Back/Forward re-fetch the URL. The controller redirects a
+  plain (non-JSON/XHR) fragment request to the canonical page with the query
+  string, and with JavaScript off the chips are ordinary links and the custom
+  form is a normal GET — the report still works, it just reloads.
+- **Loading:** `.an-page.is-loading [data-analytics-content]` drops to 0.55
+  opacity and sets `aria-busy`; a failed fetch falls back to a normal
+  navigation so stale fragments never sit under a new URL.
+- **Empty states:** no reports, no barangay, no activity, no open work and no
+  active offices each have their own sentence. A null rate or average renders
+  an em dash, never `0` or `NaN`.
+- **Interactive inspection:** every chart/bar is operable by pointer, touch
+  and keyboard. The chart bands are `tabindex="0"` with a translated
+  `aria-label`; the donut legend and bar rows are real buttons. Values are
+  written into `.an-inspect` with a localized template; `Escape` restores the
+  placeholder. Print hides `.an-inspect` and renders the full chart data and
+  activity feed instead.
+- **Print:** the print layout hides interactive chrome and keeps the tables,
+  chart data, fairness note and confidentiality line; charts and feeds avoid
+  page breaks. CSV includes a UTF-8 BOM so Filipino characters survive Excel.
+
+Responsive:
+- ≥1181px: six stat cards in one row; trend + donut side by side.
+- ≤1180px: three stat cards per row. ≤1024px: trend stacks above donut.
+- ≤860px: the two-up grids stack.
+- ≤720px: chips become 40px, actions 44px, stats two-up; workload and
+  comparison tables become labelled stacked cards; fairness padding tightens.
+- ≤420px: stats go single-column; period fields stack.
+- `prefers-reduced-motion`: transitions are removed.
+
+Tokens: `--surface`, `--surface-soft`, `--line`, `--line-soft`, `--text`,
+`--muted`, `--faint`, `--navy-50`…`--navy-900`, `--dept-primary`,
+`--dept-primary-hover`, `--dept-hover`, `--dept-active-bg`,
+`--dept-active-border`, `--dept-card-shadow`, `--dept-page-bg`,
+`--status-*-dot`, `--radius-sm`, `--radius`, `--radius-lg`,
+`--radius-pill`, `--gold-500`, `--shadow-card`. **No new colours.**
+
+Why: a department cannot improve what it cannot see, and an administrator
+cannot support an office they only know as a number. The page separates
+volume, speed, quality, workload and place so a reader can ask a specific
+question; it refuses a single composite score because staffing, equipment,
+budget and the work each office receives are not equal. The fairness note is
+part of the component, not an optional caption, so the comparison can never be
+read as a league table by accident.
+
+### 5.44 Date field — `.date-field` (a calendar the office can fill in)
+
+The visible field is a **text input** masked to `dd/mm/yyyy`; a native
+`<input type="date">` sits beside it, out of sight but still rendered, and
+carries the value the server receives.
+
+```
+.date-field__control   — the row: text input · calendar button · clear button
+.date-field__text      — the visible field, dd/mm/yyyy
+.date-field__native    — the native date input (opacity 0, 1px, pointer-events none)
+.date-field__button    — opens the OS calendar (44×44)
+.date-field__clear     — empties both (44×44, shown only with a date)
+.date-field__optional  — the "Optional" badge in the label
+.date-field__error     — the "not a date" message
+```
+
+- The visible field is a plain `input[type="text"]` **on purpose**: it then
+  inherits whatever the surface it sits in gives a text field — the dark
+  moderation panel or the light one — with no second set of rules to keep in
+  step.
+- The native input is hidden by **opacity, not `display:none`**, because
+  `showPicker()` refuses on an element that is not being rendered.
+- Typing inserts the slashes; `31/02/2026` is refused rather than rolled
+  over into March; the invalid field is marked `aria-invalid` and the message
+  shows; the form refuses to post a half-typed date.
+- The calendar button opens the OS calendar — the wheel picker on a phone —
+  and the clear button empties both fields.
+
+Tokens: `--error-bg`, `--error-text`, `--status-rejected-dot`,
+`--radius-sm`, `--radius-pill`, `--gold-500`. **No new colours.**
+
+**Why:** a native date input alone is two problems in one. It renders as bare
+`dd/mm/yyyy` text until it is filled, so on the dark panel it looked like a
+stray line rather than a field; and the format it shows follows the *browser's*
+locale, so the same office read `12/15/2026` on one device and `15/12/2026` on
+another. Masking it ourselves fixes both, and keeping the native input
+alongside keeps the calendar — which on a phone is the wheel picker the LGU
+already knows.
+
+### 5.45 Reason chips and label chips — `.reason-chips` / `.label-chip`
+
+The two controls the hold panel is built from.
+
+```
+.reason-chips        — the row of tap-able reasons (a fieldset of radios)
+.reason-chip         — one reason: a label wrapping a hidden radio
+.reason-chip__label  — the chip's text
+.label-chip          — a chip on a field label
+.label-chip--public  — "Resident sees this"
+.label-chip--internal— "Office only" / "Optional"
+```
+
+- The radios stay in the form and in the tab order; only their box is hidden,
+  and the chip carries the focus ring. The chosen chip fills in.
+- The chips wrap into rows on a narrow screen; each is 44px tall.
+- A label chip says **where the text goes**, which two same-looking textareas
+  otherwise do not: the one the resident reads and the one only the office
+  sees.
+
+Tokens: `--status-submitted-bg` / `--status-submitted-text` (the public chip),
+`--surface-soft` / `--muted` / `--line-soft` (the office-only chip),
+`--radius-pill`, `--radius-sm`, `--gold-500`, `--navy-900`, `--navy-300`.
+**No new colours.**
+
+**Why:** seven short reasons do not belong in a dropdown on a phone — opening
+it, scrolling it and choosing from it is three steps for one tap, and the
+office cannot see that "another reason" exists until they get there. And two
+textareas in a row, one of which the resident will read and one of which
+nobody else ever will, look identical until you know which is which; the
+label chip says it where the eye already is.
+
+### 5.45 Settings — one section at a time, in the portal's language
+
+The settings page is a portal page, so it speaks the portal's language: the
+card, the field and button styles, the quiet header. It is **not** the admin
+workspace, even though it used to borrow the admin's field classes and
+re-skin them.
+
+```
+.settings-page          — the page
+.settings-body         — the body: the tab rail and the section beside it
+.settings-tabs         — the tabs (a left rail on the desktop, a scrolling strip on a phone)
+.settings-tab          — one tab
+.settings-sections     — the section column
+.settings-card         — the card for the section on screen
+.settings-card__head   — the card's title and lede
+.settings-group        — a group inside a card, with a legend and a line of help
+.settings-field        — a field: label, input, hint, error
+.settings-save-row     — the save row: the quiet line and the buttons
+.settings-save-row__state — "You have unsaved changes" / "Saved"
+```
+
+- **One section at a time, switched by the tabs** — the shape the page has
+  always had. A left rail on the desktop, a scrolling strip on a phone, and
+  the tab you are on says so. The arrow keys move between them, and the tab
+  you are on is scrolled into view on a narrow screen.
+- Each section is a card in the portal's language, with the fields grouped
+  inside it and the save row living with the fields it saves.
+- **The save row lives with the fields it saves**, and says what happened in
+  place — a tick and "Saved", or "You have unsaved changes" with a discard.
+  There is no sticky bar over the page and no browser "leave site?" prompt: a
+  resident who typed something and wandered off should not be chased by the
+  browser for it. A save returns to the tab it was made in.
+- **The name rule** is the registration form's: letters, spaces, hyphens and
+  dots. It is enforced on the server (`regex:/^[\pL\s\-\.]+$/u`) and live in
+  the field, and it is the same rule the register page uses, so a name that
+  can be created at sign-up is the same name that can be set later.
+
+Tokens: `--surface`, `--surface-card`, `--surface-page`, `--surface-input`,
+`--surface-soft`, `--line`, `--line-soft`, `--border-default`,
+`--border-strong`, `--text-primary`, `--text-secondary`, `--text-muted`,
+`--navy-900`, `--gold-500`, `--gold-300`, `--success`, `--success-tint`,
+`--danger`, `--danger-tint`, `--focus-gold`, `--focus-ring`, `--radius-sm`,
+`--radius-lg`, `--shadow-sm`, `--shadow-card`. **No new colours.**
+
+**Why:** the page was the least finished thing in the portal — it borrowed
+another surface's classes, and its "Save changes" button was wired to a form
+nested inside the form it pointed at, so it looked like it would save and
+did nothing. It also let a name carry digits and stray symbols, on a page
+whose whole subject is the name a person is known by.
+
+### 5.46 Resident feedback — the page, and the stars
+
+The portal has a **Feedback** page (linked from the footer): a resident rates
+the portal and the offices they have actually dealt with, and writes a
+suggestion.
+
+```
+.feedback-page          — the page
+.feedback-card          — a card: the portal, the offices, the suggestion
+.feedback-offices       — the offices being rated
+.feedback-office        — one office: its name, its average, its stars
+.feedback-suggestions   — what residents are asking for
+.star-rating            — the stars
+.star-rating__stars     — the row of five
+```
+
+- **The stars are five real radio buttons under five stars.** The stars are the
+  picture, the radios are the control, so the rating works with a keyboard and
+  a screen reader and needs **no JavaScript at all**. The radios are laid out
+  ascending and the row is reversed (`flex-direction: row-reverse`), which is
+  what lets the CSS fill the stars from the left as the rating rises. The
+  focus ring is drawn on the star, not on the hidden radio.
+- **Only the offices a resident has actually written to can be rated.** A
+  rating of an office you never dealt with says nothing about the office, and
+  a portal that lets anyone rate anything is a portal nobody trusts.
+- **A rating counts from the moment it is given; a suggestion waits for the
+  administration to read it.** A suggestion is prose about the portal, and
+  prose goes out reviewed — the same rule the public register already follows
+  for a complaint. The administration reads them in *Resident feedback* in the
+  admin workspace, and publishes or withholds them one at a time.
+- A resident's later rating replaces their earlier one for the same scope:
+  they change their mind, and the number follows.
+
+Tokens: `--surface`, `--surface-card`, `--surface-page`, `--surface-input`,
+`--surface-soft`, `--line`, `--line-soft`, `--border-default`,
+`--border-strong`, `--text-primary`, `--text-secondary`, `--text-muted`,
+`--navy-900`, `--gold-300`, `--gold-500`, `--success`, `--success-tint`,
+`--danger`, `--danger-tint`, `--focus-gold`, `--focus-ring`, `--radius-sm`,
+`--radius-pill`, `--shadow-card`. **No new colours.**
+
+**Why:** a portal that asks for nothing gets nothing back. There was no way
+for a resident to say the service was good, or that the portal was hard to
+use, or that an office had handled their report well — and no way for the
+municipality to hear any of it.
+
+### 5.47 Publication checklist — `.publication-checklist`
+
+Purpose: a report that names somebody passes through a fixed gate before it
+can appear on the transparency page — settle, verify, redact, the office
+asks, the Mayor's office approves. The steps were scattered across three
+panels and two pages, and the office could not tell what came next or what
+was missing. The checklist renders the same gate as one ordered, live list,
+so the office always knows where the report stands and what is on them.
+
+Anatomy:
+- **`.publication-checklist`** — a `.moderation-panel--light` card, the
+  same visual family as the moderation panel it sits above.
+- **`.publication-checklist__steps`** — an ordered `<ol>` of the gate steps.
+- **`.publication-checklist__item`** — one step: `.is-done` (a tick in a
+  green ring, the label darkens), the pending state (the step number, the
+  label muted), and `.is-blocked` (a cross in a red ring, the label coloured
+  for the one outcome that ends the gate — the Mayor's office declined).
+- **`.publication-checklist__verdict`** — the one-line conclusion: waiting
+  on the Mayor's office; approved; declined (stays private for good).
+
+Behaviour:
+- Shown only on reports in a privacy-gated category; it is a status view,
+  never a control — every step is live state (settled / verified / redacted
+  / asked / approved), read from the same services the server enforces.
+- The name of the party is never rendered here.
+- No step can be ticked by hand — doing the work flips the states; nothing
+  on the card is an action.
+
+Tokens: `--text`, `--muted`, `--faint`, `--line`, `--line-soft`,
+`--surface-soft`, `--success`, `--error-text`, `--radius-sm`. **No new
+colours.**
+
+Why: a gate the office cannot see reads as a process they are failing, not
+a process with a shape. One ordered, live list tells them what is done,
+what is on them and what belongs to the Mayor's office — and a resident who
+is told in the language of the same gate understands why their report is
+still private.
+
+## 6. The z-index contract — **LOCKED**
 | Layer | z-index |
 |---|---|
 | In-map Leaflet panes (tiles … controls … attribution) | 200 … 1000 … 1200 |
@@ -1499,6 +1953,7 @@ These are the things that broke before.
 | Error page (401/403/404/419/429/500/503 + generic 4xx/5xx) | D | no banner — standalone brand header | no | no | one 640px error card: 64px icon, code kicker, h1, message, ONE gold primary + one secondary | the card is the whole page; no list and no data chrome |
 | Admin dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles from real metrics | no | dark tables + dept chips | treat separately: admin shell |
 | Staff dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles | no | dark tables | treat separately |
+| Publication decision (`/staff/publication-requests/{complaint}`) | C | no banner — back link + h1 + ONE line | no | no | redacted-copy block (ticket + dept chip) + publication panel, without the named party | the decider never sees the name of the party |
 
 **Hero/choices repeated from before failure:** no cream, no Cormorant, no ~50px
 mystery gap under the navbar; every list page shares the banner gradient with the
@@ -1546,6 +2001,152 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 
 Every UI task appends here: **(date · page · what changed).**
 
+- 2026-11-13 · Staff ticket, filing form, notifications · **the publication flow shows everyone their part — the complainant acknowledges the gate, the office sees the checklist, and the resident is told when the office asks.** Reports that name somebody passed through a gate the office had to reverse-engineer (the order lived across three panels and two pages), and the resident was told only on the decision — never when the office asked, and never made to confirm they understood the filing was private. (1) **A publication checklist** on the staff ticket, above the moderation panel and shown only on gated reports: an ordered `<ol>` of the gate steps — settle → verified → redacted → the office asks → the Mayor's office approves — each rendered live from the same services the server enforces (a tick, a number, a red cross for the one ending that is a refusal), with a one-line verdict when the office waits on the Mayor's office, when it approved, or when it declined. It is a status view, never a control — no step can be flipped by hand. New `.publication-checklist` rules in `staff-complaint.css` on existing tokens only (§5.47); no new colours. (2) **The resident is told when the office asks.** The service docblock promised it ("the resident is notified of the request, the approval, and the refusal") but only the decision was ever sent; now `ComplaintPublicationService::request` also notifies the resident with a `complaint.publication_requested` notification that lands on their own ticket. (3) **The filing form makes the complainant acknowledge the gate.** For a category that names somebody, a required "I understand…" checkbox — shown only for those categories, enforced on the server (`privacy_ack`) — states plainly that the report is filed private and appears on the transparency page only after settle, verify, redact and the Mayor's office's approval, and that the resident will be told either way. Files: `resources/views/components/publication-checklist.blade.php` (new), `resources/css/pages/staff-complaint.css`, `resources/views/staff/complaints/show.blade.php`, `resources/views/complaints/create.blade.php`, `app/Services/ComplaintPublicationService.php`, `app/Http/Controllers/ComplaintController.php`, `lang/{en,fil}/{staff,complaint_create}.php`, `tests/Feature/PrivacyGatedComplaintTest.php`, `docs/design-system.md` (§5.47, this entry), `docs/design-changelog.md`. New tokens: none.
+
+- 2026-11-13 · Moderation/redaction panel · **quick redact works again, with clearer sections.** The privacy-gated quick-redact helper was nested inside the main moderation form (invalid HTML), breaking submission in the browser. Quick redact is now a separate form/section (staff context) and the panel is reorganized into clearer visibility, redacted-copy, evidence and reason/save sections with token-based styling and en+fil state hints. Files: `resources/views/components/moderation-panel.blade.php`, `resources/views/staff/complaints/show.blade.php`, `resources/css/app.css`, `resources/css/pages/staff-complaint.css`, `lang/{en,fil}/staff.php`. New tokens: none.
+- 2026-11-13 · Staff publication decision, staff mobile drawer · **the Mayor's office can open a requested report, and the office fills in the redacted copy with ticks.** The "Open the report" button in the publication queue — and the publication notification — landed on the ticket page, which refuses any office outside the report's department; every report the Mayor's office had to decide was a 403 to them. Now **`/staff/publication-requests/{complaint}`** carries what the decision needs: ticket, requesting office, the redacted title and description a resident would read, the office's request note, and the approve/decline controls — never the name of the party. The queue's open link and the publication notifications point at it; the deciding office's entry is in the staff mobile drawer beside the staff sidebar, shown only to it and to admins. The publication panel's "missing" list is the office's three jobs again (settle, verify, redact) — the approval line moved out of it (the state line carries it, and it used to be permanently there anyway, so the request button could never enable); the Approve button is disabled with a hint while those are missing. **Quick redaction** in the Public presentation panel: the verifier ticks the parts that must not appear (the party's name; their position or office, when one is recorded) and presses "Write the redacted copy" — the system fills the redacted title and description fields with a draft (the office's own text with the ticked spans removed, or, when the name cannot be proven gone, a generic copy with no identifying detail at all); nothing is written until the office reviews, adjusts and saves, so a copy already saved is never silently replaced. The pending demo request was seeded without a redacted copy — it could never be approved — so it now carries one, and the seeder was fixed for fresh seeds. Files: `resources/views/staff/publication-requests/show.blade.php` (new), `resources/views/staff/publication-requests/index.blade.php`, `resources/views/components/publication-panel.blade.php`, `resources/views/components/moderation-panel.blade.php`, `resources/views/layouts/partials/mobile-drawer.blade.php`, `app/Http/Controllers/StaffController.php`, `app/Models/Notification.php`, `app/Services/{ComplaintPrivacyService,ComplaintModerationService}.php`, `routes/web.php`, `database/seeders/DemoComplaintSeeder.php`, `lang/{en,fil}/staff.php`, `tests/Feature/PrivacyGatedComplaintTest.php`, `docs/design-system.md` (§5.40, §10, this entry), `docs/design-changelog.md`. New tokens: none.
+
+- 2026-11-13 · Transparency register · **office ratings shown as star, score and count.** Office feedback averages on the public transparency page now render as a visual rating (filled gold star + average + count, e.g. ★ 4.5 (20)) with an accessible label, instead of sentence-only text; unrated offices keep "not rated yet". Existing tokens only.
+- 2026-11-13 · Feedback admin queue · **rebuilt as a proper admin page.** The queue mixed transparency/public chrome and inline styles into the admin workspace; it now follows the admin shell (`.admin-page` header, metric cards, panels, office-ratings table, structured suggestion items with action rows and workspace pagination/empty states). New `.admin-feedback-item*` styles in `app.css` use existing admin/theme tokens only. No new colours or strings.
+- 2026-11-13 · Feedback admin queue · **the headings, buttons and flash now use the strings that resolve.** The admin feedback page and controller reached for `admin.feedback.*`, but the strings live in the `admin_settings.feedback` group of `lang/en|fil/admin_settings.php` — so the queue rendered its own headings and buttons as raw keys and the publish/withhold flash fell back to the key. The view and the controller now use the resolving keys, and the queue test asserts the real string renders.
+
+- 2026-11-13 · Design-system gate · **the last hard-coded hex colours are out of the views, and the map owns its stacking context.** The feedback task itself shipped token-clean, but the design-system guard was still red on NEW violations left behind by the in-flight views: the citizen dashboard, the staff complaint queue and detail, the staff verification screen, the staff complaint list partial, the public transparency detail, the transparency list and component styles, the guest layout and the site footer all carried hard-coded hex — bare values (`background:#fff`) as well as `var(--token, #fallback)` pairs — and the transparency map script mounted Leaflet without the map wrapper's `isolation: isolate; z-index: 0`. All replaced with the design tokens those pages already consume; the map wrapper now sets its own stacking context in the script. Files: `resources/views/dashboard/index.blade.php`, `resources/views/layouts/guest.blade.php`, `resources/views/layouts/partials/site-footer.blade.php`, `resources/views/pages/transparency/partials/{complaints-styles,component-styles,map-script}.blade.php`, `resources/views/pages/transparency/show.blade.php`, `resources/views/staff/complaints/{index,show}.blade.php`, `resources/views/staff/complaints/partials/list.blade.php`, `resources/views/staff/verification/index.blade.php`, `docs/design-system.md` (§5.46, this entry). New tokens: none — the views are built from the portal's existing tokens.
+
+- 2026-11-13 · Auth `/login`, `/register`, `/password/*` · **the password eye is back where it belongs.** The settings rebuild (2026-11-12) moved the settings block out of `app.css` and deleted the adjacent §5.41 rules with it; the partial and its JavaScript were still in the page, so both eye glyphs rendered in normal flow under the input, the button was never hidden, and the field kept its descender space. Restored the shared `.field-toggle` block to `app.css` and pinned the alignment: the password input is `display: block` inside the toggle wrap so the wrap's height is the input's height, and the 44px button is pinned `top: 0; bottom: 0` with `margin-block: auto` and `right: 2px` instead of a `top: 50%` that sat a few pixels low. The hidden state is now inert from the moment the field is cleared (`pointer-events: none`, restored by `.is-visible`), so a fade-out cannot swallow a stray tap. Files: `resources/css/app.css`, `docs/design-system.md` (§5.41, this entry), `tests/Feature/PasswordToggleStyleTest.php` (new). New tokens: none.
+
+- 2026-11-13 · Feedback `/feedback`, transparency register, admin workspace · **a feedback page: the portal rated, the offices you dealt with rated, and suggestions that go out reviewed.** The portal asked for nothing and heard nothing back — there was no way for a resident to say the service was good, that the portal was hard to use, or that an office had handled their report well. There is now a **Feedback** page (linked from the footer) where a resident rates **the portal** and **the offices they have actually dealt with** — a rating of an office you never wrote to says nothing about the office — and writes a suggestion for the administration. The stars are **five real radio buttons under five stars**: the picture and the control are the same thing, so the rating works with a keyboard and a screen reader and needs no JavaScript. A **rating counts from the moment it is given**; a **suggestion waits for the administration to read it**, and the admin workspace gets a *Resident feedback* queue to publish or withhold them one at a time — prose about the portal goes out reviewed, the same rule the register already follows for a complaint. Published suggestions and the offices' averages appear on the feedback page and on the public register. Files: `database/migrations/2026_11_13_000004_create_feedback_table.php` (new), `app/Models/Feedback.php` (new), `app/Enums/FeedbackStatus.php` (new), `app/Services/FeedbackService.php` (new), `app/Http/Controllers/{FeedbackController,AdminFeedbackController}.php` (new), `resources/views/feedback/index.blade.php` (new), `resources/views/admin/feedback/index.blade.php` (new), `resources/views/components/star-rating.blade.php` (new), `resources/views/layouts/partials/site-footer.blade.php`, `resources/views/admin/partials/sidebar.blade.php`, `resources/views/pages/transparency/complaints.blade.php`, `resources/css/pages/feedback.css` (new), `app/Http/Controllers/TransparencyController.php`, `routes/web.php`, `lang/{en,fil}/{feedback,admin_settings,nav,footer,statuses}.php`, `tests/Feature/FeedbackTest.php` (new). New tokens: none — the page is built from the portal's existing tokens.
+
+- 2026-11-12 · Settings `/settings` · **the page rebuilt: tabs to switch, a save row that saves, and a name that has to be a name.** The settings page was the least finished thing in the portal, and it broke in two ways. (1) **Its "Save changes" button never saved.** The unsaved bar's button looked for a form *inside* `[data-settings-form]` — but that attribute is on the form itself, so the lookup found nothing and the click did nothing; because the form was never marked clean, the browser's `beforeunload` handler then asked the resident "leave site? changes you made may not be saved" on **every** navigation after they touched a field. (2) **A name could carry digits or stray symbols.** The registration form enforces `^[\p{L}\s\-.]+$`, but the settings form had no such rule — so a name could be set to `123` or `∑∑∑`, on the page whose whole subject is the name a person is known by on the public register. Now: (1) **the tabs switch between the sections, the way they always did** — a left rail on the desktop, a scrolling strip on a phone, the arrow keys moving between them, and a save returning to the tab it was made in; (2) the page speaks the **public portal's language** (the card, the field and button styles, the quiet header) rather than borrowing the admin's; (3) **the save row lives with the fields it saves** and says what happened in place — a tick and "Saved", or "You have unsaved changes" with a discard — with the sticky bar and the "leave site?" prompt gone; (4) **the name rule is the registration form's** — letters, spaces, hyphens and dots — enforced on the server and live in the field, so a name that can be created at sign-up is the same name that can be set later; (5) the page's own script moved out of the template into `resources/js/settings.js` and the page's styles into `resources/css/pages/settings.css`, so both are readable and testable on their own. Files: `resources/views/settings/index.blade.php` (rebuilt), `resources/views/settings/partials/save-state.blade.php` (new), `resources/js/settings.js` (new), `resources/js/app.js`, `resources/css/pages/settings.css` (new), `resources/css/app.css`, `app/Http/Controllers/SettingsController.php`, `lang/{en,fil}/settings.php`, `tests/Support/js/settings-audit.mjs` (new), `tests/Feature/SettingsPageTest.php` (new). New tokens: none — the page is built from the portal's existing tokens.
+
+- 2026-11-13 · Admin navigation · **the administrator no longer has a System
+  Settings destination.** The System Settings link is removed from the admin
+  sidebar, so it is gone from the desktop and mobile admin navigation. The
+  shared mobile drawer already omitted it. The `admin.settings.index` route,
+  page and controller remain for the time being; this change only removes the
+  administrator's link and the now-unused `nav.system_settings` keys.
+  Files: `resources/views/admin/partials/sidebar.blade.php`,
+  `lang/{en,fil}/nav.php`, `docs/design-changelog.md`.
+  New tokens: none.
+- 2026-11-13 · Admin audit trail · **counts and search first; offices stay collapsed.**
+  “Everyone” no longer dumps every office, administrator and resident into the
+  page. It renders the scope band, the people search and a plain prompt;
+  person rows appear only after an explicit scope, a group expansion, or a
+  search. The office rail collapses behind one real `<details>` disclosure,
+  and choosing a person replaces the roster with a selected-person prompt.
+  Files: `resources/views/admin/audit/partials/`, `resources/views/admin/audit/index.blade.php`,
+  `resources/css/pages/admin-workspace.css`, `app/Http/Controllers/AdminController.php`,
+  `lang/{en,fil}/audit.php`, `tests/Feature/ActivityLogTest.php`,
+  `docs/design-system.md` (§5.33, this entry). New tokens: none.
+- 2026-11-13 · Admin users, staff invitations · **the directory pages, and one
+  invitation at a time.** The account directory paginates five accounts per
+  page and renders the shared `pagination::workspace` pager with a translated
+  summary and localized label, with 44px page controls below 640px and the
+  existing stacked-cards table at phone width. The staff invitation page keeps
+  the single-person flow only; the bulk “several at once” panel, parser, routes
+  and CSS are removed. Files:
+  `resources/views/admin/{users,invitations}/`, `app/Http/Controllers/AdminInvitationController.php`,
+  `app/Http/Controllers/AdminUserController.php`, `routes/web.php`,
+  `app/Services/InvitationListParser.php` (removed),
+  `lang/{en,fil}/pagination.php`,
+  `resources/css/{app.css,pages/admin-workspace.css}`,
+  `tests/Feature/{AdminUserManagementTest,AdminInvitationTest}.php`,
+  `docs/design-changelog.md`. New tokens: none.
+- 2026-11-13 · Guest landing `/` · **“What can you report?” now names the three
+  problem types the filing form offers.** The section no longer lists the six
+  retired leaf tiles (road damage · flooding · streetlights · garbage · noise ·
+  something else). It renders Roads & Drainage, Garbage, Sanitation & Plastic
+  and Something else, sourced directly from `complaint_create.groups.*` so the
+  landing page cannot drift from `/complaints/create` again. The tile grid is
+  one column on phones and three at ≥768px; icons remain keyed by category, not
+  translated text. Files: `resources/views/pages/home/guest.blade.php`,
+  `lang/{en,fil}/landing.php`, `docs/design-changelog.md`.
+  New tokens: none.
+- 2026-11-12 · Filing form, office directory, staff + admin navigation · **three offices, two withdrawn categories, and the analytics parked.** The municipality closed the **Business and Licensing Office** and the **Human Resource Management Office**, leaving **Engineering, the Mayor's Office and the Municipal Environment and Natural Resource Office**. The two offices are deleted with the six complaints they had received and their two staff accounts (soft-deleted, so the trail still says who did what). **Business permits and personnel reports are withdrawn for now**: kept in the system so anything filed under them still reads properly, but no longer offered to residents — so the filing form is now three problem types (**Roads & Drainage · Garbage, Sanitation & Plastic · Something else**), and the Mayor's office receives the withdrawn ones in the meantime. The privacy gate stays: a report that names somebody is still filed private and still needs the Mayor's office's approval to publish. The **department analytics is parked, not deleted**: its links are out of both sidebars and out of the office directory and its routes answer 403, while the pages, the service, the styles and the data stay — one switch (the `analytics.paused` middleware) brings it all back, and `AnalyticsPaused::PAUSED` is what the tests read to skip the parked pages instead of failing them. Files: `app/Services/DepartmentRouter.php`, `app/Http/Middleware/AnalyticsPaused.php` (new), `bootstrap/app.php`, `routes/web.php`, `app/Http/Controllers/ComplaintController.php`, `resources/views/staff/partials/sidebar.blade.php`, `resources/views/admin/partials/sidebar.blade.php`, `resources/views/admin/departments/index.blade.php`, `config/{complaint_category_groups,complaint_privacy_policy}.php`, `database/migrations/2026_11_13_000005_close_business_licensing_and_human_resource_offices.php` (new), `database/seeders/{DepartmentSeeder,UserSeeder,PreGeneratedComplaintSeeder}.php`, `lang/{en,fil}/{errors,complaint_create}.php`. New tokens: none.
+
+- 2026-11-12 · Staff dashboard, staff sidebar, admin office directory · **an office's own trail gets a page.** Two different things shared one link: **"My activity"** is the staff member's own trail — the complaints *they* handled — while the dashboard's **"recent department activity"** card shows what *everyone in the office* has done. The card's "View all activity" link pointed at `/staff/activity`, at the member's own trail, so the office's trail existed only as a five-line preview with no page to land on. There is now **`/staff/department-activity`**: every action anyone in the office has taken, newest first, grouped by ticket, each entry naming who did it and linking to the complaint, paginated thirty at a time — and the dashboard card is a genuine preview of it. The page is **built from the designs the system already has** — the same banner, the same three-metric grid (the office's numbers where the sibling page asks about a member's) and the same feed, so the two pages are visibly siblings and the difference is visible rather than implied. The feed's styles moved out of the page-scoped `staff-dashboard.css` into a shared **`activity-feed.css`**: they were scoped to `body.page-staff-dashboard`, so the new page was rendering the feed **unstyled**. **"My activity" is untouched** — it answers the other question; the two sit side by side in the sidebar. An **administrator reaches an office's trail through the audit browser**, filtered to that office — the system's existing trail design, and the wider record (staff accounts, invitations, reassignments) the office's own complaint trail does not carry; the button sits beside "View queue" on each office's row. Files: `app/Http/Controllers/StaffController.php`, `resources/views/staff/activity/department.blade.php` (new), `resources/views/staff/partials/activity-feed.blade.php` (new), `resources/views/staff/dashboard/partials/activity.blade.php`, `resources/views/staff/partials/sidebar.blade.php`, `resources/views/admin/departments/index.blade.php`, `resources/css/pages/activity-feed.css` (new), `resources/css/pages/staff-dashboard.css`, `resources/css/app.css`, `routes/web.php`, `lang/{en,fil}/{staff,nav}.php`, `tests/Feature/DepartmentActivityPageTest.php` (new). New tokens: none.
+
+- 2026-11-12 · Staff complaint queue, transparency register · **the queue is for work that is still live, and it leads with what has waited longest.** A complaint the office had rejected or closed was still sitting in the office's queue beside the live work — the status filter did not even offer `Closed` — and the queue was ordered by **priority**, so what sat on top was a judgement rather than a fact. The queue now opens on the live work (`Submitted`, `Under Review`, `In Progress`); the rejected, resolved and closed are one click away behind a **Finished** chip, and the status filter offers the statuses that are actually in the current scope so it can never narrow the queue to nothing. The order is now **staleness** — the complaint nothing has touched for the longest comes first — so a report filed hours ago and still unreviewed climbs as the hours pass and one the office touched yesterday sinks below it; priority stays a filter but no longer decides the order. On the **transparency register**, a rejected complaint comes off: it is not a municipal matter, and the resident still sees it on their own ticket with the office's reason. Resolved and closed stay — they are the record of a problem that was fixed. And a resident whose complaint was resolved is now **reminded, three days later, to confirm it** (in the app and by email), before the 7-day automatic closure would close it for them; once per report, because the resident has had their answer. Files: `app/Http/Controllers/StaffController.php`, `resources/views/staff/complaints/{index,partials/list}.blade.php`, `app/Models/Complaint.php`, `app/Models/Notification.php`, `app/Services/{NotificationService,ComplaintUpdateDelivery}.php`, `app/Console/Commands/RemindUnconfirmedResolutions.php` (new), `bootstrap/app.php`, `lang/{en,fil}/{staff,mail}.php`, `tests/Feature/{StaffQueueScopeTest,ResolutionReminderTest}.php` (new). New tokens: none.
+
+- 2026-11-12 · Staff ticket · **the notes under a field look like the consent line.** `.moderation-panel__hint` had **no CSS rule anywhere in the project** — it was used in six places (the note under the public explanation, under the date, under the reason, the publication panel's blocked note) and every one rendered as bare default text: no box, no border, no spacing. The consent line above it, saying the same kind of thing, is a proper boxed callout, so the two read as different kinds of thing when they are the same kind of thing. The hint now gets the same boxed treatment — the same border, tinted background, radius and padding — on all three surfaces (the base dark panel, the light panel, the admin's override), and the consent line's bold opening is a block, so it sits on its own line above the explanation. Files: `resources/css/app.css`, `resources/css/pages/staff-complaint.css`, `resources/css/pages/admin-workspace.css`. New tokens: none.
+
+- 2026-11-12 · Staff ticket · **the hold panel gets its own identity, and the consent line reads as two lines.** The hold panel was borrowing the moderation panel's shape wholesale — so it read as a second moderation panel rather than as its own thing — and it carried a duplicated class, because the component merged its own classes with the caller's. It now has a **pause glyph beside the title in the hold tint**, the same tint on the state line's icon, a tighter lede, and its fields re-ordered so what the resident sees comes first (reason → the explanation → the date) with the office's own note last, where it cannot be mistaken for it. The **consent line now reads as two lines** — the bold opening on its own line, the explanation under it — which holds for the moderation, publication and hold panels alike, so the resident's consent, the publication state and the hold state all read the same way. Files: `resources/views/components/{hold-panel,moderation-panel,publication-panel}.blade.php`, `resources/css/app.css`, `resources/css/pages/staff-complaint.css`, `lang/{en,fil}/staff.php`. New tokens: none.
+
+- 2026-11-12 · Staff ticket · **the hold panel, rebuilt: a real calendar, tap-able reasons, two notes that cannot be confused.** The "Expected to carry on by" field had **no border at all** — the panel's CSS styles `input[type="text"]` and `textarea` but never `input[type="date"]`, so the browser's default rendered as a bare line of "dd/mm/yyyy" that read as stray text; the reason dropdown was equally unstyled (there is no `.moderation-field select` rule anywhere in the project). The field is now the **`x-date-field` component** (§5.44): a text input masked to `dd/mm/yyyy` — never the browser's locale, which showed the same office `12/15/2026` on one device and `15/12/2026` on another — with a calendar button that opens the OS picker (the wheel picker on a phone) and a clear button, while a native date input sits beside it, out of sight but still rendered, carrying the value the server receives; `31/02/2026` is refused rather than rolled over. The **reason is now seven tap-able chips** (§5.45) instead of a dropdown: every reason is on screen, so choosing is one tap and the office can see that "another reason" exists. The **two notes now say where they go** — a "Resident sees this" chip on the public note, an "Office only" chip on the internal one — because two same-looking textareas, one of which the resident reads, are otherwise indistinguishable. The panel's buttons use the panel's own `.moderation-panel__submit` (the `admin-button` class is scoped to the admin layout and rendered unstyled on the staff page) and are full width. Files: `resources/views/components/date-field.blade.php` (new), `resources/views/components/hold-panel.blade.php`, `resources/js/date-field.js` (new), `resources/js/app.js`, `resources/css/app.css`, `resources/css/pages/{staff-complaint,admin-workspace}.css`, `resources/views/pages/design-system.blade.php`, `lang/{en,fil}/common.php` (new), `lang/{en,fil}/staff.php`, `tests/Support/js/date-field-audit.mjs` (new), `tests/Feature/DateFieldTest.php` (new). New tokens: none — the chips use the existing status and surface tokens.
+
+- 2026-11-12 · Staff ticket, admin dashboard and queue, resident ticket · **a complaint the office cannot finish today: on hold, with the reason and a paused clock.** Some complaints are legitimate, verified, and still not finishable this week — the asphalt is not in stock, the budget has not been released, the work belongs to another body. There was no way to say that: the only channel was a note under the response card, which changed nothing, and because the SLA clock runs from verification a complaint parked for want of materials still counted as **overdue**, so the office was marked late for a gap it did not control. The hold is a **marker, not a status** — the work has not stopped, it is paused — so the status stays where it was, the report does not move backwards in the resident's progress tracker, and every filter that reads the status keeps working. The office says why out loud: a reason from a fixed list (funds · materials · procurement · a budget decision · another office · the weather · other), a plain explanation **the resident reads** and the public register carries, an optional internal note, and an optional date it expects to carry on by. The clock pauses with the work — a complaint on hold is not counted as overdue, its chip reads "On hold — the clock is paused" instead of red, and the time it waited is added back to the deadline the office owes when the hold is lifted. The administrator still sees the wait: an "On hold" tile on the dashboard, an "On hold only" filter on the queue, and the hold chip on every row — because the administrator is the person who can release the funds. New family: `--hold-bg/text/dot` (violet) as `.status-pill.hold` and `.sla-chip--on-hold`, plus `--dept-icon-violet-bg/fg` for the dashboard tile; "waiting" must not read as "due soon" or "late" at the same time. Files: `resources/views/components/hold-panel.blade.php` (new), `resources/views/staff/complaints/show.blade.php`, `resources/views/admin/complaints/show.blade.php`, `resources/views/admin/complaints/index.blade.php` + `partials/list.blade.php`, `resources/views/staff/complaints/partials/list.blade.php`, `resources/views/complaints/show.blade.php`, `resources/views/admin/dashboard/index.blade.php`, `resources/views/partials/public-ui.blade.php`, `resources/css/tokens.css`, `resources/css/pages/{complaint-show,staff-complaint,admin-dashboard}.css`, `lang/{en,fil}/{staff,complaint_show,statuses}.php`, `app/Enums/{HoldReason,ComplaintSlaState}.php`, `app/Services/{ComplaintHoldService,ComplaintSlaService,NotificationService}.php`, `app/Models/{Complaint,Notification}.php`, `app/Http/Controllers/{StaffController,AdminController}.php`, `database/migrations/2026_11_13_000003_add_hold_state_to_complaints.php` (new), `database/migrations/2026_11_13_000004_allow_notes_without_a_status_change.php` (new), `routes/web.php`.
+
+- 2026-11-12 · Staff analytics `/staff/analytics`, admin comparison
+  `/admin/analytics`, admin department analytics
+  `/admin/analytics/departments/{department}` · **the activity feed is paged
+  in place and every chart is interactive.** The recent-activity card no longer
+  renders one long scroll: it loads the latest 20 entries, shows eight first,
+  and keeps the rest behind a real `<details>` disclosure (native keyboard and
+  no JavaScript). The trend chart is now operable by pointer, touch and
+  keyboard through one focusable hit band per bucket; the status donut's legend
+  is a set of real buttons; the category, barangay and aging bars are
+  full-width buttons. Hovering, tapping or focusing any of them writes the
+  exact values into one `.an-inspect` readout, and `Escape` restores the
+  placeholder. Print hides the readouts and the feed disclosure summary, and
+  renders the full feed and chart data instead. Files:
+  `resources/views/analytics/partials/`,
+  `resources/views/pages/design-system.blade.php` (interactive swatch),
+  `resources/css/pages/analytics.css`, `resources/js/analytics.js`,
+  `app/Services/DepartmentAnalyticsService.php`,
+  `lang/{en,fil}/analytics.php`,
+  `tests/Feature/DepartmentAnalyticsTest.php`, `docs/design-system.md`
+  (§5.43, this entry). New tokens: none.
+- 2026-11-12 · Staff analytics `/staff/analytics`, admin comparison
+  `/admin/analytics`, admin department analytics
+  `/admin/analytics/departments/{department}` · **a dedicated analytics surface
+  per department, plus a context-first municipal comparison.** A department now
+  has one page that answers what arrived, what finished, how long it took, what
+  is late, where reports come from and how the load sits across the team:
+  six-stat summary, filed-vs-completed trend (inline SVG, daily/weekly/monthly
+  buckets), status donut, top categories and barangays, open-work aging,
+  verification/quality counts, staff workload, recent activity, CSV register
+  and a print view. Period is URL-backed (`month` default, `7d`, `30d`, `90d`,
+  `ytd`, custom `from`/`to`) and soft-navigated through
+  `resources/js/analytics.js`; with JavaScript off the chips and the custom
+  form work as ordinary links and a GET form. **Counting rules:** a report is
+  resolved only when Resolved or Closed (Rejected never counts), completion is
+  `COALESCE(resolved_at, closed_at, updated_at)`, and on-time is measured only
+  for verified completions against the priority's SLA resolve days. **Staff**
+  see their own office, decided by the session; the per-staff breakdown is
+  never queried for them. **Admins** get the alphabetical comparison of active
+  offices, each against its own previous period, with a fairness note above the
+  table — no ranking, no composite score — and can open any office, including
+  an archived one, for the full report with the administrator-only staff table.
+  Files: `app/Support/AnalyticsPeriod.php`, `app/Services/DepartmentAnalyticsService.php`,
+  `app/Http/Controllers/{StaffAnalyticsController,AdminAnalyticsController}.php`,
+  `resources/views/{staff/analytics,admin/analytics,analytics}/`,
+  `resources/views/layouts/print.blade.php`, `resources/css/pages/analytics.css`,
+  `resources/js/{analytics.js,app.js}`, `lang/{en,fil}/{analytics,nav}.php`,
+  staff/admin sidebars, admin department directory,
+  `resources/views/pages/design-system.blade.php` (§5.43 swatch).
+  New tokens: none.
+- 2026-11-12 · Staff complaint detail · **one-tap directions to the pin, and the
+  coordinate pair leaves the page.** The location card now answers the question
+  the ticket could not: *how do I get there?* A **Get directions** action in the
+  card footer opens Google Maps with the complaint pin as the destination and no
+  explicit origin, so Maps starts from the staff member's current location — no
+  geolocation prompt on our page, no typing a coordinate pair on a phone. The
+  printed `GPS: 14.…, 122.…` readout is removed; the coordinates now live only in
+  the map's data attributes and the directions href. The card is always present:
+  with a pin it shows the map and the action, without one it says **No exact pin
+  on this report** and offers no directions link. The map also gained the
+  missing resilience the other maps already had — `onUnavailable` copy, resize /
+  orientationchange re-measure and a non-animating `invalidateSize`, all inside
+  the §6 `isolation: isolate; z-index: 0` wrapper. Files:
+  `resources/views/staff/complaints/show.blade.php`,
+  `resources/css/pages/staff-complaint.css`, `lang/{en,fil}/staff.php`,
+  `resources/views/pages/design-system.blade.php` (static swatch),
+  `docs/design-system.md` (§5.42, this entry),
+  `tests/Feature/{ExactLocationVisibilityTest,ComplaintMapRenderingTest}.php`.
+  New tokens: none.
+- 2026-11-12 · Complaint create step 1, staff ticket, transparency · **five problem types, and the reports that name somebody.** The filing form's first step drops two withdrawn tiles (Parks & Public Areas, Noise & Animals) and gains **Staff & Personnel** — one category, "How You Were Treated at the LGU", routed to the Human Resource Management Office — so the step is now Roads & Drainage · Garbage/Sanitation & Plastic · Business & Permits · Staff & Personnel · Something else. The tile uses a new `--cat-personnel` pair (rose `#fce7f3`/`#be185d`) and a `users` icon, and the public category icon gained the same variant. **Two categories name somebody** — a member of personnel, or a business in the plastic-policy report — and for those the form asks for the name of the party in a dedicated field that never leaves the office, and offers only "Just me": the report is filed private, and it reaches the public register only when the office has settled it, the information has been verified as true, the sensitive parts have been redacted, and the Mayor's office has approved it. The staff ticket gains a **publication panel** (one component, shared) that shows the name to the office, lists what is still missing, and carries the request; the Mayor's office gets a **publication queue** in the staff sidebar. The resident's ticket page states where the publication stands instead of offering a switch they cannot pull. Files: `resources/views/complaints/create.blade.php`, `resources/views/complaints/partials/tile-icon.blade.php`, `resources/views/complaints/show.blade.php`, `resources/views/components/publication-panel.blade.php` (new), `resources/views/staff/publication-requests/index.blade.php` (new), `resources/views/staff/complaints/show.blade.php`, `resources/views/staff/partials/sidebar.blade.php`, `resources/views/partials/public-ui.blade.php`, `resources/views/pages/transparency/partials/category-icon.blade.php`, `resources/css/tokens.css`, `resources/css/pages/complaint-create.css`, `lang/{en,fil}/{complaint_create,staff,complaint_show,statuses}.php`, `app/Services/{DepartmentRouter,ComplaintPrivacyService,ComplaintPublicationService}.php`, `app/Models/Complaint.php`, `app/Enums/PublicationStatus.php` (new), `config/complaint_privacy_policy.php` (new), `database/migrations/2026_11_13_000002_add_privacy_gated_complaints.php` (new). New tokens: one `--cat-personnel` pair (+ one `.tile__icon--personnel` and one `.cat-icon--personnel` rule) — no other new colours.
+
+- 2026-11-12 · Department directory, admin dashboard, complaint create, transparency · **eight offices become five, and the names the residents see are the names in the directory.** The municipality reorganised: Health (HLTH), General Services (GSO), Municipal Planning and Development (MPDO) and Social Welfare and Development (SWDO) are gone, with the 24 complaints routed to them; Waste Management (WST) is the same office renamed the Municipal Environment and Natural Resource Office (MENRO); the Office of the Mayor (OM) is now the Mayor's Office, doing the Municipal Information Office's work; Business Permit and Licensing (BPLO) is now Business and Licensing; and a Human Resource Management Office (HRMO) joins the directory. (1) The **badge palette** follows: the four closed offices' `--dept-*` tokens are gone, `WST` → `MENRO` keeps its green so a badge never changes colour just because an office was renamed, and `HRMO` takes the blue freed by MPDO. (2) The **create form** now tells the resident the office's real name — the router's group key IS the office name, so "Goes to General Services" became "Goes to Municipal Environment and Natural Resource Office" — and a new **Plastic Product Usage** category (routed to MENRO) sits in the renamed "Garbage, Sanitation & Plastic" tile, with a `leaf` tile icon in the existing `--cat-waste-*` colours. (3) The **admin directory and dashboard** show five office cards with the new names; the "create office" page now reads "routed automatically for 4 codes — ENG, MENRO, BPLO, OM", and HRMO is the one office that receives nothing on its own until the municipality routes work to it. (4) **Park maintenance, stray animals and "other"** stay in the system but are owned by no office; they route to the Mayor's Office until they are assigned. Files: `database/migrations/2026_11_13_000001_reduce_departments_to_five_offices.php` (new), `database/seeders/{DepartmentSeeder,UserSeeder,PreGeneratedComplaintSeeder}.php`, `app/Services/{DepartmentRouter,ComplaintPriorityService}.php`, `app/Http/Controllers/ComplaintController.php`, `config/{complaint_category_groups,complaint_intake_policy,complaint_work_policy}.php`, `lang/{en,fil}/complaint_create.php`, `resources/css/app.css`, `resources/views/complaints/partials/tile-icon.blade.php`, `resources/views/pages/design-system.blade.php`, `resources/views/pages/design-system-rows.blade.php`, `resources/views/admin/departments/create.blade.php`. New tokens: one `--dept-HRMO` pair (+ one `[data-dept="HRMO"]` line) and one `--dept-MENRO` pair replacing `--dept-WST` — no other new colours; the closed codes' tokens were removed rather than left behind.
+
 - 2026-11-11 · Complaint detail `/complaints/{id}` · **resident ticket page rebuilt: updates on top, conditional photos/location, section separation.** The resident complaint detail page now shows the staff updates/timeline card at the top of the page (full-width on all screens, previously tucked in the right column on desktop) so the latest status is seen first. The photos and location cards are shown only when the complaint's category intake policy requires them (`Complaint::intakePolicy()` → `photos_required`, `intakeLocationApplicable()`) or when actual data exists — otherwise they are removed entirely so the page isn't one wall of text. Cards use `--surface` with `1px var(--line)` borders and `--shadow-card`, with `var(--line-soft)` hairline dividers between sections, matching the design system card language. Desktop keeps the two-column layout (details left, photos/location right); mobile stacks single-column. Files: `resources/views/complaints/show.blade.php`. New tokens: none.
 
 - 2026-11-11 · My Complaints `/complaints` · **File-a-complaint CTA horizontal with the H1 + P.** The "File a complaint" button (`tr-banner__cta`) rendered stacked below the greeting text; it now sits beside the H1/subtitle on desktop (`flex` row, `space-between`, `flex-wrap: wrap`) so the page reads as one horizontal banner line. Scoped to `body.page-complaints-index` only — staff/admin workspaces and the transparency register keep their existing stacked banner. Mobile still stacks (CTA full-width under the text) because the CTA is `width: 100%` there. Files: `resources/views/complaints/index.blade.php`. New tokens: none.
@@ -1553,6 +2154,15 @@ Every UI task appends here: **(date · page · what changed).**
 - 2026-11-11 · My Complaints `/complaints` · **pagination: 3 rows per page on mobile, 5 on desktop.** The resident's complaint list always rendered every match on one page (`paginate(10)`), so the Next/Prev controls in `.tr-pagination` never appeared even when a queue grew long. It now paginates at 3 per page on mobile and 5 per page on larger screens (detected server-side from the User-Agent): 5 or fewer complaints show flat with no pager; a 6th complaint flips the page and the Next/Prev buttons (plus numbered pages) show on mobile and desktop. `withQueryString()` keeps search/filter/status in the URL across pages. The duplicate top "Showing X of Y" summary was removed; the single bottom summary (e.g. "Showing 1–3 of 6") stays. Files: `app/Http/Controllers/ComplaintController.php`, `resources/views/complaints/index.blade.php`, `resources/views/vendor/pagination/resident.blade.php` (new). New tokens: none.
 
 - 2026-11-11 · My Complaints `/complaints` · **status chip text centered.** The status chips (`All`, `Open`, `Submitted`, …) rendered their text flush-left inside the pill on larger screens. Added `display: inline-flex; align-items: center; justify-content: center;` to `.status-chip` (shared in `component-styles.blade.php`) and to the mobile override in `complaints/index.blade.php` so the label is centered in its padding box on every breakpoint. New tokens: none.
+
+- 2026-11-11 · Admin · **Invite staff and Create staff stay on screen.**
+  On phones the two header buttons on `/admin/users` were rendered as two
+  full-height columns side by side with one pinned off-screen —
+  `flex-direction: column-reverse` + `flex-wrap: wrap` + `flex: 1 1 100%`
+  makes each full-height child start a new column. The actions bar now
+  forces `flex-wrap: nowrap` at ≤767px and `flex: 1 1 auto` on the
+  children, so the buttons stack full-width at 44px at 320/360/393px and
+  keep the desktop row untouched. New tokens: none.
 
 - 2026-11-11 · Navbar · **Administrator badge sits by the logo; bell by the
   hamburger.** On mobile (≤640px authenticated) the bar read
@@ -2170,3 +2780,6 @@ Every UI task appends here: **(date · page · what changed).**
 - **Verify:** `php artisan test --filter=StaffWorkspace` (6 passed). Headless Playwright
   screenshots in `/tmp/opencode/staff-pass3/` (1440/1100/1024 full, 393 top/bottom/drawer,
   360 header/full). Guard: no new violations in files touched by this pass.
+
+- 2026-11-13 · Staff complaint detail `/staff/complaints/{id}` · **review form collapses after verification.** The "Review and verification form" card stayed fully expanded after a complaint was verified, taking up space for a form the office no longer needed to fill. It now collapses behind a toggle button (SVG chevron icon) once the complaint is verified and the viewer can verify; the read-only record (review status, suggested priority, confirmed priority) stays visible above the collapse so the confirmed priority remains on screen. The toggle persists the choice in `localStorage`, so it survives reloads and Livewire re-renders, and uses `[hidden]` (never `style.display`) per §7. Button text toggles between "Minimize" and "Show form" with `aria-label`, en+fil. Files: `resources/views/staff/complaints/show.blade.php`, `lang/{en,fil}/staff.php`. New tokens: none.
+- 2026-11-13 · Complaint filing (`/complaints/create`) · **privacy-gated reports surface the missing acknowledgment.** Submitting a category that names somebody without the required "I understand…" acknowledgment showed "Check the highlighted fields. The privacy ack field must be accepted." but never highlighted a field or moved the wizard to it. Server-error mapping now routes `privacy_ack` (and `named_party` / `named_party_position`) to the correct step so the wizard lands on the privacy/describe step, and client validation requires the gated acknowledgment and named-party fields before advancing. Files: `resources/views/complaints/create.blade.php`. New tokens: none. Screenshots waived by owner (2026-11-13).

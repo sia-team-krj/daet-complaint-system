@@ -80,6 +80,11 @@
     --status-closed-text: #334155;
     --status-closed-dot: #64748b;
 
+    /* ── On hold (the work is paused, not late) ────────────────────── */
+    --hold-bg: #f5f3ff;
+    --hold-text: #5b21b6;
+    --hold-dot: #7c3aed;
+
     /* ── Heat ramp (map legend + choropleth) ───────────────────────── */
     --heat-1: #e0f2e9;
     --heat-2: #fde68a;
@@ -109,6 +114,8 @@
     --cat-stray-fg: #c2410c;
     --cat-business-bg: #cffafe;
     --cat-business-fg: #0e7490;
+    --cat-personnel-bg: #fce7f3;
+    --cat-personnel-fg: #be185d;
 
     /* ── Filing form errors / states ───────────────────────────────── */
     --error-text: #b91c1c;
@@ -176,4 +183,6 @@
     --dept-icon-green-fg: #15803d;
     --dept-icon-sky-bg: #e0f2fe;
     --dept-icon-sky-fg: #0369a1;
+    --dept-icon-violet-bg: #f5f3ff;
+    --dept-icon-violet-fg: #5b21b6;
 }

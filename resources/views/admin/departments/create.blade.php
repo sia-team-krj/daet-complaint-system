@@ -32,7 +32,7 @@
             <label class="admin-field">
                 <span>Office name</span>
                 <input type="text" name="name" class="admin-input" value="{{ old('name') }}" required maxlength="100"
-                       placeholder="Office of the Mayor" autofocus>
+                       placeholder="Human Resource Management Office" autofocus>
                 @error('name')<span class="admin-field-error">{{ $message }}</span>@enderror
             </label>
 

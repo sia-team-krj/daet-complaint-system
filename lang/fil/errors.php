@@ -48,4 +48,7 @@ return [
         'title' => 'May naganap na problema',
         'message' => 'Hindi natapos ng portal ang iyong kahilingan. Subukang muli pagkalipas ng ilang sandali.',
     ],
+
+    // Nakapark ang analytics: inilagay itong pagmamaya, hindi binura.
+    'analytics_paused' => 'Nakapark ang analytics ng mga department. Babalik ito kapag handa na ang munisipyo.',
 ];

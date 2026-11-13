@@ -10,6 +10,11 @@ class DepartmentSeeder extends Seeder
     /**
      * Seeds the real LGU department offices of Daet, Camarines Norte.
      * Run after migrations: php artisan db:seed --class=DepartmentSeeder
+     *
+     * Three offices. The municipality closed the Business and Licensing
+     * Office and the Human Resource Management Office, and folded Health,
+     * General Services, Municipal Planning and Development, and Social
+     * Welfare and Development into the offices below.
      */
     public function run(): void
     {
@@ -21,51 +26,25 @@ class DepartmentSeeder extends Seeder
                     "Roads, drainage, bridges, streetlights, and public infrastructure.",
             ],
             [
-                "name" => "Health Office",
-                "code" => "HLTH",
-                "description" =>
-                    "Public health concerns, sanitation, and medical services.",
-            ],
-            [
-                "name" => "General Services Office",
-                "code" => "GSO",
-                "description" =>
-                    "Government facilities, equipment, and general public services.",
-            ],
-            [
-                "name" => "Municipal Planning and Development Office",
-                "code" => "MPDO",
-                "description" =>
-                    "Land use, urban planning, and development projects.",
-            ],
-            [
-                "name" => "Waste Management Office",
-                "code" => "WST",
-                "description" =>
-                    "Garbage collection, waste disposal, and environmental cleanliness.",
-            ],
-            [
-                "name" => "Social Welfare and Development Office",
-                "code" => "SWDO",
-                "description" =>
-                    "Social services, livelihood assistance, and welfare programs.",
-            ],
-            [
-                "name" => "Business Permit and Licensing Office",
-                "code" => "BPLO",
-                "description" =>
-                    "Business permits, licensing, and regulatory compliance.",
-            ],
-            [
-                "name" => "Office of the Mayor",
+                "name" => "Mayor's Office",
                 "code" => "OM",
                 "description" =>
-                    'Executive concerns escalated to the Mayor\'s office.',
+                    "Municipal Information Office — public information, announcements, and community concerns escalated to the Mayor.",
+            ],
+            [
+                "name" => "Municipal Environment and Natural Resource Office",
+                "code" => "MENRO",
+                "description" =>
+                    "Garbage collection, waste disposal, environmental cleanliness, and plastic policy enforcement.",
             ],
         ];
 
         foreach ($departments as $dept) {
-            Department::firstOrCreate(
+            // updateOrCreate, not firstOrCreate: the office list is the
+            // canonical directory, so re-seeding has to bring a renamed office
+            // back to its canonical name instead of silently keeping the old
+            // one.
+            Department::updateOrCreate(
                 ["code" => $dept["code"]],
                 array_merge($dept, ["is_active" => true]),
             );

@@ -134,10 +134,10 @@ class NotificationDeliveryTest extends TestCase
 
     public function test_another_departments_verifiers_are_never_notified(): void
     {
-        $gso = Department::where('code', 'GSO')->firstOrFail();
+        $menro = Department::where('code', 'MENRO')->firstOrFail();
         $outsider = User::factory()->create([
             'role' => 'staff',
-            'department_id' => $gso->id,
+            'department_id' => $menro->id,
             'can_verify' => true,
         ]);
 
@@ -575,11 +575,11 @@ class NotificationDeliveryTest extends TestCase
     public function test_admins_are_told_when_a_department_has_no_verifier(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'department_id' => null]);
-        $gso = Department::where('code', 'GSO')->firstOrFail();
+        $menro = Department::where('code', 'MENRO')->firstOrFail();
 
-        // The only verifier in this test works for ENG, so GSO has nobody who
+        // The only verifier in this test works for ENG, so MENRO has nobody who
         // can settle this complaint.
-        $this->complaint->update(['department_id' => $gso->id]);
+        $this->complaint->update(['department_id' => $menro->id]);
 
         app(NotificationService::class)->complaintNeedsVerification($this->complaint);
 

@@ -522,6 +522,12 @@ body.role-admin.admin-layout.page-admin-dashboard .dept-si--sky {
     background: var(--dept-icon-sky-bg);
     color: var(--dept-icon-sky-fg);
 }
+/* The work is paused. Its own tint: waiting must not read as late (amber)
+ * or as out of the office (slate). */
+body.role-admin.admin-layout.page-admin-dashboard .dept-si--violet {
+    background: var(--dept-icon-violet-bg);
+    color: var(--dept-icon-violet-fg);
+}
 
 /* ─── Status pill + shared card alignment under admin ────────────────────── */
 body.role-admin.admin-layout.page-admin-dashboard .status-pill.submitted {

@@ -20,10 +20,9 @@ class ComplaintPriorityService
         'streetlight' => ComplaintPriority::Routine->value,
         'garbage' => ComplaintPriority::Routine->value,
         'sanitation' => ComplaintPriority::Elevated->value,
-        'park_maintenance' => ComplaintPriority::Routine->value,
+        'plastic_usage' => ComplaintPriority::Routine->value,
+        'staff_treatment' => ComplaintPriority::Routine->value,
         'business_permit' => ComplaintPriority::Routine->value,
-        'noise_complaint' => ComplaintPriority::Routine->value,
-        'stray_animals' => ComplaintPriority::Routine->value,
         'others' => ComplaintPriority::Routine->value,
     ];
 

@@ -41,7 +41,7 @@ class StaffWorkspaceTest extends TestCase
     {
         $this->seed(DepartmentSeeder::class);
         $engineering = Department::where('code', 'ENG')->firstOrFail();
-        $gso = Department::where('code', 'GSO')->firstOrFail();
+        $menro = Department::where('code', 'MENRO')->firstOrFail();
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $engineering->id,
@@ -54,7 +54,7 @@ class StaffWorkspaceTest extends TestCase
             'title' => 'Engineering department complaint',
         ]);
         $otherComplaint = Complaint::factory()->create([
-            'department_id' => $gso->id,
+            'department_id' => $menro->id,
             'user_id' => $resident->id,
             'title' => 'General services complaint',
         ]);

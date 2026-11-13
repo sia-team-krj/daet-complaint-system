@@ -103,7 +103,6 @@
                 <h2>How invitations work</h2>
                 <ul>
                     <li>Use the form above for one person.</li>
-                    <li>Use the bulk section for several at once.</li>
                     <li>The recipient creates their own password.</li>
                     <li>The link expires after {{ config('invitations.expires_in_hours', 24) }} hours.</li>
                     <li>The link is invalid immediately after one redemption.</li>
@@ -111,94 +110,6 @@
             </section>
         </aside>
     </div>
-
-    <section class="admin-section admin-invitation-bulk" aria-labelledby="bulk-invitation-title">
-        <div class="admin-section-heading">
-            <div>
-                <h2 id="bulk-invitation-title" class="admin-section-title">Invite several people at once</h2>
-                <p class="admin-section-description">Paste up to 25 email addresses, one per line, and check the list before anything is sent.</p>
-            </div>
-        </div>
-
-        <form data-loading-submit method="POST" action="{{ route('admin.invitations.preview') }}" class="admin-form-stack admin-invitation-form">
-            @csrf
-            <div class="admin-invitation-bulk-grid">
-                <label class="admin-field">
-                    <span>Department for every address</span>
-                    <select name="default_department_id" class="admin-input">
-                        <option value="">Each line names its own department</option>
-                        @foreach($departments as $department)
-                            <option value="{{ $department->id }}" @selected((string) old('default_department_id') === (string) $department->id)>{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                    <span class="admin-field-hint">Pick one to apply it to every line, or leave it for a mixed list.</span>
-                </label>
-
-                <label class="admin-field">
-                    <span>Email addresses</span>
-                    <textarea name="recipients" class="admin-input admin-invitation-textarea" rows="8" required placeholder="juan@daet.gov.ph&#10;maria@daet.gov.ph | General Services&#10;Pedro Reyes &lt;pedro@daet.gov.ph&gt; | Engineering">{{ old('recipients') }}</textarea>
-                    <span class="admin-field-hint">One per line. Add " | Department" only when the list is mixed.</span>
-                    @error('recipients')<span class="admin-field-error">{{ $message }}</span>@enderror
-                </label>
-            </div>
-
-            <div>
-                <button type="submit" class="admin-button admin-button--primary">Check list</button>
-                <span class="admin-field-hint">Nothing is emailed until you confirm the checked list below.</span>
-            </div>
-        </form>
-
-        @if(!empty($preview))
-            <div class="admin-invitation-review">
-                <h3 class="admin-invitation-review-title">Review before sending</h3>
-
-                <ul class="admin-invitation-tally">
-                    <li><strong>{{ $preview['ready'] }}</strong> ready</li>
-                    <li><strong>{{ $preview['skipped'] }}</strong> skipped</li>
-                    <li><strong>{{ $preview['invalid'] }}</strong> cannot send</li>
-                </ul>
-
-                <div class="admin-table-wrap">
-                    <table class="admin-table admin-invitation-review-table">
-                        <thead>
-                            <tr><th>Line</th><th>Invitee</th><th>Department</th><th>Result</th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach($preview['rows'] as $row)
-                                <tr>
-                                    <td class="admin-muted-cell">{{ $row['line'] }}</td>
-                                    <td>
-                                        <span class="admin-ticket-id">{{ $row['email'] ?? '-' }}</span>
-                                        @if(!empty($row['name']))
-                                            <span class="admin-muted-cell">{{ $row['name'] }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="admin-muted-cell">{{ $row['department_name'] ?? '-' }}</td>
-                                    <td>
-                                        <span class="admin-status admin-status--{{ $row['status'] }}">{{ ucfirst($row['status']) }}</span>
-                                        @if(!empty($row['reason']))
-                                            <span class="admin-muted-cell">{{ $row['reason'] }}</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                @if($preview['ready'] > 0)
-                    <form data-loading-submit method="POST" action="{{ route('admin.invitations.send') }}" class="admin-invitation-confirm">
-                        @csrf
-                        <button type="submit" class="admin-button admin-button--primary">
-                            Yes, email {{ $preview['ready'] }} invitation{{ $preview['ready'] === 1 ? '' : 's' }}
-                        </button>
-                    </form>
-                @endif
-
-                <p class="admin-field-hint">Sending emails cannot be undone. Each link works once and only for the address shown.</p>
-            </div>
-        @endif
-    </section>
 </div>
 @endsection
 

@@ -75,6 +75,14 @@ return [
         'privatise' => 'Make this private',
         'public_state' => 'Currently published under your display alias.',
         'private_state' => 'Currently private. Only you and the staff handling it can see this.',
+        'gated_state' => 'Private — it names someone',
+        'gated_body' => 'Because this report names a person or a business, it stays off the public page. It is published only if the office settles it, the information is verified as true, the sensitive parts are redacted, and the Mayor\'s office approves it. You will be told either way, and every update on this report reaches you as usual.',
+    ],
+
+    'hold' => [
+        'on_hold' => 'On hold',
+        'no_note' => 'The office has paused the work on this report.',
+        'expected_on' => 'Expected to carry on by :date.',
     ],
 
     'help' => [

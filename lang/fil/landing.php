@@ -28,12 +28,6 @@ return [
 
     'categories_title' => 'Ano ang puwede mong i-report?',
     'categories_subtitle' => 'Piliin ang pinakaangkop. Kami na ang magpapadala sa tamang tanggapan.',
-    'tile_road_damage' => 'Sirang kalsada',
-    'tile_flooding' => 'Baha at kanal',
-    'tile_streetlight' => 'Ilaw sa kalye',
-    'tile_garbage' => 'Basura',
-    'tile_noise' => 'Ingay',
-    'tile_others' => 'Iba pa',
 
     'process_title' => 'Ano ang mangyayari pagkatapos mong maghain',
     'process_subtitle' => 'Pare-pareho ang 5 hakbang ng bawat reklamo. Makikita mo ang bawat isa.',

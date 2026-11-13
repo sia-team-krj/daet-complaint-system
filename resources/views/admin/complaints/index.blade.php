@@ -120,6 +120,13 @@
                             </select>
                             <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
+                        <div class="tr-select tr-select--sort">
+                            <select name="on_hold" aria-label="On hold" data-filter-auto>
+                                <option value="">On hold: any</option>
+                                <option value="1" @selected(request('on_hold') === '1')>On hold only</option>
+                            </select>
+                            <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
                         <label class="tr-search admin-date-field" for="date-from">
                             <input type="date" id="date-from" name="date_from" class="tr-filter-input tr-filter-input--date" value="{{ request('date_from') }}" aria-label="From date">
                         </label>
@@ -215,7 +222,8 @@
     select[name="department"],
     select[name="review"],
     select[name="priority"],
-    select[name="flagged"] {
+    select[name="flagged"],
+    select[name="on_hold"] {
         box-sizing: border-box;
         width: 100%;
         height: 44px;
@@ -701,7 +709,7 @@
             const url = new URL(filterForm.getAttribute('action'), window.location.origin);
             const data = new FormData(filterForm);
 
-            ['search', 'department', 'status', 'review', 'priority', 'flagged', 'date_from', 'date_to'].forEach(function(key) {
+            ['search', 'department', 'status', 'review', 'priority', 'flagged', 'on_hold', 'date_from', 'date_to'].forEach(function(key) {
                 const value = data.get(key);
                 if (value) {
                     url.searchParams.set(key, value);

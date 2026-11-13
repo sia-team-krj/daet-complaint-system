@@ -48,4 +48,7 @@ return [
         'title' => 'Something went wrong',
         'message' => 'The portal could not complete your request. Please try again in a moment.',
     ],
+
+    // The analytics is parked: set aside, not deleted.
+    'analytics_paused' => 'The department analytics is paused. It will be back when the municipality is ready for it.',
 ];

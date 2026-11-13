@@ -27,15 +27,15 @@ trait SoftNavigation
     /**
      * The page this endpoint belongs to, with the state it was asked about.
      *
-     * @return string
+     * @param  array<string, mixed>  $parameters
      */
-    protected function fragmentFallbackUrl(Request $request, string $pageRoute): string
+    protected function fragmentFallbackUrl(Request $request, string $pageRoute, array $parameters = []): string
     {
         $query = array_filter(
             $request->query(),
             fn ($value) => $value !== null && $value !== '',
         );
 
-        return route($pageRoute, $query);
+        return route($pageRoute, array_merge($query, $parameters));
     }
 }

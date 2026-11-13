@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use RuntimeException;
 use Tests\TestCase;
 
 class AdminInvitationTest extends TestCase
@@ -98,7 +97,7 @@ class AdminInvitationTest extends TestCase
         $this->assertSame(1, InvitationCode::count());
     }
 
-    public function test_solo_and_bulk_invites_are_separate_forms(): void
+    public function test_invitation_page_offers_only_the_single_person_flow(): void
     {
         $content = $this->actingAs($this->admin)
             ->get(route('admin.invitations.index'))
@@ -106,30 +105,27 @@ class AdminInvitationTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString('Invite one person', $content);
-        $this->assertStringContainsString('Invite several people at once', $content);
+        $this->assertStringNotContainsString('Invite several people at once', $content);
+        $this->assertStringNotContainsString('Review before sending', $content);
+        $this->assertStringNotContainsString('name="recipients"', $content);
+        $this->assertStringNotContainsString('name="default_department_id"', $content);
 
-        // The solo form posts department_id; the bulk form posts recipients.
-        // Neither form may carry the other form's fields.
-        $this->assertMatchesRegularExpression(
-            '/<form[^>]*action="[^"]*invitations"[^>]*>(?:(?!<\/form>).)*name="department_id"/s',
-            $content,
-            'The single-invite form should own the department_id field.',
-        );
-        $this->assertDoesNotMatchRegularExpression(
-            '/<form[^>]*action="[^"]*invitations"[^>]*>(?:(?!<\/form>).)*name="recipients"/s',
-            $content,
-            'The single-invite form must not contain the bulk recipients field.',
-        );
-        $this->assertDoesNotMatchRegularExpression(
-            '/<form[^>]*action="[^"]*invitations\/preview"[^>]*>(?:(?!<\/form>).)*name="department_id"/s',
-            $content,
-            'The bulk form must not contain the solo department_id field.',
-        );
+        $this->post('/admin/invitations/preview', [
+            'recipients' => 'one@example.com',
+            'default_department_id' => $this->department->id,
+        ])->assertNotFound();
+
+        $this->post('/admin/invitations/send')->assertNotFound();
     }
 
     public function test_admin_can_generate_a_single_use_invitation_for_a_department(): void
     {
-        $response = $this->previewAndSend("Juan Dela Cruz <juan.delacruz@example.com>");
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.invitations.store'), [
+                'department_id' => $this->department->id,
+                'name' => 'Juan Dela Cruz',
+                'email' => 'juan.delacruz@example.com',
+            ]);
 
         $response->assertRedirect(route('admin.invitations.index'));
         $response->assertSessionHas('status');
@@ -151,7 +147,12 @@ class AdminInvitationTest extends TestCase
 
     public function test_generating_an_invitation_emails_the_link_to_the_invitee(): void
     {
-        $this->previewAndSend('Juan Dela Cruz <juan.delacruz@example.com>');
+        $this->actingAs($this->admin)
+            ->post(route('admin.invitations.store'), [
+                'department_id' => $this->department->id,
+                'name' => 'Juan Dela Cruz',
+                'email' => 'juan.delacruz@example.com',
+            ]);
 
         $invitation = InvitationCode::sole();
 
@@ -164,169 +165,6 @@ class AdminInvitationTest extends TestCase
         $this->assertNotNull($invitation->fresh()->emailed_at);
     }
 
-    public function test_a_single_department_can_be_applied_to_every_line(): void
-    {
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => "one@example.com\ntwo@example.com\nthree@example.com",
-                'default_department_id' => $this->department->id,
-            ])
-            ->assertRedirect(route('admin.invitations.index'));
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'))
-            ->assertRedirect(route('admin.invitations.index'));
-
-        $this->assertSame(3, InvitationCode::count());
-        $this->assertSame(
-            [$this->department->id],
-            InvitationCode::pluck('department_id')->unique()->all(),
-        );
-    }
-
-    public function test_a_mixed_list_uses_the_department_named_on_each_line(): void
-    {
-        $gso = Department::where('code', 'GSO')->firstOrFail();
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => "eng.person@example.com | {$this->department->name}\ngso.person@example.com | {$gso->code}",
-                'default_department_id' => null,
-            ]);
-
-        $this->actingAs($this->admin)->post(route('admin.invitations.send'));
-
-        $this->assertSame(
-            [$this->department->id, $gso->id],
-            InvitationCode::orderBy('id')->pluck('department_id')->all(),
-        );
-    }
-
-    public function test_bulk_invites_every_ready_row_and_skips_the_rest(): void
-    {
-        User::factory()->create(['email' => 'already.joined@example.com']);
-
-        $this->createInvitation(['invitee_email' => 'pending.invite@example.com']);
-
-        $list = implode("\n", [
-            'ready.one@example.com',
-            'ready.two@example.com',
-            'already.joined@example.com',
-            'pending.invite@example.com',
-            'repeated@example.com',
-            'repeated@example.com',
-            'not-an-email',
-            'unknown@example.com | Nonexistent Department',
-        ]);
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => $list,
-                'default_department_id' => $this->department->id,
-            ]);
-
-        $preview = session('admin.invitations.preview');
-
-        $this->assertSame(3, $preview['ready']);
-        $this->assertSame(3, $preview['skipped']);
-        $this->assertSame(2, $preview['invalid']);
-
-        $byStatus = collect($preview['rows'])->where('status', '!=', 'ready')->values();
-
-        $this->assertSame('Already has an account.', $byStatus[0]['reason']);
-        $this->assertSame('Already has an open invitation.', $byStatus[1]['reason']);
-        $this->assertStringContainsString('Repeated in this list', $byStatus[2]['reason']);
-        $this->assertStringContainsString('No email address found', $byStatus[3]['reason']);
-        $this->assertStringContainsString('Unknown department', $byStatus[4]['reason']);
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'))
-            ->assertRedirect(route('admin.invitations.index'))
-            ->assertSessionHas('status');
-
-        $this->assertSame(4, InvitationCode::count(), 'Three new invites plus the pre-existing one.');
-        $this->assertSame(
-            ['ready.one@example.com', 'ready.two@example.com', 'repeated@example.com'],
-            InvitationCode::whereNotNull('emailed_at')->orderBy('id')->pluck('invitee_email')->all(),
-        );
-
-        Mail::assertSentCount(3);
-    }
-
-    public function test_blank_lines_and_comments_are_ignored(): void
-    {
-        $this->previewAndSend(
-            "# new hires\nready@example.com\n\n   \nsecond@example.com\n# done"
-        );
-
-        $this->assertSame(
-            ['ready@example.com', 'second@example.com'],
-            InvitationCode::orderBy('id')->pluck('invitee_email')->all(),
-        );
-    }
-
-    public function test_a_line_without_a_resolvable_department_is_rejected(): void
-    {
-        $this->actingAs($this->admin)
-            ->from(route('admin.invitations.index'))
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => 'no.department@example.com',
-                'default_department_id' => null,
-            ])
-            ->assertRedirect(route('admin.invitations.index'))
-            ->assertSessionHas('errors');
-
-        $this->assertSame(0, InvitationCode::count());
-    }
-
-    public function test_preview_sends_nothing_until_confirmed(): void
-    {
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => 'not.sent.yet@example.com',
-                'default_department_id' => $this->department->id,
-            ]);
-
-        $this->assertSame(0, InvitationCode::count(), 'Checking a list must not create invitations.');
-        Mail::assertNothingSent();
-    }
-
-    public function test_confirming_without_a_checked_list_is_refused(): void
-    {
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'))
-            ->assertRedirect(route('admin.invitations.index'))
-            ->assertSessionHas('error');
-
-        $this->assertSame(0, InvitationCode::count());
-    }
-
-    public function test_a_confirmed_list_cannot_be_sent_twice(): void
-    {
-        $this->previewAndSend('once@example.com');
-
-        $this->assertSame(1, InvitationCode::count());
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'))
-            ->assertRedirect(route('admin.invitations.index'))
-            ->assertSessionHas('error');
-
-        $this->assertSame(1, InvitationCode::count());
-        Mail::assertSentCount(1);
-    }
-
-    public function test_a_bulk_list_of_one_line_still_works(): void
-    {
-        $this->previewAndSend('solo@example.com');
-
-        $invitation = InvitationCode::sole();
-
-        $this->assertSame('solo@example.com', $invitation->invitee_email);
-        $this->assertNull($invitation->invitee_name);
-        Mail::assertSentCount(1);
-    }
-
     public function test_invitation_email_is_delivered_through_brevo_when_it_is_configured(): void
     {
         config()->set('services.brevo.api_key', 'test-key');
@@ -335,7 +173,11 @@ class AdminInvitationTest extends TestCase
             'api.brevo.com/*' => Http::response(['messageId' => 'invite-1'], 201),
         ]);
 
-        $this->previewAndSend('brevo@example.com');
+        $this->actingAs($this->admin)
+            ->post(route('admin.invitations.store'), [
+                'department_id' => $this->department->id,
+                'email' => 'brevo@example.com',
+            ]);
 
         $invitation = InvitationCode::sole();
 
@@ -361,49 +203,15 @@ class AdminInvitationTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => "broken@example.com\nfine@example.com",
-                'default_department_id' => $this->department->id,
-            ]);
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'))
+            ->post(route('admin.invitations.store'), [
+                'department_id' => $this->department->id,
+                'email' => 'broken@example.com',
+            ])
             ->assertRedirect(route('admin.invitations.index'))
             ->assertSessionHas('error');
 
-        $this->assertSame(2, InvitationCode::count(), 'Both codes stay usable for manual sharing.');
+        $this->assertSame(1, InvitationCode::count(), 'The code stays usable for manual sharing.');
         $this->assertSame(0, InvitationCode::whereNotNull('emailed_at')->count());
-    }
-
-    public function test_one_failed_send_does_not_stop_the_rest_of_the_batch(): void
-    {
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => "first@example.com\nsecond@example.com\nthird@example.com",
-                'default_department_id' => $this->department->id,
-            ]);
-
-        // Fail only the middle recipient by making its mailer throw.
-        Mail::shouldReceive('to')->andReturnUsing(function ($recipient) {
-            if ($recipient === 'second@example.com') {
-                throw new RuntimeException('SMTP unavailable');
-            }
-
-            return new class
-            {
-                public function send($mailable) {}
-            };
-        });
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'))
-            ->assertRedirect(route('admin.invitations.index'));
-
-        $this->assertSame(3, InvitationCode::count());
-        $this->assertSame(
-            ['first@example.com', 'third@example.com'],
-            InvitationCode::whereNotNull('emailed_at')->orderBy('id')->pluck('invitee_email')->all(),
-        );
     }
 
     public function test_invitation_cannot_be_redeemed_from_a_different_email(): void
@@ -640,30 +448,13 @@ class AdminInvitationTest extends TestCase
 
         // A class-less control falls back to Tailwind preflight, which zeroes
         // its border and leaves no visible field at all.
-        foreach (['department_id', 'name', 'email', 'default_department_id', 'recipients'] as $field) {
+        foreach (['department_id', 'name', 'email'] as $field) {
             $this->assertMatchesRegularExpression(
                 '/<(?:input|select|textarea)[^>]*name="' . $field . '"[^>]*class="[^"]*\badmin-input\b/',
                 $content,
                 "The {$field} field is missing the admin-input class, so it renders without a border.",
             );
         }
-    }
-
-    public function test_checked_list_is_shown_for_review_before_anything_is_sent(): void
-    {
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => "good@example.com\nbad-line",
-                'default_department_id' => $this->department->id,
-            ]);
-
-        $this->actingAs($this->admin)
-            ->get(route('admin.invitations.index'))
-            ->assertOk()
-            ->assertSee('Review before sending')
-            ->assertSee('good@example.com')
-            ->assertSee('Yes, email 1 invitation')
-            ->assertDontSee('Yes, email 2 invitations');
     }
 
     public function test_staff_accounts_page_renders_for_an_administrator(): void
@@ -697,23 +488,6 @@ class AdminInvitationTest extends TestCase
             'is_active' => true,
             ...$attributes,
         ]);
-    }
-
-    /**
-     * Run the two-step bulk flow: check the list, then confirm the send.
-     */
-    private function previewAndSend(string $recipients, ?int $defaultDepartmentId = null)
-    {
-        $defaultDepartmentId ??= $this->department->id;
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.invitations.preview'), [
-                'recipients' => $recipients,
-                'default_department_id' => $defaultDepartmentId,
-            ]);
-
-        return $this->actingAs($this->admin)
-            ->post(route('admin.invitations.send'));
     }
 
     private function redeemInvitation(InvitationCode $invitation, string $email)

@@ -2,16 +2,16 @@
 @section('title', __('dashboard.title').' - Daet Listens')
 @section('content')
 <style>
-  .citizen-dashboard { --db-navy:#102545; --db-gold:#d4a947; --db-ink:#0f172a; --db-sub:#475569; --db-line:#cdd5e1; min-height:100dvh; padding-top:var(--navbar-height); background:#f6f8fb; color:var(--db-ink); font-family:var(--font-sans); overflow-x:hidden; }
+  .citizen-dashboard { --db-navy:var(--navy-800); --db-gold:var(--gold-500); --db-ink:#0f172a; --db-sub:var(--muted); --db-line:#cdd5e1; min-height:100dvh; padding-top:var(--navbar-height); background:var(--bg); color:var(--db-ink); font-family:var(--font-sans); overflow-x:hidden; }
   .db-container { width:100%; max-width:1040px; margin:0 auto; padding:0 24px; box-sizing:border-box; }
-  .dashboard-welcome { background:#0b1a33; color:#fff; }
+  .dashboard-welcome { background:#0b1a33; color:var(--surface); }
   .dashboard-welcome-inner { display:flex; align-items:center; justify-content:space-between; gap:24px; padding-top:28px; padding-bottom:28px; }
-  .dashboard-welcome-title { margin:0; color:#fff; font-size:32px; font-weight:700; line-height:1.15; }
+  .dashboard-welcome-title { margin:0; color:var(--surface); font-size:32px; font-weight:700; line-height:1.15; }
   .dashboard-welcome-title span { color:#e2c06a; }
   .dashboard-welcome-copy p { margin:8px 0 0; color:rgba(255,255,255,0.85); font-size:15px; line-height:1.5; max-width:560px; }
-  .dashboard-primary-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:10px 18px; background:#d4a947; color:#102545; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; flex-shrink:0; }
-  .dashboard-primary-action:hover { background:#b8902f; color:#fff; }
-  .dashboard-primary-action:focus-visible, .db-card:focus-visible, a:focus-visible, button:focus-visible, input:focus-visible { outline:2px solid #d4a947; outline-offset:2px; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
+  .dashboard-primary-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; padding:10px 18px; background:var(--gold-500); color:var(--navy-800); border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; flex-shrink:0; }
+  .dashboard-primary-action:hover { background:#b8902f; color:var(--surface); }
+  .dashboard-primary-action:focus-visible, .db-card:focus-visible, a:focus-visible, button:focus-visible, input:focus-visible { outline:2px solid var(--gold-500); outline-offset:2px; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
   .dashboard-content { padding-top:32px; padding-bottom:48px; }
   /* Mobile-only elements: hidden on desktop (>640px) so the desktop render
      and tests using desktop markup are unchanged; shown only ≤640px below. */
@@ -24,62 +24,62 @@
   .dashboard-section-heading h2 { margin:0; font-size:20px; font-weight:600; color:var(--db-ink); }
   .dashboard-section-heading p { margin:4px 0 0; color:var(--db-sub); font-size:13px; }
   .db-filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .db-chip { display:inline-flex; align-items:center; min-height:36px; padding:6px 12px; border:1px solid var(--db-line); border-radius:999px; background:#fff; color:#334155; font-size:13px; font-weight:600; text-decoration:none; }
-  .db-chip.is-active { background:#102545; color:#fff; border-color:#102545; }
-  .db-chip:focus-visible { outline:2px solid #d4a947; outline-offset:2px; }
+  .db-chip { display:inline-flex; align-items:center; min-height:36px; padding:6px 12px; border:1px solid var(--db-line); border-radius:999px; background:var(--surface); color:#334155; font-size:13px; font-weight:600; text-decoration:none; }
+  .db-chip.is-active { background:var(--navy-800); color:var(--surface); border-color:var(--navy-800); }
+  .db-chip:focus-visible { outline:2px solid var(--gold-500); outline-offset:2px; }
   .db-track-form { display:flex; gap:8px; align-items:center; }
-  .db-track-form input { height:40px; padding:8px 12px; border:1px solid var(--db-line); border-radius:8px; background:#fff; color:var(--db-ink); font-family:var(--font-sans); font-size:13px; width:180px; }
+  .db-track-form input { height:40px; padding:8px 12px; border:1px solid var(--db-line); border-radius:8px; background:var(--surface); color:var(--db-ink); font-family:var(--font-sans); font-size:13px; width:180px; }
   .db-track-form input::placeholder { color:#64748b; }
-  .db-track-form input:focus { border-color:#d4a947; box-shadow:0 0 0 3px rgba(212,169,71,.25); outline:none; }
-  .db-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid var(--db-line); border-radius:8px; background:#fff; color:#102545; cursor:pointer; }
+  .db-track-form input:focus { border-color:var(--gold-500); box-shadow:0 0 0 3px rgba(212,169,71,.25); outline:none; }
+  .db-icon-btn { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid var(--db-line); border-radius:8px; background:var(--surface); color:var(--navy-800); cursor:pointer; }
   .dashboard-report-list { display:grid; gap:12px; list-style:none; margin:0; padding:0; }
-  .db-card { position:relative; display:block; background:#fff; border:1px solid var(--db-line); border-radius:12px; padding:20px 24px; box-shadow:0 1px 3px rgba(15,23,42,.06); text-decoration:none; color:var(--db-ink); }
-  .db-card:hover { border-color:#94a3b8; background:#f6f8fb; }
+  .db-card { position:relative; display:block; background:var(--surface); border:1px solid var(--db-line); border-radius:12px; padding:20px 24px; box-shadow:0 1px 3px rgba(15,23,42,.06); text-decoration:none; color:var(--db-ink); }
+  .db-card:hover { border-color:var(--border-strong); background:var(--bg); }
   .db-card__row1 { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
-  .db-ticket { font-family: var(--font-mono); font-size:13px; font-weight:700; color:#102545; }
+  .db-ticket { font-family: var(--font-mono); font-size:13px; font-weight:700; color:var(--navy-800); }
   .db-pill { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
   .db-pill--submitted { background:#dbeafe; color:#1e40af; }
-  .db-pill--verified, .db-pill--assigned { background:#e8eef8; color:#102545; }
+  .db-pill--verified, .db-pill--assigned { background:#e8eef8; color:var(--navy-800); }
   .db-pill--in-progress { background:#fef3c7; color:#92400e; }
   .db-pill--resolved { background:#dcfce7; color:#15803d; }
   .db-pill--rejected { background:#fee2e2; color:#b91c1c; }
-  .db-pill--closed { background:#eef1f6; color:#475569; }
+  .db-pill--closed { background:#eef1f6; color:var(--muted); }
   .db-card__title { margin:0 0 6px; font-size:18px; font-weight:700; line-height:1.3; color:var(--db-ink); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .db-card__meta { margin:0 0 14px; color:var(--db-sub); font-size:13px; }
   .db-progress { display:flex; align-items:center; gap:0; margin-top:4px; }
-  .db-progress__step { display:flex; align-items:center; gap:6px; font-size:11px; color:#475569; }
+  .db-progress__step { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
   .db-progress__dot { width:10px; height:10px; border-radius:50%; background:#cdd5e1; flex-shrink:0; }
-  .db-progress__dot--done { background:#102545; }
-  .db-progress__dot--current { background:#d4a947; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
+  .db-progress__dot--done { background:var(--navy-800); }
+  .db-progress__dot--current { background:var(--gold-500); box-shadow:0 0 0 3px rgba(212,169,71,.25); }
   .db-progress__line { flex:1; height:2px; background:#eef1f6; margin:0 6px; min-width:12px; }
-  .db-progress__line--done { background:#102545; }
+  .db-progress__line--done { background:var(--navy-800); }
   .db-progress-mobile { display:none; }
   .db-progress-segments { display:flex; gap:4px; margin-top:6px; }
   .db-progress-segment { flex:1; height:4px; border-radius:999px; background:#eef1f6; }
-  .db-progress-segment.is-done { background:#102545; }
-  .db-progress-segment.is-current { background:#d4a947; }
+  .db-progress-segment.is-done { background:var(--navy-800); }
+  .db-progress-segment.is-current { background:var(--gold-500); }
   .db-card__meta { display:flex; flex-wrap:wrap; gap:6px 12px; }
   .db-card__meta span { white-space:normal; }
   .db-progress-bar { height:4px; background:#eef1f6; border-radius:999px; overflow:hidden; margin-top:8px; }
-  .db-progress-bar span { display:block; height:100%; background:#102545; }
-  .db-card__chevron { position:absolute; right:20px; top:50%; transform:translateY(-50%); color:#475569; }
+  .db-progress-bar span { display:block; height:100%; background:var(--navy-800); }
+  .db-card__chevron { position:absolute; right:20px; top:50%; transform:translateY(-50%); color:var(--muted); }
   .db-card__body { padding-right:28px; }
-  .dashboard-empty { background:#fff; border:1px solid var(--db-line); border-radius:12px; padding:48px 24px; text-align:center; box-shadow:0 1px 3px rgba(15,23,42,.06); }
-  .dashboard-empty-icon { display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:50%; background:#eef1f6; color:#102545; margin-bottom:14px; }
+  .dashboard-empty { background:var(--surface); border:1px solid var(--db-line); border-radius:12px; padding:48px 24px; text-align:center; box-shadow:0 1px 3px rgba(15,23,42,.06); }
+  .dashboard-empty-icon { display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:50%; background:#eef1f6; color:var(--navy-800); margin-bottom:14px; }
   .dashboard-empty h3 { margin:0 0 8px; font-size:20px; color:var(--db-ink); }
   .dashboard-empty p { margin:0 0 20px; color:var(--db-sub); font-size:15px; }
   .dashboard-rail { display:grid; gap:16px; }
-  .db-side-card { background:#fff; border:1px solid var(--db-line); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(15,23,42,.06); }
+  .db-side-card { background:var(--surface); border:1px solid var(--db-line); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(15,23,42,.06); }
   .db-side-card h2 { margin:0 0 14px; font-size:15px; font-weight:600; color:var(--db-ink); }
   .dashboard-process { list-style:none; margin:0; padding:0; display:grid; gap:16px; }
   .dashboard-process li { display:flex; gap:12px; }
-  .dashboard-process-number { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; flex-shrink:0; border-radius:50%; background:#eef1f6; color:#102545; font-size:12px; font-weight:700; }
+  .dashboard-process-number { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; flex-shrink:0; border-radius:50%; background:#eef1f6; color:var(--navy-800); font-size:12px; font-weight:700; }
   .dashboard-process li:not(:last-child) .dashboard-process-number { box-shadow:0 14px 0 -6px #eef1f6; }
   .dashboard-process strong { display:block; font-size:13px; color:var(--db-ink); margin-bottom:2px; }
   .dashboard-process p { margin:0; font-size:13px; color:var(--db-sub); line-height:1.45; }
-  .db-dismiss { margin-top:12px; background:none; border:0; color:#102545; font-size:13px; font-weight:600; text-decoration:underline; cursor:pointer; padding:6px 0; min-height:32px; }
+  .db-dismiss { margin-top:12px; background:none; border:0; color:var(--navy-800); font-size:13px; font-weight:600; text-decoration:underline; cursor:pointer; padding:6px 0; min-height:32px; }
   .db-privacy { display:flex; gap:10px; font-size:13px; color:var(--db-sub); line-height:1.5; }
-  .db-privacy svg { flex-shrink:0; color:#102545; margin-top:2px; }
+  .db-privacy svg { flex-shrink:0; color:var(--navy-800); margin-top:2px; }
   .dashboard-success { display:flex; gap:10px; padding:14px 16px; margin-bottom:20px; background:#dcfce7; border:1px solid #15803d; color:#14532d; border-radius:8px; font-size:14px; }
   .dashboard-alert { display:flex; gap:12px; padding:14px 16px; margin-bottom:20px; background:#fef3c7; border:1px solid #b45309; color:#92400e; border-radius:8px; text-decoration:none; font-size:14px; }
   .dashboard-pagination { margin-top:16px; }
@@ -90,7 +90,7 @@
   @media (max-width:1023px) {
     .db-progress { display:none; }
     .db-progress-mobile { display:block; }
-    .db-progress-mobile__label { font-size:12px; color:#475569; }
+    .db-progress-mobile__label { font-size:12px; color:var(--muted); }
   }
   @media (max-width:768px) {
     .db-container { padding:0 16px; }
@@ -109,11 +109,11 @@
     .citizen-dashboard .dashboard-primary-action { width:100%; min-height:48px; border-radius:12px; font-size:14px; }
     .citizen-dashboard .dashboard-content { padding-top:16px; padding-bottom:32px; }
     .citizen-dashboard .dashboard-mobile-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
-    .citizen-dashboard .db-summary-tile { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:4px; min-height:72px; padding:12px 16px; background:#fff; border:1px solid var(--db-line); border-radius:12px; box-shadow:0 1px 3px rgba(15,23,42,.06); text-decoration:none; min-width:0; }
+    .citizen-dashboard .db-summary-tile { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:4px; min-height:72px; padding:12px 16px; background:var(--surface); border:1px solid var(--db-line); border-radius:12px; box-shadow:0 1px 3px rgba(15,23,42,.06); text-decoration:none; min-width:0; }
     .citizen-dashboard .db-summary-tile__num { font-size:24px; font-weight:700; line-height:1.1; color:var(--db-ink); font-variant-numeric:tabular-nums; }
     .citizen-dashboard .db-summary-tile__label { font-size:12px; line-height:1.3; color:var(--db-sub); white-space:nowrap; }
     .citizen-dashboard .dashboard-section-heading { margin-bottom:12px; }
-    .citizen-dashboard .db-view-all-mobile { display:inline-flex; align-items:center; min-height:44px; font-size:13px; font-weight:600; color:#102545; text-decoration:none; white-space:nowrap; }
+    .citizen-dashboard .db-view-all-mobile { display:inline-flex; align-items:center; min-height:44px; font-size:13px; font-weight:600; color:var(--navy-800); text-decoration:none; white-space:nowrap; }
     /* /complaints already has search + filters: hide dashboard duplicates on mobile only */
     .citizen-dashboard .db-filters,
     .citizen-dashboard .db-track-form { display:none !important; }
@@ -123,24 +123,24 @@
     .citizen-dashboard .dashboard-report-list { gap:12px; }
     /* Report card: compact 4-row mobile layout, no chevron, no dead space */
     .citizen-dashboard .db-card { padding:16px; border-radius:12px; min-height:0; }
-    .citizen-dashboard .db-card:active { background:#f6f8fb; }
-    .citizen-dashboard .db-card:focus-visible { outline:2px solid #d4a947; outline-offset:2px; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
+    .citizen-dashboard .db-card:active { background:var(--bg); }
+    .citizen-dashboard .db-card:focus-visible { outline:2px solid var(--gold-500); outline-offset:2px; box-shadow:0 0 0 3px rgba(212,169,71,.25); }
     .citizen-dashboard .db-card__chevron { display:none; }
     .citizen-dashboard .db-card__body { padding-right:0; display:flex; flex-direction:column; gap:8px; }
     .citizen-dashboard .db-card__row1 { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:0; }
-    .citizen-dashboard .db-ticket { font-size:12px; color:#475569; white-space:nowrap; }
+    .citizen-dashboard .db-ticket { font-size:12px; color:var(--muted); white-space:nowrap; }
     .citizen-dashboard .db-pill { font-size:12px; white-space:nowrap; flex-shrink:0; }
     .citizen-dashboard .db-card__title { font-size:16px; line-height:1.35; margin:0; }
     .citizen-dashboard .db-card__meta { margin:0; display:flex; flex-wrap:nowrap; gap:4px; font-size:13px; overflow:hidden; }
     .citizen-dashboard .db-card__meta span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .citizen-dashboard .db-card__meta span:first-child { flex:0 1 auto; }
     .citizen-dashboard .db-card__meta span:nth-child(2) { flex:1 1 auto; text-align:left; }
-    .citizen-dashboard .db-card__meta span+span::before { content:"·"; margin:0 4px; color:#94a3b8; }
+    .citizen-dashboard .db-card__meta span+span::before { content:"·"; margin:0 4px; color:var(--border-strong); }
     .citizen-dashboard .db-card__meta span:last-child { display:none; }
     .citizen-dashboard .db-progress-mobile { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .citizen-dashboard .db-progress-mobile__label { font-size:12px; line-height:1.3; color:#475569; white-space:nowrap; flex-shrink:0; }
+    .citizen-dashboard .db-progress-mobile__label { font-size:12px; line-height:1.3; color:var(--muted); white-space:nowrap; flex-shrink:0; }
     .citizen-dashboard .db-progress-segments { flex:1 1 auto; margin-top:0; min-width:64px; }
-    .citizen-dashboard .db-card__date-mobile { display:inline-flex; font-size:12px; line-height:1.3; color:#475569; font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
+    .citizen-dashboard .db-card__date-mobile { display:inline-flex; font-size:12px; line-height:1.3; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; flex-shrink:0; }
   }
 </style>
 
@@ -230,7 +230,7 @@
           </div>
         @else
           @php
-            $categoryLabels = collect(\App\Services\DepartmentRouter::getCategoryOptions())->flatten()->pluck('label', 'value');
+            $categoryLabels = collect(\App\Services\DepartmentRouter::categoryLabels());
             $steps = __('dashboard.steps');
             // Filter chips need a filtered list — handled server-side via ?filter on dashboard
             $displayComplaints = $complaints;
@@ -238,7 +238,7 @@
           <ul class="dashboard-report-list">@foreach ($displayComplaints as $complaint) @include('partials.report-card', ['complaint' => $complaint]) @endforeach</ul>
 
           @if ($totalReports > 3)
-            <p style="margin-top:16px" class="db-view-all-bottom"><a href="{{ route('complaints.index') }}" wire:navigate style="color:#102545;font-weight:600">{{ __('dashboard.view_all') }} →</a></p>
+            <p style="margin-top:16px" class="db-view-all-bottom"><a href="{{ route('complaints.index') }}" wire:navigate style="color:var(--navy-800);font-weight:600">{{ __('dashboard.view_all') }} →</a></p>
           @endif
 
           @if ($complaints->hasPages())

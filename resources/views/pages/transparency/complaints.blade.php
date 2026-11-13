@@ -88,6 +88,52 @@
             @include('pages.transparency.partials.complaints-results')
         </div>
     </div>
+
+    {{-- What the residents say about the portal, and what they are asking for.
+         The ratings count from the moment they are given; a suggestion
+         appears here only after the administration has read it. --}}
+    @if(count($feedbackOfficeAverages) > 0 || $feedbackSuggestions->isNotEmpty())
+        <div class="tr-container" style="margin-top: 24px;">
+            <div class="tr-card feedback-public">
+                <h2 class="tr-h2">{{ __('feedback.published_title') }}</h2>
+
+                @if(count($feedbackOfficeAverages) > 0)
+                    <ul class="feedback-public__offices">
+                        @foreach($feedbackOfficeAverages as $row)
+                            <li>
+                                <span class="feedback-public__office">{{ $row['department']->name }}</span>
+                                @if($row['count'] > 0)
+                                    <span class="feedback-public__average feedback-rating" aria-label="{{ __('feedback.average_now', ['average' => $row['average'], 'count' => $row['count']]) }}">
+                                        <svg class="feedback-rating__star" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                        </svg>
+                                        <span class="feedback-rating__value">{{ $row['average'] }}</span>
+                                        <span class="feedback-rating__count">({{ number_format($row['count']) }})</span>
+                                    </span>
+                                @else
+                                    <span class="feedback-public__average">{{ __('feedback.average_none') }}</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @if($feedbackSuggestions->isNotEmpty())
+                    <ul class="feedback-suggestions">
+                        @foreach($feedbackSuggestions as $suggestion)
+                            <li class="feedback-suggestion">
+                                <p class="feedback-suggestion__body">{{ $suggestion->body }}</p>
+                                <p class="feedback-suggestion__meta">
+                                    {{ $suggestion->user?->display_alias ?: __('feedback.community_member') }}
+                                    · {{ $suggestion->published_at?->diffForHumans() }}
+                                </p>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        </div>
+    @endif
 </section>
 
     @if($anyFilter)

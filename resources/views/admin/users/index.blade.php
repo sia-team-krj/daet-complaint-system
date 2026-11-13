@@ -184,7 +184,10 @@
             </div>
 
             @if($users->hasPages())
-                <div class="admin-pagination">{{ $users->links() }}</div>
+                <div class="admin-pagination-wrap">
+                    <p class="admin-pager-summary" aria-live="polite">{{ __('pagination.page_of', ['page' => $users->currentPage(), 'last' => $users->lastPage(), 'count' => $users->perPage()]) }}</p>
+                    <div class="admin-pagination">{{ $users->links('pagination::workspace', ['ariaLabel' => __('pagination.label')]) }}</div>
+                </div>
             @endif
         @else
             <div class="admin-empty-state admin-user-empty-state">

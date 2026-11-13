@@ -90,6 +90,32 @@ class ComplaintSlaService
     }
 
     /**
+     * The deadline the office owes, with the time it spent on hold taken
+     * off.
+     *
+     * A complaint the office paused — for materials, for a budget that has
+     * not been released, for work that belongs to another body — is not a
+     * complaint the office failed. The wait does not count against it, so
+     * the deadline moves out by exactly as long as it waited.
+     */
+    private function effectiveDeadline(Complaint $complaint, int $days): ?Carbon
+    {
+        $deadline = $this->deadline($complaint, $days);
+
+        if ($deadline === null) {
+            return null;
+        }
+
+        $credited = (int) ($complaint->hold_total_minutes ?? 0);
+
+        if ($credited <= 0) {
+            return $deadline;
+        }
+
+        return $deadline->copy()->addMinutes($credited);
+    }
+
+    /**
      * Where the complaint stands, and what the office owes it right now.
      *
      * @return array{
@@ -126,10 +152,23 @@ class ComplaintSlaService
         $started = $status === ComplaintStatus::InProgress;
 
         $deadline = $started
-            ? $this->resolveDeadline($complaint)
-            : $this->startDeadline($complaint);
+            ? $this->effectiveDeadline($complaint, $this->resolveDays($this->priorityOf($complaint)))
+            : $this->effectiveDeadline($complaint, $this->startDays($this->priorityOf($complaint)));
 
         $days = $this->daysRemaining($deadline);
+
+        // The office has paused the work. The clock is paused with it: the
+        // deadline does not move while the hold runs, and the complaint is
+        // not counted as late. How long it has been waiting is reported to
+        // the administrator separately, so nothing is hidden.
+        if ($complaint->isOnHold()) {
+            return [
+                'state' => ComplaintSlaState::OnHold,
+                'action' => null,
+                'days' => $days,
+                'deadline' => $deadline,
+            ];
+        }
 
         $state = match (true) {
             $days === null => ComplaintSlaState::NotApplicable,
@@ -153,6 +192,10 @@ class ComplaintSlaService
      * priority rather than a single interval. Only the ids come back — the
      * queue filters on them, and every row still reads its own state.
      *
+     * Two things keep this in step with summary(): a complaint the office
+     * has paused is not late (the clock is paused with it), and the time it
+     * spent on hold is added back to the deadline it owed.
+     *
      * @return array<int, int>
      */
     public function overdueIds(?int $departmentId = null): array
@@ -164,6 +207,9 @@ class ComplaintSlaService
             $this->dayMap(self::SETTING_RESOLVE, self::DEFAULT_RESOLVE_DAYS)
         );
 
+        // The wait the office was given is added back to the deadline.
+        $credited = "make_interval(mins => coalesce(hold_total_minutes, 0))";
+
         return Complaint::query()
             ->where('review_status', ComplaintReviewStatus::Verified->value)
             ->whereNotNull('verified_at')
@@ -172,19 +218,21 @@ class ComplaintSlaService
                 ComplaintStatus::UnderReview->value,
                 ComplaintStatus::InProgress->value,
             ])
+            // A complaint on hold is waiting, not late.
+            ->whereNull('hold_reason')
             ->when(
                 $departmentId,
                 fn ($query) => $query->where('department_id', $departmentId)
             )
-            ->where(function (Builder $query) use ($startCase, $resolveCase): void {
-                $query->where(function (Builder $inner) use ($startCase): void {
+            ->where(function (Builder $query) use ($startCase, $resolveCase, $credited): void {
+                $query->where(function (Builder $inner) use ($startCase, $credited): void {
                     $inner->whereIn('status', [
                         ComplaintStatus::Submitted->value,
                         ComplaintStatus::UnderReview->value,
-                    ])->whereRaw("verified_at <= now() - ({$startCase})");
-                })->orWhere(function (Builder $inner) use ($resolveCase): void {
+                    ])->whereRaw("verified_at + {$credited} <= now() - ({$startCase})");
+                })->orWhere(function (Builder $inner) use ($resolveCase, $credited): void {
                     $inner->where('status', ComplaintStatus::InProgress->value)
-                        ->whereRaw("verified_at <= now() - ({$resolveCase})");
+                        ->whereRaw("verified_at + {$credited} <= now() - ({$resolveCase})");
                 });
             })
             ->pluck('id')

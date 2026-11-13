@@ -24,15 +24,10 @@ Unlike traditional opaque governmental complaint dropboxes or generic ticketing 
 ## Operating Context
 
 - Operates within the municipal jurisdiction of Daet, Camarines Norte, covering all 25 official barangays (Alawihao, Awitan, Bagasbas, Barangay I–VIII, Bibirao, Borabod, Calasgasan, Camambugan, Cobangbang, Dogongan, Gahonon, Gubat, Lag-on, Magang, Mambalite, Mancruz, Pamorangon, San Isidro).
-- Coordinates municipal workflows across 8 core LGU departments:
+- Coordinates municipal workflows across 3 core LGU departments:
   - Engineering Office (ENG)
-  - Health Office (HLTH)
-  - General Services Office (GSO)
-  - Municipal Planning and Development Office (MPDO)
-  - Waste Management Office (WST)
-  - Social Welfare and Development Office (SWDO)
-  - Business Permit and Licensing Office (BPLO)
-  - Office of the Mayor (OM)
+  - Mayor's Office — Municipal Information Office (OM)
+  - Municipal Environment and Natural Resource Office (MENRO)
 - Web-based application accessible across desktop and mobile browsers, supporting both citizens on mobile devices in the field and municipal staff at office workstations or mobile dispatch.
 
 ## Capabilities and Constraints

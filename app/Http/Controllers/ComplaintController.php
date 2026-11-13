@@ -12,6 +12,7 @@ use App\Rules\WithinDaet;
 use App\Services\ActivityLogger;
 use App\Services\BarangayLocator;
 use App\Services\ComplaintDetectionService;
+use App\Services\ComplaintPrivacyService;
 use App\Services\ComplaintPriorityService;
 use App\Services\ComplaintVerificationService;
 use App\Services\DaetBoundary;
@@ -44,10 +45,7 @@ class ComplaintController extends Controller
         'streetlight',
         'garbage',
         'sanitation',
-        'park_maintenance',
-        'business_permit',
-        'noise_complaint',
-        'stray_animals',
+        'plastic_usage',
         'others',
     ];
 
@@ -174,8 +172,8 @@ class ComplaintController extends Controller
             ->pluck('name');
 
         $categoryLabels = collect(
-            \App\Services\DepartmentRouter::getCategoryOptions()
-        )->flatten(1)->pluck('label', 'value');
+            \App\Services\DepartmentRouter::categoryLabels()
+        );
 
         $categoryOptions = (clone $base)
             ->select('category')
@@ -232,6 +230,20 @@ class ComplaintController extends Controller
 
         $wasPublic = $complaint->is_public;
         $isPublic = $validated['visibility'] === self::VISIBILITY_PUBLIC;
+
+        // A complaint in a category that names somebody is not published on the
+        // resident's say-so. It goes out only when the office has settled it,
+        // the information has been verified, the sensitive parts have been
+        // redacted, and the Mayor's office has approved it — so the resident
+        // cannot publish it before then, and cannot unpublish it afterwards
+        // either: the office's decision stands.
+        if ($complaint->isPrivacyGated()) {
+            return redirect()
+                ->route('complaints.show', $complaint)
+                ->with('status', $complaint->isPubliclyVisible()
+                    ? 'This report is published on the transparency page. Its publication is decided by the office handling it and the Mayor\'s office, because it names someone.'
+                    : 'This report names someone, so it stays off the transparency page. It is published only after the office settles it, the information is verified, the sensitive parts are redacted, and the Mayor\'s office approves it.');
+        }
 
         if ($wasPublic === $isPublic) {
             return redirect()
@@ -570,10 +582,10 @@ class ComplaintController extends Controller
             'streetlight' => ['icon' => 'lightbulb', 'color' => 'streetlight'],
             'garbage' => ['icon' => 'trash-2', 'color' => 'waste'],
             'sanitation' => ['icon' => 'spray-can', 'color' => 'sanitation'],
+            'plastic_usage' => ['icon' => 'leaf', 'color' => 'waste'],
             'park_maintenance' => ['icon' => 'trees', 'color' => 'spaces'],
             'noise_complaint' => ['icon' => 'volume-2', 'color' => 'neighborhood'],
             'stray_animals' => ['icon' => 'paw-print', 'color' => 'stray'],
-            'business_permit' => ['icon' => 'file-badge', 'color' => 'business'],
             'others' => ['icon' => 'circle-help', 'color' => 'other'],
         ];
         $defaultLeafStyle = ['icon' => 'circle-help', 'color' => 'other'];
@@ -600,7 +612,7 @@ class ComplaintController extends Controller
                 'helper' => $helper,
                 'icon' => $style['icon'],
                 'color' => $style['color'],
-                'department' => $departmentByCategory[$value] ?? 'General Services',
+                'department' => $departmentByCategory[$value] ?? "Mayor's Office",
             ];
         };
 
@@ -650,6 +662,20 @@ class ComplaintController extends Controller
             $intakePoliciesByCategory[$categoryKey] = \App\Models\Complaint::intakePolicyFor($categoryKey);
         }
 
+        // The categories that name somebody. The form uses this to ask for the
+        // name of the party and to take the publication choice away.
+        $privacyPoliciesByCategory = [];
+        foreach (self::VALID_CATEGORIES as $categoryKey) {
+            if (! ComplaintPrivacyService::isGated($categoryKey)) {
+                continue;
+            }
+
+            $privacyPoliciesByCategory[$categoryKey] = [
+                'named_party' => ComplaintPrivacyService::namedPartyKind($categoryKey),
+                'named_party_position' => ComplaintPrivacyService::asksForPosition($categoryKey),
+            ];
+        }
+
         return view('complaints.create', [
             'categoryOptions' => $categoryOptions,
             'categoryGroups' => $categoryGroups,
@@ -657,6 +683,7 @@ class ComplaintController extends Controller
             'daetBoundary' => $boundary->geojson(),
             'daetBoundaryTolerance' => $boundary->toleranceMetres(),
             'intakePoliciesByCategory' => $intakePoliciesByCategory,
+            'privacyPoliciesByCategory' => $privacyPoliciesByCategory,
         ]);
     }
 
@@ -681,6 +708,11 @@ class ComplaintController extends Controller
         $categoryInput = (string) $request->input('category', '');
         $intakePolicy = Complaint::intakePolicyFor($categoryInput !== '' ? $categoryInput : null);
         $intakeMode = $intakePolicy['mode'];
+        // A category that names somebody is governed by the privacy policy:
+        // filed private, and published only after the office has settled it,
+        // the information has been verified, the sensitive parts have been
+        // redacted, and the Mayor's office has approved it.
+        $isPrivacyGated = ComplaintPrivacyService::isGated($categoryInput !== '' ? $categoryInput : null);
         $photosRequired = (bool) ($intakePolicy['photos_required'] ?? true);
         $photosAllowed = (bool) ($intakePolicy['photos_allowed'] ?? true);
         $barangayRequired = (bool) ($intakePolicy['barangay_required'] ?? true);
@@ -701,6 +733,10 @@ class ComplaintController extends Controller
             'camera_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'terms' => ['accepted'],
+            // A category that names somebody may only be filed after the
+            // resident acknowledges the publication gate — the box is hidden
+            // in the form for every other category and shown for those.
+            'privacy_ack' => [$isPrivacyGated ? 'accepted' : 'nullable'],
             // Jurisdiction, not just a coordinate range. `between:-90,90` accepted
             // a pin anywhere on the planet; a complaint outside Daet cannot be
             // labelled with a barangay from the app's own table, and it has no
@@ -720,6 +756,11 @@ class ComplaintController extends Controller
             // field — a bookmarked page, an old client — files privately
             // rather than publishing by accident.
             'visibility' => ['nullable', Rule::in([self::VISIBILITY_PRIVATE, self::VISIBILITY_PUBLIC])],
+            // The name of the party a gated complaint is about — a member of
+            // personnel, or a business. It is stored in a field that never
+            // leaves the office.
+            'named_party' => ['nullable', 'string', 'max:150'],
+            'named_party_position' => ['nullable', 'string', 'max:150'],
             'address_text' => [$addressTextRequired ? 'required' : 'nullable', 'string', 'max:500'],
             // The resident's own answer to "which barangay is this?", which they
             // are simply asked rather than guessed for. Guessing from a single
@@ -925,7 +966,7 @@ class ComplaintController extends Controller
         }
 
         try {
-            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $locationStepsEnabled, $intakeMode, $activityLogger, $detector, $priorityService) {
+            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $locationStepsEnabled, $intakeMode, $activityLogger, $detector, $priorityService, $isPrivacyGated) {
                 // The resident's stated barangay: what they chose on the form, or
                 // failing that what they gave at registration. Never a guess — a
                 // guess from a reference point is wrong across most of a large
@@ -956,10 +997,20 @@ class ComplaintController extends Controller
                     'intake_mode' => $intakeMode,
                     'status' => ComplaintStatus::Submitted->value,
                     // Private unless the resident explicitly asked otherwise.
-                    'is_public' => ($validated['visibility'] ?? self::VISIBILITY_PRIVATE)
-                        === self::VISIBILITY_PUBLIC,
+                    // A complaint in a category that names somebody is always
+                    // private: the resident was never offered the choice, and
+                    // publication is decided by the office and the Mayor's
+                    // office, not by the person who filed it.
+                    'is_public' => ! $isPrivacyGated
+                        && ($validated['visibility'] ?? self::VISIBILITY_PRIVATE)
+                            === self::VISIBILITY_PUBLIC,
                     'review_status' => ComplaintReviewStatus::Pending->value,
                     'suggested_priority' => 'routine',
+                    // The name of the party, when the category names one.
+                    'named_party' => $isPrivacyGated ? ($validated['named_party'] ?? null) : null,
+                    'named_party_position' => $isPrivacyGated
+                        ? ($validated['named_party_position'] ?? null)
+                        : null,
                 ]);
 
                 $suggestion = $priorityService->suggest($complaint);
@@ -975,7 +1026,7 @@ class ComplaintController extends Controller
                     'actor_id' => Auth::id(),
                     'previous_status' => null,
                     'new_status' => ComplaintStatus::Submitted->value,
-                    'comment' => 'Complaint filed and routed to '.($department?->name ?? 'General Services Office').' for department verification.',
+                    'comment' => 'Complaint filed and routed to '.($department?->name ?? "Mayor's Office").' for department verification.',
                 ]);
 
                 $moderation = $detector->evaluate($complaint);
@@ -996,7 +1047,7 @@ class ComplaintController extends Controller
 
                 $activityLogger->log(
                     'complaint.filed',
-                    "Complaint {$complaint->ticket_id} filed and routed to ".($department?->name ?? 'General Services Office').'.',
+                    "Complaint {$complaint->ticket_id} filed and routed to ".($department?->name ?? "Mayor's Office").'.',
                     $complaint,
                     metadata: [
                         'category' => $complaint->category,

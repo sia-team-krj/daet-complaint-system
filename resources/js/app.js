@@ -13,6 +13,15 @@ import { initializeLiveQueues } from "./live-queue";
 // The live ticket panel (docs/design-system.md §5.39). Staff- and admin-only:
 // it binds to [data-live-ticket] and never replaces the page's form.
 import { initializeLiveTickets } from "./live-ticket";
+// Department analytics period controls (docs/design-system.md §5.43). Staff-
+// and admin-only: it binds to [data-analytics] and swaps the changed regions.
+import { initializeAnalytics } from "./analytics";
+// The date field (docs/design-system.md §5.42). It binds to [data-date-field]
+// and does nothing on a page without one.
+import { initializeDateFields } from "./date-field";
+// The settings page (docs/design-system.md §5.45). It binds to [data-settings-form]
+// and does nothing on any other page.
+import { initializeSettings } from "./settings";
 
 const normalizeSearchValue = (value) => value.trim().toLocaleLowerCase();
 
@@ -444,6 +453,12 @@ const initializeSharedComponents = () => {
     // Staff- and admin-only: finds nothing on a resident page.
     initializeLiveQueues();
     initializeLiveTickets();
+    // Staff- and admin-only: finds nothing on a resident page.
+    initializeAnalytics();
+    // Any page with a date field: the filing forms, the ticket pages.
+    initializeDateFields();
+    // The settings page.
+    initializeSettings();
 };
 
 const registerRegistrationFieldLifecycle = () => {

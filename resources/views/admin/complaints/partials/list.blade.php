@@ -72,6 +72,9 @@
                                     <span class="admin-phone-values">
                                         <span class="status-pill {{ $statusKey }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->statusEnum->label() }}</span>
                                         <span class="status-pill {{ $reviewKey }}"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->reviewStatusEnum->label() }}</span>
+                                        @if($complaint->isOnHold())
+                                            <span class="status-pill hold"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->holdReasonEnum()?->label() }}</span>
+                                        @endif
                                         @if($complaint->isModerationFlagged())
                                             <span class="status-pill rejected"><span class="status-pill__dot" aria-hidden="true"></span>{{ $complaint->moderationLabel() }}</span>
                                         @endif

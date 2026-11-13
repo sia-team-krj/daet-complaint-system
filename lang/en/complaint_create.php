@@ -10,6 +10,21 @@ return [
         'optional' => 'optional',
     ],
 
+    'fields' => [
+        'named_party_person' => 'Name of the person concerned',
+        'named_party_business' => 'Name of the business concerned',
+        'named_party_hint_person' => 'Only the office handling this report sees this name. It is never shown on the public page.',
+        'named_party_hint_business' => 'Only the office handling this report sees this name. It is never shown on the public page.',
+        'named_party_position' => 'Their position or office',
+        'named_party_position_hint' => 'Optional. It helps the office find the right person.',
+    ],
+
+    'visibility' => [
+        'gated_title' => 'This report names someone.',
+        'gated_body' => 'Because it names a person or a business, it is filed private. It is published only if the office settles it, the information is verified as true, the sensitive parts are redacted, and the Mayor\'s office approves it. You will be told either way.',
+        'gated_ack' => 'I understand this report names somebody and will be filed private. It will appear on the transparency page only if the office settles it, the information is verified as true, the sensitive parts are redacted, and the Mayor\'s office approves it. I will be told either way.',
+    ],
+
     'page' => [
         'title' => 'File a complaint',
         'lede' => 'Tell us what needs attention. We will send it to the right office and keep you updated.',
@@ -116,20 +131,8 @@ return [
             'helper' => 'Potholes, streetlights, flooding',
         ],
         'waste' => [
-            'label' => 'Garbage & Sanitation',
-            'helper' => 'Garbage, sewage, bad smells',
-        ],
-        'spaces' => [
-            'label' => 'Parks & Public Areas',
-            'helper' => 'Parks, plazas, playgrounds',
-        ],
-        'neighborhood' => [
-            'label' => 'Noise & Animals',
-            'helper' => 'Noise, stray animals',
-        ],
-        'business' => [
-            'label' => 'Business & Permits',
-            'helper' => 'Permits and licenses',
+            'label' => 'Garbage, Sanitation & Plastic',
+            'helper' => 'Garbage, sewage, plastic packaging',
         ],
         'other' => [
             'label' => 'Something else',
@@ -158,6 +161,10 @@ return [
             'label' => 'Sanitation',
             'helper' => 'Bad smells, sewage, unclean areas',
         ],
+        'plastic_usage' => [
+            'label' => 'Plastic Product Usage',
+            'helper' => 'Business using plastic in its products',
+        ],
         'park_maintenance' => [
             'label' => 'Park / Public Area Maintenance',
             'helper' => 'Damaged benches, playgrounds, plazas',
@@ -173,6 +180,10 @@ return [
         'business_permit' => [
             'label' => 'Business Permit Issues',
             'helper' => 'Permit, license or business problems',
+        ],
+        'staff_treatment' => [
+            'label' => 'How You Were Treated at the LGU',
+            'helper' => 'How a member of personnel handled you',
         ],
         'others' => [
             'label' => 'Other Concerns',

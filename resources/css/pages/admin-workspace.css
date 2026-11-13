@@ -465,8 +465,7 @@ body.role-admin.admin-layout .admin-user-metric-grid .admin-metric small {
 /* ─── Surfaces ───────────────────────────────────────────────────────────── */
 body.role-admin.admin-layout .admin-panel,
 body.role-admin.admin-layout .admin-filter-panel,
-body.role-admin.admin-layout .admin-table-wrap,
-body.role-admin.admin-layout .admin-invitation-review {
+body.role-admin.admin-layout .admin-table-wrap {
     background: var(--surface);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-lg);
@@ -643,16 +642,6 @@ body.role-admin.admin-layout .admin-invitation-form .admin-input:focus {
 
 body.role-admin.admin-layout .admin-invitation-form .admin-input::placeholder {
     color: var(--faint);
-}
-
-body.role-admin.admin-layout .admin-invitation-textarea {
-    min-height: 168px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    line-height: 1.7;
-    white-space: pre;
-    overflow-wrap: normal;
-    overflow-x: auto;
 }
 
 /* ─── Tables ─────────────────────────────────────────────────────────────── */
@@ -922,6 +911,39 @@ body.role-admin.admin-layout .admin-phone-values {
 }
 
 /* ─── Pagination ─────────────────────────────────────────────────────────── */
+.admin-pagination-wrap {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.admin-pagination-wrap .admin-pagination {
+    margin-top: 0;
+}
+
+body.role-admin.admin-layout .admin-pager-summary {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    body.role-admin.admin-layout .admin-pagination-wrap {
+        justify-items: stretch;
+    }
+
+    body.role-admin.admin-layout .admin-pagination-wrap .admin-pager-step,
+    body.role-admin.admin-layout .admin-pagination-wrap .admin-pager-page {
+        min-height: 44px;
+    }
+
+    body.role-admin.admin-layout .admin-pagination-wrap .admin-pager-summary {
+        text-align: center;
+    }
+}
+
 body.role-admin.admin-layout .admin-pagination a,
 body.role-admin.admin-layout .admin-pagination span,
 body.role-admin.admin-layout .admin-pager-step,
@@ -1119,6 +1141,12 @@ body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-pane
     color: var(--navy-800);
 }
 
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-panel__hint {
+    color: var(--muted);
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+}
+
 body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field label {
     color: var(--muted);
 }
@@ -1153,6 +1181,34 @@ body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-pane
     color: var(--navy-950);
     background: var(--gold-300);
     border-color: var(--gold-300);
+}
+
+/* The reason chips, on the admin's light surface. */
+body.role-admin.admin-layout .admin-content > .moderation-panel .reason-chip {
+    border-color: var(--line);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .reason-chip:hover {
+    background: var(--surface-soft);
+    border-color: var(--navy-300);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .reason-chip:has(input:checked) {
+    background: var(--navy-900);
+    border-color: var(--navy-900);
+    color: var(--surface);
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .reason-chip:has(input:focus-visible) {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
+body.role-admin.admin-layout .admin-content > .moderation-panel .moderation-field__label {
+    color: var(--muted);
 }
 
 /* ─── Departments ────────────────────────────────────────────────────────── */
@@ -1282,36 +1338,6 @@ body.role-admin.admin-layout .admin-department-list-item.is-archived {
 
 body.role-admin.admin-layout .admin-dept.is-archived .admin-dept__name {
     color: var(--muted);
-}
-
-/* ─── Invitations ────────────────────────────────────────────────────────── */
-body.role-admin.admin-layout .admin-invitation-review {
-    margin-top: 20px;
-    padding: 18px 20px;
-    border-color: var(--line-soft);
-}
-
-body.role-admin.admin-layout .admin-invitation-review-title {
-    color: var(--navy-900);
-    font-family: var(--font-sans);
-}
-
-body.role-admin.admin-layout .admin-invitation-tally {
-    color: var(--muted);
-}
-
-body.role-admin.admin-layout .admin-invitation-tally strong {
-    color: var(--navy-800);
-}
-
-body.role-admin.admin-layout .admin-invitation-bulk {
-    margin-top: 8px;
-    padding-top: 24px;
-    border-top: 1px solid var(--line-soft);
-}
-
-body.role-admin.admin-layout .admin-invitation-confirm .admin-button {
-    width: 100%;
 }
 
 /* ─── Audit trail ────────────────────────────────────────────────────────── */
@@ -1691,6 +1717,134 @@ body.role-admin.admin-layout .admin-audit-browser__hint {
     line-height: 1.5;
 }
 
+/* Offices collapse into one disclosure so the rail stays an entry point,
+   not a second directory. */
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure {
+    margin: 20px 0 0;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure-toggle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 10px;
+    color: var(--navy-800);
+    font: 700 12px/1.35 var(--font-sans);
+    letter-spacing: .04em;
+    list-style: none;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure-toggle::-webkit-details-marker {
+    display: none;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure-toggle:hover {
+    color: var(--navy-900);
+    background: var(--navy-50);
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure-toggle:focus-visible {
+    outline: var(--ring-inset);
+    outline-offset: 0;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure-count {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure-chevron {
+    display: inline-flex;
+    color: var(--faint);
+    transition: transform .18s ease;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-disclosure[open] .admin-audit-browser__office-disclosure-chevron {
+    transform: rotate(180deg);
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-list {
+    display: grid;
+    gap: 2px;
+    padding: 6px;
+    border-top: 1px solid var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-audit-browser__office-list .admin-audit-browser__context {
+    min-height: 40px;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__prompt {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    padding: 28px 18px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-soft);
+    color: var(--muted);
+    text-align: left;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__prompt-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-audit-browser__prompt strong {
+    display: block;
+    color: var(--navy-900);
+    font-size: 15px;
+    line-height: 1.3;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__prompt p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__prompt-clear {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    margin-top: 10px;
+    color: var(--navy-700);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+body.role-admin.admin-layout .admin-audit-browser__prompt-clear:hover {
+    color: var(--navy-900);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.role-admin.admin-layout .admin-audit-browser__office-disclosure-chevron {
+        transition: none;
+    }
+}
+
 /* Roster — people, grouped. */
 body.role-admin.admin-layout .admin-audit-browser__roster-head {
     display: grid;
@@ -1839,33 +1993,14 @@ body.role-admin.admin-layout .admin-audit-browser__group-shown {
     font-variant-numeric: tabular-nums;
 }
 
-body.role-admin.admin-layout .admin-audit-browser__pager {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
+.admin-pagination-wrap--compact {
+    justify-items: start;
+    gap: 6px;
+    margin-top: 0;
 }
 
-body.role-admin.admin-layout .admin-audit-browser__pager-state {
-    color: var(--muted);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-}
-
-body.role-admin.admin-layout .admin-audit-browser__pager-link {
-    color: var(--navy-700);
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-}
-
-body.role-admin.admin-layout .admin-audit-browser__pager-link:hover {
-    color: var(--navy-900);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-body.role-admin.admin-layout .admin-audit-browser__pager-link.is-disabled {
-    color: var(--faint);
+.admin-pagination-wrap--compact .admin-pagination {
+    margin-top: 0;
 }
 
 body.role-admin.admin-layout .admin-audit-browser__group-more {
@@ -2301,11 +2436,18 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
 
     body.role-admin.admin-layout .admin-header-actions {
         width: 100%;
+        /* NEVER wrap here: column direction + wrap turns each full-width child
+           into a full-container-height side-by-side column, pinning every
+           button to the same row and pushing the last one off-screen
+           (owner report, /admin/users at 393px). */
+        flex-wrap: nowrap;
     }
 
     body.role-admin.admin-layout .admin-header-actions .admin-button {
-        flex: 1 1 100%;
+        flex: 1 1 auto;
+        width: 100%;
         justify-content: center;
+        min-height: 44px;
     }
 
     body.role-admin.admin-layout .admin-page-title {
@@ -2328,8 +2470,7 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
 
     body.role-admin.admin-layout .admin-filter-grid,
     body.role-admin.admin-layout .admin-user-filter-grid,
-    body.role-admin.admin-layout .admin-form-grid,
-    body.role-admin.admin-layout .admin-invitation-bulk-grid {
+    body.role-admin.admin-layout .admin-form-grid {
         grid-template-columns: 1fr;
     }
 

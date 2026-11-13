@@ -83,6 +83,41 @@ class AdminController extends Controller
 
         $stats['overdue'] = array_sum($overdueByDepartment);
 
+        // The work that is paused — waiting on funds, materials, a budget
+        // decision, another body. It is not late, and it is not nothing: the
+        // administrator is the person who can release the funds or make the
+        // call, so the wait is reported here with how long it has been going.
+        $heldComplaints = Complaint::whereNotNull('hold_reason')
+            ->whereIn('status', [
+                ComplaintStatus::Submitted->value,
+                ComplaintStatus::UnderReview->value,
+                ComplaintStatus::InProgress->value,
+            ])
+            ->get(['id', 'department_id', 'hold_reason', 'hold_started_at', 'hold_total_minutes']);
+
+        $heldByDepartment = [];
+        $heldDaysByDepartment = [];
+
+        foreach ($heldComplaints as $held) {
+            $departmentId = (int) $held->department_id;
+
+            $heldByDepartment[$departmentId] = ($heldByDepartment[$departmentId] ?? 0) + 1;
+
+            $minutes = (int) $held->hold_total_minutes;
+            if ($held->hold_started_at !== null) {
+                $minutes += max(0, (int) $held->hold_started_at->diffInMinutes(now()));
+            }
+
+            $heldDaysByDepartment[$departmentId] = ($heldDaysByDepartment[$departmentId] ?? 0) + intdiv($minutes, 1440);
+        }
+
+        $stats['onHold'] = $heldComplaints->count();
+        $stats['heldDays'] = array_sum($heldDaysByDepartment);
+        $stats['heldByReason'] = $heldComplaints
+            ->groupBy('hold_reason')
+            ->map(fn ($group): int => $group->count())
+            ->all();
+
         // Recent complaints (all departments)
         $recentComplaints = Complaint::with(['user', 'department'])
             ->latest()
@@ -102,6 +137,8 @@ class AdminController extends Controller
             'stats',
             'departments',
             'overdueByDepartment',
+            'heldByDepartment',
+            'heldDaysByDepartment',
             'recentComplaints',
             'unassignedComplaints'
         ));
@@ -450,20 +487,16 @@ class AdminController extends Controller
                 'residentsOnly' => $scope['residents'],
                 'auditQuery' => $auditQuery,
             ])->render(),
-            'roster' => $searchResults !== null
-                ? view('admin.audit.partials.people-results', [
-                    'rows' => $searchResults['rows'],
-                    'total' => $searchResults['total'],
-                    'query' => $peopleQuery,
-                    'auditQuery' => $auditQuery,
-                    'actorId' => $scope['actor_id'],
-                ])->render()
-                : view('admin.audit.partials.roster', [
-                    'groups' => $groups,
-                    'auditQuery' => $auditQuery,
-                    'selectionParams' => $selectionParams,
-                    'actorId' => $scope['actor_id'],
-                ])->render(),
+            'roster' => view('admin.audit.partials.roster-section', [
+                'groups' => $groups,
+                'searchResults' => $searchResults,
+                'peopleQuery' => $peopleQuery,
+                'expandedGroup' => $expandedGroup,
+                'selection' => $selection,
+                'auditQuery' => $auditQuery,
+                'selectionParams' => $selectionParams,
+                'actorId' => $scope['actor_id'],
+            ])->render(),
             'trail' => view('admin.audit.partials.trail', [
                 'logs' => $logs,
                 'actionLabelFor' => $this->auditActionLabel(),
@@ -919,6 +952,14 @@ class AdminController extends Controller
 
         if ($request->boolean('flagged')) {
             $query->flagged();
+        }
+
+        // The work that is paused — waiting on funds, materials, a budget
+        // decision, another body. The administrator is the person who can
+        // release the funds or make the call, so the wait is a queue of its
+        // own rather than something buried under the open complaints.
+        if ($request->boolean('on_hold')) {
+            $query->whereNotNull('hold_reason');
         }
 
         return $query->latest()->paginate(self::QUEUE_PAGE_SIZE)

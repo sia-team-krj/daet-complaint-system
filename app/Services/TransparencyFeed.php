@@ -505,9 +505,7 @@ class TransparencyFeed
      */
     public function categoryLabels(): Collection
     {
-        return collect(DepartmentRouter::getCategoryOptions())
-            ->flatten(1)
-            ->pluck('label', 'value');
+        return collect(DepartmentRouter::categoryLabels());
     }
 
     private function hasValidCoordinates(Complaint $complaint): bool

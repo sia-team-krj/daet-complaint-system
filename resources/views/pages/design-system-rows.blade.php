@@ -5,7 +5,7 @@
     $rows = [
         ['cat' => 'road_damage', 'ticket' => 'COMP-2026-00025', 'title' => 'This report concerns a significant hazard on the roadway located within Barangay Lag-on, which presents a daily risk to motorists and pedestrians. The city must repair this stretch of road.', 'dept' => 'ENG', 'deptName' => 'Engineering Office', 'barangay' => 'Lag-on', 'date' => 'Nov 8, 2026', 'status' => 'submitted', 'statusLabel' => 'Submitted', 'step' => 1, 'verified' => false],
         ['cat' => 'flooding', 'ticket' => 'COMP-2026-00022', 'title' => 'Large pothole along the national road', 'dept' => 'ENG', 'deptName' => 'Engineering Office', 'barangay' => 'VI (Centro)', 'date' => 'Nov 8, 2026', 'status' => 'in_progress', 'statusLabel' => 'In Progress', 'step' => 3, 'verified' => true],
-        ['cat' => 'noise_complaint', 'ticket' => 'COMP-2026-00023', 'title' => 'Late-night noise near the public plaza', 'dept' => 'OM', 'deptName' => 'Office of the Mayor', 'barangay' => 'VI (Centro)', 'date' => 'Nov 8, 2026', 'status' => 'resolved', 'statusLabel' => 'Resolved', 'step' => 4, 'verified' => false],
+        ['cat' => 'noise_complaint', 'ticket' => 'COMP-2026-00023', 'title' => 'Late-night noise near the public plaza', 'dept' => 'OM', 'deptName' => "Mayor's Office", 'barangay' => 'VI (Centro)', 'date' => 'Nov 8, 2026', 'status' => 'resolved', 'statusLabel' => 'Resolved', 'step' => 4, 'verified' => false],
         ['cat' => 'flooding', 'ticket' => 'COMP-2026-00005', 'title' => 'Flooded pedestrian path after rainfall', 'dept' => 'ENG', 'deptName' => 'Engineering Office', 'barangay' => 'VI (Centro)', 'date' => 'Nov 7, 2026', 'status' => 'submitted', 'statusLabel' => 'Submitted', 'step' => 1, 'verified' => false],
     ];
 @endphp

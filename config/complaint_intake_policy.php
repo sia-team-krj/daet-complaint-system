@@ -57,9 +57,10 @@ return [
         'streetlight' => 'physical_required',
         'garbage' => 'physical_required',
         'sanitation' => 'physical_required',
-        'park_maintenance' => 'physical_required',
-        'noise_complaint' => 'proof_optional',
-        'stray_animals' => 'proof_optional',
+        'plastic_usage' => 'physical_required',
+        // Names a member of personnel, so nothing is asked of the resident
+        // beyond their own account: no photo, no map pin, no address.
+        'staff_treatment' => 'sensitive_intake',
         'business_permit' => 'sensitive_intake',
         'others' => 'follow_up_optional',
     ],

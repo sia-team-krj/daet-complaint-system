@@ -19,6 +19,29 @@ return [
         'escalated' => 'Na-escalate',
     ],
 
+    'feedback_status' => [
+        'published' => 'Nailathala',
+        'pending' => 'Naghihintay na basahin',
+        'withheld' => 'Hindi nailabas',
+    ],
+
+    'publication_status' => [
+        'pending' => 'Naghihintay ng tanggapan ng Alkalde',
+        'approved' => 'Aprubado para sa paglathala',
+        'declined' => 'Hindi nalathala — isang alintataman sa privacy',
+    ],
+
+    // Bakit pinihinto ng tanggapan ang trabaho sa isang reklamo.
+    'hold_reason' => [
+        'awaiting_funds' => 'Naghihintay ng pondo',
+        'awaiting_materials' => 'Naghihintay ng materyales',
+        'awaiting_procurement' => 'Naghihintay ng procurement',
+        'awaiting_budget_approval' => 'Naghihintay ng desisyon sa badyet',
+        'awaiting_other_office' => 'Naghihintay ng ibang tanggapan',
+        'awaiting_weather' => 'Naghihintay ng panahon',
+        'other' => 'Ibang dahilan',
+    ],
+
     'priority' => [
         'routine' => 'Karaniwan',
         'elevated' => 'Nakaangat',
@@ -55,5 +78,6 @@ return [
         'overdue' => 'Na-lampas',
         'met' => 'Tapos na',
         'not_applicable' => 'Hindi pa beripika',
+        'on_hold' => 'Naka-hold — nakatigil ang oras',
     ],
 ];

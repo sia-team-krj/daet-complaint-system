@@ -10,6 +10,21 @@ return [
         'optional' => 'opsyonal',
     ],
 
+    'fields' => [
+        'named_party_person' => 'Pangalan ng taong pinagkakansitan',
+        'named_party_business' => 'Pangalan ng negosyong pinagkakansitan',
+        'named_party_hint_person' => 'Nakikita ito ng tanging tanggapan na humahawlak sa ulat na ito. Hindi ito ipapakita sa pampublikong pahina.',
+        'named_party_hint_business' => 'Nakikita ito ng tanging tanggapan na humahawlak sa ulat na ito. Hindi ito ipapakita sa pampublikong pahina.',
+        'named_party_position' => 'Ang kanyang posisyon o tanggapan',
+        'named_party_position_hint' => 'Opsyonal. Nakakatulong ito sa tanggapan na mahanap ang tamang tao.',
+    ],
+
+    'visibility' => [
+        'gated_title' => 'Binabanggit ng ulat na ito ang isang tao.',
+        'gated_body' => 'Dahil binabanggit nito ang isang tao o negosyo, ito ay ipinapasa nang pribado. Iipublish lamang ito kung ayusin ito ng tanggapan, beripikado ang impormasyon bilang totoo, nai-redact ang sensitibong detalye, at aprubahan ito ng tanggapan ng Alkalde. Ise-info ka man kaya.',
+        'gated_ack' => 'Nauunawaan ko na binabanggit ng ulat na ito ang isang tao o negosyo, at ito ay ipapasa nang pribado. Lalabas lamang ito sa transparency page kung ayusin ito ng tanggapan, beripikado ang impormasyon bilang totoo, nai-redact ang sensitibong detalye, at aprubahan ito ng tanggapan ng Alkalde. Sila na ang magsasabi sa akin, kahit ano ang maging desisyon.',
+    ],
+
     'page' => [
         'title' => 'Maghain ng reklamo',
         'lede' => 'Sabihin sa amin kung ano ang kailangang tugunan. Ipapadala namin ito sa tamang tanggapan at ia-update ka.',
@@ -116,20 +131,8 @@ return [
             'helper' => 'Lubak, ilaw sa kalye, baha',
         ],
         'waste' => [
-            'label' => 'Basura at Kalinisan',
-            'helper' => 'Basura, imburnal, mabahong amoy',
-        ],
-        'spaces' => [
-            'label' => 'Parke at Pampublikong Lugar',
-            'helper' => 'Parke, plaza, palaruan',
-        ],
-        'neighborhood' => [
-            'label' => 'Ingay at Hayop',
-            'helper' => 'Ingay, gala-galang hayop',
-        ],
-        'business' => [
-            'label' => 'Negosyo at Permit',
-            'helper' => 'Permit at lisensya',
+            'label' => 'Basura, Kalinisan at Plastik',
+            'helper' => 'Basura, imburnal, plastic na balot',
         ],
         'other' => [
             'label' => 'Iba pa',
@@ -158,6 +161,10 @@ return [
             'label' => 'Kalinisan',
             'helper' => 'Mabahong amoy, imburnal, maruming lugar',
         ],
+        'plastic_usage' => [
+            'label' => 'Paggamit ng Plastik',
+            'helper' => 'Negosyong gumagamit ng plastik sa produkto nito',
+        ],
         'park_maintenance' => [
             'label' => 'Pagpapanatili ng Parke',
             'helper' => 'Sirang upuan, palaruan, plaza',
@@ -173,6 +180,10 @@ return [
         'business_permit' => [
             'label' => 'Problema sa Business Permit',
             'helper' => 'Problema sa permit, lisensya o negosyo',
+        ],
+        'staff_treatment' => [
+            'label' => 'Paano Ka Tinugunan ng LGU',
+            'helper' => 'Paano ka tinugunan ng isang kawani',
         ],
         'others' => [
             'label' => 'Ibang mga Alalahanin',

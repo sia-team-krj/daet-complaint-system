@@ -75,6 +75,14 @@ return [
         'privatise' => 'Gawing pribado ito',
         'public_state' => 'Kasalukuyang nailathala sa ilalim ng iyong display alias.',
         'private_state' => 'Kasalukuyang pribado. Ikaw at ang kawani lamang ang makakakita nito.',
+        'gated_state' => 'Pribado — binabanggit nito ang isang tao',
+        'gated_body' => 'Dahil binabanggit ng ulat na ito ang isang tao o negosyo, nananatili itong hindi nakikita sa pampublikong pahina. Iipublish lamang ito kung ayusin ito ng tanggapan, beripikado ang impormasyon bilang totoo, nai-redact ang sensitibong detalye, at aprubahan ng tanggapan ng Alkalde. Ise-info ka man kaya, at tulad ng dati ay sa iyo dumating ang bawat update ng ulat na ito.',
+    ],
+
+    'hold' => [
+        'on_hold' => 'Naka-hold',
+        'no_note' => 'Ipinalitan ng tanggapan ang trabaho sa ulat na ito.',
+        'expected_on' => 'Inaasahang magpapatuloy sa :date.',
     ],
 
     'help' => [

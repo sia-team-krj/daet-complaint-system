@@ -5,13 +5,19 @@ namespace App\Http\Controllers;
 use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
+use App\Enums\HoldReason;
+use App\Enums\PublicationStatus;
 use App\Enums\VerificationMethod;
 use App\Models\Complaint;
 use App\Models\ComplaintLog;
+use App\Models\Department;
 use App\Models\User;
 use App\Http\Controllers\Concerns\SoftNavigation;
 use App\Services\ActivityLogger;
+use App\Services\ComplaintHoldService;
 use App\Services\ComplaintModerationService;
+use App\Services\ComplaintPrivacyService;
+use App\Services\ComplaintPublicationService;
 use App\Services\ComplaintSlaService;
 use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
@@ -35,6 +41,34 @@ use Throwable;
 
 class StaffController extends Controller
 {
+    /**
+     * The work that is still live. The queue opens on these.
+     *
+     * @var list<string>
+     */
+    public const OPEN_STATUSES = [
+        ComplaintStatus::Submitted->value,
+        ComplaintStatus::UnderReview->value,
+        ComplaintStatus::InProgress->value,
+    ];
+
+    /**
+     * The work that is finished — rejected, resolved, closed. Still on the
+     * record, one click away behind the "Finished" scope.
+     *
+     * @var list<string>
+     */
+    public const FINISHED_STATUSES = [
+        ComplaintStatus::Resolved->value,
+        ComplaintStatus::Rejected->value,
+        ComplaintStatus::Closed->value,
+    ];
+
+    /**
+     * How many actions the department activity page shows at a time.
+     */
+    public const ACTIVITY_PAGE_SIZE = 30;
+
     use SoftNavigation;
 
     /**
@@ -130,28 +164,8 @@ class StaffController extends Controller
             ->limit(12)
             ->get();
 
-        $recentActivity = collect();
-        $group = null;
-        $flush = function () use (&$group, &$recentActivity) {
-            if ($group === null) {
-                return;
-            }
-            $recentActivity->push($this->formatActivityGroup($group));
-            $group = null;
-        };
-        foreach ($rawActivity as $log) {
-            $ticketId = $log->complaint?->ticket_id ?? null;
-            if ($group === null || $group['ticket_id'] !== $ticketId) {
-                $flush();
-                $group = ['ticket_id' => $ticketId, 'logs' => [$log]];
-            } else {
-                $group['logs'][] = $log;
-            }
-            if ($recentActivity->count() >= 4) {
-                break;
-            }
-        }
-        $flush();
+        $recentActivity = $this->groupActivityEntries($rawActivity);
+
         return view('staff.dashboard.index', compact(
             'department',
             'stats',
@@ -203,6 +217,113 @@ class StaffController extends Controller
             ->withQueryString();
 
         return view('staff.activity.index', compact('department', 'stats', 'complaints', 'user'));
+    }
+
+    /**
+     * Group consecutive actions on the same complaint into one entry, so a burst
+     * of updates on one ticket reads as one line rather than five.
+     *
+     * Shared by the dashboard card (a preview of the last few) and the
+     * department activity page (the whole trail), so the two can never
+     * disagree about what an entry says.
+     *
+     * @param  iterable<\App\Models\ComplaintLog>  $logs
+     * @return \Illuminate\Support\Collection<int, \stdClass>
+     */
+    private function groupActivityEntries($logs): \Illuminate\Support\Collection
+    {
+        $entries = collect();
+        $group = null;
+
+        foreach ($logs as $log) {
+            $ticketId = $log->complaint?->ticket_id ?? null;
+
+            if ($group === null || $group['ticket_id'] !== $ticketId) {
+                if ($group !== null) {
+                    $entries->push($this->formatActivityGroup($group));
+                }
+
+                $group = ['ticket_id' => $ticketId, 'logs' => [$log]];
+            } else {
+                $group['logs'][] = $log;
+            }
+        }
+
+        if ($group !== null) {
+            $entries->push($this->formatActivityGroup($group));
+        }
+
+        return $entries;
+    }
+
+    /**
+     * The office's trail: everything anyone in the office has done.
+     *
+     * "My activity" answers what *I* did. This answers what the office did —
+     * which is a different question, and until now had no page to land on: the
+     * dashboard's "recent department activity" card linked to my own trail.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function departmentActivity(Request $request): View
+    {
+        $department = Auth::user()->department;
+
+        abort_if($department === null, 403, 'Your account is not assigned to an office yet.');
+
+        return $this->departmentActivityFor($department);
+    }
+
+    /**
+     * An administrator opening an office's trail.
+     *
+     * The staff workspace has the same page for the office's own people; an
+     * administrator who needs to see what an office has actually been doing
+     * reaches the same trail through the audit browser, filtered to that
+     * office — which is also where the wider record (staff accounts,
+     * invitations, reassignments) lives.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function departmentActivityForOffice(Department $department): View
+    {
+        return $this->departmentActivityFor($department);
+    }
+
+    /**
+     * @return \Illuminate\View\View
+     */
+    private function departmentActivityFor(Department $department): View
+    {
+        $logs = ComplaintLog::with([
+            'complaint',
+            'actor:id,display_alias,first_name,last_name,role',
+        ])
+            ->whereHas('complaint', fn ($query) => $query->where('department_id', $department->id))
+            ->latest('created_at')
+            ->paginate(self::ACTIVITY_PAGE_SIZE)
+            ->withQueryString();
+
+        $entries = $this->groupActivityEntries($logs->getCollection());
+
+        // The same three numbers "My activity" asks of the member, asked of
+        // the office instead: what has been done, on how much, and when the
+        // last thing happened.
+        $officeLogs = ComplaintLog::query()
+            ->whereHas('complaint', fn ($query) => $query->where('department_id', $department->id));
+
+        $stats = [
+            'actions' => (clone $officeLogs)->count(),
+            'complaints' => Complaint::where('department_id', $department->id)->count(),
+            'lastAction' => (clone $officeLogs)->latest('created_at')->first()?->created_at,
+        ];
+
+        return view('staff.activity.department', [
+            'department' => $department,
+            'entries' => $entries,
+            'logs' => $logs,
+            'stats' => $stats,
+        ]);
     }
 
     /**
@@ -306,12 +427,19 @@ class StaffController extends Controller
         $priority = $request->get('priority');
         $search = $request->get('search');
         $overdue = $request->get('overdue') === '1';
+        $scope = $this->queueScope($request);
 
         $complaints = $this->complaintsQueue($request, $user, $sla);
         $queueFingerprint = QueueFingerprint::for($complaints);
 
         $reviewStatusOptions = ComplaintReviewStatus::cases();
         $priorityOptions = ComplaintPriority::cases();
+
+        // The status filter offers the statuses that are actually in the
+        // current scope, so it can never narrow a queue to nothing.
+        $statusOptions = $scope === 'finished'
+            ? self::FINISHED_STATUSES
+            : self::OPEN_STATUSES;
 
         // Where each complaint stands against its deadline, so the row can say
         // how long the office has left rather than only where it is.
@@ -325,12 +453,28 @@ class StaffController extends Controller
             'priority',
             'reviewStatusOptions',
             'priorityOptions',
+            'statusOptions',
+            'scope',
             'search',
             'user',
             'slaSummaries',
             'queueFingerprint',
             'overdue'
         ));
+    }
+
+    /**
+     * Which part of the department's work the queue is showing.
+     *
+     * The queue is for the work that is still live. A complaint that has been
+     * rejected, resolved or closed is finished, and burying it in the same
+     * list is how a queue becomes a graveyard — the live work disappears
+     * under the settled cases. The finished ones are still there, one click
+     * away, and the record keeps them either way.
+     */
+    private function queueScope(Request $request): string
+    {
+        return $request->get('scope') === 'finished' ? 'finished' : 'open';
     }
 
     /**
@@ -366,13 +510,11 @@ class StaffController extends Controller
         $priority = $request->get('priority');
         $search = $request->get('search');
         $overdue = $request->get('overdue') === '1';
-        $validStatuses = [
-            ComplaintStatus::Submitted->value,
-            ComplaintStatus::UnderReview->value,
-            ComplaintStatus::InProgress->value,
-            ComplaintStatus::Resolved->value,
-            ComplaintStatus::Rejected->value,
-        ];
+        $scope = $this->queueScope($request);
+        $scopeStatuses = $scope === 'finished'
+            ? self::FINISHED_STATUSES
+            : self::OPEN_STATUSES;
+        $validStatuses = $scopeStatuses;
 
         $validReviewStatuses = array_map(
             fn (ComplaintReviewStatus $review): string => $review->value,
@@ -386,12 +528,14 @@ class StaffController extends Controller
 
         // Outstanding asks are eager-loaded, otherwise the queue would issue one
         // extra query per row just to show how long a resident has been waiting.
-        $query = Complaint::where('department_id', $departmentId)->with([
-            'user:id,display_alias,barangay',
-            'informationRequests' => fn ($relation) => $relation
-                ->outstanding()
-                ->latest('id'),
-        ]);
+        $query = Complaint::where('department_id', $departmentId)
+            ->whereIn('status', $scopeStatuses)
+            ->with([
+                'user:id,display_alias,barangay',
+                'informationRequests' => fn ($relation) => $relation
+                    ->outstanding()
+                    ->latest('id'),
+            ]);
 
         if ($status && in_array($status, $validStatuses, true)) {
             $query->where('status', $status);
@@ -422,9 +566,15 @@ class StaffController extends Controller
         }
 
         return $query
-            ->orderByRaw("CASE WHEN review_status = 'pending' THEN 0 ELSE 1 END")
-            ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
-            ->orderBy('created_at', 'asc')
+            // The queue is ordered by staleness: the complaint nothing has
+            // touched for the longest comes first. A report filed three hours
+            // ago and still unreviewed climbs the queue as the hours pass, and
+            // one the office touched yesterday sinks below it — which is the
+            // order an office actually wants to work in. Priority used to be
+            // the second key here; it stays a filter, but it no longer decides
+            // what is on top.
+            ->orderBy('updated_at', 'asc')
+            ->orderBy('id', 'asc')
             ->paginate(3)
             ->withQueryString();
     }
@@ -446,6 +596,7 @@ class StaffController extends Controller
 
         $complaints = $this->complaintsQueue($request, Auth::user(), $sla);
         $slaSummaries = $this->slaSummariesFor($complaints);
+        $scope = $this->queueScope($request);
 
         $total = $complaints->total();
         $perPage = $complaints->perPage();
@@ -457,6 +608,7 @@ class StaffController extends Controller
             'list' => view('staff.complaints.partials.list', [
                 'complaints' => $complaints,
                 'slaSummaries' => $slaSummaries,
+                'scope' => $scope,
             ])->render(),
             'pagination' => view('staff.complaints.partials.pagination', compact('complaints', 'total', 'perPage', 'currentPage', 'from', 'to'))->render(),
             'fingerprint' => QueueFingerprint::for($complaints),
@@ -928,6 +1080,263 @@ class StaffController extends Controller
         return redirect()
             ->route('staff.complaints.show', $complaint)
             ->with('status', 'Moderation saved. The resident still sees their complaint exactly as they filed it.');
+    }
+
+    /**
+     * The office's quick-fill for the public copy of a report that names
+     * somebody.
+     *
+     * Writing the redacted title and description by hand is the slow, easy-
+     * to-forget step. This fills the two fields in from what the office
+     * ticked must not appear — the copy lands back in the fields below for
+     * the office to review and adjust. Nothing is written until the office
+     * saves, through the ordinary moderation form (which requires a reason,
+     * and records it).
+     */
+    public function redact(
+        Request $request,
+        Complaint $complaint,
+        ComplaintModerationService $moderation,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+            return back()->with('error', 'You cannot act on complaints outside your department.');
+        }
+
+        if (! $user->canVerifyComplaints()) {
+            abort(403, 'Only a department verifier or an administrator can redact a report that names somebody.');
+        }
+
+        abort_unless($complaint->isPrivacyGated(), 422, 'This report does not need a redacted copy for publication.');
+
+        $validated = $request->validate([
+            'strip_party' => ['nullable', 'boolean'],
+            'strip_position' => ['nullable', 'boolean'],
+        ]);
+
+        $stripParty = (bool) ($validated['strip_party'] ?? false);
+        $stripPosition = (bool) ($validated['strip_position'] ?? false);
+
+        if (! $stripParty && ! $stripPosition) {
+            return back()->with('error', __('staff.moderation.quick_nothing'));
+        }
+
+        $draft = $moderation->redactionDraft($complaint, $stripParty, $stripPosition);
+
+        // Back to the ticket with the draft in the fields — the office reviews
+        // it, adjusts it, and saves it as the public version.
+        return back()
+            ->withInput([
+                'redacted_title' => $draft['title'],
+                'redacted_description' => $draft['description'],
+            ])
+            ->with('status', __('staff.moderation.quick_done'));
+    }
+
+    /**
+     * The office pauses the work on a complaint.
+     *
+     * Some complaints cannot be finished today for reasons that are not the
+     * office's doing — the materials are not in stock, the budget has not
+     * been released, the work belongs to another body. The office records
+     * why and says it out loud to the resident, and the deadline it owes
+     * pauses for as long as it waits.
+     */
+    public function hold(
+        Request $request,
+        Complaint $complaint,
+        ComplaintHoldService $holds,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+            return back()->with('error', 'You cannot put complaints outside your department on hold.');
+        }
+
+        $validated = $request->validate([
+            'hold_reason' => ['required', 'string', Rule::enum(HoldReason::class)],
+            'hold_note' => ['required', 'string', 'min:10', 'max:2000'],
+            'hold_internal_note' => ['nullable', 'string', 'max:2000'],
+            'hold_expected_resume_at' => ['nullable', 'date'],
+        ]);
+
+        try {
+            $holds->putOnHold($complaint, $user, $validated);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('staff.complaints.show', $complaint)
+            ->with('status', 'This complaint is on hold. The resident has been told why, and the deadline is paused while you wait.');
+    }
+
+    /**
+     * The office takes the hold off and carries on with the work.
+     */
+    public function resume(
+        Request $request,
+        Complaint $complaint,
+        ComplaintHoldService $holds,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+            return back()->with('error', 'You cannot resume complaints outside your department.');
+        }
+
+        $validated = $request->validate([
+            'hold_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $holds->resume($complaint, $user, $validated['hold_note'] ?? null);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('staff.complaints.show', $complaint)
+            ->with('status', 'The hold is off and the work is carrying on. The resident has been told.');
+    }
+
+    /**
+     * The owning office asks the Mayor's office to publish a report that names
+     * somebody.
+     *
+     * The office must have settled the report, had the information verified,
+     * and written the redacted version first — the request is refused until
+     * then, so the Mayor's office is never asked to sign off on something
+     * that is not ready.
+     */
+    public function publicationRequest(
+        Request $request,
+        Complaint $complaint,
+        ComplaintPublicationService $publication,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+            return back()->with('error', 'You cannot act on complaints outside your department.');
+        }
+
+        $validated = $request->validate([
+            'publication_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $publication->request($complaint, $user, $validated['publication_note'] ?? null);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', 'This report is not ready to be published yet.');
+        }
+
+        return redirect()
+            ->route('staff.complaints.show', $complaint)
+            ->with('status', 'The Mayor\'s office has been asked to decide whether this report is published.');
+    }
+
+    /**
+     * The queue of reports waiting for the Mayor's office to decide.
+     */
+    public function publicationRequests(Request $request): View
+    {
+        $user = Auth::user();
+
+        abort_unless(
+            ComplaintPrivacyService::canApprove($user),
+            403,
+            'Only the Mayor\'s office decides whether a report that names somebody is published.',
+        );
+
+        $requests = Complaint::query()
+            ->where('publication_status', PublicationStatus::Pending->value)
+            ->with(['department', 'user'])
+            ->orderBy('publication_requested_at')
+            ->paginate(12);
+
+        return view('staff.publication-requests.index', [
+            'requests' => $requests,
+        ]);
+    }
+
+    /**
+     * The decider's review of one publication request.
+     *
+     * The Mayor's office decides reports from every office, so the report it
+     * is deciding on usually belongs to another department — the ticket page
+     * would refuse it ("not assigned to your department"). This page carries
+     * what the decision actually needs: the redacted copy that would be
+     * published, the office's request note, and the decision itself. The name
+     * of the party is never shown here; it stays in the handling office.
+     */
+    public function publicationReview(Complaint $complaint): View
+    {
+        $user = Auth::user();
+
+        abort_unless(
+            ComplaintPrivacyService::canApprove($user),
+            403,
+            'Only the Mayor\'s office decides whether a report that names somebody is published.',
+        );
+
+        abort_unless(
+            $complaint->isPrivacyGated(),
+            404,
+            'This complaint is not in a category that needs a publication decision.',
+        );
+
+        $complaint->load(['department']);
+
+        return view('staff.publication-requests.show', [
+            'complaint' => $complaint,
+        ]);
+    }
+
+    /**
+     * The Mayor's office approves the publication.
+     */
+    public function publicationApprove(
+        Request $request,
+        Complaint $complaint,
+        ComplaintPublicationService $publication,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'publication_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $publication->approve($complaint, $user, $validated['publication_note'] ?? null);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', 'This report is not ready to be published yet.');
+        }
+
+        return redirect()
+            ->route('staff.publication-requests.index')
+            ->with('status', "Complaint {$complaint->ticket_id} is published on the transparency page, in its redacted form.");
+    }
+
+    /**
+     * The Mayor's office declines: the report stays private for good.
+     */
+    public function publicationDecline(
+        Request $request,
+        Complaint $complaint,
+        ComplaintPublicationService $publication,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'publication_note' => ['required', 'string', 'min:10', 'max:1000'],
+        ]);
+
+        $publication->decline($complaint, $user, $validated['publication_note']);
+
+        return redirect()
+            ->route('staff.publication-requests.index')
+            ->with('status', "Complaint {$complaint->ticket_id} will not be published. The resident has been told.");
     }
 
     /**

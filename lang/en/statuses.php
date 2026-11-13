@@ -19,6 +19,29 @@ return [
         'escalated' => 'Escalated',
     ],
 
+    'feedback_status' => [
+        'published' => 'Published',
+        'pending' => 'Waiting to be read',
+        'withheld' => 'Kept off the register',
+    ],
+
+    'publication_status' => [
+        'pending' => "Awaiting the Mayor's office",
+        'approved' => 'Approved for publication',
+        'declined' => 'Not published — privacy concern',
+    ],
+
+    // Why an office has paused the work on a complaint.
+    'hold_reason' => [
+        'awaiting_funds' => 'Waiting on funds',
+        'awaiting_materials' => 'Waiting on materials',
+        'awaiting_procurement' => 'Waiting on procurement',
+        'awaiting_budget_approval' => 'Waiting on a budget decision',
+        'awaiting_other_office' => 'Waiting on another office',
+        'awaiting_weather' => 'Waiting on the weather',
+        'other' => 'Another reason',
+    ],
+
     'priority' => [
         'routine' => 'Routine',
         'elevated' => 'Elevated',
@@ -55,5 +78,6 @@ return [
         'overdue' => 'Overdue',
         'met' => 'Met',
         'not_applicable' => 'Not verified yet',
+        'on_hold' => 'On hold — the clock is paused',
     ],
 ];

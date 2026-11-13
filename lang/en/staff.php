@@ -79,6 +79,18 @@ return [
         'activity' => 'Activity',
     ],
 
+    // The office's own trail — what everyone in the office has done, as
+    // against "my activity", which is what this member has done.
+    'activity' => [
+        'department_title' => 'Office activity',
+        'department_lede' => '{1}:count action recorded.|{2,*}:count actions recorded.',
+        'department_feed_title' => 'What the office has done',
+        'department_feed_lede' => 'Every action anyone in this office has taken, newest first.',
+        'metric_actions' => 'Actions recorded',
+        'metric_complaints' => 'Complaints handled',
+        'metric_last' => 'Last activity',
+    ],
+
     // The staff proof capture (design system §5.36): the photos that prove
     // the work was done, and the rule that says when they are required.
     'proof' => [
@@ -137,6 +149,10 @@ return [
         'delegate_submit' => 'Hand over verification',
         'delegate_current' => 'Verification currently sits with :name.',
         'read_only_body' => 'Only a department verifier or an administrator can record a review decision or set the confirmed priority on this ticket.',
+        'minimize' => 'Minimize',
+        'show' => 'Show form',
+        'minimize_label' => 'Minimize review form',
+        'show_label' => 'Show review form',
     ],
 
     // The internal half of a status update. Written to the same immutable
@@ -166,6 +182,15 @@ return [
         'reason' => 'Reason (required)',
         'reason_placeholder' => 'Why is this being withheld or cleaned up?',
         'save' => 'Save moderation',
+        'quick_title' => 'Write the redacted copy for me',
+        'quick_lede' => 'Tick everything that must not appear in the public copy. We write a redacted title and description that leave it out — a safe draft you review and adjust before saving. Nothing is published until the Mayor\'s office approves it.',
+        'quick_party' => 'The name of the party',
+        'quick_position' => 'Their position or office',
+        'quick_submit' => 'Write the redacted copy',
+        'quick_done' => 'The redacted copy is filled in below. Nothing is public yet — review it, adjust anything, then save.',
+        'quick_nothing' => 'Tick at least one thing to leave out.',
+        'redacted_state_ready' => 'A redacted public copy is saved. You can review and adjust it below.',
+        'redacted_state_empty' => 'Leave fields blank to keep the original public text, or write a redacted replacement below.',
     ],
 
     'flag_notice' => [
@@ -174,6 +199,29 @@ return [
         'similar' => ':percent% similar',
         'hidden_public' => 'Hidden from the public transparency page.',
         'compare' => 'Compare with :ticket',
+    ],
+
+    // Getting the field team to the pin. The coordinates stay out of the
+    // visible copy: the map carries the position, and one tap hands it to
+    // Google Maps with the staff member's current location as the origin.
+    'location' => [
+        'title' => 'Complaint location',
+        'directions' => 'Get directions',
+        'directions_aria' => 'Get directions in Google Maps (opens in a new tab)',
+        'map_aria' => 'Map showing the pinned location of this complaint',
+        'map_unavailable' => 'Map unavailable. Get directions still opens the pinned location in Google Maps.',
+        'no_pin_title' => 'No exact pin on this report',
+        'no_pin_body' => 'The resident gave a barangay or address, but no GPS point was captured, so there is nothing to navigate to.',
+        'barangay_label' => 'Barangay',
+    ],
+
+    // The queue: which work it shows, and how it is ordered.
+    'queue_scope' => [
+        'scope_open' => 'Open work',
+        'scope_finished' => 'Finished',
+        'all_statuses' => 'All statuses',
+        'empty_finished_title' => 'Nothing finished yet',
+        'empty_finished_body' => 'Rejected, resolved and closed complaints appear here. Nothing has been finished in this scope.',
     ],
 
     // The clock on the work a department owes. The office accepts a report
@@ -186,5 +234,78 @@ return [
         'overdue_filter' => 'Overdue',
         'overdue_count' => ':count overdue',
         'no_overdue' => 'Nothing overdue',
+    ],
+
+    // Reports that name somebody. The name stays in the office; publication
+    // is the Mayor's office to decide.
+    'publication' => [
+        'title' => 'This report names somebody',
+        'lede' => 'The name below is seen by this office only. It is never shown on the public page. The report is published only after it is settled, the information is verified, the sensitive parts are redacted, and the Mayor\'s office approves it.',
+        'named_party' => 'Who this is about',
+        'named_party_hint' => 'Only the office handling this report sees this name.',
+        'not_requested' => 'Not asked for yet',
+        'not_requested_body' => 'This report is private. Ask the Mayor\'s office to publish it once it is settled, verified and redacted.',
+        'pending_body' => 'The Mayor\'s office has been asked. The resident has been told.',
+        'approved_body' => 'Published on the transparency page in its redacted form.',
+        'declined_body' => 'The Mayor\'s office decided this is a privacy concern. It stays private, and the resident has been told.',
+        'note' => 'Decision note',
+        'request_note' => 'Note for the Mayor\'s office',
+        'request_note_placeholder' => 'What was done, and what was redacted.',
+        'request' => 'Ask the Mayor\'s office to publish this',
+        'request_blocked' => 'Settle it, verify it and redact it first.',
+        'approve' => 'Approve publication',
+        'approve_blocked' => 'This report is not ready yet. The office must settle it, verify it and redact the sensitive parts first.',
+        'decline' => 'Decline — keep it private',
+        'decline_note' => 'Why it is not published',
+        'decline_note_placeholder' => 'The resident is told what you write here.',
+        'queue_title' => 'Publication decisions',
+        'queue_lede' => 'Reports that name somebody, waiting for a decision on whether they are published.',
+        'queue_empty' => 'Nothing is waiting for a decision.',
+        'queue_empty_body' => 'Reports that name somebody appear here when the office asks for them to be published.',
+        'open' => 'Open the report',
+        'review_title' => 'Publication decision',
+        'review_lede' => 'The office has asked the Mayor\'s office to publish this report. The redacted copy below is what a resident would read; the name of the party is never shown here.',
+        'review_back' => 'Back to publication decisions',
+        'review_copy_title' => 'What would be published',
+        'review_copy_hint' => 'The redacted title and description, exactly as they would appear on the transparency page.',
+        'review_panel_lede' => 'The redacted copy is what a resident would read. The name of the party stays in the office that handled the report.',
+        'checklist_title' => 'Publication checklist',
+        'checklist_lede' => 'What has to happen before this report can appear on the transparency page.',
+        'checklist_settled' => 'Resolved or closed by your office',
+        'checklist_verified' => 'The information has been verified as true',
+        'checklist_redacted' => 'The sensitive parts have been redacted',
+        'checklist_asked' => 'Your office has asked the Mayor\'s office to publish it',
+        'checklist_approved' => 'The Mayor\'s office has approved the publication',
+        'checklist_waiting_body' => 'Waiting on the Mayor\'s office. Your office and the resident will be told when they decide.',
+        'checklist_published_body' => 'Approved — this report can appear on the transparency page in its redacted form.',
+        'checklist_declined_body' => 'Declined — this report stays private for good.',
+    ],
+
+    // Pausing the work. A complaint can be legitimate and still not be
+    // finishable today — no funds, no materials, another body's work.
+    'hold' => [
+        'title' => 'Pause the work',
+        'lede' => 'A complaint can be legitimate and still not be finishable today. Say why, say it out loud to the resident, and the deadline pauses while you wait.',
+        'on_hold' => 'On hold',
+        'held_for' => '{1}Held for :count day.|{2,*}Held for :count days.',
+        'expected_on' => 'Expected to carry on by :date.',
+        'told_the_resident' => 'What the resident was told',
+        'internal_note' => 'Internal note',
+        'internal_note_placeholder' => 'Only the office sees this.',
+        'note' => 'What the resident will read',
+        'note_placeholder' => 'The asphalt for this stretch of road is not in stock; the schedule is for next quarter.',
+        'note_hint' => 'The resident reads this, and so does the public register. Keep out of it anything that identifies a person.',
+        'chip_public' => 'Resident sees this',
+        'chip_internal' => 'Office only',
+        'reason' => 'Why is the work on hold?',
+        'reason_placeholder' => 'Choose a reason',
+        'reason_hint' => 'The reason is recorded for the administrator. The resident reads your explanation below.',
+        'expected_resume' => 'Expected to carry on by',
+        'expected_resume_hint' => 'The resident sees this date, so they know when to expect an update. Leave it empty if the office cannot say yet.',
+        'resume_note' => 'Note for the resident',
+        'resume_note_placeholder' => 'The materials arrived; the crew is back on site from Monday.',
+        'resume' => 'Take the hold off and carry on',
+        'not_on_hold' => 'This complaint is not on hold. The office owes work on it against the usual deadline.',
+        'put_on_hold' => 'Put the work on hold',
     ],
 ];

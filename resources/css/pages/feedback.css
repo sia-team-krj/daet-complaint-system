@@ -1,0 +1,376 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   RESIDENT FEEDBACK — the page, the stars, and the offices being rated.
+
+   The portal's own language: cards, the banner, the button. The stars are
+   five real radio buttons under five stars, so the control works with a
+   keyboard and a screen reader and needs no JavaScript.
+
+   Docs: docs/design-system.md §5.46.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.feedback-page {
+    flex: 1 0 auto;
+    width: 100%;
+    padding-bottom: 56px;
+    box-sizing: border-box;
+    background: var(--surface-page);
+}
+
+.feedback-banner {
+    padding-bottom: 40px;
+}
+
+.feedback-form {
+    display: grid;
+    gap: 20px;
+    margin-top: -24px;
+    position: relative;
+    z-index: 1;
+}
+
+.feedback-card {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+}
+
+.feedback-card--quiet {
+    padding: 20px 24px;
+}
+
+.feedback-card__head {
+    display: grid;
+    gap: 4px;
+}
+
+.feedback-card__title {
+    margin: 0;
+    color: var(--navy-900);
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.feedback-card__lede {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+.feedback-card__note {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.feedback-card__average {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* ── The stars ──────────────────────────────────────────────────────── */
+
+.star-rating {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.star-rating__legend {
+    padding: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.star-rating__stars {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 2px;
+}
+
+/* The radios are the control; the stars are the picture. The radios are
+   laid out ascending and the row is reversed, which is what lets the CSS
+   fill the stars from the left as the rating rises. */
+.star-rating__stars input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.star-rating__stars label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    color: var(--line);
+    transition: color 0.15s ease;
+}
+
+.star-rating__stars label svg {
+    width: 26px;
+    height: 26px;
+}
+
+.star-rating__stars label:hover,
+.star-rating__stars input:checked ~ label {
+    color: var(--gold-500);
+}
+
+.star-rating__stars input:focus-visible ~ label {
+    outline: 2px solid var(--focus-gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.star-rating__hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+/* ── The offices being rated ────────────────────────────────────────── */
+
+.feedback-offices {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.feedback-office {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 0;
+    border-top: 1px solid var(--line-soft);
+}
+
+.feedback-office:first-child {
+    border-top: 0;
+}
+
+.feedback-office__body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.feedback-office__name {
+    color: var(--navy-900);
+    font-size: 14.5px;
+    font-weight: 600;
+}
+
+.feedback-office__average {
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+/* ── The suggestion box ─────────────────────────────────────────────── */
+
+.feedback-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    background: var(--surface-input);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    resize: vertical;
+}
+
+.feedback-textarea:focus {
+    border-color: var(--focus-gold);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    outline: none;
+}
+
+/* ── Actions and messages ───────────────────────────────────────────── */
+
+.feedback-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.feedback-submit {
+    min-height: 48px;
+    padding: 0 28px;
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    color: var(--navy-900);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.feedback-submit:hover {
+    background: var(--gold-300);
+    border-color: var(--gold-300);
+    color: var(--navy-900);
+}
+
+.feedback-flash {
+    margin: 16px 0 0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.feedback-flash ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.feedback-flash--success {
+    color: var(--success);
+    background: var(--success-tint);
+    border: 1px solid var(--success);
+}
+
+.feedback-flash--error {
+    color: var(--danger);
+    background: var(--danger-tint);
+    border: 1px solid var(--danger);
+}
+
+/* ── What residents are asking for ──────────────────────────────────── */
+
+.feedback-suggestions {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.feedback-suggestion {
+    padding: 14px 16px;
+    background: var(--surface-page);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+}
+
+.feedback-suggestion__body {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.feedback-suggestion__meta {
+    margin: 8px 0 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+@media (max-width: 700px) {
+    .feedback-card {
+        padding: 18px;
+    }
+
+    .feedback-office {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .feedback-actions {
+        justify-content: stretch;
+    }
+
+    .feedback-submit {
+        width: 100%;
+    }
+}
+
+/* ── The block on the public register ──────────────────────────────── */
+
+.feedback-public {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 32px;
+}
+
+.feedback-public__offices {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.feedback-public__offices li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-top: 1px solid var(--line-soft);
+}
+
+.feedback-public__offices li:first-child {
+    border-top: 0;
+}
+
+.feedback-public__office {
+    color: var(--navy-900);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.feedback-public__average {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.feedback-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.feedback-rating__star {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: var(--gold-500);
+    stroke: var(--gold-500);
+    stroke-width: 1;
+}
+
+.feedback-rating__value {
+    color: var(--text);
+}
+
+.feedback-rating__count {
+    color: var(--muted);
+    font-weight: 500;
+}

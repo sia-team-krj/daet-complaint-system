@@ -12,7 +12,7 @@
 
     $status = $complaint->statusEnum;
     $statusKey = Str::slug($status->value, '_');
-    $mcCategoryLabels = collect(\App\Services\DepartmentRouter::getCategoryOptions())->flatten()->pluck('label', 'value');
+    $mcCategoryLabels = collect(\App\Services\DepartmentRouter::categoryLabels());
     $mcCategoryLabel = $mcCategoryLabels->get($complaint->category, ucwords(str_replace('_', ' ', (string) $complaint->category)));
     $closed = $statusKey === 'closed';
     $step = match ($statusKey) {

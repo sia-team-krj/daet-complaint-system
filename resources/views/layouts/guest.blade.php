@@ -17,7 +17,7 @@
            as body means a decorative element that reaches past the viewport can
            never expose the browser's white canvas behind it. */
         html {
-            background-color: #142D4F;
+            background-color: var(--navy-800);
         }
         @if(request()->routeIs('transparency.complaints'))
         body {
@@ -25,7 +25,7 @@
         }
         @else
         body {
-            background-color: #142D4F;
+            background-color: var(--navy-800);
         }
         @endif
     </style>

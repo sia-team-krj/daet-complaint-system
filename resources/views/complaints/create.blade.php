@@ -191,6 +191,20 @@
                                     <p class="fc-counter" id="description-counter" aria-live="polite"></p>
                                     @error('description') <div class="fc-error">{{ $message }}</div> @enderror
                                 </div>
+                                {{-- Shown only for the categories that name somebody. The name is
+                                     stored in a field that never leaves the office. --}}
+                                <div class="fc-field" id="named-party-field" hidden>
+                                    <label for="named_party"><span id="named-party-label">{{ __('complaint_create.fields.named_party_person') }}</span> <span aria-hidden="true">*</span></label>
+                                    <p class="fc-field__hint" id="named-party-hint">{{ __('complaint_create.fields.named_party_hint_person') }}</p>
+                                    <input id="named_party" name="named_party" class="fc-input" type="text" maxlength="150" autocomplete="off" value="{{ old('named_party') }}">
+                                    @error('named_party') <div class="fc-error">{{ $message }}</div> @enderror
+                                    <div class="fc-field" id="named-party-position-field" hidden>
+                                        <label for="named_party_position">{{ __('complaint_create.fields.named_party_position') }}</label>
+                                        <p class="fc-field__hint">{{ __('complaint_create.fields.named_party_position_hint') }}</p>
+                                        <input id="named_party_position" name="named_party_position" class="fc-input" type="text" maxlength="150" autocomplete="off" value="{{ old('named_party_position') }}">
+                                        @error('named_party_position') <div class="fc-error">{{ $message }}</div> @enderror
+                                    </div>
+                                </div>
                                 <button type="button" class="fc-toggle" id="priority-toggle" aria-expanded="false" aria-controls="priority-notice">{{ __('complaint_create.wizard.priority_toggle') }}</button>
                                 <div class="fc-notice" id="priority-notice">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7l8 4 8-4-8-4Z"></path><path d="M4 12h16"></path><path d="M4 17h16"></path><path d="m4 7 8 4 8-4"></path></svg>
@@ -368,6 +382,24 @@
                                     </label>
                                 </fieldset>
 
+                                {{-- For the categories that name somebody, the publication choice is
+                                     the office's to make, not the resident's. The reason is shown
+                                     instead of the second option. --}}
+                                <div class="fc-notice" id="privacy-visibility-notice" hidden>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    <span><strong>{{ __('complaint_create.visibility.gated_title') }}</strong> {{ __('complaint_create.visibility.gated_body') }}</span>
+                                </div>
+
+                                {{-- Categories that name somebody: the resident must
+                                     acknowledge the publication gate before submitting.
+                                     JS shows the box only for those categories; the
+                                     server enforces it too. --}}
+                                <div class="fc-terms" id="gated-acknowledgment" hidden>
+                                    <input type="checkbox" name="privacy_ack" id="privacy-ack" value="1" @checked(old('privacy_ack'))>
+                                    <label for="privacy-ack">{{ __('complaint_create.visibility.gated_ack') }}</label>
+                                    @error('privacy_ack') <div class="fc-error">{{ $message }}</div> @enderror
+                                </div>
+
                                 @error('visibility') <div class="fc-error">{{ $message }}</div> @enderror
 
                                 <button type="button" class="fc-toggle" id="visibility-why-toggle" aria-expanded="false" aria-controls="visibility-footnote">{{ __('complaint_create.wizard.why_toggle') }}</button>
@@ -478,6 +510,7 @@
         JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT,
     ) !!}</script>
     <script id="intake-policy-data" type="application/json">{!! json_encode($intakePoliciesByCategory ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+    <script id="privacy-policy-data" type="application/json">{!! json_encode($privacyPoliciesByCategory ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script id="complaint-create-i18n" type="application/json">{!! json_encode([
         'steps' => [
             'group' => __('complaint_create.steps.group'),
@@ -507,6 +540,10 @@
             'where_landmark' => __('complaint_create.hints.where_landmark'),
             'review' => __('complaint_create.hints.review'),
         ],
+        'namedPartyPerson' => __('complaint_create.fields.named_party_person'),
+        'namedPartyBusiness' => __('complaint_create.fields.named_party_business'),
+        'namedPartyPersonHint' => __('complaint_create.fields.named_party_hint_person'),
+        'namedPartyBusinessHint' => __('complaint_create.fields.named_party_hint_business'),
         'map' => [
             'outside' => __('complaint_create.map.outside'),
             'previousOutside' => __('complaint_create.map.previous_outside'),
@@ -558,6 +595,7 @@
                 const submitButton = document.getElementById('submit-btn');
                 const categoryDataElement = document.getElementById('category-department-data');
                 const intakePolicyDataElement = document.getElementById('intake-policy-data');
+                const privacyPolicyDataElement = document.getElementById('privacy-policy-data');
                 const i18nElement = document.getElementById('complaint-create-i18n');
 
                 const latitudeInput = document.getElementById('latitude');
@@ -788,6 +826,85 @@
                 const intakePolicyForCategory = (value) => intakePoliciesByCategory[value] || intakePoliciesByCategory['others'] || { mode: 'physical_required', photos_required: true, photos_allowed: true, barangay_required: true, address_text_required: false, show_photos_step: true, show_location_steps: true };
                 const currentIntakePolicy = () => intakePolicyForCategory(categorySelect?.value || '');
 
+                // ── Privacy policy: the categories that name somebody ──
+                let privacyPoliciesByCategory = {};
+                try {
+                    privacyPoliciesByCategory = JSON.parse(privacyPolicyDataElement?.textContent || '{}');
+                } catch (error) {
+                    privacyPoliciesByCategory = {};
+                }
+
+                const privacyPolicyForCategory = (value) => privacyPoliciesByCategory[value] || null;
+                const currentPrivacyPolicy = () => privacyPolicyForCategory(categorySelect?.value || '');
+
+                /**
+                 * Apply the privacy policy of the chosen category.
+                 *
+                 * For a category that names somebody, the form asks for the name
+                 * of the party and takes the publication choice away: the report
+                 * is filed private, and whether it ever reaches the public
+                 * register is decided by the office and the Mayor's office.
+                 */
+                const applyPrivacyPolicy = () => {
+                    const policy = currentPrivacyPolicy();
+                    const gated = Boolean(policy);
+
+                    const namedPartyField = document.getElementById('named-party-field');
+                    const namedPartyLabel = document.getElementById('named-party-label');
+                    const namedPartyHint = document.getElementById('named-party-hint');
+                    const namedPartyInput = document.getElementById('named_party');
+                    const positionField = document.getElementById('named-party-position-field');
+                    const positionInput = document.getElementById('named_party_position');
+                    const privacyNotice = document.getElementById('privacy-visibility-notice');
+
+                    if (namedPartyField) namedPartyField.hidden = !gated;
+                    if (positionField) positionField.hidden = !(gated && policy.named_party_position);
+
+                    if (gated) {
+                        const isBusiness = policy.named_party === 'business';
+                        if (namedPartyLabel) namedPartyLabel.textContent = isBusiness
+                            ? (i18n.namedPartyBusiness || 'Name of the business concerned')
+                            : (i18n.namedPartyPerson || 'Name of the person concerned');
+                        if (namedPartyHint) namedPartyHint.textContent = isBusiness
+                            ? (i18n.namedPartyBusinessHint || '')
+                            : (i18n.namedPartyPersonHint || '');
+                    }
+
+                    if (namedPartyInput) {
+                        if (gated) namedPartyInput.setAttribute('required', 'required');
+                        else namedPartyInput.removeAttribute('required');
+                    }
+                    if (positionInput) {
+                        if (gated && policy.named_party_position) positionInput.setAttribute('required', 'required');
+                        else positionInput.removeAttribute('required');
+                    }
+
+                    if (privacyNotice) privacyNotice.hidden = !gated;
+
+                    const ack = document.getElementById('gated-acknowledgment');
+                    const ackInput = document.getElementById('privacy-ack');
+
+                    if (ack) ack.hidden = !gated;
+                    if (ackInput) {
+                        if (gated) ackInput.setAttribute('required', 'required');
+                        else ackInput.removeAttribute('required');
+                    }
+
+                    if (gated) {
+                        const publicOption = document.querySelector('input[name="visibility"][value="public"]');
+                        const privateOption = document.querySelector('input[name="visibility"][value="private"]');
+                        const publicLabel = publicOption?.closest('.visibility-option');
+                        if (publicOption) publicOption.disabled = true;
+                        if (publicLabel) publicLabel.hidden = true;
+                        if (privateOption) privateOption.checked = true;
+                    } else {
+                        const publicOption = document.querySelector('input[name="visibility"][value="public"]');
+                        const publicLabel = publicOption?.closest('.visibility-option');
+                        if (publicOption) publicOption.disabled = false;
+                        if (publicLabel) publicLabel.hidden = false;
+                    }
+                };
+
                 // ── Tile data: read from DOM so server-rendered panels are truth ──
                 const groupTiles = () => Array.from(document.querySelectorAll('.tile--group'));
                 const leafTiles = () => Array.from(document.querySelectorAll('.tile--leaf'));
@@ -839,8 +956,23 @@
                         case 'describe': {
                             const title = document.getElementById('title')?.value?.trim() || '';
                             const desc = document.getElementById('description')?.value?.trim() || '';
-                            const valid = title.length > 0 && desc.length >= 20;
-                            return { valid, hint: i18n.hints.describe, focus: () => (title.length === 0 ? document.getElementById('title') : document.getElementById('description'))?.focus() };
+                            let valid = title.length > 0 && desc.length >= 20;
+                            let focusEl = title.length === 0 ? document.getElementById('title') : document.getElementById('description');
+                            const privacy = currentPrivacyPolicy();
+                            if (valid && privacy) {
+                                const namedParty = document.getElementById('named_party')?.value?.trim() || '';
+                                if (!namedParty) {
+                                    valid = false;
+                                    focusEl = document.getElementById('named_party');
+                                } else if (privacy.named_party_position) {
+                                    const position = document.getElementById('named_party_position')?.value?.trim() || '';
+                                    if (!position) {
+                                        valid = false;
+                                        focusEl = document.getElementById('named_party_position');
+                                    }
+                                }
+                            }
+                            return { valid, hint: i18n.hints.describe, focus: () => focusEl?.focus() };
                         }
                         case 'photos': {
                             const policy = currentIntakePolicy();
@@ -858,8 +990,14 @@
                         }
                         case 'pin':
                             return { valid: true, hint: '' };
-                        case 'visibility':
+                        case 'visibility': {
+                            if (currentPrivacyPolicy()) {
+                                const ack = document.getElementById('privacy-ack');
+                                const ok = Boolean(ack?.checked);
+                                return { valid: ok, hint: i18n.hints.visibility || i18n.hints.review, focus: () => ack?.focus() };
+                            }
                             return { valid: true, hint: '' };
+                        }
                         case 'review': {
                             const ok = Boolean(document.getElementById('terms')?.checked);
                             return { valid: ok, hint: i18n.hints.review, focus: () => document.getElementById('terms')?.focus() };
@@ -1628,6 +1766,10 @@
                     const locationEdit = document.querySelector('button[data-edit-step="where"]');
                     if (locationEdit) locationEdit.hidden = !policy.show_location_steps;
 
+                    // The privacy policy of the chosen category: the name of the
+                    // party, and the publication choice that goes with it.
+                    applyPrivacyPolicy();
+
                     if (!wizardOn) {
                         document.querySelectorAll('[data-wizard-step]').forEach((el) => {
                             const key = el.getAttribute('data-wizard-step');
@@ -2124,11 +2266,11 @@
             window.__FILING_ERRORS__ = {
                 group: @json($errors->has('category') && !old('category')),
                 category: @json($errors->has('category') && (bool) old('category')),
-                describe: @json($errors->has('title') || $errors->has('description')),
+                describe: @json($errors->has('title') || $errors->has('description') || $errors->has('named_party') || $errors->has('named_party_position')),
                 photos: @json($errors->has('images') || $errors->has('camera_photo') || $errors->has('image')),
                 where: @json($errors->has('barangay') || $errors->has('address_text')),
                 pin: @json($errors->has('latitude') || $errors->has('longitude') || $errors->has('location_choice')),
-                visibility: @json($errors->has('visibility')),
+                visibility: @json($errors->has('visibility') || $errors->has('privacy_ack')),
                 review: @json($errors->has('terms')),
             };
             window.__FILING_HAS_ERRORS__ = @json($errors->any());

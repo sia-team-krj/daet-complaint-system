@@ -98,9 +98,11 @@
                             <div class="admin-department-list-actions">
                                 @if($department->is_active)
                                     <a href="{{ route('admin.complaints.index', ['department' => $department->id]) }}" class="admin-button admin-button--compact admin-button--secondary">View queue</a>
+                                    <a href="{{ route('admin.audit.index', ['department_id' => $department->id]) }}" class="admin-button admin-button--compact admin-button--secondary">{{ __('staff.activity.department_title') }}</a>
                                     <a href="{{ route('admin.invitations.index') }}" class="admin-button admin-button--compact admin-button--secondary">Invite staff</a>
                                 @else
                                     <a href="{{ route('admin.complaints.index', ['department' => $department->id]) }}" class="admin-button admin-button--compact admin-button--secondary">View history</a>
+                                    <a href="{{ route('admin.audit.index', ['department_id' => $department->id]) }}" class="admin-button admin-button--compact admin-button--secondary">{{ __('staff.activity.department_title') }}</a>
                                 @endif
 
 

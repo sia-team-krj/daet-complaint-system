@@ -123,10 +123,9 @@
         ['--heat-4', '#dc2626', 'high'],
     ];
     $deptSwatches = [
-        ['ENG', '#B45309', 'rgba(180,83,9,.16)'], ['HLTH', '#0F766E', 'rgba(15,118,110,.16)'],
-        ['GSO', '#475569', 'rgba(71,85,105,.16)'], ['MPDO', '#1D4ED8', 'rgba(29,78,216,.16)'],
-        ['WST', '#15803D', 'rgba(21,128,61,.16)'], ['SWDO', '#7C3AED', 'rgba(124,58,237,.16)'],
-        ['BPLO', '#0E7490', 'rgba(14,116,144,.16)'], ['OM', '#A16207', 'rgba(161,98,7,.16)'],
+        ['ENG', '#B45309', 'rgba(180,83,9,.16)'], ['HRMO', '#1D4ED8', 'rgba(29,78,216,.16)'],
+        ['MENRO', '#15803D', 'rgba(21,128,61,.16)'], ['BPLO', '#0E7490', 'rgba(14,116,144,.16)'],
+        ['OM', '#A16207', 'rgba(161,98,7,.16)'],
         ['fallback', '#475569', 'rgba(71,85,105,.16)'],
     ];
 @endphp
@@ -311,7 +310,7 @@
                 <div class="tr-selects" style="max-width: 520px;">
                     <div class="tr-select">
                         <select id="ds-department" aria-label="Department">
-                            <option>All departments</option><option>Engineering Office</option><option>Office of the Mayor</option>
+                            <option>All departments</option><option>Engineering Office</option><option>Mayor's Office</option>
                         </select>
                         <svg class="tr-select__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
@@ -391,11 +390,8 @@
                 <h3 class="ds-h3">Department badges</h3>
                 <div class="ds-kbd-row">
                     <span class="dept-badge" data-dept="ENG">ENG</span>
-                    <span class="dept-badge" data-dept="HLTH">HLTH</span>
-                    <span class="dept-badge" data-dept="GSO">GSO</span>
-                    <span class="dept-badge" data-dept="MPDO">MPDO</span>
-                    <span class="dept-badge" data-dept="WST">WST</span>
-                    <span class="dept-badge" data-dept="SWDO">SWDO</span>
+                    <span class="dept-badge" data-dept="HRMO">HRMO</span>
+                    <span class="dept-badge" data-dept="MENRO">MENRO</span>
                     <span class="dept-badge" data-dept="BPLO">BPLO</span>
                     <span class="dept-badge" data-dept="OM">OM</span>
                     <span class="dept-badge" data-dept="UNKNOWN-XX">UNKNOWN</span>
@@ -522,13 +518,13 @@
                                 <span class="admin-audit-browser__context-count">18</span>
                             </a>
                             <a href="#ds-audit-browser" class="admin-audit-browser__context">
-                                <span class="dept-badge" data-dept="GSO">GSO</span>
-                                <span class="admin-audit-browser__context-name">General Services Office</span>
+                                <span class="dept-badge" data-dept="MENRO">MENRO</span>
+                                <span class="admin-audit-browser__context-name">Municipal Environment and Natural Resource Office</span>
                                 <span class="admin-audit-browser__context-count">14</span>
                             </a>
                             <a href="#ds-audit-browser" class="admin-audit-browser__context">
-                                <span class="dept-badge" data-dept="WST">WST</span>
-                                <span class="admin-audit-browser__context-name">Waste Management Office</span>
+                                <span class="dept-badge" data-dept="HRMO">HRMO</span>
+                                <span class="admin-audit-browser__context-name">Human Resource Management Office</span>
                                 <span class="admin-audit-browser__context-count">6</span>
                             </a>
 
@@ -692,7 +688,7 @@
                 <span style="min-width:0;"><span style="display:block; font-size:10px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:var(--status-progress-text);">WAITING ON YOU</span><strong style="display:block; font-size:20px; font-weight:700; color:var(--navy-900); margin-top:2px;">The department needs more information</strong></span>
             </div>
             <p style="margin:6px 0 14px; font-size:13.5px; line-height:1.55; color:var(--navy-900);">The office reviewing this complaint needs more from you before it can proceed. Answer the question below — photos help confirm the spot.</p>
-            <blockquote style="margin:0 0 16px; padding:16px 18px; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm);"><p style="margin:0 0 6px; font-size:10px; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--status-progress-text);">Asked by GSO · Nov 9, 2026 10:15 AM</p><p style="margin:0; font-size:14px; line-height:1.65; color:var(--navy-900);">The streetlight photo is too dark to read the pole number. Please send a closer shot of the pole.</p></blockquote>
+            <blockquote style="margin:0 0 16px; padding:16px 18px; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm);"><p style="margin:0 0 6px; font-size:10px; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; color:var(--status-progress-text);">Asked by MENRO · Nov 9, 2026 10:15 AM</p><p style="margin:0; font-size:14px; line-height:1.65; color:var(--navy-900);">The streetlight photo is too dark to read the pole number. Please send a closer shot of the pole.</p></blockquote>
             <p style="margin:0; font-size:12px; color:var(--status-progress-text); font-weight:700;">→ Your reply textarea + optional photos + gold “Send to the department”</p>
         </div>
     </section>
@@ -804,6 +800,385 @@
             <code>resources/views/components/moderation-panel.blade.php</code> and is shared by
             staff and admin. The internal note is a <code>.staff-field</code> inside the official
             response form, never a separate form.
+        </p>
+    </section>
+
+    {{-- ═══ STAFF LOCATION CARD (§5.42) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-location-card">
+        <h2 class="ds-h2" id="ds-location-card">Staff location card &amp; directions — §5.42</h2>
+        <p class="ds-note">
+            Static swatch: the location card on a staff ticket. The map shows the place; the
+            footer carries the one action that hands the pin to Google Maps as the destination,
+            starting from the device's current location. The exact coordinate pair is never
+            printed — it lives only in the map's data attributes and the directions href.
+        </p>
+
+        <div class="tr-card location-card" style="max-width: 620px; overflow: hidden; padding: 0; border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-card);">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line-soft);">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 6px; background: var(--navy-50); color: var(--navy-700);" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--navy-900);">Complaint location</h3>
+            </div>
+            <div role="region" aria-label="Map showing the complaint's pinned location" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 280px; background: var(--navy-50); color: var(--muted); font-size: 13px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Leaflet map (280px) — static demo
+            </div>
+            <div class="location-card__footer">
+                <span class="location-card__meta">Barangay: <strong>Barangay I (Hilahod)</strong></span>
+                <a class="tr-button location-card__directions" href="https://www.google.com/maps/dir/?api=1&amp;destination=14.112800,122.955500" target="_blank" rel="noopener noreferrer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                    <span>Get directions</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="tr-card location-card" style="max-width: 620px; margin-top: 16px; overflow: hidden; padding: 0; border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-card);">
+            <div class="location-card__empty">
+                <span class="location-card__empty-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                <strong>No exact pin on this report</strong>
+                <p>The resident did not drop a pin and this category does not require one. There is no destination to hand to Google Maps.</p>
+            </div>
+            <div class="location-card__footer">
+                <span class="location-card__meta">Barangay: <strong>Barangay IV</strong></span>
+            </div>
+        </div>
+
+        <p class="ds-note" style="margin-top: 12px;">
+            Markup contract: <code>.location-card</code> · <code>.map-container</code>
+            (<code>data-latitude</code> · <code>data-longitude</code> ·
+            <code>data-map-unavailable</code>) · <code>.location-card__footer</code> ·
+            <code>.location-card__meta</code> · <code>.location-card__directions</code> ·
+            <code>.location-card__empty</code>. States: pin present → map + directions; no
+            pin → the card still renders with the empty state and no action; map library
+            unavailable → the map says so and directions stays usable; no barangay → the
+            footer shows only the action.
+        </p>
+    </section>
+
+    {{-- ═══ DATE FIELD (§5.44) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-date-field">
+        <h2 class="ds-h2" id="ds-date-field">Date field — §5.44</h2>
+        <p class="ds-note">
+            The field an office fills in when it says when it expects to carry on with a
+            complaint. The visible field is a text input masked to dd/mm/yyyy — never the
+            browser's locale, which would show 12/15/2026 to one office and 15/12/2026 to
+            another — and the calendar beside it opens the OS picker, which on a phone is the
+            wheel picker the LGU already knows. A date that does not exist is refused rather
+            than rolled over.
+        </p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; max-width: 760px;">
+            <div class="moderation-panel moderation-panel--light" style="flex: 1 1 320px; max-width: 420px;">
+                <div class="moderation-panel__header">
+                    <h3 class="moderation-panel__title">Pause the work</h3>
+                    <p class="moderation-panel__lede">Some complaints cannot be finished today for reasons that are not the office's doing.</p>
+                </div>
+
+                <x-date-field
+                    name="ds-date-field-demo"
+                    id="ds-date-field-demo"
+                    label="Expected to carry on by"
+                    value="2026-12-15"
+                    hint="The resident sees this date, so they know when to expect an update. Leave it empty if the office cannot say yet."
+                />
+
+                <button type="button" class="moderation-panel__submit">Put the work on hold</button>
+            </div>
+
+            <div class="moderation-panel moderation-panel--light" style="flex: 1 1 260px; max-width: 320px;">
+                <div class="moderation-panel__header">
+                    <h3 class="moderation-panel__title">Empty, and not yet a date</h3>
+                    <p class="moderation-panel__lede">The field before anything is typed, and what a date that does not exist looks like.</p>
+                </div>
+
+                <x-date-field
+                    name="ds-date-field-empty"
+                    id="ds-date-field-empty"
+                    label="Expected to carry on by"
+                    hint="Leave it empty if the office cannot say yet."
+                />
+
+                <div class="moderation-field date-field date-field--invalid" style="margin-top: 14px;">
+                    <label for="ds-date-field-invalid">Expected to carry on by</label>
+                    <div class="date-field__control">
+                        <input type="text" id="ds-date-field-invalid" class="date-field__text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" maxlength="10" value="31/02/2026" aria-invalid="true" aria-describedby="ds-date-field-invalid-hint">
+                        <input type="date" name="ds-date-field-invalid-native" value="" class="date-field__native" tabindex="-1" aria-hidden="true">
+                        <button type="button" class="date-field__button" aria-label="Choose a date">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        </button>
+                        <button type="button" class="date-field__clear" aria-label="Clear the date">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <p class="moderation-panel__hint" id="ds-date-field-invalid-hint">The resident sees this date, so they know when to expect an update.</p>
+                    <p class="date-field__error">That is not a date. Use dd/mm/yyyy.</p>
+                </div>
+            </div>
+        </div>
+
+        <p class="ds-note" style="margin-top: 12px;">
+            Markup contract: <code>.date-field</code> · <code>.date-field__control</code> ·
+            <code>.date-field__text</code> · <code>.date-field__native</code> ·
+            <code>.date-field__button</code> · <code>.date-field__clear</code> ·
+            <code>.date-field__optional</code> · <code>.date-field__error</code>, with
+            <code>data-date-field</code> on the wrapper, <code>data-date-field-display</code> on the
+            visible input, <code>data-date-field-native</code> on the native one (this is the
+            field the form posts), <code>data-date-field-open</code> and
+            <code>data-date-field-clear</code> on the buttons. The visible input is a plain
+            <code>input[type="text"]</code> on purpose, so it inherits whatever the surface
+            gives a text field. Tokens: <code>--error-bg</code>, <code>--error-text</code>,
+            <code>--status-rejected-dot</code> — no new colours.
+        </p>
+    </section>
+
+    {{-- ═══ REASON CHIPS & LABEL CHIPS (§5.45) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-reason-chips">
+        <h2 class="ds-h2" id="ds-reason-chips">Reason chips &amp; label chips — §5.45</h2>
+        <p class="ds-note">
+            The controls the hold panel is built from. Seven short reasons do not belong in a
+            dropdown on a phone: the chips put every one of them on screen, so choosing is one tap
+            and the office can see that "another reason" exists. The label chip says where a piece
+            of text goes, which two same-looking textareas otherwise do not.
+        </p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+            <div class="moderation-panel moderation-panel--light" style="flex: 1 1 320px; max-width: 420px;">
+                <div class="moderation-panel__header">
+                    <h3 class="moderation-panel__title">Pause the work</h3>
+                    <p class="moderation-panel__lede">Some complaints cannot be finished today for reasons that are not the office's doing.</p>
+                </div>
+
+                <div class="moderation-field">
+                    <span class="moderation-field__label">Why is the work on hold?</span>
+                    <fieldset class="reason-chips">
+                        <legend class="sr-only">Why is the work on hold?</legend>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="funds" data-reason-chip><span class="reason-chip__label">Waiting on funds</span></label>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="materials" data-reason-chip checked><span class="reason-chip__label">Waiting on materials</span></label>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="procurement" data-reason-chip><span class="reason-chip__label">Waiting on procurement</span></label>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="budget" data-reason-chip><span class="reason-chip__label">Waiting on a budget decision</span></label>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="office" data-reason-chip><span class="reason-chip__label">Waiting on another office</span></label>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="weather" data-reason-chip><span class="reason-chip__label">Waiting on the weather</span></label>
+                        <label class="reason-chip"><input type="radio" name="ds-reason" value="other" data-reason-chip><span class="reason-chip__label">Another reason</span></label>
+                    </fieldset>
+                    <p class="moderation-panel__hint">The reason is recorded for the administrator. The resident reads your explanation below.</p>
+                </div>
+
+                <div class="moderation-field">
+                    <label for="ds-label-chip-note">
+                        What the resident will read
+                        <span class="label-chip label-chip--public">Resident sees this</span>
+                    </label>
+                    <textarea id="ds-label-chip-note" rows="3" placeholder="The asphalt for this stretch of road is not in stock; the schedule is for next quarter."></textarea>
+                    <p class="moderation-panel__hint">The resident reads this, and so does the public register. Keep out of it anything that identifies a person.</p>
+                </div>
+
+                <div class="moderation-field">
+                    <label for="ds-label-chip-internal">
+                        Internal note
+                        <span class="label-chip label-chip--internal">Office only</span>
+                    </label>
+                    <textarea id="ds-label-chip-internal" rows="2" placeholder="Only the office sees this."></textarea>
+                </div>
+            </div>
+
+            <div style="flex: 1 1 220px; max-width: 280px;">
+                <h3 class="ds-h3">Label chips</h3>
+                <p class="ds-note" style="margin-bottom: 10px;">On a label, where the eye already is.</p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <span class="label-chip label-chip--public">Resident sees this</span>
+                    <span class="label-chip label-chip--internal">Office only</span>
+                    <span class="label-chip label-chip--internal">Optional</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="ds-note" style="margin-top: 12px;">
+            Markup contract: <code>.reason-chips</code> (a fieldset of radios, each in a
+            <code>.reason-chip</code> label) · <code>.reason-chip__label</code> ·
+            <code>.label-chip</code> · <code>.label-chip--public</code> ·
+            <code>.label-chip--internal</code> · <code>.moderation-field__label</code> for a
+            label that points at nothing. The radios stay in the form and in the tab order; only
+            their box is hidden, and the chip carries the focus ring.
+        </p>
+    </section>
+
+    {{-- ═══ DEPARTMENT ANALYTICS (§5.43) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-analytics">
+        <h2 class="ds-h2" id="ds-analytics">Department analytics — §5.43</h2>
+        <p class="ds-note">
+            Static swatch: the shared vocabulary behind the staff department report and the
+            administrator comparison. The period bar, stat strip, delta, trend, donut, bars,
+            tables, activity feed and fairness note are the same components on every surface.
+            Direction in a delta is context — the arrow never turns red or green. The
+            comparison is alphabetical and never ranked; the fairness note sits above the
+            table, not in a tooltip.
+        </p>
+
+        <div class="an-page" data-an-preview style="max-width: 940px; padding: 0;">
+            <section class="an-period" aria-labelledby="ds-an-period-label">
+                <div class="an-period__top">
+                    <div>
+                        <h3 class="an-period__title" id="ds-an-period-label">{{ __('analytics.period.label') }}</h3>
+                        <p class="an-period__range">
+                            Nov 1, 2026 to Nov 30, 2026
+                            <span class="an-period__previous">Compared with Oct 1, 2026 to Oct 31, 2026</span>
+                        </p>
+                    </div>
+                    <nav class="an-period__nav" aria-label="{{ __('analytics.period.label') }}">
+                        <span class="an-period__chip is-active" aria-current="true">{{ __('analytics.period.month') }}</span>
+                        <span class="an-period__chip">{{ __('analytics.period.7d') }}</span>
+                        <span class="an-period__chip">{{ __('analytics.period.30d') }}</span>
+                        <span class="an-period__chip">{{ __('analytics.period.90d') }}</span>
+                        <span class="an-period__chip">{{ __('analytics.period.ytd') }}</span>
+                    </nav>
+                </div>
+                <div class="an-period__custom">
+                    <label class="an-period__field">
+                        <span>{{ __('analytics.period.from') }}</span>
+                        <input type="date" value="2026-11-01">
+                    </label>
+                    <label class="an-period__field">
+                        <span>{{ __('analytics.period.to') }}</span>
+                        <input type="date" value="2026-11-30">
+                    </label>
+                    <button type="button" class="an-button an-button--secondary an-button--compact">{{ __('analytics.period.apply') }}</button>
+                </div>
+            </section>
+
+            <div class="an-stats">
+                <article class="an-stat">
+                    <span class="an-stat__label">{{ __('analytics.stats.filed') }}</span>
+                    <strong class="an-stat__value">128</strong>
+                    <span class="an-stat__meta">{{ __('analytics.stats.filed_meta') }}</span>
+                    <span class="an-delta an-delta--up">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                        <span>+12%</span>
+                        <span class="an-delta__label">{{ __('analytics.delta.label') }}</span>
+                    </span>
+                </article>
+                <article class="an-stat">
+                    <span class="an-stat__label">{{ __('analytics.stats.resolved') }}</span>
+                    <strong class="an-stat__value">94</strong>
+                    <span class="an-stat__meta">{{ __('analytics.stats.resolved_meta') }}</span>
+                    <span class="an-delta an-delta--down">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        <span>−4%</span>
+                        <span class="an-delta__label">{{ __('analytics.delta.label') }}</span>
+                    </span>
+                </article>
+                <article class="an-stat">
+                    <span class="an-stat__label">{{ __('analytics.stats.open') }}</span>
+                    <strong class="an-stat__value">21</strong>
+                    <span class="an-stat__meta">{{ __('analytics.stats.open_meta', ['assigned' => '17', 'unassigned' => '4']) }}</span>
+                </article>
+                <article class="an-stat an-stat--attention">
+                    <span class="an-stat__label">{{ __('analytics.stats.overdue') }}</span>
+                    <strong class="an-stat__value">3</strong>
+                    <span class="an-stat__meta">{{ __('analytics.stats.overdue_meta') }}</span>
+                </article>
+                <article class="an-stat">
+                    <span class="an-stat__label">{{ __('analytics.stats.avg_days') }}</span>
+                    <strong class="an-stat__value">6.4 {{ __('analytics.days_short') }}</strong>
+                    <span class="an-stat__meta">{{ __('analytics.stats.avg_meta') }}</span>
+                    <span class="an-delta an-delta--down">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        <span>−1.2 {{ __('analytics.days_short') }}</span>
+                        <span class="an-delta__label">{{ __('analytics.delta.label') }}</span>
+                    </span>
+                </article>
+                <article class="an-stat an-stat--calm">
+                    <span class="an-stat__label">{{ __('analytics.stats.on_time') }}</span>
+                    <strong class="an-stat__value">82%</strong>
+                    <span class="an-stat__meta">{{ __('analytics.stats.on_time_meta', ['on_time' => '74', 'base' => '90']) }}</span>
+                </article>
+            </div>
+
+            <div class="an-grid an-grid--trend">
+                <section class="an-card an-card--wide" aria-labelledby="ds-an-trend">
+                    <div class="an-card__head">
+                        <div>
+                            <h3 class="an-card__title" id="ds-an-trend">{{ __('analytics.sections.trend') }}</h3>
+                            <p class="an-card__sub">{{ __('analytics.sections.trend_sub', ['granularity' => __('analytics.granularity.weekly')]) }}</p>
+                        </div>
+                    </div>
+                    @include('analytics.partials.trend-chart', ['trend' => [
+                        'granularity' => 'weekly',
+                        'max' => 32,
+                        'rows' => [
+                            ['label' => 'Nov 1', 'filed' => 18, 'resolved' => 12],
+                            ['label' => 'Nov 8', 'filed' => 24, 'resolved' => 19],
+                            ['label' => 'Nov 15', 'filed' => 31, 'resolved' => 22],
+                            ['label' => 'Nov 22', 'filed' => 27, 'resolved' => 25],
+                            ['label' => 'Nov 29', 'filed' => 16, 'resolved' => 21],
+                        ],
+                    ]])
+                </section>
+
+                <section class="an-card" aria-labelledby="ds-an-status">
+                    <div class="an-card__head">
+                        <div>
+                            <h3 class="an-card__title" id="ds-an-status">{{ __('analytics.sections.status_mix') }}</h3>
+                            <p class="an-card__sub">{{ __('analytics.sections.status_mix_sub') }}</p>
+                        </div>
+                    </div>
+                    @include('analytics.partials.status-mix', ['mix' => [
+                        'total' => 128,
+                        'segments' => [
+                            ['key' => 'submitted', 'label' => __('statuses.complaint_status.submitted'), 'count' => 8, 'percent' => 6.3],
+                            ['key' => 'under_review', 'label' => __('statuses.complaint_status.under_review'), 'count' => 14, 'percent' => 10.9],
+                            ['key' => 'in_progress', 'label' => __('statuses.complaint_status.in_progress'), 'count' => 22, 'percent' => 17.2],
+                            ['key' => 'resolved', 'label' => __('statuses.complaint_status.resolved'), 'count' => 58, 'percent' => 45.3],
+                            ['key' => 'rejected', 'label' => __('statuses.complaint_status.rejected'), 'count' => 6, 'percent' => 4.7],
+                            ['key' => 'closed', 'label' => __('statuses.complaint_status.closed'), 'count' => 20, 'percent' => 15.6],
+                        ],
+                    ]])
+                </section>
+            </div>
+
+            <div class="an-grid an-grid--two">
+                <section class="an-card" aria-labelledby="ds-an-categories">
+                    <div class="an-card__head">
+                        <div>
+                            <h3 class="an-card__title" id="ds-an-categories">{{ __('analytics.sections.categories') }}</h3>
+                            <p class="an-card__sub">{{ __('analytics.sections.categories_sub') }}</p>
+                        </div>
+                    </div>
+                    @include('analytics.partials.bars', [
+                        'emptyMessage' => __('analytics.sections.no_reports'),
+                        'items' => [
+                            ['key' => 'road_damage', 'label' => \App\Services\DepartmentRouter::categoryLabels()['road_damage'] ?? 'Road damage', 'count' => 34, 'percent' => 26.6],
+                            ['key' => 'garbage', 'label' => \App\Services\DepartmentRouter::categoryLabels()['garbage'] ?? 'Garbage collection', 'count' => 28, 'percent' => 21.9],
+                            ['key' => 'streetlight', 'label' => \App\Services\DepartmentRouter::categoryLabels()['streetlight'] ?? 'Streetlight', 'count' => 17, 'percent' => 13.3],
+                        ],
+                    ])
+                </section>
+            </div>
+
+            @include('analytics.partials.fairness')
+
+            <p class="an-table-note">{{ __('analytics.sections.staff_breakdown_sub') }}</p>
+        </div>
+
+        <p class="ds-note" style="margin-top: 12px;">
+            Markup contract: <code>.an-page</code> (with <code>[data-analytics]</code> when live)
+            · <code>.an-period</code> · <code>.an-stats</code> / <code>.an-stat</code> ·
+            <code>.an-grid</code> · <code>.an-card</code> · <code>.an-chart</code> ·
+            <code>.an-donut</code> · <code>.an-bars</code> · <code>.an-mini-grid</code> ·
+            <code>.an-table--workload</code> / <code>.an-table--comparison</code> ·
+            <code>.an-feed</code> · <code>.an-fairness</code> ·
+            <code>.an-inspect</code>. The live chart, donut and bars expose values on hover,
+            tap and keyboard focus; the chart uses focusable hit bands and the donut and bars
+            use real buttons. The period bar and content are
+            swapped by <code>resources/js/analytics.js</code> from
+            <code>[data-analytics-period]</code> / <code>[data-analytics-content]</code>; the
+            swatch above uses <code>[data-an-preview]</code> to exercise the same interaction
+            handlers without a live endpoint. Without JavaScript the chips are ordinary links
+            and the custom range is a normal GET — the report still works, it just reloads.
+            Live surfaces: <code>/staff/analytics</code>, <code>/admin/analytics</code> and
+            <code>/admin/analytics/departments/{department}</code>.
         </p>
     </section>
 

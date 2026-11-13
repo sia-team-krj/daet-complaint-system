@@ -67,6 +67,32 @@ class AdminUserManagementTest extends TestCase
             ->assertDontSee($inactive->full_name);
     }
 
+    public function test_the_account_directory_is_paginated_and_uses_the_workspace_pager(): void
+    {
+        foreach (range(1, 7) as $index) {
+            User::factory()->create([
+                'role' => 'citizen',
+                'first_name' => 'Page',
+                'last_name' => str_pad((string) $index, 2, '0', STR_PAD_LEFT),
+            ]);
+        }
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertSee('class="admin-pagination-wrap"', false)
+            ->assertSee('class="admin-pager"', false)
+            ->assertSee('Page 1 of 2 · 5 per page')
+            ->assertSee('Page 01')
+            ->assertDontSee('Page 06');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.users.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee('Page 06')
+            ->assertDontSee('Page 01');
+    }
+
     public function test_non_admin_users_cannot_access_or_mutate_the_user_directory(): void
     {
         $staff = User::factory()->create([

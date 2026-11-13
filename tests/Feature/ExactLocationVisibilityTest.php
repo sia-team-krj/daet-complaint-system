@@ -13,11 +13,11 @@ use Tests\TestCase;
  * Three audiences, three different amounts of location, and the boundaries
  * between them are not negotiable.
  *
- *   - Whoever is dispatched to fix the problem needs the exact position. A
- *     barangay is a division of a small municipality, so the address, the pin
- *     and the coordinates are all of it. Without them the work cannot be done,
- *     and a field worker whose phone has no signal needs digits to type in, not
- *     a marker to look at.
+ *   - Whoever is dispatched needs the position, but the staff page now carries
+ *     it as a map pin and a one-tap directions link rather than a printed
+ *     coordinate pair. The office can still navigate to the report, and a
+ *     screenshot of the ticket no longer hands the exact position to anyone
+ *     who happens to see it.
  *   - The resident needs to see exactly what they filed, so they can recognise
  *     it and object if it is wrong.
  *   - The public gets the barangay and nothing finer. A heat map and a public
@@ -68,29 +68,56 @@ class ExactLocationVisibilityTest extends TestCase
 
     // ── the people doing the work ──────────────────────────────────────
 
-    public function test_staff_see_the_exact_position(): void
+    public function test_staff_get_the_pin_and_a_directions_link_without_a_coordinate_readout(): void
     {
         [$complaint, , $staff] = $this->complaint();
 
         $body = $this->actingAs($staff)
             ->get(route('staff.complaints.show', $complaint))
             ->assertOk()
-            ->assertSee('Complaint Location')
+            ->assertSee('Complaint location')
+            ->assertSee('Get directions')
             ->getContent();
 
-        // Scoped to the coordinate readout, not the whole page. A pin on a map
-        // cannot be typed into a handheld GPS, so the figures have to be there
-        // as readable text — and a `hidden` element is not readable, however
-        // much of it is in the markup.
-        $readout = $this->slice($body, 'complaint-coords');
-
-        $this->assertStringContainsString($this->formatted(self::LAT), $readout);
-        $this->assertStringContainsString($this->formatted(self::LNG), $readout);
-        $this->assertStringNotContainsStringIgnoringCase(
-            'hidden',
-            $readout,
-            'The coordinates are in the markup but hidden from the field worker.',
+        // The pin still reaches the field team: the map is built from the
+        // complaint's own coordinates and the directions link hands them to
+        // Google Maps. What is gone is the printed readout a screenshot could
+        // carry off the page.
+        $this->assertStringContainsString('data-latitude="14.1264"', $body);
+        $this->assertStringContainsString('data-longitude="122.9432"', $body);
+        $this->assertStringContainsString(
+            'google.com/maps/dir/?api=1&amp;destination='
+                .$this->formatted(self::LAT).','.$this->formatted(self::LNG),
+            $body,
         );
+
+        $this->assertStringNotContainsString('GPS:', $body);
+        $this->assertStringNotContainsString(
+            $this->formatted(self::LAT).', '.$this->formatted(self::LNG),
+            $body,
+            'The staff page still prints the complaint coordinates as a readable pair.',
+        );
+    }
+
+    public function test_staff_location_card_stays_when_there_is_no_pin(): void
+    {
+        [$complaint, , $staff] = $this->complaint();
+
+        $complaint->forceFill([
+            'latitude' => null,
+            'longitude' => null,
+        ])->save();
+
+        $body = $this->actingAs($staff)
+            ->get(route('staff.complaints.show', $complaint->fresh()))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString(__('staff.location.title'), $body);
+        $this->assertStringContainsString(__('staff.location.no_pin_title'), $body);
+        $this->assertStringContainsString(__('staff.location.no_pin_body'), $body);
+        $this->assertStringNotContainsString('google.com/maps/dir/', $body);
+        $this->assertStringNotContainsString('Get directions', $body);
     }
 
     public function test_admins_see_the_exact_position(): void

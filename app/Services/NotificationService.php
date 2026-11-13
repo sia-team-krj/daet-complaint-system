@@ -320,6 +320,84 @@ class NotificationService
     }
 
     /**
+     * The office paused the work on a complaint. The resident is told why,
+     * rather than being left to guess at a silence.
+     */
+    public function complaintPutOnHold(Complaint $complaint, ?User $actor = null): ?Notification
+    {
+        $owner = $complaint->user;
+
+        if ($owner === null) {
+            return null;
+        }
+
+        return $this->notifyUser(
+            $owner,
+            Notification::COMPLAINT_PUT_ON_HOLD,
+            "{$complaint->ticket_id} is on hold",
+            $actor,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'hold_reason' => $complaint->hold_reason,
+                'hold_note' => $complaint->holdNote(),
+                'expected_resume_at' => $complaint->hold_expected_resume_at?->toDateString(),
+            ],
+            $complaint,
+        );
+    }
+
+    /**
+     * The office took the hold off and is carrying on with the work.
+     */
+    public function complaintHoldRemoved(Complaint $complaint, ?User $actor = null): ?Notification
+    {
+        $owner = $complaint->user;
+
+        if ($owner === null) {
+            return null;
+        }
+
+        return $this->notifyUser(
+            $owner,
+            Notification::COMPLAINT_HOLD_REMOVED,
+            "{$complaint->ticket_id} is being worked on again",
+            $actor,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'held_minutes' => $complaint->heldMinutes(),
+            ],
+            $complaint,
+        );
+    }
+
+    /**
+     * The work was resolved; the resident has not confirmed it yet.
+     *
+     * The case is not closed until they say so, so they can still say it was
+     * not fixed — but only if they know it is waiting on them.
+     */
+    public function resolutionReminder(Complaint $complaint, ?User $actor = null): ?Notification
+    {
+        $owner = $complaint->user;
+
+        if ($owner === null) {
+            return null;
+        }
+
+        return $this->notifyUser(
+            $owner,
+            Notification::COMPLAINT_RESOLUTION_REMINDER,
+            "{$complaint->ticket_id} was resolved — please confirm it",
+            $actor,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'resolved_at' => $complaint->resolved_at?->toDateString(),
+            ],
+            $complaint,
+        );
+    }
+
+    /**
      * Recipients who are waiting on the resident are not told about status
      * noise; only the owner of a complaint hears about its own progress.
      *

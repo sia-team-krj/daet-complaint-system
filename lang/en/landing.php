@@ -30,12 +30,6 @@ return [
 
     'categories_title' => 'What can you report?',
     'categories_subtitle' => 'Pick what fits best. We send it to the right office.',
-    'tile_road_damage' => 'Road damage',
-    'tile_flooding' => 'Flooding & drainage',
-    'tile_streetlight' => 'Streetlights',
-    'tile_garbage' => 'Garbage & waste',
-    'tile_noise' => 'Noise',
-    'tile_others' => 'Something else',
 
     'process_title' => 'What happens after you file',
     'process_subtitle' => 'Every complaint follows the same 5 steps. You see each one.',

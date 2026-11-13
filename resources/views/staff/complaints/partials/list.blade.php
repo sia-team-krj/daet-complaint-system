@@ -50,7 +50,7 @@
                                 <div class="staff-row__text">
                                     <h3 class="staff-row__title">{{ \Illuminate\Support\Str::limit($complaint->title, 90) }}</h3>
                                     <div class="staff-row__meta">
-                                        <span class="ticket-id" style="font-family: var(--font-mono, monospace); font-weight: 700; color: #10294B;">{{ $complaint->ticket_id }}</span>
+                                        <span class="ticket-id" style="font-family: var(--font-mono, monospace); font-weight: 700; color: var(--navy-800);">{{ $complaint->ticket_id }}</span>
                                         <span aria-hidden="true"> · </span>
                                         <span>{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
                                     </div>
@@ -63,6 +63,13 @@
                                     <span class="status-pill__dot" aria-hidden="true"></span>
                                     {{ $complaint->statusEnum->label() }}
                                 </span>
+
+                                @if($complaint->isOnHold())
+                                    <span class="status-pill hold">
+                                        <span class="status-pill__dot" aria-hidden="true"></span>
+                                        {{ $complaint->holdReasonEnum()?->label() }}
+                                    </span>
+                                @endif
 
                                 @if($complaint->isModerationFlagged())
                                     <span class="status-pill rejected">
@@ -77,7 +84,7 @@
                                 </span>
 
                                 @if($waiting)
-                                    <span class="staff-row__subtext" style="color: #D97706; font-weight: 600;">
+                                    <span class="staff-row__subtext" style="color: var(--gold-500); font-weight: 600;">
                                         Waiting {{ $waitingDays }}d{{ $waiting->isStale() ? ' · overdue' : '' }}
                                     </span>
                                 @endif
@@ -119,8 +126,13 @@
                             <span class="empty-state__icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
                             </span>
-                            <strong>{{ __('staff.empty_title') }}</strong>
-                            <p>{{ __('staff.empty_desc') }}</p>
+                            @if (($scope ?? 'open') === 'finished')
+                                <strong>{{ __('staff.queue_scope.empty_finished_title') }}</strong>
+                                <p>{{ __('staff.queue_scope.empty_finished_body') }}</p>
+                            @else
+                                <strong>{{ __('staff.empty_title') }}</strong>
+                                <p>{{ __('staff.empty_desc') }}</p>
+                            @endif
                         </div>
                     </li>
                 @endforelse

@@ -169,7 +169,7 @@ class ComplaintMapRenderingTest extends TestCase
         $expected = [
             'views/complaints/create.blade.php' => 'You can still submit',
             'views/complaints/show.blade.php' => 'map_unavailable',
-            'views/staff/complaints/show.blade.php' => 'handheld GPS',
+            'views/staff/complaints/show.blade.php' => 'staff.location.map_unavailable',
             'views/pages/transparency/index.blade.php' => 'mapUnavailable',
         ];
 

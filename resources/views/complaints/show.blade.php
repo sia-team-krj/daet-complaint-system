@@ -603,6 +603,9 @@
         <span class="show-status-large {{ $statusEnum->badgeColor() }} fu d4">
           {{ $statusEnum->label() }}
         </span>
+        @if($complaint->isOnHold())
+          <span class="hold-chip">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
+        @endif
         <span class="pcs-visibility pcs-mobile-only pcs-visibility--{{ $complaint->is_public ? 'public' : 'private' }}">
           {{ $complaint->is_public ? __('my_complaints.visibility_public') : __('my_complaints.visibility_private') }}
         </span>
@@ -720,6 +723,20 @@
     <section class="updates-top" aria-labelledby="updates-top-heading">
       <div class="timeline-card" id="pcs-updates">
         <h2 class="pcs-section-title pcs-mobile-only" id="updates-top-heading"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>{{ __('complaint_show.updates.title') }}</h2>
+
+        {{-- The work is paused. The resident is told why, rather than being
+             left to read a silence as neglect. --}}
+        @if($complaint->isOnHold())
+          <div class="hold-notice" role="status">
+            <span class="hold-notice__chip">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
+            <p class="hold-notice__body">
+              {{ $complaint->holdNote() ?? __('complaint_show.hold.no_note') }}
+              @if($complaint->hold_expected_resume_at)
+                <span class="hold-notice__meta">{{ __('complaint_show.hold.expected_on', ['date' => $complaint->hold_expected_resume_at->toFormattedDateString()]) }}</span>
+              @endif
+            </p>
+          </div>
+        @endif
         <div class="timeline-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
           <div class="timeline-title">{{ __('complaint_show.updates.staff_responses') }}</div>
@@ -913,6 +930,15 @@
   </div>
   <h2 class="pcs-section-title pcs-mobile-only"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>{{ __('complaint_show.visibility.title') }}</h2>
 
+  @if ($complaint->isPrivacyGated())
+    {{-- A report that names somebody: the publication decision is the
+         office's and the Mayor's office's, so the resident is told where it
+         stands instead of being given a switch they cannot pull. --}}
+    <p class="visibility-panel__state">
+      <strong>{{ $complaint->publicationStatus()?->label() ?? __('complaint_show.visibility.gated_state') }}</strong>
+      {{ __('complaint_show.visibility.gated_body') }}
+    </p>
+  @else
   <form data-loading-submit method="POST" action="{{ route('complaints.visibility.update', $complaint) }}" class="visibility-panel__actions">
     @csrf
     @method('PUT')
@@ -926,7 +952,7 @@
           : __('complaint_show.visibility.private_state') }}
     </span>
   </form>
-  <details class="pcs-how pcs-mobile-only">
+  @endif  <details class="pcs-how pcs-mobile-only">
     <summary>{{ __('complaint_show.visibility.how_it_works') }}</summary>
     <p class="pcs-how__body">{{ __('complaint_show.visibility.lede') }}</p>
   </details>
@@ -987,7 +1013,13 @@
               </div>
               <div class="detail-field detail-field--visibility">
                 <div class="detail-label">{{ __('complaint_show.visibility.title_legacy') }}</div>
-                <span class="detail-value">{{ $complaint->is_public ? __('complaint_show.details.published') : __('my_complaints.visibility_private') }}</span>
+                <span class="detail-value">
+                  @if ($complaint->isPrivacyGated())
+                    {{ $complaint->publicationStatus()?->label() ?? __('complaint_show.visibility.gated_state') }}
+                  @else
+                    {{ $complaint->is_public ? __('complaint_show.details.published') : __('my_complaints.visibility_private') }}
+                  @endif
+                </span>
               </div>
               <div class="detail-field">
                 <div class="detail-label">{{ __('complaint_show.details.suggested_priority') }}</div>

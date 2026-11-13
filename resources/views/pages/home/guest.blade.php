@@ -289,7 +289,7 @@
   /* ── Category tiles ──────────────────────────────────────────── */
   .lp-tiles {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 12px;
   }
   @media (min-width: 768px) { .lp-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
@@ -704,12 +704,9 @@
 
       @php
         $tiles = [
-            ['category' => 'road_damage', 'label' => __('landing.tile_road_damage')],
-            ['category' => 'flooding', 'label' => __('landing.tile_flooding')],
-            ['category' => 'streetlight', 'label' => __('landing.tile_streetlight')],
-            ['category' => 'garbage', 'label' => __('landing.tile_garbage')],
-            ['category' => 'noise_complaint', 'label' => __('landing.tile_noise')],
-            ['category' => 'others', 'label' => __('landing.tile_others')],
+            ['category' => 'road_damage', 'label' => __('complaint_create.groups.roads.label')],
+            ['category' => 'garbage', 'label' => __('complaint_create.groups.waste.label')],
+            ['category' => 'others', 'label' => __('complaint_create.groups.other.label')],
         ];
         $tileHref = auth()->check() ? route('complaints.create') : route('register');
       @endphp

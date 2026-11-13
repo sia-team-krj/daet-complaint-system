@@ -162,7 +162,7 @@ class ActivityLogTest extends TestCase
 
     public function test_admin_audit_directory_lists_departments_people_and_counts(): void
     {
-        $gso = Department::where('code', 'GSO')->firstOrFail();
+        $menro = Department::where('code', 'MENRO')->firstOrFail();
         $citizen = User::factory()->create(['role' => 'citizen']);
 
         ActivityLog::create([
@@ -202,7 +202,7 @@ class ActivityLogTest extends TestCase
             ->assertSee(__('audit.departments'))
             ->assertSee(__('audit.automated'))
             ->assertSee($this->department->name)
-            ->assertSee($gso->name)
+            ->assertSee($menro->name)
             ->assertSee($this->staff->full_name)
             ->assertSee($citizen->full_name)
             ->assertSee(__('audit.automated_records'));
@@ -242,21 +242,30 @@ class ActivityLogTest extends TestCase
 
         AuditDirectory::flush();
 
-        // The preview never renders the whole group.
-        $preview = $this->actingAs($this->admin)->get(route('admin.audit.index'));
+        $this->actingAs($this->admin)
+            ->get(route('admin.audit.index'))
+            ->assertOk()
+            ->assertSee(__('audit.directory_prompt_title'))
+            ->assertDontSee('people_group=residents', false);
+
+        // Choosing the residents scope renders the same bounded preview as
+        // before the directory became counts-first.
+        $preview = $this->actingAs($this->admin)->get(route('admin.audit.index', [
+            'residents' => 1,
+        ]));
 
         $preview->assertOk()
-            ->assertSee(__('audit.showing_rows', ['shown' => 8, 'total' => 55]))
+            ->assertSee(__('audit.showing_rows', ['shown' => 5, 'total' => 55]))
             ->assertSee(__('audit.see_all', ['count' => 55]))
             ->assertSee('people_group=residents', false);
 
         $this->assertSame(
-            8,
+            5,
             preg_match_all('/class="admin-audit-browser__person[ "]/', $preview->getContent()),
-            'The roster preview must stay bounded at 8 rows per group.',
+            'The roster preview must stay bounded at 5 rows per group.',
         );
 
-        // Asking for the group opens it, 25 people to a page — never a dump.
+        // Asking for the group opens it, five people to a page — never a dump.
         $expanded = $this->actingAs($this->admin)->get(route('admin.audit.index', [
             'people_group' => 'residents',
             'people_page' => 1,
@@ -264,11 +273,11 @@ class ActivityLogTest extends TestCase
 
         $expanded->assertOk()
             ->assertSee(__('audit.collapse'))
-            ->assertSee(__('audit.showing_range', ['from' => 1, 'to' => 25, 'total' => 55]))
-            ->assertSee(__('audit.page_of', ['current' => 1, 'last' => 3]));
+            ->assertSee(__('audit.showing_range', ['from' => 1, 'to' => 5, 'total' => 55]))
+            ->assertSee('Page 1 of 11 · 5 people per page');
 
         $this->assertSame(
-            25,
+            5,
             preg_match_all('/class="admin-audit-browser__person[ "]/', $expanded->getContent()),
             'An expanded group lists one page of people.',
         );
@@ -279,21 +288,22 @@ class ActivityLogTest extends TestCase
         ]));
 
         $second->assertOk()
-            ->assertSee(__('audit.page_of', ['current' => 2, 'last' => 3]))
-            ->assertSee(__('audit.showing_range', ['from' => 26, 'to' => 50, 'total' => 55]));
+            ->assertSee('Page 2 of 11 · 5 people per page')
+            ->assertSee(__('audit.showing_range', ['from' => 6, 'to' => 10, 'total' => 55]));
 
         $this->assertSame(
-            25,
+            5,
             preg_match_all('/class="admin-audit-browser__person[ "]/', $second->getContent()),
             'The second page holds the next slice.',
         );
 
         $last = $this->actingAs($this->admin)->get(route('admin.audit.index', [
             'people_group' => 'residents',
-            'people_page' => 3,
+            'people_page' => 11,
         ]));
 
         $last->assertOk()
+            ->assertSee('Page 11 of 11 · 5 people per page')
             ->assertSee(__('audit.showing_range', ['from' => 51, 'to' => 55, 'total' => 55]));
 
         $this->assertSame(
@@ -450,7 +460,7 @@ class ActivityLogTest extends TestCase
 
     public function test_legacy_combined_department_and_actor_url_filters_both(): void
     {
-        $gso = Department::where('code', 'GSO')->firstOrFail();
+        $menro = Department::where('code', 'MENRO')->firstOrFail();
         $otherStaff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $this->department->id,
@@ -460,7 +470,7 @@ class ActivityLogTest extends TestCase
             'actor_id' => $this->staff->id,
             'actor_name' => $this->staff->full_name,
             'actor_role' => 'staff',
-            'department_id' => $gso->id,
+            'department_id' => $menro->id,
             'action' => 'complaint.reviewed',
             'description' => 'Same actor in another office.',
             'created_at' => now(),
@@ -516,28 +526,49 @@ class ActivityLogTest extends TestCase
                 'actor_role' => $actor->role,
                 'department_id' => $this->department->id,
                 'action' => 'complaint.reviewed',
-                'description' => 'Entry by '.$actor->full_name.'.',
+                'description' => 'Grouped directory entry.',
                 'created_at' => now(),
             ]);
         }
 
-        $html = $this->actingAs($this->admin)
+        // Everyone now shows the prompt first; no person is dumped into the
+        // page until a scope is chosen.
+        $default = $this->actingAs($this->admin)
             ->get(route('admin.audit.index'))
             ->assertOk()
             ->getContent();
 
-        // Three people with entries. The automated records live in the scope
-        // rail, not in the people roster.
-        $this->assertSame(3, preg_match_all('/class="admin-audit-browser__person[ "]/', $html));
+        $this->assertStringContainsString(__('audit.directory_prompt_title'), $default);
+        $this->assertSame(
+            0,
+            preg_match_all('/class="admin-audit-browser__person[ "]/', $default),
+        );
 
-        // The office-less admin sits in Administration; the admin assigned to
-        // ENG sits under ENG and is not repeated in the Administration group.
-        $start = strpos($html, 'admin-audit-browser__group-name">Administration<');
-        $end = strpos($html, 'admin-audit-browser__group-name">', $start + 10);
-        $administration = substr($html, $start, $end - $start);
+        // The office contains the office-bound admin and never repeats it in
+        // Administration.
+        // The office scope does not place an office-less administrator in
+        // the office's roster, even though their ENG-banded entry is in the
+        // trail itself.
+        $departmentPage = $this->actingAs($this->admin)
+            ->get(route('admin.audit.index', ['department_id' => $this->department->id]))
+            ->assertOk()
+            ->getContent();
 
-        $this->assertStringContainsString(e($adminWithoutOffice->full_name), $administration);
-        $this->assertStringNotContainsString(e($adminWithOffice->full_name), $administration);
+        $this->assertStringContainsString('actor_id='.$adminWithOffice->id, $departmentPage);
+        $this->assertStringNotContainsString('actor_id='.$adminWithoutOffice->id, $departmentPage);
+
+        // The office-less administrator appears behind the person-scope prompt,
+        // not as a default roster row.
+        $selected = $this->actingAs($this->admin)
+            ->get(route('admin.audit.index', ['actor_id' => $adminWithoutOffice->id]))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString($adminWithoutOffice->full_name, $selected);
+        $this->assertSame(
+            0,
+            preg_match_all('/class="admin-audit-browser__person[ "]/', $selected),
+        );
     }
 
     public function test_admin_audit_residents_scope_filters_to_resident_activity(): void

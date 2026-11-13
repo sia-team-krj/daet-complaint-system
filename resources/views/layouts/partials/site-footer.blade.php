@@ -25,6 +25,9 @@
         @if(auth()->user()?->role !== 'admin')
             <a href="{{ route('transparency') }}" wire:navigate>{{ __('footer.transparency_register') }}</a>
         @endif
+        @auth
+            <a href="{{ route('feedback.index') }}" wire:navigate>{{ __('footer.feedback') }}</a>
+        @endauth
     </nav>
 
     <div class="site-footer__meta">
@@ -148,7 +151,7 @@
       font-family: var(--font-sans);
       font-size: 12px;
       line-height: 1.6;
-      color: #9fb3d1;
+      color: var(--navy-100);
   }
 
   .site-footer__bottom {
@@ -167,14 +170,14 @@
       font-size: 10px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: #9fb3d1;
+      color: var(--navy-100);
   }
 
   .site-footer__copy {
       font-family: var(--font-sans);
       font-size: 10px;
       letter-spacing: 0.06em;
-      color: #9fb3d1;
+      color: var(--navy-100);
   }
 
   @media (max-width: 768px) {

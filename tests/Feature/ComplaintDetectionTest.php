@@ -30,7 +30,7 @@ class ComplaintDetectionTest extends TestCase
         $resident = User::factory()->create(['role' => 'citizen']);
         $complaint = Complaint::create([
             'user_id' => $resident->id,
-            'department_id' => Department::where('code', 'GSO')->firstOrFail()->id,
+            'department_id' => Department::where('code', 'MENRO')->firstOrFail()->id,
             'category' => 'others',
             'title' => 'FREE MONEY click here now!!!',
             'description' => 'FREE MONEY click here https://spam.example.com guaranteed profit',

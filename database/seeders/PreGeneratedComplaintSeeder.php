@@ -2,230 +2,415 @@
 
 namespace Database\Seeders;
 
-use App\Enums\ComplaintPriority;
-use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use App\Enums\VerificationMethod;
 use App\Models\Complaint;
-use App\Models\ComplaintLog;
+use App\Models\ComplaintInformationRequest;
 use App\Models\Department;
 use App\Models\User;
-use App\Services\ComplaintDetectionService;
-use App\Services\DepartmentRouter;
+use Database\Seeders\Support\DemoData;
 use Illuminate\Database\Seeder;
 
+/**
+ * The volume layer of the presentation data: 47 tickets spread across all 25
+ * barangays (weighted toward the Centro hotspot), all seven categories, every
+ * status, and a deliberate mix of SLA states — some resolved inside the
+ * deadline, several overdue, one due soon.
+ *
+ * Deterministic by seeding the RNG, so re-seeding reproduces the same mix.
+ */
 class PreGeneratedComplaintSeeder extends Seeder
 {
-    public function __construct(private readonly ComplaintDetectionService $detector)
+    /** Picked deterministically after mt_srand(). */
+    private function pick(array $items)
     {
+        return $items[mt_rand(0, count($items) - 1)];
     }
 
     public function run(): void
     {
-        $this->command->info('Seeding pre-generated complaint tickets...');
+        mt_srand(20261113);
 
-        $citizens = User::where('role', 'citizen')->get();
+        $this->command->info('Seeding volume complaints...');
+
+        $citizens = User::where('role', 'citizen')->orderBy('id')->get();
         if ($citizens->isEmpty()) {
-            $this->command->warn('No citizen users found; skipping.');
+            $this->command->warn('No citizens found; run UserSeeder first.');
 
             return;
         }
 
-        $staffByDept = User::where('role', 'staff')
-            ->get()
-            ->groupBy('department_id');
+        $staffByDept = User::where('role', 'staff')->get()->groupBy('department_id');
+        $admin = User::where('role', 'admin')->first();
 
-        $points = config('daet-barangays.points', []);
+        // Status breakdown for the 47: a mature register with a resolved
+        // majority for the analytics cards, plus open work in flight.
+        $statusPool = array_merge(
+            array_fill(0, 14, 'Resolved'),
+            array_fill(0, 10, 'Closed'),
+            array_fill(0, 9, 'In Progress'),
+            array_fill(0, 6, 'Under Review'),
+            array_fill(0, 6, 'Submitted'),
+            array_fill(0, 2, 'Rejected')
+        );
+        // Interleave categories so neighbours never share a category.
+        $categoryPool = $this->interleave([
+            'road_damage' => 9,
+            'garbage' => 7,
+            'flooding' => 7,
+            'sanitation' => 6,
+            'plastic_usage' => 6,
+            'others' => 7,
+            'streetlight' => 5,
+        ]);
 
-        $categories = ['road_damage', 'flooding', 'streetlight', 'garbage', 'sanitation', 'park_maintenance', 'business_permit', 'noise_complaint', 'stray_animals', 'others'];
+        // Guarantee all 25 barangays appear at least once: the first 25
+        // volume tickets get one barangay each (deterministic shuffle),
+        // the rest are drawn from the Centro-weighted list below.
+        $shuffledBarangays = User::BARANGAYS;
+        for ($i = count($shuffledBarangays) - 1; $i > 0; $i--) {
+            $j = mt_rand(0, $i);
+            [$shuffledBarangays[$i], $shuffledBarangays[$j]] = [$shuffledBarangays[$j], $shuffledBarangays[$i]];
+        }
 
-        $titles = [
-            'road_damage' => ['Large pothole on main road', 'Cracked pavement near the school', 'Road cave-in after heavy rain', 'Uneven road surface by the market'],
-            'flooding' => ['Flooded street after downpour', 'Drainage clogged near the creek', 'Standing water on pedestrian lane', 'Flooded underpass after storm'],
-            'streetlight' => ['Streetlight out on main road', 'Broken lamp post near the plaza', 'Dark corner by the barangay hall', 'Flickering light near the school'],
-            'garbage' => ['Uncollected garbage by the health center', 'Overflowing bin near the market', 'Illegal dumping near the creek', 'Missed collection on our street'],
-            'sanitation' => ['Clogged drainage near the market', 'Foul odor from sewer line', 'Blocked canal causing stagnant water', 'Dirty canal beside the road'],
-            'park_maintenance' => ['Broken bench in the plaza', 'Overgrown grass in the park', 'Damaged playground equipment', 'Unlit path in the public park'],
-            'business_permit' => ['Delayed business permit renewal', 'Unclear permit requirements', 'Long queue at the licensing office', 'Permit verification issue'],
-            'noise_complaint' => ['Late-night noise near the plaza', 'Loud karaoke past midnight', 'Construction noise early morning', 'Barking dogs disturbing sleep'],
-            'stray_animals' => ['Stray dogs near the school', 'Roaming cattle on the road', 'Stray cats around the market', 'Unattended animals in the park'],
-            'others' => ['General concern for the barangay', 'Request for public assistance', 'Community safety concern', 'Miscellaneous municipal issue'],
-        ];
+        $weightedBarangays = array_merge(
+            array_fill(0, 6, 'Barangay VI (Centro)'),
+            array_fill(0, 3, 'Bagasbas'),
+            array_fill(0, 3, 'Barangay I (Hilahod)'),
+            array_fill(0, 2, 'Barangay II (Pasig)'),
+            array_fill(0, 2, 'Barangay III (Iraya)'),
+            array_fill(0, 2, 'Barangay IV (Mantagbac)'),
+            array_fill(0, 2, 'Barangay V (Pandan)'),
+            array_fill(0, 2, 'Barangay VII (Diego Liñan)'),
+            array_fill(0, 2, 'Barangay VIII (Salcedo)'),
+            array_diff(User::BARANGAYS, [
+                'Barangay VI (Centro)', 'Bagasbas', 'Barangay I (Hilahod)', 'Barangay II (Pasig)',
+                'Barangay III (Iraya)', 'Barangay IV (Mantagbac)', 'Barangay V (Pandan)',
+                'Barangay VII (Diego Liñan)', 'Barangay VIII (Salcedo)',
+            ])
+        );
 
-        $descriptions = [
-            'road_damage' => 'The road surface is damaged and poses a risk to motorists and pedestrians. Please inspect and repair as soon as possible.',
-            'flooding' => 'Water accumulates after rain and blocks passage for residents. The drainage needs clearing and repair.',
-            'streetlight' => 'The streetlight has been non-functional for several days, making the area unsafe at night.',
-            'garbage' => 'Garbage has not been collected and is attracting pests. Please schedule collection promptly.',
-            'sanitation' => 'The drainage is clogged and emits a foul odor. It needs immediate cleaning.',
-            'park_maintenance' => 'The public area needs maintenance to keep it safe and usable for residents.',
-            'business_permit' => 'I need assistance with my business permit application. The process has been delayed.',
-            'noise_complaint' => 'Excessive noise is disturbing residents, especially late at night. Please look into this.',
-            'stray_animals' => 'Stray animals are roaming freely and pose a safety risk to pedestrians.',
-            'others' => 'This is a general concern that requires attention from the appropriate office.',
-        ];
-
+        $content = $this->contentPools();
         $premadeResponses = [
-            'Initial review started by the department.',
+            'Initial review completed by the department.',
             'Field inspection scheduled for this week.',
-            'Repair work has been assigned to a contractor.',
-            'Additional information requested from the resident.',
-            'Issue verified on site; remediation underway.',
+            'Work assigned to the maintenance crew.',
+            'Site cleared; resampling next week.',
+            'Remediation under way; barangay informed.',
             'Work completed; awaiting resident confirmation.',
-            'Case closed after verification of resolution.',
+            'Site verified clear after the last rain.',
+        ];
+        $internalNotes = [
+            'Verified on site; photos on the office file.',
+            'Resident provided additional evidence.',
+            'Coordinated with the assigned barangay.',
+            'Marked priority due to safety risk.',
             'No further action required at this time.',
         ];
 
-        $internalNotes = [
-            'Verified on site; photos attached.',
-            'Resident provided additional evidence.',
-            'Coordinated with the engineering crew.',
-            'Marked as priority due to safety risk.',
-            'Duplicate suspected; monitor closely.',
-        ];
-
-        $statuses = [
-            ComplaintStatus::Submitted,
-            ComplaintStatus::UnderReview,
-            ComplaintStatus::InProgress,
-            ComplaintStatus::Resolved,
-            ComplaintStatus::Rejected,
-            ComplaintStatus::Closed,
-        ];
-
-        $count = (int) (env('SEED_COMPLAINT_COUNT', 40));
         $created = 0;
 
-        for ($i = 0; $i < $count; $i++) {
-            $citizen = $citizens->random();
-            $category = $categories[array_rand($categories)];
-            $department = DepartmentRouter::resolve($category);
-            $barangay = $citizens->isNotEmpty()
-                ? \App\Models\User::BARANGAYS[array_rand(\App\Models\User::BARANGAYS)]
-                : 'Barangay VI (Centro)';
+        // In Progress gets a scripted date split so the SLA board shows a
+        // healthy mix: 5 overdue, 3 on track, 1 due soon.
+        $inProgressPlan = ['overdue', 'overdue', 'overdue', 'overdue', 'overdue', 'on_track', 'on_track', 'on_track', 'due_soon'];
 
-            $base = $points[$barangay] ?? [14.1122, 122.9553];
-            $lat = $base[0] + (mt_rand(-30, 30) / 100000);
-            $lng = $base[1] + (mt_rand(-30, 30) / 100000);
+        foreach ($statusPool as $i => $statusValue) {
+            $category = $categoryPool[$i % count($categoryPool)];
+            $citizen = $citizens[$i % $citizens->count()];
+            $barangay = $i < 25
+                ? $shuffledBarangays[$i]
+                : $weightedBarangays[mt_rand(0, count($weightedBarangays) - 1)];
+            [$lat, $lng] = DemoData::barangayPoint($barangay);
 
-            $status = $statuses[array_rand($statuses)];
-            $isPublic = (bool) mt_rand(0, 1);
-            $urgency = ['Low', 'Medium', 'High'][array_rand(['Low', 'Medium', 'High'])];
-            $priority = [ComplaintPriority::Routine->value, ComplaintPriority::Elevated->value, ComplaintPriority::Critical->value][array_rand([0, 1, 2])];
-
-            $reviewStatus = match ($status) {
-                ComplaintStatus::Submitted => ComplaintReviewStatus::Pending->value,
-                ComplaintStatus::Rejected => ComplaintReviewStatus::Rejected->value,
-                default => ComplaintReviewStatus::Verified->value,
+            $deptCode = match (true) {
+                in_array($category, ['road_damage', 'flooding', 'streetlight'], true) => 'ENG',
+                in_array($category, ['garbage', 'sanitation', 'plastic_usage'], true) => 'MENRO',
+                default => 'OM',
             };
+            $department = Department::where('code', $deptCode)->firstOrFail();
+            $deptStaff = $staffByDept[$department->id] ?? collect();
+            $assigned = $deptStaff->isNotEmpty() ? $deptStaff->random() : null;
+            $verifier = $deptCode === 'ENG'
+                ? User::where('email', 'verifier@daetlistens.gov.ph')->first()
+                : $admin;
 
-            $title = $titles[$category][array_rand($titles[$category])];
-            $description = $descriptions[$category];
-
-            $deptStaff = $department ? ($staffByDept[$department->id] ?? collect()) : collect();
-            $assignedStaff = $deptStaff->isNotEmpty() && in_array($status, [ComplaintStatus::InProgress, ComplaintStatus::Resolved, ComplaintStatus::Closed], true)
-                ? $deptStaff->random()
-                : null;
-            $verifyingStaff = $deptStaff->isNotEmpty() && $reviewStatus === ComplaintReviewStatus::Verified->value
-                ? $deptStaff->random()
-                : null;
-
-            // Avoid self-verification conflict when possible
-            if ($verifyingStaff && $assignedStaff && $verifyingStaff->id === $assignedStaff->id && $deptStaff->count() > 1) {
-                $verifyingStaff = $deptStaff->where('id', '!=', $assignedStaff->id)->random();
+            // Scripted timeline by status.
+            $filedDaysAgo = match ($statusValue) {
+                'Resolved', 'Closed' => mt_rand(20, 75),
+                'In Progress' => $inProgressPlan[$this->takeInProgressSlot()] === 'due_soon' ? mt_rand(12, 14) : mt_rand(15, 70),
+                'Under Review' => mt_rand(2, 10),
+                default => mt_rand(0, 4),
+            };
+            // In Progress date split: make the due-soon one routine and verified exactly 13 days ago.
+            $filedAt = now()->subDays($filedDaysAgo);
+            $priority = $this->pick(mt_rand(0, 10) > 7 ? ['elevated'] : ['routine', 'routine', 'routine', 'elevated', 'urgent']);
+            if ($statusValue === 'Submitted' || $statusValue === 'Rejected') {
+                $priority = 'routine';
             }
 
-            $complaint = Complaint::create([
-                'user_id' => $citizen->id,
-                'department_id' => $department?->id,
+            $verifiedAt = in_array($statusValue, ['Resolved', 'Closed', 'In Progress'], true)
+                ? $filedAt->copy()->addDays(mt_rand(1, 3))
+                : null;
+            $resolvedAt = in_array($statusValue, ['Resolved', 'Closed'], true)
+                ? $verifiedAt->copy()->addDays(mt_rand(1, 8))
+                : null;
+            $closedAt = $statusValue === 'Closed'
+                ? $resolvedAt->copy()->addDays(mt_rand(2, 9))
+                : null;
+
+            if ($statusValue === 'In Progress') {
+                $plan = $inProgressPlan[$this->inProgressSlot - 1];
+                if ($plan === 'overdue') {
+                    $verifiedAt = now()->subDays(mt_rand(16, 60));
+                    $filedAt = $verifiedAt->copy()->subDays(mt_rand(1, 3));
+                    $priority = in_array($priority, ['critical', 'urgent'], true) ? 'elevated' : $priority;
+                } elseif ($plan === 'on_track') {
+                    $verifiedAt = now()->subDays(mt_rand(3, 9));
+                    $filedAt = $verifiedAt->copy()->subDays(mt_rand(1, 3));
+                } else { // due_soon
+                    $priority = 'routine';
+                    $verifiedAt = now()->subDays(13);
+                    $filedAt = $verifiedAt->copy()->subDays(mt_rand(1, 2));
+                }
+            }
+
+            $reviewStatus = match ($statusValue) {
+                'Submitted' => 'pending',
+                'Rejected' => 'rejected',
+                'Under Review' => $this->pick(['pending', 'pending', 'pending', 'needs_information', 'needs_information', 'escalated']),
+                default => 'verified',
+            };
+
+            $isGated = \App\Services\ComplaintPrivacyService::isGated($category);
+            $isPublic = $isGated
+                ? false
+                : (in_array($statusValue, ['Resolved', 'Closed', 'In Progress'], true)
+                    ? mt_rand(0, 10) < 6
+                    : ($statusValue === 'Submitted' ? mt_rand(0, 10) < 2 : false));
+
+            [$title, $description] = $this->pickContent($content, $category);
+            $description .= " Reported near {$barangay}, Daet, Camarines Norte.";
+
+            $urgency = $this->pick(['Low', 'Medium', 'Medium', 'Medium', 'High']);
+
+            $complaint = DemoData::complaint([
+                'user' => $citizen,
+                'department_code' => $deptCode,
                 'category' => $category,
                 'title' => $title,
                 'description' => $description,
-                'address_text' => $barangay.', Daet, Camarines Norte',
                 'barangay' => $barangay,
                 'latitude' => $lat,
                 'longitude' => $lng,
                 'urgency' => $urgency,
-                'status' => $status->value,
+                'status' => $statusValue,
                 'is_public' => $isPublic,
-                'hidden_from_public' => false,
                 'suggested_priority' => $priority,
-                'confirmed_priority' => $priority,
+                'confirmed_priority' => $reviewStatus === 'verified' ? $priority : null,
                 'review_status' => $reviewStatus,
-                'reviewed_by' => $reviewStatus === ComplaintReviewStatus::Verified->value ? ($verifyingStaff?->id ?? null) : null,
-                'reviewed_at' => $reviewStatus === ComplaintReviewStatus::Verified->value ? now()->subDays(rand(0, 14)) : null,
-                'verification_method' => $reviewStatus === ComplaintReviewStatus::Verified->value ? VerificationMethod::SiteVisit->value : null,
-                'assigned_staff_id' => $assignedStaff?->id,
-                'verifying_staff_id' => $verifyingStaff?->id,
+                'reviewed_by' => $reviewStatus === 'verified' ? $verifier?->id : ($reviewStatus === 'rejected' ? $admin?->id : null),
+                'reviewed_at' => in_array($reviewStatus, ['verified', 'rejected'], true) ? $verifiedAt ?? now()->subDays(mt_rand(0, 5)) : null,
+                'verified_at' => $verifiedAt,
+                'verifying_staff_id' => $reviewStatus === 'verified' ? $verifier?->id : null,
+                'verification_method' => $reviewStatus === 'verified' ? ($deptCode === 'ENG' && mt_rand(0, 1) ? VerificationMethod::SiteVisit->value : VerificationMethod::Desk->value) : null,
+                'assigned_staff_id' => $reviewStatus === 'verified' && $statusValue !== 'Submitted' ? $assigned?->id : null,
+                'resolved_at' => $resolvedAt,
+                'closed_at' => $closedAt,
+                'closed_by' => $statusValue === 'Closed' ? $this->pick(['resident', 'staff', 'system', 'resident']) : null,
                 'spam_status' => 'clear',
-                'spam_score' => 0,
+                'filed_at' => $filedAt,
             ]);
 
-            // Initial filing log
-            ComplaintLog::create([
-                'complaint_id' => $complaint->id,
-                'actor_id' => $citizen->id,
-                'previous_status' => null,
-                'new_status' => ComplaintStatus::Submitted->value,
-                'comment' => 'Complaint filed and routed to '.($department?->name ?? 'General Services Office').'.',
-                'is_internal' => false,
-                'created_at' => now()->subDays(rand(1, 30)),
-            ]);
+            // Filing log
+            DemoData::log($complaint, $citizen, null, ComplaintStatus::Submitted->value,
+                'Complaint filed and routed to '.$department->name.'.', $filedAt);
 
-            // Status progression logs with premade responses
-            $progression = [];
-            if ($status === ComplaintStatus::UnderReview) {
-                $progression = [ComplaintStatus::UnderReview];
-            } elseif ($status === ComplaintStatus::InProgress) {
-                $progression = [ComplaintStatus::UnderReview, ComplaintStatus::InProgress];
-            } elseif ($status === ComplaintStatus::Resolved) {
-                $progression = [ComplaintStatus::UnderReview, ComplaintStatus::InProgress, ComplaintStatus::Resolved];
-            } elseif ($status === ComplaintStatus::Closed) {
-                $progression = [ComplaintStatus::UnderReview, ComplaintStatus::InProgress, ComplaintStatus::Resolved, ComplaintStatus::Closed];
-            } elseif ($status === ComplaintStatus::Rejected) {
-                $progression = [ComplaintStatus::Rejected];
-            }
+            // Progression logs
+            $progression = match ($statusValue) {
+                'Under Review' => [ComplaintStatus::UnderReview],
+                'In Progress' => [ComplaintStatus::UnderReview, ComplaintStatus::InProgress],
+                'Resolved' => [ComplaintStatus::UnderReview, ComplaintStatus::InProgress, ComplaintStatus::Resolved],
+                'Closed' => [ComplaintStatus::UnderReview, ComplaintStatus::InProgress, ComplaintStatus::Resolved, ComplaintStatus::Closed],
+                'Rejected' => [ComplaintStatus::Rejected],
+                default => [],
+            };
 
             $prev = ComplaintStatus::Submitted->value;
-            $daysOffset = rand(1, 25);
+            $at = $filedAt->copy();
             foreach ($progression as $next) {
-                ComplaintLog::create([
-                    'complaint_id' => $complaint->id,
-                    'actor_id' => ($next === ComplaintStatus::Rejected || $next === ComplaintStatus::UnderReview)
-                        ? ($verifyingStaff?->id ?? $citizen->id)
-                        : ($assignedStaff?->id ?? $verifyingStaff?->id ?? $citizen->id),
-                    'previous_status' => $prev,
-                    'new_status' => $next->value,
-                    'comment' => $premadeResponses[array_rand($premadeResponses)],
-                    'is_internal' => (bool) mt_rand(0, 1),
-                    'created_at' => now()->subDays($daysOffset),
-                ]);
+                $at = $at->copy()->addDays(mt_rand(0, 3));
+                $actor = $next === ComplaintStatus::Rejected
+                    ? $admin
+                    : ($next === ComplaintStatus::UnderReview ? $verifier : $assigned);
+                $comment = $next === ComplaintStatus::Rejected
+                    ? 'Reviewed and declined: not a matter this office can act on.'
+                    : $this->pick($premadeResponses);
+                DemoData::log($complaint, $actor, $prev, $next->value, $comment, $at);
                 $prev = $next->value;
-                $daysOffset = max(1, $daysOffset - rand(1, 5));
             }
 
-            // Premade internal note
-            if (mt_rand(0, 1)) {
-                ComplaintLog::create([
+            // One open information request for the two needs_information tickets,
+            // so the information-request screens have a second real entry.
+            if ($reviewStatus === 'needs_information') {
+                $request = ComplaintInformationRequest::create([
                     'complaint_id' => $complaint->id,
-                    'actor_id' => $assignedStaff?->id ?? $verifyingStaff?->id ?? $citizen->id,
-                    'previous_status' => $status->value,
-                    'new_status' => $status->value,
-                    'comment' => $internalNotes[array_rand($internalNotes)],
-                    'is_internal' => true,
-                    'created_at' => now()->subDays(rand(0, 10)),
+                    'requested_by' => $deptCode === 'ENG' ? $verifier?->id : $admin?->id,
+                    'question' => $this->pick([
+                        'How long has this been going on, and has the barangay been notified?',
+                        'Can you describe the exact location and the nearest landmark?',
+                        'Has this been reported before, and if so, when?',
+                    ]),
+                    'status' => 'open',
+                    'round' => 1,
                 ]);
+                $request->forceFill(['created_at' => $filedAt->copy()->addDays(1), 'updated_at' => $filedAt->copy()->addDays(1)])->save();
             }
 
-            try {
-                $this->detector->evaluate($complaint);
-            } catch (\Throwable $e) {
-                // non-fatal
+            // Occasional internal note so the staff/admin views have texture.
+            if (mt_rand(0, 2) === 0 && $statusValue !== 'Submitted') {
+                DemoData::log($complaint, $assigned ?? $verifier ?? $admin, $prev, $prev,
+                    $this->pick($internalNotes), $at->copy()->addDays(mt_rand(0, 2)), true);
+            }
+
+            // Audit trail
+            DemoData::activity($citizen, $department, 'complaint.filed', $complaint,
+                "Complaint {$complaint->ticket_id} was filed and routed to {$department->name}.", [], $filedAt);
+            if ($reviewStatus === 'verified') {
+                DemoData::activity($verifier, $department, 'complaint.reviewed', $complaint,
+                    "{$complaint->ticket_id} was verified.", ['review_status' => 'verified'], $verifiedAt);
+            }
+            if (in_array($statusValue, ['In Progress', 'Resolved', 'Closed'], true)) {
+                DemoData::activity($assigned ?? $verifier, $department, 'complaint.status_updated', $complaint,
+                    "{$complaint->ticket_id} moved to In Progress.", ['from' => 'Under Review', 'to' => 'In Progress'], $verifiedAt?->copy()->addDay() ?? now());
+            }
+            if (in_array($statusValue, ['Resolved', 'Closed'], true)) {
+                DemoData::activity($assigned ?? $verifier, $department, 'complaint.status_updated', $complaint,
+                    "{$complaint->ticket_id} moved to Resolved.", ['from' => 'In Progress', 'to' => 'Resolved'], $resolvedAt);
             }
 
             $created++;
         }
 
-        $this->command->info("Pre-generated complaints completed: {$created}.");
+        $this->command->info("Volume complaints completed: {$created}. Total presentation tickets: ".($created + 14).'.');
+    }
+
+    /** @var int */
+    private int $inProgressSlot = 0;
+
+    private function takeInProgressSlot(): int
+    {
+        return $this->inProgressSlot++;
+    }
+
+    /**
+     * Round-robin the categories so a seeded order never runs long stretches
+     * of the same category.
+     *
+     * @param array<string, int> $counts
+     * @return list<string>
+     */
+    private function interleave(array $counts): array
+    {
+        $pool = [];
+        $remaining = $counts;
+        $order = array_keys($counts);
+        $index = 0;
+
+        while (array_sum($remaining) > 0) {
+            $key = $order[$index % count($order)];
+            if (($remaining[$key] ?? 0) > 0) {
+                $pool[] = $key;
+                $remaining[$key]--;
+            }
+            $index++;
+            if ($index > 10000) {
+                break;
+            }
+        }
+
+        return $pool;
+    }
+
+    /**
+     * 6–8 unique (title, description) pairs per category; language mix kept
+     * mostly English with a few Filipino entries.
+     */
+    private function contentPools(): array
+    {
+        return [
+            'road_damage' => [
+                ['Large pothole on the national road', 'A large pothole has opened on the national road and is forcing motorists into the oncoming lane. Motorcycle riders are at risk, especially at night.'],
+                ['Cracked pavement near the school', 'The pavement directly in front of the elementary school is cracked and heaving. Small children trip on it on their way to class every morning.'],
+                ['Road cave-in after heavy rain', 'A section of the road caved in after the last heavy rain. Water collects there and the surface is collapsing further each week.'],
+                ['Uneven road surface by the market', 'The road surface approaching the public market is uneven and broken. Vendors and tricycles swerve to avoid it all day.'],
+                ['Sirang labasan ng drainage; butas sa kalsada', 'Ilang bahagi ng kalsada ang gumuho matapos ang ulan. Butas-butas na ito at delikado sa mga motor ngayong gabi.'],
+                ['Persistent potholes on the barangay road', 'The concrete pothole repairs on this barangay road keep breaking open after every rain. The patches are barely level with the road surface.'],
+                ['Deep pothole near the waiting shed', 'A deep pothole beside the tricycle waiting shed swallows a whole wheel if a rider hits it at speed. It needs proper compaction, not another quick patch.'],
+                ['Edge of the asphalted road is breaking away', 'The shoulder of the asphalted road is breaking away in chunks. Motorcycles drifting to the edge hit loose pieces and lose control.'],
+                ['Open manhole cover on the national highway', 'A manhole cover near the highway bend is broken and sitting askew. It is a death trap at night for inbound motorcycles.'],
+            ],
+            'flooding' => [
+                ['Flooded street after downpour', 'The street floods ankle-deep for hours after every downpour. Residents cannot reach the main road and children are kept home from school.'],
+                ['Drainage clogged near the creek', 'The drainage outlet into the creek is choked with trash. Water backs up into the lane every time it rains and garbage washes onto the road.'],
+                ['Standing water on pedestrian lane', 'Standing water sits on the pedestrian lane for days after rain. It breeds mosquitoes and the lane is impassable for elders and wheelchairs.'],
+                ['Flooded underpass after storm', 'The low underpass section floods knee-deep after every storm; tricycles stall there and drivers have had to be pulled out twice.'],
+                ['Barangay creek overflows onto the road', 'The creek behind the basketball court overflows onto the feeder road during heavy rain. The road is impassable for hours.'],
+                ['Binaha ang side street tuwing tag-ulan', 'Tuwing malakas ang ulan ay umaabot sa tuhod ang tubig sa side street. Humihina ang drainage at bumabara ito ng basura.'],
+                ['Roadside drainage channeled into the residences', 'The roadside drain has been redirected and now pours straight into two residences on every heavy rain. Their floors are soaked nightly.'],
+            ],
+            'streetlight' => [
+                ['Streetlight out on main road', 'The streetlight on the main road has been out for two weeks; the corner is pitch black and accidents are narrowly avoided nightly.'],
+                ['Broken lamp post near the plaza', 'The lamp post near the public plaza is leaning and its bulb is dead. Children cross there on the way home from church.'],
+                ['Dark corner by the barangay hall', 'The corner behind the barangay hall has been dark for a week, making the alley the obvious route for people carrying cash at night.'],
+                ['Flickering light near the school', 'The light outside the school fence flickers on and off. It fails entirely just as classes let out in the late afternoon.'],
+                ['Walang ilaw sa unahan ng basketball court', 'Ilang araw nang walang ilaw sa unahan ng basketball court tuwing gabi. Mapanganib sa mga naglalaro at umuwi.'],
+            ],
+            'garbage' => [
+                ['Uncollected garbage by the health center', 'Garbage has not been collected at the health center for a week; the bins overflow onto the sidewalk and the smell reaches the clinic.'],
+                ['Overflowing bin near the market', 'The communal bin near the public market overflows every day. Pest control is impossible and buyers complain about the smell.'],
+                ['Illegal dumping near the creek', 'Someone dumps household waste behind the market row near the creek. It is collected by stray dogs and washed into the creek on high water.'],
+                ['Missed collection on our street', 'Our street was skipped on yesterday\'s collection. The truck went to the next barangay but never came back for us.'],
+                ['Basura hindi kinokolekta sa tabi ng daycare', 'Tatlong araw nang hindi nakukuha ang basura sa tabi ng daycare. Amoy na amoy ang buong lansangan.'],
+                ['Garbage truck blocked by parked vehicles', 'Parked vehicles block the collection truck at the cul-de-sac, so the whole row is skipped every week though the driver is willing.'],
+                ['Bulk waste abandoned on the roadside', 'A sofa and construction debris were abandoned on the roadside last Sunday. They are now a road hazard and an eyesore.'],
+            ],
+            'sanitation' => [
+                ['Clogged drainage near the market', 'Drainage near the market is clogged solid with grease and food waste. Greywater floods the dry-goods lane during washing hours.'],
+                ['Foul odor from sewer line', 'The sewer line beside our row of houses vents a foul smell at night. It is worst on humid evenings and no one has come to check the vent.'],
+                ['Blocked canal causing stagnant water', 'The canal along the barangay boundary is blocked with silt and branches. Water stands motionless for days and mosquitoes swarm.'],
+                ['Dirty canal beside the road', 'The open canal beside the road is full of black, stagnant water. Children walk past it to school every morning.'],
+                ['Baradong canal sa tapat ng pampublikong ulan', 'Baradong-barado ang canal sa tapat ng edsa drainage; tuwing umuulan ay umuumbok ang putik hanggang sa bahay.'],
+                ['Standing water behind the market row', 'Water stands behind the market row permanently. It is black and carries kitchen grease from the eateries.'],
+            ],
+            'plastic_usage' => [
+                ['Store using plastic bags for every purchase', 'A convenience store packs every purchase in single-use plastic bags, including items meant for immediate consumption, contrary to the municipal ordinance.'],
+                ['Plastic packaging instead of paper', 'A food stall wraps every order in plastic film and Styrofoam instead of the paper or leaves agreed with the association. The pile of plastic grows daily.'],
+                ['Food stall serving in plastic containers', 'A food stall serves every meal in single-use plastic containers. The discarded containers choke the sidewalk drain within meters.'],
+                ['Shop giving out plastic sachets', 'A retail shop keeps selling detergent and shampoo in plastic sachets long after the association"s commitment to refill stations.'],
+                ['Plastic wrap-around every sari-sari shelf', 'A sari-sari store over-wraps products in multiple layers of plastic, doubling the plastic waste from a single row of shelves.'],
+                ['Plastic cups at the barangay water refilling station', 'The refilling station hands out single-use plastic cups with every refill instead of asking customers to bring their own.'],
+            ],
+            'others' => [
+                ['Stray dogs near the elementary school', 'A pack of stray dogs has settled near the elementary school gate. They growl at children every afternoon dismissal.'],
+                ['Request for public assistance', 'A senior citizen household needs assistance clearing storm debris from the roof before the next heavy rain.'],
+                ['Community safety concern', 'The public plaza lighting was vandalized two weekends ago and the entire north side is dark. Residents avoid the plaza after dinner.'],
+                ['Water supply interrupted for days', 'Our barangay has had no water supply for four days. The private utility truck has not passed our street since the maintenance week.'],
+                ['Noise from the cockpit past midnight', 'The cockpit"s PA system is audible two barangays away past midnight on weekends. Sleep is impossible for the row of houses facing it.'],
+                ['Kahilingan para sa tubig sa aming kanto', 'Apat na araw nang walang tubig ang kantong aming kinatatayuan. Sana po kami ay mapuntahan ng tubig.'],
+                ['Missed garbage schedule last week', 'The garbage schedule posted at the waiting shed was skipped twice last week and no notice was posted.'],
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, list<array{0: string, 1: string}>> $content
+     * @return array{0: string, 1: string}
+     */
+    private function pickContent(array $content, string $category): array
+    {
+        $pool = $content[$category];
+        $entry = $pool[mt_rand(0, count($pool) - 1)];
+
+        return [$entry[0], $entry[1]];
     }
 }

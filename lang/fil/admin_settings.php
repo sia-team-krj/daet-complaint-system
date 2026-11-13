@@ -41,4 +41,23 @@ return [
     'contact_text' => 'Text ng contact',
     'audit' => 'Audit log',
     'audit_retention_days' => 'Retention ng audit log (araw)',
+
+    'feedback' => [
+        'title' => 'Feedback ng mga resident',
+        'lede' => 'Ang ining-rating ng mga resident, at ang mga mungkahing naghihintay na basahin.',
+        'ratings_title' => 'Ang mga rating',
+        'pending_title' => 'Naghihintay na basahin',
+        'pending_lede' => 'Ang isang mungkahi ay ilalathala lamang pagkatapos itong basahin ng iba.',
+        'pending_empty' => 'Wala pang naghihintay na basahin.',
+        'published_title' => 'Mga inilathalang mungkahi',
+        'published_lede' => 'Mga mungkahing nabasa na at inilathala ng administrasyon.',
+        'published_empty' => 'Wala pang inilathalang mungkahi.',
+        'col_office' => 'Tanggapan',
+        'col_average' => 'Average',
+        'col_count' => 'Mga rating',
+        'publish' => 'I-publish ito',
+        'withhold' => 'Huwag ilabas sa pampublikong pahina',
+        'published' => 'Inilathala ang mungkahi.',
+        'withheld' => 'Binasa ang mungkahi at hindi ito inilabas sa pampublikong pahina.',
+    ],
 ];

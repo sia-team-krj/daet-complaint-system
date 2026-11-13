@@ -331,6 +331,18 @@
     id-prefix="admin"
 />
 
+{{--
+    The work is paused — waiting on funds, materials, a budget decision,
+    another body. The administrator is the person who can release the funds
+    or make the call, so the reason and the wait are in front of them.
+--}}
+@if($complaint->isVerified() && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Rejected && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Closed)
+    <x-hold-panel
+        :complaint="$complaint"
+        :can-manage="true"
+    />
+@endif
+
 @endsection
 
 @push('scripts')

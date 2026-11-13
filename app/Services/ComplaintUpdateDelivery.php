@@ -89,6 +89,22 @@ class ComplaintUpdateDelivery
     }
 
     /**
+     * The work was marked resolved and the resident has not said whether it
+     * was fixed. They still can: the case is not closed until they confirm
+     * it, or until the grace period runs out.
+     */
+    public function remindResolution(Complaint $complaint, int $days): void
+    {
+        $this->deliver($complaint, fn (Complaint $complaint): array => [
+            'subject' => __('mail.ticket_remind_subject', ['ticket' => $complaint->ticket_id]),
+            'headline' => __('mail.ticket_remind_headline'),
+            'summary' => __('mail.ticket_remind_summary', ['days' => $days]),
+            'note' => null,
+            'noteLabel' => null,
+        ]);
+    }
+
+    /**
      * @param  callable(Complaint): array{subject: string, headline: string, summary: string, note: string|null, noteLabel: string|null}  $build
      */
     private function deliver(Complaint $complaint, callable $build): void

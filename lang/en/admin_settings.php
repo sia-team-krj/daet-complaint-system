@@ -41,4 +41,23 @@ return [
     'contact_text' => 'Contact text',
     'audit' => 'Audit log',
     'audit_retention_days' => 'Audit log retention (days)',
+
+    'feedback' => [
+        'title' => 'Resident feedback',
+        'lede' => 'What residents rated, and the suggestions waiting to be read.',
+        'ratings_title' => 'The ratings',
+        'pending_title' => 'Waiting to be read',
+        'pending_lede' => 'A suggestion is published only after somebody has read it.',
+        'pending_empty' => 'Nothing is waiting to be read.',
+        'published_title' => 'Published suggestions',
+        'published_lede' => 'Suggestions the administration has read and put on the public page.',
+        'published_empty' => 'No suggestion has been published yet.',
+        'col_office' => 'Office',
+        'col_average' => 'Average',
+        'col_count' => 'Ratings',
+        'publish' => 'Publish it',
+        'withhold' => 'Keep it off the register',
+        'published' => 'The suggestion is published.',
+        'withheld' => 'The suggestion was read and kept off the public page.',
+    ],
 ];

@@ -67,8 +67,12 @@ class SettingsController extends Controller
     {
         $user = Auth::user();
         $rules = [
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
+            // The same rule the registration form enforces: letters, spaces,
+            // hyphens and dots. A name that carries digits or stray symbols
+            // is not a name, and the person it names is the one who carries it
+            // on the public register.
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.]+$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[\pL\s\-\.]+$/u'],
             'email' => ['required', 'email:rfc,dns', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'contact_number' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
         ];
@@ -76,7 +80,10 @@ class SettingsController extends Controller
             $rules['barangay'] = ['nullable', 'string', Rule::in(User::BARANGAYS)];
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($rules, [
+            'first_name.regex' => __('settings.profile.name_rule'),
+            'last_name.regex' => __('settings.profile.name_rule'),
+        ]);
 
         $user->update([
             'first_name' => $validated['first_name'],
@@ -88,7 +95,9 @@ class SettingsController extends Controller
 
         $activityLogger->log('profile.updated', "{$user->full_name} updated their profile.", $user, metadata: ['updated_fields' => array_keys($validated)]);
 
-        return redirect()->route('settings', ['tab' => 'profile'])->with('status', __('settings.profile.saved'));
+        return redirect()->route('settings', ['tab' => 'profile'])
+            ->with('status', __('settings.profile.saved'))
+            ->with('status_for', 'profile');
     }
 
     public function updatePassword(Request $request, ActivityLogger $activityLogger): RedirectResponse
@@ -113,7 +122,9 @@ class SettingsController extends Controller
 
         $activityLogger->log('profile.password_changed', "{$user->full_name} changed their account password.", $user);
 
-        return redirect()->route('settings', ['tab' => 'security'])->with('status', __('settings.security.password_updated'));
+        return redirect()->route('settings', ['tab' => 'security'])
+            ->with('status', __('settings.security.password_updated'))
+            ->with('status_for', 'security');
     }
 
     public function logoutOtherDevices(Request $request): RedirectResponse
@@ -161,7 +172,9 @@ class SettingsController extends Controller
             'daily_digest' => $user->role === 'staff' ? (bool) ($validated['daily_digest'] ?? false) : false,
         ])->save();
 
-        return redirect()->route('settings', ['tab' => 'notifications'])->with('status', __('settings.notifications.saved'));
+        return redirect()->route('settings', ['tab' => 'notifications'])
+            ->with('status', __('settings.notifications.saved'))
+            ->with('status_for', 'notifications');
     }
 
     public function updatePreferences(Request $request): RedirectResponse|JsonResponse

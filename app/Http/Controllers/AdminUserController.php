@@ -62,7 +62,7 @@ class AdminUserController extends Controller
         $users = $query
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->paginate(20)
+            ->paginate(5)
             ->withQueryString();
 
         $stats = [

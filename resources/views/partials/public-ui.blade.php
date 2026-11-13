@@ -71,6 +71,7 @@
         .tr-stat__icon--amber  { background: var(--status-progress-bg); color: var(--status-progress-text); }
         .tr-stat__icon--green  { background: var(--status-resolved-bg); color: var(--status-resolved-text); }
         .tr-stat__icon--sky    { background: var(--cat-flood-bg);       color: var(--cat-flood-fg); }
+        .tr-stat__icon--violet { background: var(--hold-bg);            color: var(--hold-text); }
 
         .tr-stat__value {
             display: block;
@@ -121,6 +122,7 @@
         .cat-icon--flood       { background: var(--cat-flood-bg);       color: var(--cat-flood-fg); }
         .cat-icon--waste       { background: var(--cat-waste-bg);       color: var(--cat-waste-fg); }
         .cat-icon--streetlight { background: var(--cat-streetlight-bg); color: var(--cat-streetlight-fg); }
+        .cat-icon--personnel   { background: var(--cat-personnel-bg);   color: var(--cat-personnel-fg); }
         .cat-icon--other       { background: var(--cat-other-bg);       color: var(--cat-other-fg); }
 
                 .status-pill {
@@ -160,6 +162,10 @@
         .status-pill.rejected    .status-pill__dot { background: var(--status-rejected-dot); }
         .status-pill.closed      { background: var(--status-closed-bg);   color: var(--status-closed-text); }
         .status-pill.closed      .status-pill__dot { background: var(--status-closed-dot); }
+        /* The work is paused. Its own family: waiting is not late (amber)
+         * and not out of the office (slate). */
+        .status-pill.hold        { background: var(--hold-bg);            color: var(--hold-text); }
+        .status-pill.hold        .status-pill__dot { background: var(--hold-dot); }
         /* Review statuses ride the same four families — no new colours:
            pending is in flight but stable, needs-information is action
            needed, duplicate is cooling off, escalated is negative. */

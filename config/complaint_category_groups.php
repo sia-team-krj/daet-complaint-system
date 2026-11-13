@@ -15,11 +15,14 @@
  * Live labels (from DepartmentRouter::getCategoryOptions()) resolved to values:
  *   roads       = Road Damage (road_damage), Streetlight Issues (streetlight),
  *                 Flooding / Drainage (flooding)
- *   waste       = Garbage Collection (garbage), Sanitation (sanitation)
- *   spaces      = Park / Public Area Maintenance (park_maintenance)
- *   neighborhood= Noise Complaint (noise_complaint), Stray Animals (stray_animals)
- *   business    = Business Permit Issues (business_permit)
+ *   waste       = Garbage Collection (garbage), Sanitation (sanitation),
+ *                 Plastic Product Usage (plastic_usage)
  *   other       = Other Concerns (others)
+ *
+ * Business & Permits and Staff & Personnel are withdrawn for now: the
+ * municipalities closed those offices, so the categories go with them. They
+ * stay in the system so anything already filed under them still reads
+ * properly, and the Mayor's office receives them in the meantime.
  *
  * Values present in $categoryOptions but missing here are appended to "other"
  * by ComplaintController; values here that do not exist in $categoryOptions
@@ -37,25 +40,7 @@ return [
         'key' => 'waste',
         'icon' => 'trash-2',
         'color' => 'waste',
-        'categories' => ['garbage', 'sanitation'],
-    ],
-    [
-        'key' => 'spaces',
-        'icon' => 'trees',
-        'color' => 'spaces',
-        'categories' => ['park_maintenance'],
-    ],
-    [
-        'key' => 'neighborhood',
-        'icon' => 'volume-2',
-        'color' => 'neighborhood',
-        'categories' => ['noise_complaint', 'stray_animals'],
-    ],
-    [
-        'key' => 'business',
-        'icon' => 'briefcase',
-        'color' => 'business',
-        'categories' => ['business_permit'],
+        'categories' => ['garbage', 'sanitation', 'plastic_usage'],
     ],
     [
         'key' => 'other',

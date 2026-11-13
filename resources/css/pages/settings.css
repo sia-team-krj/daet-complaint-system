@@ -1,0 +1,553 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   SETTINGS — one card per section, all on one page, with a jump-nav.
+
+   The page speaks the public portal's language: the card (surface, hairline
+   border, radius-lg, soft shadow), the field and button styles, the quiet
+   banner header. Nothing here is borrowed from the admin workspace any more.
+
+   The save row lives with the fields it saves and says what happened in
+   place — no sticky bar over the page, no browser "leave site?" prompt.
+   Docs: docs/design-system.md §5.45.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+body:has(.settings-page) > main {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-page);
+}
+
+.settings-page {
+    flex: 1 0 auto;
+    width: 100%;
+    padding: calc(var(--navbar-height, 64px) + 32px) 0 56px;
+    box-sizing: border-box;
+    color: var(--text-primary);
+}
+
+.settings-container {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.settings-header__title {
+    color: var(--navy-900);
+}
+
+.settings-header__lede {
+    margin: 6px 0 0;
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────
+   A left rail on the desktop, a scrolling strip on a phone — the shape the
+   page always had, rebuilt in the portal's colours. One section is shown at
+   a time, and the tab you are on says so.
+   ──────────────────────────────────────────────────────────────────── */
+
+.settings-body {
+    display: grid;
+    gap: 20px;
+    align-items: start;
+    min-width: 0;
+}
+
+.settings-sections {
+    min-width: 0;
+}
+
+.settings-tabs ul {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.settings-tabs ul::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-tab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-tab:hover {
+    background: var(--surface-soft);
+    border-color: var(--line);
+    color: var(--navy-900);
+}
+
+.settings-tab:focus-visible {
+    outline: 2px solid var(--focus-gold);
+    outline-offset: 2px;
+}
+
+.settings-tab.is-active {
+    background: var(--navy-900);
+    border-color: var(--navy-900);
+    color: var(--surface);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────
+   The portal's own button (`.tr-button`, from the shared component library)
+   is the neutral one. The page needs a primary and a danger variant, and the
+   portal has no name for them yet — so it gets them here, scoped to the
+   settings page, in the portal's colours: gold for the primary action, the
+   danger tint for the one that destroys.
+   ──────────────────────────────────────────────────────────────────── */
+
+.settings-page .tr-button--primary {
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    color: var(--navy-900);
+}
+
+.settings-page .tr-button--primary:hover {
+    background: var(--gold-300);
+    border-color: var(--gold-300);
+    color: var(--navy-900);
+}
+
+.settings-page .tr-button--danger {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.settings-page .tr-button--danger:hover {
+    background: var(--danger-tint);
+}
+
+.settings-page .tr-button--compact {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
+.settings-page .tr-button.is-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ── The cards ──────────────────────────────────────────────────────── */
+
+.settings-card {
+    display: grid;
+    gap: 24px;
+    align-content: start;
+    padding: 24px;
+    scroll-margin-top: calc(var(--navbar-height, 64px) + 72px);
+}
+
+.settings-card__head {
+    display: grid;
+    gap: 4px;
+}
+
+.settings-card__title {
+    margin: 0;
+    color: var(--navy-900);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.settings-card__lede {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+/* ── Groups inside a card ───────────────────────────────────────────── */
+
+.settings-group {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 20px;
+}
+
+.settings-group:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.settings-group__legend {
+    padding: 0;
+    color: var(--navy-900);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.settings-group__help {
+    margin: -8px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.settings-group--danger .settings-group__legend {
+    color: var(--danger);
+}
+
+/* ── Fields ─────────────────────────────────────────────────────────── */
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.settings-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.settings-field__label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.settings-field__hint {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+.settings-field__error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+.settings-input {
+    width: 100%;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    background: var(--surface-input);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+.settings-input:hover {
+    border-color: var(--border-strong);
+}
+
+.settings-input:focus {
+    border-color: var(--focus-gold);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    outline: none;
+}
+
+.settings-input[aria-invalid="true"] {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15);
+}
+
+.settings-input:disabled {
+    background: var(--surface-soft);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.settings-password-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-password-wrap .settings-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.settings-password-toggle {
+    flex: none;
+    min-height: 44px;
+    padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.settings-password-toggle:hover {
+    border-color: var(--border-strong);
+    color: var(--navy-900);
+}
+
+.settings-password-toggle:focus-visible {
+    outline: 2px solid var(--focus-gold);
+    outline-offset: 2px;
+}
+
+/* ── The save row ───────────────────────────────────────────────────── */
+
+.settings-save-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.settings-save-row__state {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.settings-save-row__state.is-dirty {
+    color: var(--navy-900);
+    font-weight: 600;
+}
+
+.settings-save-row__state.is-saved {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--success);
+    font-weight: 600;
+}
+
+.settings-save-row__tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--success-tint);
+    color: var(--success);
+}
+
+.settings-save-row__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+/* ── Alerts ─────────────────────────────────────────────────────────── */
+
+.settings-alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.settings-alert ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.settings-alert--danger {
+    color: var(--danger);
+    background: var(--danger-tint);
+    border: 1px solid var(--danger);
+}
+
+/* ── Sessions ───────────────────────────────────────────────────────── */
+
+.settings-sessions {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.settings-session {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    background: var(--surface-page);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.settings-session__body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.settings-session__body strong {
+    color: var(--navy-900);
+    font-weight: 600;
+}
+
+.settings-session__badge {
+    justify-self: start;
+    padding: 2px 8px;
+    background: var(--success-tint);
+    color: var(--success);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.settings-session__meta {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.settings-empty {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+}
+
+/* ── Dialog ─────────────────────────────────────────────────────────── */
+
+.settings-dialog {
+    max-width: 440px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.settings-dialog h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.settings-dialog p {
+    margin: 0 0 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.settings-dialog__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* ── Toggles ────────────────────────────────────────────────────────── */
+
+.settings-toggle-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.settings-toggle-row__body {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.settings-toggle-row__label {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.settings-toggle-row__desc {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+/* ── Narrow screens ─────────────────────────────────────────────────── */
+
+@media (min-width: 1024px) {
+    .settings-body {
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+
+    .settings-tabs ul {
+        flex-direction: column;
+        gap: 2px;
+        overflow-x: visible;
+    }
+
+    .settings-tab {
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .settings-page {
+        padding: calc(var(--navbar-height, 64px) + 20px) 0 40px;
+    }
+
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-card {
+        padding: 18px;
+        gap: 20px;
+    }
+
+    .settings-body {
+        gap: 16px;
+    }
+
+    .settings-save-row__actions {
+        width: 100%;
+    }
+
+    .settings-save-row__actions .tr-button {
+        flex: 1 1 auto;
+        min-height: 44px;
+    }
+}

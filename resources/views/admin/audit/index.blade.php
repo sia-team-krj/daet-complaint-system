@@ -55,17 +55,18 @@
                     @include('admin.audit.partials.contexts')
                 </nav>
 
-                {{-- People. Bounded preview per group; "See all" opens one, paged. --}}
+                {{-- People appear only after a scope or search is chosen. --}}
                 <div class="admin-audit-browser__roster" id="admin-audit-browser-roster" data-audit-roster>
-                    @if($searchResults !== null)
-                        @include('admin.audit.partials.people-results', [
-                            'rows' => $searchResults['rows'],
-                            'total' => $searchResults['total'],
-                            'query' => $peopleQuery,
-                        ])
-                    @else
-                        @include('admin.audit.partials.roster', ['groups' => $groups])
-                    @endif
+                    @include('admin.audit.partials.roster-section', [
+                        'groups' => $groups,
+                        'searchResults' => $searchResults,
+                        'peopleQuery' => $peopleQuery,
+                        'expandedGroup' => $expandedGroup,
+                        'selection' => $selection,
+                        'auditQuery' => $auditQuery,
+                        'selectionParams' => $selectionParams,
+                        'actorId' => $actorId,
+                    ])
                 </div>
             </div>
         </details>

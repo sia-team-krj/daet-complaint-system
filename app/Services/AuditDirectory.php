@@ -19,12 +19,13 @@ use Illuminate\Support\Facades\DB;
  */
 class AuditDirectory
 {
-    /** Rows shown per group before the admin asks for the rest. */
-    public const PREVIEW_ROWS = 8;
+    /** People shown per group before the admin asks for the rest. */
+    public const PREVIEW_ROWS = 5;
 
-    /** Rows per page once a group is opened. Never a dump: a group of 3,000
-     *  residents pages 25 at a time. */
-    public const PAGE_ROWS = 25;
+    /** People per page once a group is opened. Five keeps the same rhythm
+     *  as the operator queues — a group of 3,000 residents pages five at a
+     *  time. */
+    public const PAGE_ROWS = 5;
 
     /** Seconds the snapshot (counts + roster) stays cached. */
     public const CACHE_TTL = 60;

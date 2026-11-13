@@ -5,9 +5,13 @@
 @import "./pages/complaint-show.css";
 @import "./pages/error.css";
 @import "./pages/staff-dashboard.css";
+@import "./pages/activity-feed.css";
+@import "./pages/feedback.css";
+@import "./pages/settings.css";
 @import "./pages/staff-complaint.css";
 @import "./pages/admin-workspace.css";
 @import "./pages/admin-dashboard.css";
+@import "./pages/analytics.css";
 
 /* Inter — self-hosted (public/fonts/inter). font-display: swap. */
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/inter/inter-latin-400-normal.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0100-017F, U+2000-206F; }
@@ -108,11 +112,8 @@
     --dept-fallback: #475569;
     --dept-fallback-tint: rgba(71, 85, 105, 0.16);
     --dept-ENG: #F59E0B; --dept-ENG-tint: rgba(245, 158, 11, 0.24);
-    --dept-HLTH: #14B8A6; --dept-HLTH-tint: rgba(20, 184, 166, 0.24);
-    --dept-GSO: #F97316; --dept-GSO-tint: rgba(249, 115, 22, 0.24);
-    --dept-MPDO: #F97316; --dept-MPDO-tint: rgba(249, 115, 22, 0.24);
-    --dept-WST: #22C55E; --dept-WST-tint: rgba(34, 197, 94, 0.24);
-    --dept-SWDO: #A855F7; --dept-SWDO-tint: rgba(168, 85, 247, 0.24);
+    --dept-HRMO: #3B82F6; --dept-HRMO-tint: rgba(59, 130, 246, 0.24);
+    --dept-MENRO: #22C55E; --dept-MENRO-tint: rgba(34, 197, 94, 0.24);
     --dept-BPLO: #06B6D4; --dept-BPLO-tint: rgba(6, 182, 212, 0.24);
     --dept-OM: #EAB308; --dept-OM-tint: rgba(234, 179, 8, 0.24);
 }
@@ -699,11 +700,57 @@ main {
 }
 
 .moderation-panel__consent strong {
+    display: block;
+    margin-bottom: 3px;
     color: var(--color-white);
+}
+
+/* A note under a field. It carries something the office needs to know —
+ * what the resident will read, what the date is for — so it gets the same
+ * boxed treatment as the consent line rather than floating away as grey
+ * text that reads like a caption.
+ */
+.moderation-panel__hint {
+    margin: 10px 0 0;
+    padding: 11px 13px;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 7px;
+    font-size: 11.5px;
+    line-height: 1.55;
 }
 
 .moderation-field {
     margin-top: 14px;
+}
+
+/* ── A label that says where the text goes ────────────────────────────
+ * Two notes look alike until you know which one the resident reads. The
+ * chip says it on the label, where the eye already is.
+ */
+
+.label-chip {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.label-chip--public {
+    background: var(--status-submitted-bg);
+    color: var(--status-submitted-text);
+}
+
+.label-chip--internal {
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    color: var(--muted);
 }
 
 .moderation-field label {
@@ -732,6 +779,170 @@ main {
 .moderation-field input[type="text"]:focus {
     border-color: rgba(201, 168, 76, 0.55);
     outline: none;
+}
+
+/* ── Date field (docs/design-system.md §5.42) ─────────────────────────
+ * The visible field is a plain text input, so it inherits whatever the
+ * surface it sits in gives a text field. The native date input beside it
+ * carries the value the server receives and opens the OS calendar; it is
+ * hidden by opacity rather than display:none, because showPicker() refuses
+ * on an element that is not being rendered.
+ */
+
+.date-field__control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-field__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    letter-spacing: 0.04em;
+}
+
+.date-field__native {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.date-field__button,
+.date-field__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.date-field__button:hover,
+.date-field__clear:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-color: color-mix(in srgb, currentColor 38%, transparent);
+}
+
+.date-field__button:focus-visible,
+.date-field__clear:focus-visible {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
+.date-field__error {
+    display: inline-block;
+    margin: 6px 0 0;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--error-bg);
+    color: var(--error-text);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ── Reason chips ─────────────────────────────────────────────────────
+ * Seven short reasons, all on screen at once: one tap instead of opening
+ * a dropdown and hunting through it on a phone. The radio is hidden but
+ * still focusable, and the chip carries the focus ring.
+ */
+
+.reason-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.reason-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.04);
+    color: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.reason-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+/* The radio stays in the form and in the tab order; only its box is
+   hidden, so the browser can still focus and check it. */
+.reason-chip input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.reason-chip:has(input:checked) {
+    background: rgba(201, 168, 76, 0.16);
+    border-color: rgba(201, 168, 76, 0.55);
+    color: var(--color-white);
+}
+
+.reason-chip:has(input:focus-visible) {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
+/* The panel's own field label, used where there is no <label for> to
+   point at (a fieldset of chips). */
+.moderation-field__label {
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.moderation-panel__submit--block {
+    display: block;
+    width: 100%;
+}
+
+.date-field__error {
+    display: inline-block;
+    margin: 6px 0 0;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--error-bg);
+    color: var(--error-text);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.date-field--invalid .date-field__text {
+    border-color: var(--status-rejected-dot);
 }
 
 .moderation-check {
@@ -766,13 +977,75 @@ main {
 .moderation-photo {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.moderation-photo__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.moderation-photo__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.moderation-photo__action input {
+    margin: 0;
+}
+
+.moderation-panel__section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.moderation-panel__section:first-of-type {
+    margin-top: 14px;
+}
+
+.moderation-panel__section-head {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.moderation-panel__section-title {
+    margin: 0;
+    color: var(--color-white);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.moderation-panel__quick-form .moderation-panel__submit {
+    margin-top: 10px;
+}
+
+.moderation-panel__submit--secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: var(--color-white);
+}
+
+.moderation-panel__submit--secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .moderation-panel__submit {
@@ -1582,6 +1855,77 @@ body:has(.notifications-page) > main {
     }
 }
 
+/* ── Password visibility toggle — auth (dark) password fields ─────────────
+ * docs/design-system.md §5.41. Shared by login, register, reset-password and
+ * change-password; markup comes from auth.partials.password-toggle. The button
+ * is hidden until app.js adds `.is-visible` from the input's value; the two eye
+ * glyphs stack in one grid cell and cross-fade off aria-pressed.
+ *
+ * The password input is block-level inside the wrap and the button is pinned
+ * to the field's top/bottom edges with auto block margins. An inline input
+ * leaves descender space under it, which made the button sit a few pixels low
+ * even when absolute-positioned. */
+.field-wrap { position: relative; }
+.field-wrap:has(.field-toggle) .field-input { display: block; padding-right: 52px; }
+.field-underline { pointer-events: none; }
+.field-toggle {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    bottom: 0;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    margin-block: auto;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: rgba(201, 168, 76, 0.85);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    /* Hidden until app.js adds .is-visible when the input has text. The
+       hidden state is inert immediately, so a fade-out cannot swallow a
+       stray tap after the field has been cleared. */
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.5);
+    transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                color 0.18s ease, background-color 0.18s ease, visibility 0s linear 0.18s;
+}
+.field-toggle.is-visible {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                color 0.18s ease, background-color 0.18s ease, visibility 0s;
+}
+.field-toggle:hover { color: rgba(226, 192, 106, 1); background: rgba(201, 168, 76, 0.10); }
+.field-toggle:focus-visible { outline: none; color: rgba(226, 192, 106, 1); box-shadow: 0 0 0 3px rgba(212, 169, 71, 0.35); }
+.field-wrap:focus-within .field-toggle { color: rgba(226, 192, 106, 0.95); }
+.field-toggle[aria-pressed="true"] { color: rgba(226, 192, 106, 1); }
+
+/* The two eye SVGs stack in the same grid cell; aria-pressed drives which is
+   shown. Swap = a small pop-in rotation, not an instant cut. */
+.field-toggle__icon {
+    grid-area: 1 / 1;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.field-toggle__icon--show { opacity: 1; transform: scale(1) rotate(0deg); }
+.field-toggle__icon--hide { opacity: 0; transform: scale(0.4) rotate(-45deg); }
+.field-toggle[aria-pressed="true"] .field-toggle__icon--show { opacity: 0; transform: scale(0.4) rotate(45deg); }
+.field-toggle[aria-pressed="true"] .field-toggle__icon--hide { opacity: 1; transform: scale(1) rotate(0deg); }
+
+@media (prefers-reduced-motion: reduce) {
+    .field-toggle, .field-toggle__icon { transition: none; }
+}
+
 .nav-user-btn {
     display: flex;
     align-items: center;
@@ -1715,132 +2059,6 @@ body:has(.settings-page) > main {
     display: flex;
     flex-direction: column;
 }
-
-.settings-page {
-    flex: 1 0 auto;
-    width: 100%;
-    max-width: 1040px;
-    margin: 0 auto;
-    padding: calc(var(--navbar-height) + 32px) 24px 48px;
-    box-sizing: border-box;
-    background: var(--surface-page);
-    color: var(--text-primary);
-}
-.settings-container { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; min-width: 0; }
-.settings-header h1 { margin: 0; color: var(--text-primary); font-family: var(--font-sans); font-size: 32px; font-weight: 700; line-height: 1.15; }
-.settings-header p { margin: 6px 0 0; color: var(--text-secondary); font-size: 15px; line-height: 1.5; }
-.settings-tabs { border-bottom: 1px solid var(--border-default); position: relative; mask-image: linear-gradient(90deg, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent); }
-.settings-tabs ul { display: flex; gap: 24px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
-.settings-tabs ul::-webkit-scrollbar { display: none; }
-.settings-tab { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 2px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; }
-.settings-tab:hover { color: var(--text-primary); }
-.settings-tab:focus-visible { outline: 2px solid var(--focus-gold); outline-offset: 2px; }
-.settings-tab.is-active { border-bottom-color: #102545; color: #102545; font-weight: 700; }
-.settings-panel { display: grid; gap: 20px; align-content: start; min-width: 0; max-width: 100%; padding: 24px; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 12px; box-shadow: var(--shadow-sm); color: var(--text-primary); }
-.settings-panel h2 { margin: 0; color: var(--text-primary); font-family: var(--font-sans); font-size: 20px; font-weight: 600; line-height: 1.2; }
-.settings-panel h3 { margin: 4px 0 0; color: var(--text-primary); font-size: 15px; font-weight: 600; }
-.settings-panel form { display: grid; gap: 20px; max-width: 640px; min-width: 0; width: 100%; }
-.settings-panel form .admin-field { display: grid; gap: 6px; margin-bottom: 0; }
-.settings-panel .admin-field > span { color: var(--text-secondary); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.settings-panel .admin-field-hint { color: var(--text-muted); font-size: 13px; line-height: 1.45; text-transform: none; letter-spacing: normal; }
-.settings-panel .admin-input { background: var(--surface-input); border: 1px solid var(--border-default); color: var(--text-primary); height: 44px; border-radius: 8px; font-family: var(--font-sans); }
-.settings-panel textarea.admin-input { height: auto; min-height: 44px; }
-.settings-panel .admin-input::placeholder { color: var(--text-muted); font-family: var(--font-sans); opacity: 1; }
-.settings-panel .admin-input:hover { border-color: var(--border-strong); }
-.settings-panel .admin-input:focus { border-color: var(--focus-gold); box-shadow: 0 0 0 3px var(--focus-ring); outline: none; }
-.settings-panel .admin-input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15); }
-.settings-panel .field-narrow { max-width: 480px; }
-.settings-form-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; padding-top: 24px; border-top: 1px solid var(--border-default); }
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.settings-toast { padding: 12px 16px; color: var(--success); background: var(--success-tint); border: 1px solid var(--success); border-radius: 8px; font-size: 14px; }
-.settings-errors { padding: 12px 16px; color: var(--danger); background: var(--danger-tint); border: 1px solid var(--danger); border-radius: 8px; font-size: 14px; }
-.settings-sessions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.settings-session { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; background: var(--surface-page); border: 1px solid var(--border-default); border-radius: 8px; font-size: 14px; color: var(--text-secondary); }
-.settings-session__badge { padding: 2px 8px; background: var(--success-tint); color: var(--success); border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.settings-session__meta { color: var(--text-muted); font-size: 13px; }
-.settings-panel fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
-.settings-panel fieldset legend { padding: 0; margin-bottom: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.settings-panel label { color: var(--text-secondary); font-size: 14px; }
-.settings-panel .password-requirements { background: #f6f8fb; border: 1px solid #cdd5e1; color: #334155; padding: 12px 14px; border-radius: 8px; }
-.settings-panel .password-requirements-title { color: #334155; }
-.settings-panel .password-requirements li { color: #64748b; }
-.settings-panel .password-requirements li.is-met { color: #15803d; }
-.settings-notif-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border-default); }
-.settings-notif-row:last-child { border-bottom: 0; }
-.settings-notif-row__body { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.settings-notif-row__label { color: var(--text-primary); font-size: 14px; font-weight: 600; }
-.settings-notif-row__desc { color: var(--text-muted); font-size: 13px; line-height: 1.45; }
-.settings-password-wrap { position: relative; display: block; }
-.settings-password-wrap .admin-input { padding-right: 88px; }
-.settings-password-toggle { width: auto; position: absolute; top: 50%; right: 6px; transform: translateY(-50%); min-height: 32px; padding: 6px 10px; font-size: 12px; }
-/* Password visibility toggle — auth (dark) password fields (docs/design-system.md §5.41).
-   Gold rgba values are the auth surface palette (same family the auth pages
-   declare page-locally); the button inherits nothing from the light bundle.
-   Hidden until the field has text (`.is-visible`, set by app.js from the
-   input's value); the two eye SVGs stack and cross-fade on toggle. */
-.field-wrap { position: relative; }
-.field-wrap:has(.field-toggle) .field-input { padding-right: 52px; }
-.field-underline { pointer-events: none; }
-.field-toggle {
-    position: absolute; right: 2px; top: 50%; z-index: 2;
-    width: 44px; height: 44px;
-    display: grid; place-items: center;
-    background: transparent; border: 0; border-radius: var(--radius-sm);
-    color: rgba(201,168,76,0.85);
-    cursor: pointer; padding: 0;
-    -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-    /* Hidden until app.js adds .is-visible when the input has text. */
-    opacity: 0; visibility: hidden;
-    transform: translateY(-50%) scale(0.5);
-    transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
-                color 0.18s ease, background-color 0.18s ease, visibility 0s linear 0.18s;
-}
-.field-toggle.is-visible {
-    opacity: 1; visibility: visible;
-    transform: translateY(-50%) scale(1);
-    transition: opacity 0.18s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1),
-                color 0.18s ease, background-color 0.18s ease, visibility 0s;
-}
-.field-toggle:hover { color: rgba(226,192,106,1); background: rgba(201,168,76,0.10); }
-.field-toggle:focus-visible { outline: none; color: rgba(226,192,106,1); box-shadow: 0 0 0 3px rgba(212,169,71,0.35); }
-.field-wrap:focus-within .field-toggle { color: rgba(226,192,106,0.95); }
-.field-toggle[aria-pressed="true"] { color: rgba(226,192,106,1); }
-
-/* The two eye SVGs stack in the same grid cell; aria-pressed drives which is shown.
-   Swap = a small pop-in rotation, not an instant cut. */
-.field-toggle__icon {
-    grid-area: 1 / 1;
-    pointer-events: none;
-    transition: opacity 0.18s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-}
-.field-toggle__icon--show { opacity: 1; transform: scale(1) rotate(0deg); }
-.field-toggle__icon--hide { opacity: 0; transform: scale(0.4) rotate(-45deg); }
-.field-toggle[aria-pressed="true"] .field-toggle__icon--show { opacity: 0; transform: scale(0.4) rotate(45deg); }
-.field-toggle[aria-pressed="true"] .field-toggle__icon--hide { opacity: 1; transform: scale(1) rotate(0deg); }
-
-@media (prefers-reduced-motion: reduce) {
-    .field-toggle, .field-toggle__icon { transition: none; }
-}
-.settings-unsaved-bar { position: sticky; bottom: 16px; z-index: 20; display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: #102545; color: #ffffff; border-radius: 8px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25); font-size: 14px; }
-.settings-unsaved-bar.is-visible { display: flex; }
-.settings-unsaved-bar .admin-button { min-height: 36px; }
-@media (min-width: 1024px) {
-    .settings-container { grid-template-columns: 220px minmax(0, 1fr); align-items: start; }
-    .settings-header, .settings-toast, .settings-errors { grid-column: 1 / -1; }
-    .settings-tabs { border-bottom: 0; border-right: 1px solid var(--border-default); mask-image: none; -webkit-mask-image: none; }
-    .settings-tabs ul { flex-direction: column; gap: 2px; overflow-x: visible; }
-    .settings-tab { border-bottom: 0; border-left: 3px solid transparent; margin-bottom: 0; padding: 10px 12px; border-radius: 8px; }
-    .settings-tab:hover { background: #f6f8fb; }
-    .settings-tab.is-active { border-left-color: transparent; border-bottom-color: transparent; background: #e8eef8; }
-}
-
-@media (max-width: 700px) {
-    .settings-page { padding: calc(var(--navbar-height) + 20px) 16px 40px; }
-    .settings-grid { grid-template-columns: 1fr; }
-    .settings-panel { padding: 18px; }
-    .settings-panel .admin-button:not(.settings-password-toggle) { width: 100%; min-height: 44px; }
-}
-
 
 .dropdown-item {
     display: flex;
@@ -3443,11 +3661,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 /* Department color identifiers — visual cues (especially admin). Fallback for unknown codes. */
 [data-dept] { --dept-accent: var(--dept-fallback); --dept-tint: var(--dept-fallback-tint); }
 [data-dept="ENG"] { --dept-accent: var(--dept-ENG); --dept-tint: var(--dept-ENG-tint); }
-[data-dept="HLTH"] { --dept-accent: var(--dept-HLTH); --dept-tint: var(--dept-HLTH-tint); }
-[data-dept="GSO"] { --dept-accent: var(--dept-GSO); --dept-tint: var(--dept-GSO-tint); }
-[data-dept="MPDO"] { --dept-accent: var(--dept-MPDO); --dept-tint: var(--dept-MPDO-tint); }
-[data-dept="WST"] { --dept-accent: var(--dept-WST); --dept-tint: var(--dept-WST-tint); }
-[data-dept="SWDO"] { --dept-accent: var(--dept-SWDO); --dept-tint: var(--dept-SWDO-tint); }
+[data-dept="HRMO"] { --dept-accent: var(--dept-HRMO); --dept-tint: var(--dept-HRMO-tint); }
+[data-dept="MENRO"] { --dept-accent: var(--dept-MENRO); --dept-tint: var(--dept-MENRO-tint); }
 [data-dept="BPLO"] { --dept-accent: var(--dept-BPLO); --dept-tint: var(--dept-BPLO-tint); }
 [data-dept="OM"] { --dept-accent: var(--dept-OM); --dept-tint: var(--dept-OM-tint); }
 
@@ -4228,10 +4443,6 @@ body:has(.staff-create-page) .admin-content {
     font-weight: 700;
 }
 
-.settings-panel .required-mark {
-    color: #b91c1c;
-}
-
 .optional-mark {
     color: rgba(255, 255, 255, 0.55);
     font-size: 10px;
@@ -4529,88 +4740,6 @@ body:has(.staff-create-page) .admin-content {
     color: rgba(255, 255, 255, 0.42);
 }
 
-.admin-invitation-textarea {
-    min-height: 168px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.7;
-    resize: vertical;
-    white-space: pre;
-    overflow-wrap: normal;
-    overflow-x: auto;
-}
-
-.admin-invitation-bulk {
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-gold);
-}
-
-.admin-invitation-bulk-grid {
-    display: grid;
-    grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr);
-    align-items: start;
-    gap: 16px;
-}
-
-.admin-invitation-review {
-    margin-top: 20px;
-    padding: 18px;
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid var(--color-gold);
-    border-radius: 6px;
-}
-
-.admin-invitation-review-title {
-    margin: 0 0 14px;
-    color: var(--color-white);
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.admin-invitation-tally {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin: 0 0 16px;
-    padding: 0;
-    list-style: none;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.admin-invitation-tally strong {
-    color: var(--color-gold-light);
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.admin-invitation-review-table td {
-    vertical-align: top;
-}
-
-@media (max-width: 900px) {
-    .admin-invitation-bulk-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.admin-invitation-review-table .admin-status,
-.admin-invitation-review-table .admin-muted-cell {
-    display: block;
-}
-
-.admin-invitation-confirm {
-    margin-top: 16px;
-}
-
-.admin-invitation-confirm .admin-button {
-    width: 100%;
-}
-
 .admin-filter-actions,
 .admin-form-actions {
     display: flex;
@@ -4684,6 +4813,42 @@ body:has(.staff-create-page) .admin-content {
 .admin-form-stack {
     display: grid;
     gap: 16px;
+}
+
+.admin-feedback-item {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+
+.admin-feedback-item--published {
+    background: var(--surface);
+}
+
+.admin-feedback-item__body {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-feedback-item__meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-feedback-item__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
 }
 
 .admin-detail-layout {

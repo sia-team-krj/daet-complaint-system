@@ -5,7 +5,10 @@ namespace App\Models;
 use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
+use App\Enums\HoldReason;
+use App\Enums\PublicationStatus;
 use App\Enums\VerificationMethod;
+use App\Services\ComplaintPrivacyService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +64,21 @@ class Complaint extends Model
         'reviewed_at',
         'verified_at',
         'review_notes',
+        'named_party',
+        'named_party_position',
+        'publication_status',
+        'publication_requested_at',
+        'publication_requested_by',
+        'publication_decided_at',
+        'publication_decided_by',
+        'publication_note',
+        'hold_reason',
+        'hold_note',
+        'hold_internal_note',
+        'hold_expected_resume_at',
+        'hold_started_at',
+        'hold_started_by',
+        'hold_total_minutes',
     ];
 
     protected function casts(): array
@@ -70,6 +88,11 @@ class Complaint extends Model
             'hidden_from_public' => 'boolean',
             'withheld_image_paths' => 'array',
             'moderated_at' => 'datetime',
+            'publication_requested_at' => 'datetime',
+            'publication_decided_at' => 'datetime',
+            'hold_expected_resume_at' => 'date',
+            'hold_started_at' => 'datetime',
+            'hold_total_minutes' => 'integer',
             'resolved_at' => 'datetime',
             'closed_at' => 'datetime',
             'image_paths' => 'array',
@@ -382,12 +405,123 @@ class Complaint extends Model
      * answers "is this report accurate", which is a different question from
      * "did this resident agree to be public", and the resident's answer must not
      * depend on an office choosing to sign off.
+     *
+     * A complaint in a privacy-gated category is the one exception, and it is
+     * not the resident's consent that carries it: those complaints name
+     * somebody, so they are filed private and reach the register only when the
+     * office has settled them, the information has been verified, the
+     * sensitive parts have been redacted and the Mayor's office has approved
+     * the publication. See ComplaintPrivacyService.
      */
     public function isPubliclyVisible(): bool
     {
-        return $this->is_public
-            && ! $this->hidden_from_public
-            && ! $this->isModerationFlagged();
+        if ($this->hidden_from_public || $this->isModerationFlagged()) {
+            return false;
+        }
+
+        if ($this->isPrivacyGated()) {
+            return $this->publicationStatus() === PublicationStatus::Approved;
+        }
+
+        return $this->is_public;
+    }
+
+    /**
+     * Whether this complaint names somebody, and is therefore governed by the
+     * privacy policy rather than by the resident's publication choice.
+     */
+    public function isPrivacyGated(): bool
+    {
+        return ComplaintPrivacyService::isGated($this->category);
+    }
+
+    /**
+     * The publication state of a privacy-gated complaint.
+     */
+    public function publicationStatus(): ?PublicationStatus
+    {
+        if ($this->publication_status === null || $this->publication_status === '') {
+            return null;
+        }
+
+        return PublicationStatus::tryFrom($this->publication_status);
+    }
+
+    /**
+     * The named party — a person or a business — as it was written by the
+     * resident. This never leaves the office: it is not rendered on the public
+     * register and is not part of the public search text.
+     */
+    public function namedParty(): ?string
+    {
+        $value = $this->named_party;
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    public function namedPartyPosition(): ?string
+    {
+        $value = $this->named_party_position;
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
+    // ── On hold ─────────────────────────────────────────────────────────
+    //
+    // A complaint can be verified and still not be something the office can
+    // finish today. The office says why, the resident is told, and the
+    // deadline pauses — because a budget gap is not a failure to work.
+
+    /**
+     * Whether the office has paused the work on this complaint.
+     */
+    public function isOnHold(): bool
+    {
+        return $this->hold_reason !== null && $this->hold_reason !== '';
+    }
+
+    public function holdReasonEnum(): ?HoldReason
+    {
+        if (! $this->isOnHold()) {
+            return null;
+        }
+
+        return HoldReason::tryFrom($this->hold_reason);
+    }
+
+    /**
+     * How long the complaint has been held, in total.
+     *
+     * The wait that is still running counts too, so the number the admin
+     * sees is the whole story and not just the finished parts of it.
+     */
+    public function heldMinutes(): int
+    {
+        $minutes = (int) ($this->hold_total_minutes ?? 0);
+
+        if ($this->isOnHold() && $this->hold_started_at !== null) {
+            $minutes += max(0, (int) $this->hold_started_at->diffInMinutes(now()));
+        }
+
+        return $minutes;
+    }
+
+    /**
+     * The whole days the complaint has been held.
+     */
+    public function heldDays(): int
+    {
+        return intdiv($this->heldMinutes(), 1440);
+    }
+
+    /**
+     * The public explanation of the hold — what the resident is told.
+     */
+    public function holdNote(): ?string
+    {
+        $value = $this->hold_note;
+
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     /**
@@ -500,10 +634,24 @@ class Complaint extends Model
     public function scopePublic($query)
     {
         return $query
-            ->where('is_public', true)
             ->where('hidden_from_public', false)
             ->whereNotIn('spam_status', ['review', 'spam'])
-            ->whereNull('duplicate_of_id');
+            ->whereNull('duplicate_of_id')
+            // A rejected complaint is not a municipal matter — the office has
+            // said so — so it does not belong on the public register, which
+            // exists to show what residents are reporting and what is being
+            // done about it. The resident still sees it on their own ticket,
+            // with the office's reason. Resolved and closed complaints stay:
+            // they are the record of a problem that was fixed, which is the
+            // whole value of the register.
+            ->where('status', '!=', ComplaintStatus::Rejected->value)
+            ->where(function ($query) {
+                // A complaint the resident agreed to publish, or one the
+                // Mayor's office approved for publication after the office
+                // redacted it.
+                $query->where('is_public', true)
+                    ->orWhere('publication_status', PublicationStatus::Approved->value);
+            });
     }
 
     public function scopePendingReview($query)

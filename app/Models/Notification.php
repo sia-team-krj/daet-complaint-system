@@ -45,6 +45,24 @@ class Notification extends Model
     /** The office verified a report and has not started the work in time. */
     public const COMPLAINT_WORK_OVERDUE = 'complaint.work_overdue';
 
+    /** A report that names somebody is waiting for the Mayor's office to decide. */
+    public const COMPLAINT_PUBLICATION_REQUESTED = 'complaint.publication_requested';
+
+    /** The Mayor's office approved the report for publication. */
+    public const COMPLAINT_PUBLICATION_APPROVED = 'complaint.publication_approved';
+
+    /** The Mayor's office declined: the report stays private. */
+    public const COMPLAINT_PUBLICATION_DECLINED = 'complaint.publication_declined';
+
+    /** The office paused the work on a complaint. */
+    public const COMPLAINT_PUT_ON_HOLD = 'complaint.put_on_hold';
+
+    /** The office took the hold off and is carrying on. */
+    public const COMPLAINT_HOLD_REMOVED = 'complaint.hold_removed';
+
+    /** The work was resolved; the resident has not confirmed it yet. */
+    public const COMPLAINT_RESOLUTION_REMINDER = 'complaint.resolution_reminder';
+
     protected $fillable = [
         'user_id',
         'type',
@@ -163,6 +181,17 @@ class Notification extends Model
             return route('admin.complaints.show', $complaint);
         }
 
+        // A publication decision belongs to the Mayor's office, which is
+        // usually not the office that owns the report — the ticket page would
+        // refuse it. The decider's review page is where the decision is made.
+        if (in_array($this->type, [
+            self::COMPLAINT_PUBLICATION_REQUESTED,
+            self::COMPLAINT_PUBLICATION_APPROVED,
+            self::COMPLAINT_PUBLICATION_DECLINED,
+        ], true)) {
+            return route('staff.publication-requests.show', $complaint);
+        }
+
         return route('staff.complaints.show', $complaint);
     }
 
@@ -180,6 +209,12 @@ class Notification extends Model
             self::COMPLAINT_STATUS_CHANGED => 'Status changed',
             self::COMPLAINT_REVIEW_UPDATED => 'Review updated',
             self::COMPLAINT_ASSIGNED => 'Assigned to you',
+            self::COMPLAINT_PUT_ON_HOLD => 'Work paused',
+            self::COMPLAINT_HOLD_REMOVED => 'Work resumed',
+            self::COMPLAINT_RESOLUTION_REMINDER => 'Please confirm the resolution',
+            self::COMPLAINT_PUBLICATION_REQUESTED => 'Publication decision needed',
+            self::COMPLAINT_PUBLICATION_APPROVED => 'Published',
+            self::COMPLAINT_PUBLICATION_DECLINED => 'Not published',
             default => 'Update',
         };
     }
@@ -194,10 +229,9 @@ class Notification extends Model
         $complaint = $this->subject instanceof Complaint ? $this->subject : null;
 
         if ($complaint && is_string($complaint->category) && $complaint->category !== '') {
-            $labels = \App\Services\DepartmentRouter::getCategoryOptions();
-            $flat = collect($labels)->flatten(1)->pluck('label', 'value');
+            $labels = collect(\App\Services\DepartmentRouter::categoryLabels());
 
-            return $flat->get($complaint->category, $this->typeLabel());
+            return $labels->get($complaint->category, $this->typeLabel());
         }
 
         return $this->typeLabel();

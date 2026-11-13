@@ -36,8 +36,8 @@
                     <div class="tr-selects">
                         <div class="tr-select tr-select--department">
                             <select name="status" class="staff-queue-filter-select" aria-label="Status">
-                                <option value="">All statuses</option>
-                                @foreach(['Submitted', 'Under Review', 'In Progress', 'Resolved', 'Rejected'] as $value)
+                                <option value="">{{ __('staff.queue_scope.all_statuses') }}</option>
+                                @foreach($statusOptions as $value)
                                     <option value="{{ $value }}" @selected(($status ?? '') === $value)>{{ $value }}</option>
                                 @endforeach
                             </select>
@@ -65,13 +65,28 @@
                 </div>
                 <div class="tr-filters__row2">
                     <button type="submit" class="tr-button" style="margin: 0;">Apply</button>
+
+                    {{-- The queue is for the work that is still live. The
+                         finished cases are one click away, not buried in the
+                         same list. --}}
+                    <a href="{{ route('staff.complaints.index', array_merge(request()->except(['scope']), ['scope' => 'open'])) }}"
+                       class="status-chip {{ $scope === 'open' ? 'selected' : '' }}"
+                       @if($scope === 'open') aria-current="true" @endif>
+                        {{ __('staff.queue_scope.scope_open') }}
+                    </a>
+                    <a href="{{ route('staff.complaints.index', array_merge(request()->except(['scope']), ['scope' => 'finished'])) }}"
+                       class="status-chip {{ $scope === 'finished' ? 'selected' : '' }}"
+                       @if($scope === 'finished') aria-current="true" @endif>
+                        {{ __('staff.queue_scope.scope_finished') }}
+                    </a>
+
                     <a href="{{ route('staff.complaints.index', array_merge(request()->except(['overdue']), $overdue ? [] : ['overdue' => 1])) }}"
                        class="status-chip {{ $overdue ? 'selected' : '' }}"
                        @if($overdue) aria-current="true" @endif>
                         {{ __('staff.sla.overdue_filter') }}
                     </a>
                     @if(request()->filled('status') || request()->filled('review') || request()->filled('priority') || request()->filled('search') || $overdue)
-                        <a href="{{ route('staff.complaints.index') }}" class="tr-clear">Clear</a>
+                        <a href="{{ route('staff.complaints.index', ['scope' => $scope]) }}" class="tr-clear">Clear</a>
                     @endif
                 </div>
             </form>
@@ -89,7 +104,7 @@
                  data-message-updated="{{ __('audit.queue_updated') }}">
 
             <div data-queue-list>
-                @include('staff.complaints.partials.list', ['complaints' => $complaints, 'slaSummaries' => $slaSummaries])
+                @include('staff.complaints.partials.list', ['complaints' => $complaints, 'slaSummaries' => $slaSummaries, 'scope' => $scope])
             </div>
 
             {{-- ════════════ RESPONSIVE PAGINATION SECTION ════════════ --}}
@@ -118,17 +133,17 @@
     .transparency-page .tr-container { width: 100%; }
 
     .staff-queue-item {
-        border: 1px solid var(--line-soft, #DCE5F1);
+        border: 1px solid var(--line-soft);
         border-radius: var(--radius-lg, 10px);
-        background: var(--surface, #FFFFFF);
+        background: var(--surface);
         box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
         overflow: hidden;
     }
 
     .staff-queue-item + .staff-queue-item { margin-top: 12px; }
 
-    .staff-queue-item--overdue { box-shadow: inset 4px 0 0 #EF4444, var(--shadow-card); }
-    .staff-queue-item--aging { box-shadow: inset 4px 0 0 #F59E0B, var(--shadow-card); }
+    .staff-queue-item--overdue { box-shadow: inset 4px 0 0 var(--dept-priority-critical-strip), var(--shadow-card); }
+    .staff-queue-item--aging { box-shadow: inset 4px 0 0 var(--dept-priority-elevated-strip), var(--shadow-card); }
 
     /* Redesigned Complaint Card Layout */
     .staff-row {
@@ -157,7 +172,7 @@
         height: 36px;
         border-radius: 8px;
         background: rgba(16,41,75,0.06);
-        color: #10294B;
+        color: var(--navy-800);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -175,7 +190,7 @@
         font-size: 14px;
         font-weight: 700;
         line-height: 1.4;
-        color: #142D50;
+        color: var(--navy-900);
         margin: 0 0 3px 0;
     }
 
@@ -185,7 +200,7 @@
         flex-wrap: wrap;
         gap: 4px;
         font-size: 11px;
-        color: #64748B;
+        color: var(--faint);
     }
 
     .staff-row__badges {
@@ -198,7 +213,7 @@
 
     .staff-row__subtext {
         font-size: 11px;
-        color: #64748B;
+        color: var(--faint);
         white-space: nowrap;
     }
 
@@ -215,10 +230,10 @@
         white-space: nowrap;
     }
 
-    .staff-priority--routine { background: rgba(100,116,139,0.1); color: #475569; }
-    .staff-priority--elevated { background: rgba(37,99,235,0.1); color: #1D4ED8; }
-    .staff-priority--urgent { background: rgba(245,158,11,0.15); color: #B45309; }
-    .staff-priority--critical { background: rgba(239,68,68,0.15); color: #B91C1C; }
+    .staff-priority--routine { background: rgba(100,116,139,0.1); color: var(--muted); }
+    .staff-priority--elevated { background: rgba(37,99,235,0.1); color: var(--dept-primary); }
+    .staff-priority--urgent { background: rgba(245,158,11,0.15); color: var(--dept-priority-elevated-text); }
+    .staff-priority--critical { background: rgba(239,68,68,0.15); color: var(--dept-priority-critical-text); }
 
     .staff-row__age {
         display: flex;
@@ -233,8 +248,8 @@
         min-height: 30px;
         padding: 4px 10px;
         border-radius: 6px;
-        background: #10294B;
-        color: #FFFFFF;
+        background: var(--navy-800);
+        color: var(--surface);
         font-size: 11px;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
@@ -251,8 +266,8 @@
         gap: 16px;
         margin-top: 20px;
         padding: 16px 20px;
-        background: var(--surface, #FFFFFF);
-        border: 1px solid var(--line-soft, #DCE5F1);
+        background: var(--surface);
+        border: 1px solid var(--line-soft);
         border-radius: 10px;
         box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,0.06));
         margin-bottom: 60px;
@@ -260,11 +275,11 @@
 
     .staff-pagination-info {
         font-size: 13px;
-        color: #142D50;
+        color: var(--navy-900);
     }
 
     .pagination-range {
-        color: #64748B;
+        color: var(--faint);
     }
 
     .staff-pagination-desktop {
@@ -298,10 +313,10 @@
         min-height: 40px;
         min-width: 40px;
         padding: 0 12px;
-        border: 1px solid var(--line, #dce5f1);
+        border: 1px solid var(--line);
         border-radius: 8px;
-        background: var(--surface, #fff);
-        color: var(--navy-700, #10294b);
+        background: var(--surface);
+        color: var(--navy-700);
         font-size: 13px;
         font-weight: 600;
         text-decoration: none;
@@ -309,25 +324,25 @@
 
     .staff-pagination-desktop .admin-pager-step:hover,
     .staff-pagination-desktop .admin-pager-page:hover {
-        background: var(--navy-50, #f4f7fb);
-        border-color: var(--navy-100, #dce5f1);
-        color: var(--navy-800, #10294b);
+        background: var(--navy-50);
+        border-color: var(--navy-100);
+        color: var(--navy-800);
     }
 
     .staff-pagination-desktop .admin-pager-page.is-current {
-        background: var(--navy-700, #10294b);
-        border-color: var(--navy-700, #10294b);
-        color: #fff;
+        background: var(--navy-700);
+        border-color: var(--navy-700);
+        color: var(--surface);
     }
 
     .staff-pagination-desktop .admin-pager-step.is-disabled {
-        background: var(--surface-soft, #f8fafc);
-        border-color: var(--line-soft, #e8edf5);
-        color: var(--faint, #64748b);
+        background: var(--surface-soft);
+        border-color: var(--line-soft);
+        color: var(--faint);
     }
 
     .staff-pagination-desktop .admin-pager-gap {
-        color: var(--faint, #64748b);
+        color: var(--faint);
         padding: 0 4px;
     }
 
@@ -337,7 +352,7 @@
         justify-content: space-between;
         width: 100%;
         gap: 12px;
-        border-top: 1px solid var(--line-soft, #DCE5F1);
+        border-top: 1px solid var(--line-soft);
         padding-top: 12px;
         margin-top: 4px;
     }
@@ -349,33 +364,33 @@
         min-height: 44px;
         padding: 0 16px;
         border-radius: 6px;
-        background: #10294B;
-        color: #FFFFFF;
+        background: var(--navy-800);
+        color: var(--surface);
         font-size: 13px;
         font-weight: 700;
         text-decoration: none;
-        border: 1px solid #10294B;
+        border: 1px solid var(--navy-800);
         cursor: pointer;
         flex: 1;
         text-align: center;
     }
 
     .staff-page-btn:hover {
-        background: #1B3A61;
-        color: #FFFFFF;
+        background: var(--navy-700);
+        color: var(--surface);
     }
 
     .staff-page-btn--disabled {
-        background: #F1F5F9;
-        color: #94A3B8;
-        border-color: #E2E8F0;
+        background: var(--bg);
+        color: var(--border-strong);
+        border-color: var(--line);
         cursor: not-allowed;
     }
 
     .staff-page-indicator {
         font-size: 13px;
         font-weight: 700;
-        color: #142D50;
+        color: var(--navy-900);
         padding: 0 12px;
         white-space: nowrap;
     }
@@ -390,7 +405,7 @@
         .staff-row__badges {
             grid-column: span 2;
             padding-top: 6px;
-            border-top: 1px solid var(--line-soft, #DCE5F1);
+            border-top: 1px solid var(--line-soft);
         }
         .staff-row__age {
             grid-column: 2;

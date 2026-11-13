@@ -28,4 +28,7 @@ return [
     'ticket_autoclose_subject' => 'Your complaint :ticket has been closed',
     'ticket_autoclose_headline' => 'Your complaint has been closed automatically',
     'ticket_autoclose_summary' => 'It was marked Resolved :days days ago and there was no response from you, so it was closed automatically.',
+    'ticket_remind_subject' => 'Your complaint :ticket was resolved — please confirm it',
+    'ticket_remind_headline' => 'Please confirm your complaint was resolved',
+    'ticket_remind_summary' => 'The office marked your complaint Resolved :days days ago. If the work was not done, or was not done properly, please tell us — the case stays open until you confirm it.',
 ];

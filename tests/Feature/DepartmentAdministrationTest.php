@@ -42,6 +42,22 @@ class DepartmentAdministrationTest extends TestCase
         $this->admin = User::factory()->create(['role' => 'admin']);
     }
 
+    /**
+     * An ordinary office — one that receives nothing on its own.
+     *
+     * Every office the municipality runs is a routing key now, so a test that
+     * needs an office whose code is free to change creates one.
+     */
+    private function createOffice(string $code = 'LTO', string $name = 'Liaison Office'): Department
+    {
+        return Department::create([
+            'name' => $name,
+            'code' => $code,
+            'description' => 'An office created for this test.',
+            'is_active' => true,
+        ]);
+    }
+
     // ── Create ──────────────────────────────────────────────
 
     public function test_an_admin_can_create_a_department(): void
@@ -179,12 +195,12 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_an_admin_can_edit_a_department(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
 
         $this->actingAs($this->admin)
             ->put(route('admin.departments.update', $department), [
-                'name' => 'Social Welfare and Development Office',
-                'code' => 'SWDO',
+                'name' => 'Liaison Office Renamed',
+                'code' => 'LTO',
                 'description' => 'Renamed description.',
             ])
             ->assertRedirect(route('admin.departments.index'));
@@ -194,12 +210,12 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_editing_is_logged_with_before_and_after_values(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
         $originalName = $department->name;
 
         $this->actingAs($this->admin)->put(route('admin.departments.update', $department), [
-            'name' => 'Social Welfare Office',
-            'code' => 'SWDO',
+            'name' => 'Human Resource Office',
+            'code' => 'LTO',
             'description' => 'Shortened.',
         ]);
 
@@ -207,7 +223,7 @@ class DepartmentAdministrationTest extends TestCase
 
         $this->assertNotNull($log, 'Editing a department must leave an audit record.');
         $this->assertSame($originalName, $log->metadata['before']['name']);
-        $this->assertSame('Social Welfare Office', $log->metadata['after']['name']);
+        $this->assertSame('Human Resource Office', $log->metadata['after']['name']);
     }
 
     /**
@@ -235,27 +251,37 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_a_non_routable_code_can_be_renamed(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        // Every office the municipality runs is a routing key now, so the code
+        // that is free to change is one an administrator creates.
+        $this->actingAs($this->admin)
+            ->post(route('admin.departments.store'), [
+                'name' => 'Liaison Office',
+                'code' => 'LTO',
+                'description' => 'Inter-agency liaison.',
+            ]);
+
+        $department = Department::where('code', 'LTO')->firstOrFail();
 
         $this->actingAs($this->admin)
             ->put(route('admin.departments.update', $department), [
                 'name' => $department->name,
-                'code' => 'SWDO2',
+                'code' => 'LTO2',
                 'description' => $department->description,
             ])
             ->assertSessionHasNoErrors();
 
-        $this->assertSame('SWDO2', $department->fresh()->code);
+        $this->assertSame('LTO2', $department->fresh()->code);
     }
 
     public function test_an_edit_cannot_take_another_offices_name_or_code(): void
     {
-        $social = Department::where('code', 'SWDO')->firstOrFail();
+        $humanResources = $this->createOffice();
+        $other = $this->createOffice('LTO2', 'Another Office');
 
         $this->actingAs($this->admin)
-            ->put(route('admin.departments.update', $social), [
-                'name' => 'Health Office',
-                'code' => 'HLTH',
+            ->put(route('admin.departments.update', $humanResources), [
+                'name' => $other->name,
+                'code' => $other->code,
                 'description' => null,
             ])
             ->assertSessionHasErrors(['name', 'code']);
@@ -265,7 +291,7 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_an_admin_can_archive_a_department(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
 
         $this->actingAs($this->admin)
             ->post(route('admin.departments.archive', $department))
@@ -276,7 +302,7 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_archiving_is_logged(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
 
         $this->actingAs($this->admin)->post(route('admin.departments.archive', $department));
 
@@ -293,7 +319,7 @@ class DepartmentAdministrationTest extends TestCase
      */
     public function test_an_archived_department_can_be_restored(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
 
         $this->actingAs($this->admin)->post(route('admin.departments.archive', $department));
         $this->actingAs($this->admin)->post(route('admin.departments.restore', $department));
@@ -325,7 +351,7 @@ class DepartmentAdministrationTest extends TestCase
     /** Work in flight needs an owner, so it blocks archiving rather than orphaning it. */
     public function test_a_department_with_open_complaints_cannot_be_archived(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
 
         // The stored value is "In Progress", not the enum case name. The
         // controller's open-case filter reads the stored value, so a test that
@@ -347,7 +373,7 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_closed_complaints_do_not_block_archiving(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
 
         Complaint::factory()->create([
             'department_id' => $department->id,
@@ -362,9 +388,9 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_archived_departments_are_hidden_from_the_directory_by_default(): void
     {
-        $archived = Department::where('code', 'SWDO')->firstOrFail();
+        $archived = $this->createOffice();
         $archived->update(['is_active' => false]);
-        $active = Department::where('code', 'WST')->firstOrFail();
+        $active = Department::where('code', 'MENRO')->firstOrFail();
 
         $this->actingAs($this->admin)
             ->get(route('admin.departments.index'))
@@ -431,19 +457,19 @@ class DepartmentAdministrationTest extends TestCase
 
     public function test_an_archived_department_cannot_receive_staff_invitations(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
         $department->update(['is_active' => false]);
 
         $listed = InvitationCode::query();
         $options = Department::where('is_active', true)->orderBy('name')->pluck('code');
 
-        $this->assertNotContains('SWDO', $options->all());
+        $this->assertNotContains($department->code, $options->all());
     }
 
     /** An archived office must not appear as somewhere to send new work. */
     public function test_assignment_dropdowns_exclude_archived_offices(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
         $department->update(['is_active' => false]);
 
         $this->actingAs($this->admin)
@@ -459,7 +485,7 @@ class DepartmentAdministrationTest extends TestCase
      */
     public function test_the_complaint_filter_still_offers_archived_offices(): void
     {
-        $department = Department::where('code', 'SWDO')->firstOrFail();
+        $department = $this->createOffice();
         $department->update(['is_active' => false]);
 
         $this->actingAs($this->admin)

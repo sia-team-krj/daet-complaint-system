@@ -32,11 +32,12 @@ return [
         'streetlight' => 'labor_required',
         'garbage' => 'labor_required',
         'sanitation' => 'labor_required',
-        'park_maintenance' => 'labor_required',
-        'stray_animals' => 'labor_required',
 
         'noise_complaint' => 'report_only',
         'business_permit' => 'report_only',
+        'plastic_usage' => 'report_only',
+        // Desk work: the office looks into what happened and acts on it.
+        'staff_treatment' => 'report_only',
         'others' => 'report_only',
     ],
 
