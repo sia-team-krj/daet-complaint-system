@@ -31,6 +31,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -108,7 +109,9 @@ class StaffController extends Controller
         $user = Auth::user();
         $department = $user->department;
         $departmentId = $user->department_id;
-        $baseQuery = Complaint::where('department_id', $departmentId);
+        // A verifier carries the office's whole queue; an ordinary staff
+        // member carries only the work the office handed them.
+        $baseQuery = Complaint::visibleToStaff($user)->where('department_id', $departmentId);
 
         $stats = [
             'new' => (clone $baseQuery)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
@@ -118,7 +121,7 @@ class StaffController extends Controller
                 ->whereMonth('updated_at', now()->month)
                 ->whereYear('updated_at', now()->year)
                 ->count(),
-            'avgDays' => $this->calculateAvgResolutionDays($departmentId),
+            'avgDays' => $this->calculateAvgResolutionDays($user),
         ];
 
         $prioritySearch = $request->string('q')->toString();
@@ -159,7 +162,9 @@ class StaffController extends Controller
             'complaint',
             'actor:id,display_alias,first_name,last_name,role',
         ])
-            ->whereHas('complaint', fn ($query) => $query->where('department_id', $departmentId))
+            ->whereHas('complaint', fn ($query) => $query
+                ->visibleToStaff($user)
+                ->where('department_id', $departmentId))
             ->latest('created_at')
             ->limit(12)
             ->get();
@@ -402,12 +407,19 @@ class StaffController extends Controller
     /**
      * Calculate average resolution days for department
      */
-    private function calculateAvgResolutionDays(?int $departmentId): ?float
+    /**
+     * How long the office takes, on average, to finish a report.
+     *
+     * Measured over the work this staff member can see: the office's average
+     * for a verifier, the person's own average for an ordinary staff member.
+     */
+    private function calculateAvgResolutionDays(User $user): ?float
     {
-        $query = Complaint::where('status', ComplaintStatus::Resolved->value);
+        $query = Complaint::visibleToStaff($user)
+            ->where('status', ComplaintStatus::Resolved->value);
 
-        if ($departmentId) {
-            $query->where('department_id', $departmentId);
+        if ($user->department_id) {
+            $query->where('department_id', $user->department_id);
         }
 
         $avgDays = $query
@@ -526,9 +538,17 @@ class StaffController extends Controller
             ComplaintPriority::cases(),
         );
 
+        $category = $request->get('category');
+        $barangay = $request->get('barangay');
+        $assignedStaffId = $request->get('assigned_staff_id');
+        $assigned = $request->get('assigned');
+
         // Outstanding asks are eager-loaded, otherwise the queue would issue one
         // extra query per row just to show how long a resident has been waiting.
-        $query = Complaint::where('department_id', $departmentId)
+        // A verifier sees the office's whole queue; an ordinary staff member
+        // sees only the work the office handed them.
+        $query = Complaint::visibleToStaff($user)
+            ->where('department_id', $departmentId)
             ->whereIn('status', $scopeStatuses)
             ->with([
                 'user:id,display_alias,barangay',
@@ -556,6 +576,20 @@ class StaffController extends Controller
                     ->orWhere('title', 'ILIKE', '%'.$search.'%')
                     ->orWhere('description', 'ILIKE', '%'.$search.'%');
             });
+        }
+
+        if (is_string($category) && $category !== '') {
+            $query->where('category', $category);
+        }
+
+        if (is_string($barangay) && $barangay !== '') {
+            $query->where('barangay', $barangay);
+        }
+
+        if ($assigned === 'unassigned') {
+            $query->whereNull('assigned_staff_id');
+        } elseif (is_string($assignedStaffId) && $assignedStaffId !== '' && ctype_digit($assignedStaffId)) {
+            $query->where('assigned_staff_id', (int) $assignedStaffId);
         }
 
         // Only the work that has actually slipped past its deadline. The days
@@ -739,8 +773,12 @@ class StaffController extends Controller
 
         $user = Auth::user();
 
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             abort(403, 'This complaint is not assigned to your department.');
+        }
+
+        if ($user->isDepartmentStaff() && ! Complaint::isVisibleToStaff($complaint, $user)) {
+            abort(403, 'This complaint is not assigned to you.');
         }
 
         $complaint->load(['logs.actor:id,display_alias,first_name,last_name,role']);
@@ -795,9 +833,14 @@ class StaffController extends Controller
     {
         $user = Auth::user();
 
-        // Authorization: staff can only view their department's complaints
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        // Authorization: staff can only view their department's complaints,
+        // and an ordinary staff member only the work the office handed them.
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             abort(403, 'This complaint is not assigned to your department.');
+        }
+
+        if ($user->isDepartmentStaff() && ! Complaint::isVisibleToStaff($complaint, $user)) {
+            abort(403, 'This complaint is not assigned to you. Ask your office to assign it to you.');
         }
 
         // The resident rides as the staff-safe alias plus the barangay the
@@ -811,6 +854,7 @@ class StaffController extends Controller
             'logs.evidences',
             'reviewedBy',
             'verifyingStaff',
+            'assignedStaff:id,first_name,last_name,role',
             'duplicateOf',
             'informationRequests.requester:id,display_alias,first_name,last_name,role',
         ]);
@@ -842,13 +886,73 @@ class StaffController extends Controller
         // advertise a control that would be refused.
         $departmentVerifiers = $user->canVerifyComplaints()
             ? User::query()
-                ->where('role', 'staff')
+                ->whereIn('role', ['staff', 'department_admin'])
                 ->where('department_id', $complaint->department_id)
-                ->where('can_verify', true)
+                ->where(function ($query): void {
+                    $query->where('role', 'department_admin')
+                        ->orWhere('can_verify', true);
+                })
                 ->where('is_active', true)
                 ->orderBy('first_name')
                 ->get()
             : collect();
+
+        // Assignment is available to office verifiers (DA and staff with
+        // verification rights) for their own office. Show active office
+        // members with workload counts so the verifier can pick quickly.
+        $canAssignComplaint = Gate::allows('assign', $complaint);
+        $officeAssignees = collect();
+        $recommendedAssigneeId = null;
+
+        if ($canAssignComplaint) {
+            $officeMembers = User::query()
+                ->whereIn('role', ['staff', 'department_admin'])
+                ->where('department_id', $complaint->department_id)
+                ->where('is_active', true)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+
+            $memberIds = $officeMembers->pluck('id')->all();
+            $openStatuses = [
+                ComplaintStatus::Submitted->value,
+                ComplaintStatus::UnderReview->value,
+                ComplaintStatus::InProgress->value,
+            ];
+
+            $openCounts = $memberIds === [] ? collect() : Complaint::query()
+                ->where('department_id', $complaint->department_id)
+                ->whereIn('assigned_staff_id', $memberIds)
+                ->whereIn('status', $openStatuses)
+                ->selectRaw('assigned_staff_id, COUNT(*) as total')
+                ->groupBy('assigned_staff_id')
+                ->pluck('total', 'assigned_staff_id');
+
+            $overdueIds = $sla->overdueIds((int) $complaint->department_id);
+            $overdueCounts = ($memberIds === [] || $overdueIds === []) ? collect() : Complaint::query()
+                ->whereIn('id', $overdueIds)
+                ->whereIn('assigned_staff_id', $memberIds)
+                ->selectRaw('assigned_staff_id, COUNT(*) as total')
+                ->groupBy('assigned_staff_id')
+                ->pluck('total', 'assigned_staff_id');
+
+            $officeAssignees = $officeMembers->map(function (User $member) use ($openCounts, $overdueCounts) {
+                $member->open_load = (int) ($openCounts[$member->id] ?? 0);
+                $member->overdue_load = (int) ($overdueCounts[$member->id] ?? 0);
+                return $member;
+            })->sortBy([
+                ['open_load', 'asc'],
+                ['overdue_load', 'asc'],
+                ['first_name', 'asc'],
+                ['last_name', 'asc'],
+            ])->values();
+
+            // Recommend the least-loaded staff member; Department Administrators
+            // remain assignable but are not auto-recommended.
+            $recommendedAssigneeId = $officeAssignees
+                ->first(fn (User $member): bool => ! $member->isDepartmentAdmin())
+                ?->id;
+        }
 
         // The conversation with the resident: what is outstanding, and which
         // round it is on. The ask and the answer are one state, so the page
@@ -895,6 +999,9 @@ class StaffController extends Controller
             'reviewStatusOptions',
             'priorityOptions',
             'departmentVerifiers',
+            'officeAssignees',
+            'recommendedAssigneeId',
+            'canAssignComplaint',
             'openInformationRequest',
             'informationRounds',
             'awaitingResident',
@@ -913,11 +1020,11 @@ class StaffController extends Controller
     /**
      * Review complaint legitimacy and confirm the operational priority.
      */
-    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintUpdateDelivery $ticketUpdates): RedirectResponse
+    public function review(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintUpdateDelivery $ticketUpdates, ComplaintPublicationService $publication): RedirectResponse
     {
         $user = Auth::user();
 
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             abort(403, 'This complaint is not assigned to your department.');
         }
 
@@ -997,6 +1104,15 @@ class StaffController extends Controller
         // is secondary to saving the decision, so a notification failure must
         // not make the review look like it did not land.
         if ($oldReviewStatus !== $reviewStatus) {
+            // The handoff is automatic when the report was already settled:
+            // verification is the last gate, so send it now rather than making
+            // the office ask again.
+            try {
+                $publication->autoSubmit($complaint, $user);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+
             try {
                 $notifications->reviewUpdated($complaint, $reviewStatus, $user);
             } catch (Throwable $exception) {
@@ -1032,7 +1148,7 @@ class StaffController extends Controller
     ): RedirectResponse {
         $user = Auth::user();
 
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             return back()->with('error', 'You cannot moderate complaints outside your department.');
         }
 
@@ -1083,58 +1199,6 @@ class StaffController extends Controller
     }
 
     /**
-     * The office's quick-fill for the public copy of a report that names
-     * somebody.
-     *
-     * Writing the redacted title and description by hand is the slow, easy-
-     * to-forget step. This fills the two fields in from what the office
-     * ticked must not appear — the copy lands back in the fields below for
-     * the office to review and adjust. Nothing is written until the office
-     * saves, through the ordinary moderation form (which requires a reason,
-     * and records it).
-     */
-    public function redact(
-        Request $request,
-        Complaint $complaint,
-        ComplaintModerationService $moderation,
-    ): RedirectResponse {
-        $user = Auth::user();
-
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
-            return back()->with('error', 'You cannot act on complaints outside your department.');
-        }
-
-        if (! $user->canVerifyComplaints()) {
-            abort(403, 'Only a department verifier or an administrator can redact a report that names somebody.');
-        }
-
-        abort_unless($complaint->isPrivacyGated(), 422, 'This report does not need a redacted copy for publication.');
-
-        $validated = $request->validate([
-            'strip_party' => ['nullable', 'boolean'],
-            'strip_position' => ['nullable', 'boolean'],
-        ]);
-
-        $stripParty = (bool) ($validated['strip_party'] ?? false);
-        $stripPosition = (bool) ($validated['strip_position'] ?? false);
-
-        if (! $stripParty && ! $stripPosition) {
-            return back()->with('error', __('staff.moderation.quick_nothing'));
-        }
-
-        $draft = $moderation->redactionDraft($complaint, $stripParty, $stripPosition);
-
-        // Back to the ticket with the draft in the fields — the office reviews
-        // it, adjusts it, and saves it as the public version.
-        return back()
-            ->withInput([
-                'redacted_title' => $draft['title'],
-                'redacted_description' => $draft['description'],
-            ])
-            ->with('status', __('staff.moderation.quick_done'));
-    }
-
-    /**
      * The office pauses the work on a complaint.
      *
      * Some complaints cannot be finished today for reasons that are not the
@@ -1150,7 +1214,7 @@ class StaffController extends Controller
     ): RedirectResponse {
         $user = Auth::user();
 
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             return back()->with('error', 'You cannot put complaints outside your department on hold.');
         }
 
@@ -1182,7 +1246,7 @@ class StaffController extends Controller
     ): RedirectResponse {
         $user = Auth::user();
 
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             return back()->with('error', 'You cannot resume complaints outside your department.');
         }
 
@@ -1199,41 +1263,6 @@ class StaffController extends Controller
         return redirect()
             ->route('staff.complaints.show', $complaint)
             ->with('status', 'The hold is off and the work is carrying on. The resident has been told.');
-    }
-
-    /**
-     * The owning office asks the Mayor's office to publish a report that names
-     * somebody.
-     *
-     * The office must have settled the report, had the information verified,
-     * and written the redacted version first — the request is refused until
-     * then, so the Mayor's office is never asked to sign off on something
-     * that is not ready.
-     */
-    public function publicationRequest(
-        Request $request,
-        Complaint $complaint,
-        ComplaintPublicationService $publication,
-    ): RedirectResponse {
-        $user = Auth::user();
-
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
-            return back()->with('error', 'You cannot act on complaints outside your department.');
-        }
-
-        $validated = $request->validate([
-            'publication_note' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        try {
-            $publication->request($complaint, $user, $validated['publication_note'] ?? null);
-        } catch (ValidationException $exception) {
-            return back()->withErrors($exception->errors())->with('error', 'This report is not ready to be published yet.');
-        }
-
-        return redirect()
-            ->route('staff.complaints.show', $complaint)
-            ->with('status', 'The Mayor\'s office has been asked to decide whether this report is published.');
     }
 
     /**
@@ -1266,9 +1295,9 @@ class StaffController extends Controller
      * The Mayor's office decides reports from every office, so the report it
      * is deciding on usually belongs to another department — the ticket page
      * would refuse it ("not assigned to your department"). This page carries
-     * what the decision actually needs: the redacted copy that would be
-     * published, the office's request note, and the decision itself. The name
-     * of the party is never shown here; it stays in the handling office.
+     * what the decision actually needs: the named party (so the public copy
+     * can be redacted), the original report, the public copy, and the
+     * decision itself.
      */
     public function publicationReview(Complaint $complaint): View
     {
@@ -1291,6 +1320,103 @@ class StaffController extends Controller
         return view('staff.publication-requests.show', [
             'complaint' => $complaint,
         ]);
+    }
+
+    /**
+     * Fill the redaction fields from the parts the Mayor's office ticked must
+     * not appear. Nothing is written until the redacted copy is saved.
+     */
+    public function publicationRedactDraft(
+        Request $request,
+        Complaint $complaint,
+        ComplaintModerationService $moderation,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        abort_unless(
+            ComplaintPrivacyService::canApprove($user),
+            403,
+            'Only the Mayor\'s office can redact a report for publication.',
+        );
+
+        abort_unless(
+            $complaint->isPrivacyGated(),
+            404,
+            'This complaint is not in a category that needs a publication decision.',
+        );
+
+        abort_unless(
+            $complaint->publicationStatus() === PublicationStatus::Pending,
+            422,
+            'This report is not waiting for a publication decision.',
+        );
+
+        $validated = $request->validate([
+            'strip_party' => ['nullable', 'boolean'],
+            'strip_position' => ['nullable', 'boolean'],
+        ]);
+
+        $stripParty = (bool) ($validated['strip_party'] ?? false);
+        $stripPosition = (bool) ($validated['strip_position'] ?? false);
+
+        if (! $stripParty && ! $stripPosition) {
+            return back()->with('error', __('staff.publication.redact_draft_nothing'));
+        }
+
+        $draft = $moderation->redactionDraft($complaint, $stripParty, $stripPosition);
+
+        return redirect()
+            ->route('staff.publication-requests.show', $complaint)
+            ->withInput([
+                'redacted_title' => $draft['title'],
+                'redacted_description' => $draft['description'],
+            ])
+            ->with('status', __('staff.publication.redact_draft_done'));
+    }
+
+    /**
+     * Save the redacted public copy the Mayor's office will publish.
+     */
+    public function publicationSaveRedaction(
+        Request $request,
+        Complaint $complaint,
+        ComplaintPublicationService $publication,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        abort_unless(
+            ComplaintPrivacyService::canApprove($user),
+            403,
+            'Only the Mayor\'s office can redact a report for publication.',
+        );
+
+        abort_unless(
+            $complaint->isPrivacyGated(),
+            404,
+            'This complaint is not in a category that needs a publication decision.',
+        );
+
+        $validated = $request->validate([
+            'redacted_title' => ['required', 'string', 'max:255'],
+            'redacted_description' => ['required', 'string', 'max:5000'],
+            'redaction_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $publication->saveRedaction(
+                $complaint,
+                $user,
+                $validated['redacted_title'],
+                $validated['redacted_description'],
+                $validated['redaction_note'] ?? null,
+            );
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', 'The redacted copy could not be saved.');
+        }
+
+        return redirect()
+            ->route('staff.publication-requests.show', $complaint)
+            ->with('status', __('staff.publication.redact_saved'));
     }
 
     /**
@@ -1332,7 +1458,11 @@ class StaffController extends Controller
             'publication_note' => ['required', 'string', 'min:10', 'max:1000'],
         ]);
 
-        $publication->decline($complaint, $user, $validated['publication_note']);
+        try {
+            $publication->decline($complaint, $user, $validated['publication_note']);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', 'This report cannot be declined right now.');
+        }
 
         return redirect()
             ->route('staff.publication-requests.index')
@@ -1346,13 +1476,19 @@ class StaffController extends Controller
      * (ComplaintWorkService): a repair is proven by a photograph of it, and
      * the same rule applies to an administrator as to a department.
      */
-    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications, ComplaintWorkService $work, ComplaintUpdateDelivery $ticketUpdates): RedirectResponse
+    public function update(Request $request, Complaint $complaint, ActivityLogger $activityLogger, NotificationService $notifications, ComplaintWorkService $work, ComplaintUpdateDelivery $ticketUpdates, ComplaintPublicationService $publication): RedirectResponse
     {
         $user = Auth::user();
 
         // Authorization check
-        if ($user->role === 'staff' && $complaint->department_id !== $user->department_id) {
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
             return back()->with('error', 'You cannot update complaints outside your department.');
+        }
+
+        // An ordinary staff member works the cases the office handed them:
+        // they may act on their own work, and on nothing else.
+        if ($user->isDepartmentStaff() && ! Complaint::isVisibleToStaff($complaint, $user)) {
+            return back()->with('error', 'This complaint is not assigned to you.');
         }
 
         $validated = $request->validate([
@@ -1379,8 +1515,15 @@ class StaffController extends Controller
             return back()->with('error', 'Cannot update a complaint that is already terminal (Rejected or Closed).');
         }
 
-        // Enforce valid transitions using the enum's allowedTransitions
-        if (! $oldStatus->canTransitionTo($newStatus)) {
+        // Closing is not a department decision. Only the resident who filed
+        // the report can confirm it is done, or the scheduled auto-close does
+        // after the grace period — never the office, not even as a workaround.
+        if ($newStatus === ComplaintStatus::Closed) {
+            return back()->with('error', __('staff.closure.resident_only'));
+        }
+
+        // Enforce valid transitions using the enum's manually-appliable list
+        if (! in_array($newStatus, $oldStatus->allowedManualTransitions(), true)) {
             return back()->with('error', 'Invalid status transition from '.$oldStatus->label().' to '.$newStatus->label().'.');
         }
 
@@ -1497,6 +1640,19 @@ class StaffController extends Controller
         // remember to open the page. Reported rather than thrown: a failed
         // notification must not undo a status change the department has already
         // committed to, with its proof photos attached.
+        //
+        // A resolved, verified report that names somebody is handed to the
+        // Mayor's office here — resolving it is the handoff. A failure is
+        // reported rather than thrown for the same reason: the resolution is
+        // already committed and the ceremony of asking again is gone.
+        $handoffFailed = false;
+        try {
+            $publication->autoSubmit($complaint, $user);
+        } catch (Throwable $exception) {
+            report($exception);
+            $handoffFailed = true;
+        }
+
         try {
             $notifications->statusChanged($complaint, $newStatus->label(), $user);
         } catch (Throwable $exception) {
@@ -1512,8 +1668,14 @@ class StaffController extends Controller
             report($exception);
         }
 
-        return redirect()
+        $redirect = redirect()
             ->route('staff.complaints.show', $complaint)
             ->with('status', 'Response sent and status updated successfully.');
+
+        if ($handoffFailed) {
+            $redirect->with('error', 'The report was resolved, but it could not be sent to the Mayor\'s office automatically. Please tell an administrator.');
+        }
+
+        return $redirect;
     }
 }

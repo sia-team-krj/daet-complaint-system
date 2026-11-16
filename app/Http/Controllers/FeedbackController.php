@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\FeedbackStatus;
 use App\Models\Department;
 use App\Models\Feedback;
 use App\Services\FeedbackService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -35,12 +33,23 @@ class FeedbackController extends Controller
         }
 
         // What the resident has already said, so the page shows their own
-        // ratings back to them rather than asking again.
+        // ratings back to them rather than asking again. A rating is final, so
+        // these render as a read-only score, never as controls.
         $myRatings = Feedback::query()
             ->where('user_id', $user->id)
             ->ratings()
             ->get()
             ->keyBy('department_id');
+
+        $portalRating = $myRatings->get(null);
+
+        $unratedOffices = $offices->reject(
+            fn (Department $office): bool => $myRatings->has($office->id),
+        );
+
+        // One suggestion a day. Administrators read the queue rather than
+        // write to it, so the daily allowance is theirs to ignore.
+        $suggestionSentToday = ! $user->isAdmin() && $feedback->hasSuggestedToday($user);
 
         $suggestions = Feedback::query()
             ->published()
@@ -55,8 +64,12 @@ class FeedbackController extends Controller
             'portalAverage' => $portal,
             'officeAverages' => $officeAverages,
             'myRatings' => $myRatings,
+            'portalRating' => $portalRating,
+            'suggestionSentToday' => $suggestionSentToday,
+            'canSubmit' => $portalRating === null
+                || $unratedOffices->isNotEmpty()
+                || ! $suggestionSentToday,
             'suggestions' => $suggestions,
-            'officeAveragesAll' => $feedback->officeAverages(),
         ]);
     }
 
@@ -74,15 +87,34 @@ class FeedbackController extends Controller
             'office_ratings.*.between' => __('feedback.errors.rating'),
         ]);
 
-        // Only the offices this resident has actually dealt with can be
-        // rated: a rating of an office you never wrote to says nothing.
+        $suggestion = trim((string) ($validated['suggestion'] ?? ''));
+
+        // The page disables the box at the limit, and this is the server's
+        // half of the same rule: the request is refused rather than silently
+        // dropping the resident's words. Staff are limited too; only the
+        // administration, which reads the queue, is exempt.
+        if ($suggestion !== '' && ! $user->isAdmin() && $feedback->hasSuggestedToday($user)) {
+            return back()
+                ->withInput()
+                ->with('error', __('feedback.errors.suggestion_limit'));
+        }
+
+        // Only the offices that have resolved or closed a report for this
+        // resident can be rated: a rating of an office you never finished a
+        // job with says nothing about the service.
         $rateable = $feedback->officesFor($user)->pluck('id')->map(fn ($id): int => (int) $id)->all();
 
-        $given = 0;
+        $rated = 0;
+        $alreadyRated = 0;
 
         if (! empty($validated['portal_rating'])) {
-            $feedback->recordRating($user, null, (int) $validated['portal_rating']);
-            $given++;
+            $record = $feedback->recordRating($user, null, (int) $validated['portal_rating']);
+
+            if ($record->wasRecentlyCreated) {
+                $rated++;
+            } else {
+                $alreadyRated++;
+            }
         }
 
         foreach ((array) ($validated['office_ratings'] ?? []) as $departmentId => $rating) {
@@ -92,23 +124,38 @@ class FeedbackController extends Controller
                 continue;
             }
 
-            $feedback->recordRating($user, Department::find($departmentId), (int) $rating);
-            $given++;
+            $record = $feedback->recordRating($user, Department::find($departmentId), (int) $rating);
+
+            if ($record->wasRecentlyCreated) {
+                $rated++;
+            } else {
+                $alreadyRated++;
+            }
         }
 
-        $suggestion = trim((string) ($validated['suggestion'] ?? ''));
+        $suggestionGiven = false;
 
         if ($suggestion !== '') {
             $feedback->submitSuggestion($user, $suggestion);
-            $given++;
+            $suggestionGiven = true;
         }
 
-        if ($given === 0) {
-            return back()->with('error', __('feedback.errors.empty'));
+        if ($rated === 0 && ! $suggestionGiven) {
+            return back()
+                ->withInput()
+                ->with('error', $alreadyRated > 0
+                    ? __('feedback.errors.rating_locked')
+                    : __('feedback.errors.empty'));
         }
+
+        $message = match (true) {
+            $rated > 0 && $suggestionGiven => __('feedback.sent_both'),
+            $suggestionGiven => __('feedback.sent_suggestion'),
+            default => __('feedback.sent_rating'),
+        };
 
         return redirect()
             ->route('feedback.index')
-            ->with('status', __('feedback.sent'));
+            ->with('status', $message);
     }
 }

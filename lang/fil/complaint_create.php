@@ -13,16 +13,21 @@ return [
     'fields' => [
         'named_party_person' => 'Pangalan ng taong pinagkakansitan',
         'named_party_business' => 'Pangalan ng negosyong pinagkakansitan',
-        'named_party_hint_person' => 'Nakikita ito ng tanging tanggapan na humahawlak sa ulat na ito. Hindi ito ipapakita sa pampublikong pahina.',
-        'named_party_hint_business' => 'Nakikita ito ng tanging tanggapan na humahawlak sa ulat na ito. Hindi ito ipapakita sa pampublikong pahina.',
+        'named_party_hint_person' => 'Nakikita ito ng tanggapang humahawak sa ulat na ito at ng tanggapan ng Alkalde. Hindi ito ipapakita sa pampublikong pahina.',
+        'named_party_hint_business' => 'Nakikita ito ng tanggapang humahawak sa ulat na ito at ng tanggapan ng Alkalde. Hindi ito ipapakita sa pampublikong pahina.',
         'named_party_position' => 'Ang kanyang posisyon o tanggapan',
         'named_party_position_hint' => 'Opsyonal. Nakakatulong ito sa tanggapan na mahanap ang tamang tao.',
     ],
 
     'visibility' => [
         'gated_title' => 'Binabanggit ng ulat na ito ang isang tao.',
-        'gated_body' => 'Dahil binabanggit nito ang isang tao o negosyo, ito ay ipinapasa nang pribado. Iipublish lamang ito kung ayusin ito ng tanggapan, beripikado ang impormasyon bilang totoo, nai-redact ang sensitibong detalye, at aprubahan ito ng tanggapan ng Alkalde. Ise-info ka man kaya.',
-        'gated_ack' => 'Nauunawaan ko na binabanggit ng ulat na ito ang isang tao o negosyo, at ito ay ipapasa nang pribado. Lalabas lamang ito sa transparency page kung ayusin ito ng tanggapan, beripikado ang impormasyon bilang totoo, nai-redact ang sensitibong detalye, at aprubahan ito ng tanggapan ng Alkalde. Sila na ang magsasabi sa akin, kahit ano ang maging desisyon.',
+        'gated_body' => 'Dahil binabanggit nito ang isang tao o negosyo, ito ay ipinapasa nang pribado. Kapag naayos ng tanggapan at naberipikado ang impormasyon bilang totoo, awtomatiko itong napupunta sa tanggapan ng Alkalde, na nagre-redact ng pampublikong kopya at nagpapasya kung ilalathala ito. Ise-info ka man kaya.',
+        'gated_ack' => 'Nauunawaan ko na binabanggit ng ulat na ito ang isang tao o negosyo, at ito ay ipapasa nang pribado. Kapag naayos ng tanggapan at naberipikado ang impormasyon bilang totoo, awtomatiko itong napupunta sa tanggapan ng Alkalde, na nagre-redact ng pampublikong kopya at nagpapasya kung ilalathala ito. Sila na ang magsasabi sa akin, kahit ano ang maging desisyon.',
+        'public_title' => 'Ilathala sa transparency page',
+        'public_note' => 'Makikita ito ng sinuman sa lalong madaling mapatunayan ng tanggapan ang iyong reklamo — gamit ang iyong display alias, hindi ang iyong tunay na pangalan. Maaari mo itong ibalik sa pribado anumang oras.',
+        'private_title' => 'Ako lang',
+        'private_note' => 'Ikaw lang at ang staff na humahawak sa iyong reklamo ang makakakita nito. Hindi ito lalabas sa pampublikong pahina.',
+        'footnote' => 'Ang mga reklamo ay lumalabas sa pampublikong pahina pagkatapos mapatunayan ng tanggapan, at awtomatikong napipigilan kung mukhang spam o hindi kaugnay sa serbisyo ng munisipyo. Maaari ring mag-alis ang staff ng sensitibong detalye sa pampublikong pahina, ngunit hindi nila mababago ang napili mo — at laging makikita mo ang iyong sariling reklamo kung paano mo ito ipinasa.',
     ],
 
     'page' => [

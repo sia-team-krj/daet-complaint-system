@@ -32,6 +32,16 @@
             @if($complaint->duplicate_of_id && $complaint->duplicateOf)
                 <a href="{{ route('admin.complaints.show', $complaint->duplicateOf) }}" class="admin-text-link">Compare with {{ $complaint->duplicateOf->ticket_id }}</a>
             @endif
+            @if(in_array($complaint->spam_status, ['review', 'spam'], true))
+                <form data-loading-submit method="POST" action="{{ route('admin.complaints.clear-spam-flag', $complaint) }}" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px;">
+                    @csrf
+                    @method('PUT')
+                    <label for="clear-spam-flag-reason" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">Release this flag — not spam</label>
+                    <textarea id="clear-spam-flag-reason" name="clear_flag_reason" class="admin-input" rows="2" required minlength="10" maxlength="1000" placeholder="Reviewed and this is not spam because…">{{ old('clear_flag_reason') }}</textarea>
+                    @error('clear_flag_reason')<p class="admin-field-error">{{ $message }}</p>@enderror
+                    <button type="submit" class="admin-button admin-button--danger-ghost">Release the flag — not spam</button>
+                </form>
+            @endif
         </section>
     @endif
 
@@ -334,9 +344,11 @@
 {{--
     The work is paused — waiting on funds, materials, a budget decision,
     another body. The administrator is the person who can release the funds
-    or make the call, so the reason and the wait are in front of them.
+    or make the call, so the reason and the wait are in front of them. The
+    panel itself renders nothing for a finished report unless a hold is
+    already in place — then it offers only the way to take it off.
 --}}
-@if($complaint->isVerified() && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Rejected && $complaint->statusEnum !== \App\Enums\ComplaintStatus::Closed)
+@if($complaint->isVerified())
     <x-hold-panel
         :complaint="$complaint"
         :can-manage="true"

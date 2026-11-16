@@ -4,6 +4,7 @@
     'label' => null,
     'id' => null,
     'hint' => null,
+    'locked' => false,
 ])
 
 {{--
@@ -15,26 +16,41 @@
     row is reversed, which is what makes the CSS able to fill the stars from
     the left as the rating rises.
 
+    Once a rating has been sent it is final, so the component renders the same
+    five stars as a read-only score instead of controls. The score and its
+    accessible label carry the value in text, never colour alone.
+
     Docs: docs/design-system.md §5.46.
 --}}
 @php
     $fieldId = $id ?: ('stars-'.preg_replace('/[^a-z0-9]+/i', '-', $name));
+    $isLocked = $locked && $value !== null;
 @endphp
 <fieldset class="star-rating" @if($id) id="{{ $id }}" @endif>
     @if($label)
         <legend class="star-rating__legend">{{ $label }}</legend>
     @endif
 
-    <div class="star-rating__stars">
-        @for($i = 1; $i <= 5; $i++)
-            <input type="radio" id="{{ $fieldId }}-{{ $i }}" name="{{ $name }}" value="{{ $i }}"
-                   @checked((int) $value === $i)>
-            <label for="{{ $fieldId }}-{{ $i }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                <span class="sr-only">{{ __('feedback.stars.'.$i, ['count' => $i]) }}</span>
-            </label>
-        @endfor
-    </div>
+    @if($isLocked)
+        <div class="star-rating__static" role="img" aria-label="{{ __('feedback.rated_aria', ['rating' => (int) $value]) }}">
+            @for($i = 1; $i <= 5; $i++)
+                <svg class="star-rating__static-star @if($i <= (int) $value) is-filled @endif"
+                     viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            @endfor
+            <span class="star-rating__static-value">{{ (int) $value }} / 5</span>
+        </div>
+    @else
+        <div class="star-rating__stars">
+            @for($i = 1; $i <= 5; $i++)
+                <input type="radio" id="{{ $fieldId }}-{{ $i }}" name="{{ $name }}" value="{{ $i }}"
+                       @checked((int) $value === $i)>
+                <label for="{{ $fieldId }}-{{ $i }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span class="sr-only">{{ __('feedback.stars.'.$i, ['count' => $i]) }}</span>
+                </label>
+            @endfor
+        </div>
+    @endif
 
     @if($hint)
         <p class="star-rating__hint">{{ $hint }}</p>

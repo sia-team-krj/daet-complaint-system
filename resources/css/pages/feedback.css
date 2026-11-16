@@ -143,6 +143,40 @@
     line-height: 1.45;
 }
 
+/* A rating that has been sent is a score, not a control. The stars keep the
+   same size and the number stays beside them, so the value is never colour
+   alone. */
+.star-rating__static {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--line);
+}
+
+.star-rating__static-star {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.star-rating__static-star.is-filled {
+    color: var(--gold-500);
+    fill: var(--gold-500);
+    stroke: var(--gold-500);
+}
+
+.star-rating__static-value {
+    margin-left: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
 /* ── The offices being rated ────────────────────────────────────────── */
 
 .feedback-offices {
@@ -211,7 +245,18 @@
 
 .feedback-actions {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.feedback-actions__note {
+    margin: 0;
+    margin-right: auto;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .feedback-submit {
@@ -231,7 +276,9 @@
 }
 
 .feedback-flash {
-    margin: 16px 0 0;
+    position: relative;
+    z-index: 2;
+    margin: 16px 0 24px;
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 14px;
@@ -297,7 +344,13 @@
     }
 
     .feedback-actions {
+        flex-direction: column;
+        align-items: stretch;
         justify-content: stretch;
+    }
+
+    .feedback-actions__note {
+        margin-right: 0;
     }
 
     .feedback-submit {

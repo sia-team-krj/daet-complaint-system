@@ -178,6 +178,29 @@
     color: var(--navy-900);
     overflow-wrap: anywhere;
   }
+  .info-request__answer-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .info-request__answer-photo {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    background: var(--surface-soft);
+    aspect-ratio: 1;
+  }
+  .info-request__answer-photo img {
+    display: block;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .info-request__answer-photo:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+  }
   .info-request__form {
     display: grid; gap: 16px;
   }
@@ -676,6 +699,16 @@
           <div class="info-request__answer">
             <p class="info-request__answer-label">{{ __('complaint_show.action.reply_label') }}</p>
             <p class="info-request__answer-text">{{ $openRequest->response_text }}</p>
+            @php $replyPhotos = (array) ($openRequest->response_image_paths ?? []); @endphp
+            @if($replyPhotos !== [])
+              <div class="info-request__answer-photos">
+                @foreach($replyPhotos as $replyPhotoIndex => $replyPhotoPath)
+                  <a href="{{ route('complaints.information.evidence', [$complaint, $openRequest, $replyPhotoIndex]) }}" target="_blank" rel="noopener" class="info-request__answer-photo">
+                    <img src="{{ route('complaints.information.evidence', [$complaint, $openRequest, $replyPhotoIndex]) }}" alt="{{ __('complaint_show.action.reply_photo_alt', ['index' => $replyPhotoIndex + 1]) }}" loading="lazy">
+                  </a>
+                @endforeach
+              </div>
+            @endif
           </div>
         @else
           <form data-loading-submit method="POST" action="{{ route('complaints.information.store', $complaint) }}" enctype="multipart/form-data" class="info-request__form" data-disable-on-submit>

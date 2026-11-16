@@ -48,13 +48,17 @@ enum ComplaintSlaState: string
 
     public function badgeClass(): string
     {
+        // The documented chip classes (§5.38): the stylesheet keys the tint
+        // family off these names, so a bare `sla-overdue` left the chip
+        // unstyled and its text fell back to the page colour — invisible
+        // on the navy ticket banner.
         return match ($this) {
-            self::OnTrack => 'sla-on-track',
-            self::DueSoon => 'sla-due-soon',
-            self::Overdue => 'sla-overdue',
-            self::Met => 'sla-met',
-            self::NotApplicable => 'sla-none',
-            self::OnHold => 'sla-on-hold',
+            self::OnTrack => 'sla-chip--on-track',
+            self::DueSoon => 'sla-chip--due-soon',
+            self::Overdue => 'sla-chip--overdue',
+            self::Met => 'sla-chip--met',
+            self::NotApplicable => 'sla-chip--none',
+            self::OnHold => 'sla-chip--on-hold',
         };
     }
 }

@@ -241,8 +241,8 @@ class NotificationDeliveryTest extends TestCase
         $this->actingAs($this->verifier)
             ->get(route('staff.complaints.index', ['review' => 'needs_information']))
             ->assertOk()
-            ->assertSee('Waiting 5 days')
-            ->assertSee('overdue');
+            ->assertSee('Waiting 5d')
+            ->assertSee('· overdue');
     }
 
     public function test_the_queue_marks_a_fresh_wait_as_not_overdue(): void
@@ -252,7 +252,7 @@ class NotificationDeliveryTest extends TestCase
         $this->actingAs($this->verifier)
             ->get(route('staff.complaints.index', ['review' => 'needs_information']))
             ->assertOk()
-            ->assertDontSee('overdue');
+            ->assertDontSee('· overdue');
     }
 
     public function test_filing_a_complaint_tells_the_departments_verifiers(): void

@@ -70,6 +70,8 @@ class ActivityLogTest extends TestCase
             'user_id' => User::factory()->create(['role' => 'citizen'])->id,
             'department_id' => $this->department->id,
             'status' => ComplaintStatus::Submitted->value,
+            // An ordinary staff member works the cases the office hands them.
+            'assigned_staff_id' => $this->staff->id,
         ]);
 
         $this->actingAs($this->staff)

@@ -20,6 +20,9 @@ class StaffWorkspaceTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,
+            // A verifier carries the office's whole queue; an ordinary staff
+            // member sees only the work assigned to them.
+            'can_verify' => true,
         ]);
 
         $response = $this->actingAs($staff)
@@ -45,6 +48,7 @@ class StaffWorkspaceTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $engineering->id,
+            'can_verify' => true,
         ]);
         $resident = User::factory()->create(['role' => 'citizen']);
 
@@ -75,6 +79,7 @@ class StaffWorkspaceTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $engineering->id,
+            'can_verify' => true,
         ]);
         $resident = User::factory()->create(['role' => 'citizen']);
 
@@ -105,6 +110,7 @@ class StaffWorkspaceTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $engineering->id,
+            'can_verify' => true,
         ]);
         $complaint = Complaint::factory()->create([
             'department_id' => $engineering->id,
@@ -126,6 +132,9 @@ class StaffWorkspaceTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,
+            // A verifier carries the office's whole queue; an ordinary staff
+            // member sees only the work assigned to them.
+            'can_verify' => true,
         ]);
 
         $this->actingAs($staff)
@@ -143,6 +152,9 @@ class StaffWorkspaceTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,
+            // A verifier carries the office's whole queue; an ordinary staff
+            // member sees only the work assigned to them.
+            'can_verify' => true,
         ]);
         $complaint = Complaint::factory()->create([
             'department_id' => $department->id,

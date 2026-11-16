@@ -5,7 +5,7 @@
     See docs/design-system.md §5.36.
 --}}
             <div class="tr-register-head">
-                <h2 class="tr-h2" id="queue-list-title">{{ __('staff.queue') }} — {{ $complaints->total() }} {{ \Illuminate\Support\Str::plural('complaint', $complaints->total()) }}</h2>
+                <h2 class="tr-h2" id="queue-list-title">{{ auth()->user()->canVerifyComplaints() ? __('staff.queue') : __('nav.my_work') }} — {{ $complaints->total() }} {{ \Illuminate\Support\Str::plural('complaint', $complaints->total()) }}</h2>
                 @if($complaints->hasPages())
                     <p class="tr-results">Page {{ $complaints->currentPage() }} of {{ $complaints->lastPage() }}</p>
                 @endif
@@ -129,6 +129,9 @@
                             @if (($scope ?? 'open') === 'finished')
                                 <strong>{{ __('staff.queue_scope.empty_finished_title') }}</strong>
                                 <p>{{ __('staff.queue_scope.empty_finished_body') }}</p>
+                            @elseif(! auth()->user()->canVerifyComplaints())
+                                <strong>{{ __('staff.empty_my_work_title') }}</strong>
+                                <p>{{ __('staff.empty_my_work_desc') }}</p>
                             @else
                                 <strong>{{ __('staff.empty_title') }}</strong>
                                 <p>{{ __('staff.empty_desc') }}</p>

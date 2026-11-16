@@ -16,11 +16,34 @@
     </header>
 
     <div class="tr-container" style="max-width: none; padding: 0 24px;">
-        {{-- Existing three statistics preserved exactly as implemented (no new stat cards, no icons added, data unchanged) --}}
-        <section class="staff-metric-grid staff-metric-grid--three" aria-label="Personal activity metrics" style="margin-top: -16px; margin-bottom: 24px;">
-            <article class="staff-metric"><span>Total responded</span><strong>{{ $stats['totalResponded'] ?? 0 }}</strong></article>
-            <article class="staff-metric"><span>Resolved by me</span><strong>{{ $stats['resolvedByMe'] ?? 0 }}</strong></article>
-            <article class="staff-metric"><span>Last activity</span><strong class="staff-metric-text">{{ $stats['lastActivity']?->diffForHumans() ?? '-' }}</strong></article>
+        <section class="dept-stats" aria-label="Personal activity metrics" style="margin-top: -16px; margin-bottom: 24px;">
+            <div class="dept-stat">
+                <span class="tr-stat__icon tr-stat__icon--navy dept-si dept-si--navy" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+                </span>
+                <span>
+                    <span class="dept-stat__value">{{ $stats['totalResponded'] ?? 0 }}</span>
+                    <span class="dept-stat__label">Total responded</span>
+                </span>
+            </div>
+            <div class="dept-stat">
+                <span class="tr-stat__icon tr-stat__icon--green dept-si dept-si--green" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+                <span>
+                    <span class="dept-stat__value">{{ $stats['resolvedByMe'] ?? 0 }}</span>
+                    <span class="dept-stat__label">Resolved by me</span>
+                </span>
+            </div>
+            <div class="dept-stat">
+                <span class="tr-stat__icon tr-stat__icon--amber dept-si dept-si--amber" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                </span>
+                <span>
+                    <span class="dept-stat__value">{{ $stats['lastActivity']?->diffForHumans() ?? '-' }}</span>
+                    <span class="dept-stat__label">Last activity</span>
+                </span>
+            </div>
         </section>
 
         @include('staff.partials.flash')

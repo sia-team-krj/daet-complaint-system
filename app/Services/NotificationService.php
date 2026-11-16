@@ -36,9 +36,14 @@ class NotificationService
         }
 
         return User::query()
-            ->where('role', 'staff')
+            ->whereIn('role', ['staff', 'department_admin'])
             ->where('department_id', $complaint->department_id)
-            ->where('can_verify', true)
+            // Department Administrators verify by role; ordinary staff need
+            // the explicit capability.
+            ->where(function ($query): void {
+                $query->where('role', 'department_admin')
+                    ->orWhere('can_verify', true);
+            })
             ->where('is_active', true)
             ->when($actor !== null, fn ($query) => $query->where('id', '!=', $actor->id))
             ->when(
@@ -207,7 +212,7 @@ class NotificationService
         }
 
         return User::query()
-            ->where('role', 'staff')
+            ->whereIn('role', ['staff', 'department_admin'])
             ->where('department_id', $complaint->department_id)
             ->where('is_active', true)
             ->get();

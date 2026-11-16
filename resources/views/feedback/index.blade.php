@@ -24,7 +24,7 @@
         </header>
 
         @if(session('status'))
-            <div class="feedback-flash feedback-flash--success" role="status">{{ session('status') }}</div>
+            <x-toast :message="session('status')" variant="success" />
         @endif
         @if(session('error'))
             <div class="feedback-flash feedback-flash--error" role="alert">{{ session('error') }}</div>
@@ -48,9 +48,10 @@
 
                 <x-star-rating
                     name="portal_rating"
-                    :value="$myRatings->get(null)?->rating"
-                    :label="__('feedback.portal_label')"
-                    :hint="__('feedback.portal_hint')"
+                    :value="$portalRating?->rating"
+                    :label="$portalRating ? __('feedback.your_rating') : __('feedback.portal_label')"
+                    :hint="$portalRating ? __('feedback.rating_locked') : __('feedback.portal_hint')"
+                    :locked="$portalRating !== null"
                 />
 
                 @if($portalAverage['count'] > 0)
@@ -71,7 +72,10 @@
 
                     <ul class="feedback-offices">
                         @foreach($offices as $office)
-                            @php $average = $officeAverages[$office->id] ?? ['average' => null, 'count' => 0]; @endphp
+                            @php
+                                $average = $officeAverages[$office->id] ?? ['average' => null, 'count' => 0];
+                                $myRating = $myRatings->get($office->id);
+                            @endphp
                             <li class="feedback-office">
                                 <div class="feedback-office__body">
                                     <span class="feedback-office__name">{{ $office->name }}</span>
@@ -83,7 +87,8 @@
                                 </div>
                                 <x-star-rating
                                     name="office_ratings[{{ $office->id }}]"
-                                    :value="$myRatings->get($office->id)?->rating"
+                                    :value="$myRating?->rating"
+                                    :locked="$myRating !== null"
                                 />
                             </li>
                         @endforeach
@@ -103,12 +108,24 @@
 
                 <label class="sr-only" for="feedback-suggestion">{{ __('feedback.suggestion_title') }}</label>
                 <textarea id="feedback-suggestion" name="suggestion" class="feedback-textarea" rows="6" maxlength="5000"
-                          placeholder="{{ __('feedback.suggestion_placeholder') }}">{{ old('suggestion') }}</textarea>
-                <p class="feedback-card__note">{{ __('feedback.suggestion_note') }}</p>
+                          placeholder="{{ __('feedback.suggestion_placeholder') }}"
+                          aria-describedby="feedback-suggestion-note"
+                          @disabled($suggestionSentToday)>{{ old('suggestion') }}</textarea>
+                <p id="feedback-suggestion-note" class="feedback-card__note">
+                    {{ $suggestionSentToday ? __('feedback.suggestion_limit') : __('feedback.suggestion_note') }}
+                </p>
+                @if($suggestionSentToday)
+                    <p class="feedback-card__note">{{ __('feedback.suggestion_note') }}</p>
+                @endif
             </section>
 
             <div class="feedback-actions">
-                <button type="submit" class="tr-button feedback-submit">{{ __('feedback.send') }}</button>
+                @unless($canSubmit)
+                    <p class="feedback-actions__note" role="status">
+                        {{ $suggestionSentToday ? __('feedback.already_submitted_all') : __('feedback.nothing_to_send') }}
+                    </p>
+                @endunless
+                <button type="submit" class="tr-button feedback-submit" @disabled(! $canSubmit)>{{ $canSubmit ? __('feedback.send') : __('feedback.already_submitted') }}</button>
             </div>
         </form>
 

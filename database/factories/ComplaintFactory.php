@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
 use App\Models\Department;
@@ -35,6 +36,9 @@ class ComplaintFactory extends Factory
             'confirmed_priority' => 'elevated',
             'review_status' => 'verified',
             'reviewed_at' => now(),
+            'verified_at' => fn (array $attributes) => ($attributes['review_status'] ?? 'verified') === ComplaintReviewStatus::Verified->value
+                ? now()
+                : null,
             'address_text' => 'Brgy. Lag-on, Daet, Camarines Norte',
             'latitude' => 14.1122,
             'longitude' => 122.9553,

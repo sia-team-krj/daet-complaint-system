@@ -14,14 +14,21 @@
 
     `canManage` — the office handling the complaint may put it on hold and
     take it off again. One markup for the staff and admin ticket pages.
+
+    A finished report (resolved, rejected, closed) cannot be paused: the work
+    is done, so the panel renders nothing — not the form, not even the idle
+    line. If the report was put on hold before it was finished, the panel
+    shows only what it is waiting for and the way to take the hold off.
     Docs: docs/design-system.md §5.40, §5.45.
 --}}
 @php
     $reason = $complaint->holdReasonEnum();
     $heldDays = $complaint->heldDays();
     $reasons = \App\Enums\HoldReason::cases();
+    $finished = $complaint->statusEnum->isClosed();
 @endphp
 
+@if ($complaint->isOnHold() || ! $finished)
 <div {{ $attributes->merge(['class' => 'moderation-panel moderation-panel--light hold-panel']) }}>
     <div class="moderation-panel__header">
         <div class="hold-panel__title">
@@ -144,3 +151,4 @@
         @endif
     @endif
 </div>
+@endif

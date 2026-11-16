@@ -50,7 +50,7 @@
                                         </span>
                                         <span class="dept-identity-card__name">{{ $deptName }}</span>
                                     </div>
-                                    <p class="dept-identity-card__staff"><span class="dept-identity-card__role">{{ __('staff.dashboard.identity_role') }}</span></p>
+                                    <p class="dept-identity-card__staff"><span class="dept-identity-card__role">{{ $user->isDepartmentAdmin() ? __('nav.department_administrator') : __('staff.dashboard.identity_role') }}</span></p>
                                 </div>
                             </div>
                         </div>

@@ -33,6 +33,17 @@ class ComplaintModerationService
      */
     public function apply(Complaint $complaint, User $actor, array $input): array
     {
+        // The public copy for a report that names somebody belongs to the
+        // Mayor's office's publication review, not to the handling office's
+        // moderation form. Refuse the fields outright so a direct POST cannot
+        // do what the ticket page does not offer.
+        if ($complaint->isPrivacyGated()
+            && (array_key_exists('redacted_title', $input) || array_key_exists('redacted_description', $input))) {
+            throw ValidationException::withMessages([
+                'redacted_title' => 'The public copy for this report is written by the Mayor\'s office on the publication review page.',
+            ]);
+        }
+
         $hiddenFromPublic = (bool) ($input['hidden_from_public'] ?? false);
         $redactedTitle = $this->clean($input['redacted_title'] ?? null);
         $redactedDescription = $this->clean($input['redacted_description'] ?? null);

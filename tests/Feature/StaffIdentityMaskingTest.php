@@ -130,6 +130,8 @@ class StaffIdentityMaskingTest extends TestCase
             'confirmed_priority' => 'elevated',
             'verified_at' => now()->subDay(),
             'reviewed_at' => now()->subDay(),
+            // An ordinary staff member works the cases the office hands them.
+            'assigned_staff_id' => $this->staff->id,
         ]);
     }
 }

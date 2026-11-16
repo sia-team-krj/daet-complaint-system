@@ -1,0 +1,389 @@
+/* ─────────────────────────────────────────────
+   Publication decision — the Mayor's office reads one report and decides
+   one thing. Shell C: back link + h1 + one line, then a two-column work
+   area (original report + two-stage redaction editor on the left; the
+   live public preview on the right, sticky on desktop) and a sticky
+   decision bar at the bottom. Design system §10, tokens only.
+   ───────────────────────────────────────────── */
+
+.publication-review .tr-h1 { color: var(--navy-900); }
+.publication-review .tr-privacy { color: var(--muted); }
+
+/* .tr-card is the shell only — these sections supply the interior. */
+.publication-review .tr-card { padding: 20px; }
+
+@media (max-width: 640px) {
+    .publication-review .tr-card { padding: 16px; }
+}
+
+.publication-review__head { padding: 16px 0 24px; }
+
+.publication-review__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 16px;
+    color: var(--navy-700);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    min-height: 44px;
+    border-radius: var(--radius-sm);
+}
+.publication-review__back:hover { color: var(--navy-900); text-decoration: underline; text-underline-offset: 3px; }
+.publication-review__back:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ── Context strip: what this report is, in one line ───────────────────── */
+.publication-review__context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 16px 20px;
+}
+
+.publication-review__context-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.publication-review__context-facts strong { color: var(--navy-900); font-weight: 600; }
+
+/* ── Privacy panel: always visible, above the work area ───────────────── */
+.publication-privacy {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin: 16px 0 24px;
+    padding: 12px 16px;
+    background: var(--navy-50);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+}
+.publication-privacy__icon {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    color: var(--navy-700);
+}
+.publication-privacy__kicker {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.publication-privacy__name {
+    margin: 4px 0 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy-900);
+}
+.publication-privacy__hint {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 72ch;
+}
+
+/* ── Work grid ─────────────────────────────────────────────────────────── */
+.publication-review__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    gap: 24px;
+    align-items: start;
+}
+.publication-review__main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.publication-review__aside {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: calc(var(--navbar-height) + 16px);
+}
+
+/* ── Original report ───────────────────────────────────────────────────── */
+.publication-review__title {
+    margin: 10px 0 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--navy-900);
+}
+.publication-review__body {
+    margin: 8px 0 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-line;
+}
+
+/* ── Save the public copy: navy, the button that unlocks the gold one ────── */
+.publication-review__save {
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--navy-700);
+    border-radius: var(--radius-sm);
+    background: var(--navy-700);
+    color: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.publication-review__save:hover { background: var(--navy-800); border-color: var(--navy-800); }
+.publication-review__save:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ── Inline validation errors from the redaction forms ──────────────────── */
+.publication-review .filing-error {
+    margin-top: 6px;
+    color: var(--error-text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ── Redaction editor, in stages ───────────────────────────────────────── */
+.publication-stage { border-top: 1px solid var(--line-soft); padding-top: 20px; margin-top: 20px; }
+.publication-stage:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.publication-stage__label { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+.publication-stage__number {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--navy-700);
+    color: var(--surface);
+    font-size: 11px;
+    font-weight: 700;
+}
+.publication-stage__title { margin: 0; font-size: 13px; font-weight: 700; color: var(--navy-900); }
+.publication-stage__hint { margin: 2px 0 12px; font-size: 12px; color: var(--muted); }
+
+/* ── What would be published: the live public preview ──────────────────── */
+.publication-preview__status { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.publication-preview__card {
+    margin-top: 16px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+}
+.publication-preview__meta { font-size: 11px; color: var(--faint); }
+.publication-preview__title {
+    margin: 8px 0 0;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--navy-900);
+}
+.publication-preview__body {
+    margin: 8px 0 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-line;
+}
+.publication-preview__warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 12px;
+    background: var(--status-progress-bg);
+    color: var(--status-progress-text);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.publication-preview__warn svg { flex: 0 0 auto; margin-top: 1px; }
+
+/* ── Decision bar: sticky, one primary action ─────────────────────────── */
+.publication-decide {
+    position: sticky;
+    bottom: 16px;
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 24px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lift);
+}
+.publication-decide__status { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.publication-decide__statuscopy { min-width: 0; }
+.publication-decide__status-line { margin: 0; font-size: 13px; font-weight: 600; color: var(--navy-900); }
+.publication-decide__hint { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+.publication-decide__actions { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+
+.publication-decide__approve {
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--gold-500);
+    border-radius: var(--radius-sm);
+    background: var(--gold-500);
+    color: var(--navy-900);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.publication-decide__approve:hover:not(:disabled) { background: var(--gold-300); border-color: var(--gold-300); }
+.publication-decide__approve:focus-visible { outline: none; box-shadow: var(--ring); }
+.publication-decide__approve:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Decline expands above the bar; a <details> disclosure, so it works with JS off. */
+.publication-decide__decline { position: relative; }
+.publication-decide__decline > summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--navy-800);
+    font-size: 13px;
+    font-weight: 700;
+}
+.publication-decide__decline > summary::-webkit-details-marker { display: none; }
+.publication-decide__decline > summary:hover { background: var(--navy-50); color: var(--navy-900); }
+.publication-decide__decline > summary:focus-visible { outline: none; box-shadow: var(--ring); }
+.publication-decide__decline-body {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    z-index: 805;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(360px, calc(100vw - 48px));
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lift);
+}
+.publication-decide__decline-body label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.publication-decide__decline-body textarea {
+    width: 100%;
+    min-height: 72px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+}
+.publication-decide__decline-body textarea:focus-visible {
+    outline: none;
+    border-color: var(--gold-500);
+    box-shadow: var(--ring);
+}
+.publication-decide__decline-copy { margin: 0; font-size: 11px; color: var(--muted); }
+.publication-decide__decline-confirm {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--error-line);
+    border-radius: var(--radius-sm);
+    background: var(--error-bg);
+    color: var(--error-text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.publication-decide__decline-confirm:hover { background: var(--surface); }
+.publication-decide__decline-confirm:focus-visible { outline: none; box-shadow: var(--ring); }
+
+@media (max-width: 1024px) {
+    .publication-review__grid { grid-template-columns: minmax(0, 1fr); }
+    .publication-review__aside { position: static; }
+}
+
+@media (max-width: 640px) {
+    .publication-privacy { padding: 12px; }
+    .publication-privacy__hint { max-width: none; }
+    .publication-review__context { flex-direction: column; align-items: flex-start; }
+    .publication-decide {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        bottom: 8px;
+        padding: 12px;
+    }
+    .publication-decide__actions { flex-direction: column; width: 100%; }
+    .publication-decide__actions > *,
+    .publication-decide__decline > summary,
+    .publication-decide__approve { width: 100%; }
+    .publication-decide__decline > summary { justify-content: center; }
+    .publication-decide__decline-body { left: 0; right: auto; width: 100%; bottom: calc(100% + 8px); }
+}
+
+/* ── Publication queue — one waiting report per row ───────────────────── */
+.publication-requests__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.publication-requests__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+.publication-requests__row-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.publication-requests__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--navy-900);
+}
+.publication-requests__meta { margin: 0; font-size: 12px; color: var(--muted); }
+.publication-requests__open { flex: 0 0 auto; }
+
+@media (max-width: 640px) {
+    .publication-requests__row { flex-direction: column; align-items: stretch; }
+    .publication-requests__open { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .publication-review * { animation: none !important; transition: none !important; }
+}

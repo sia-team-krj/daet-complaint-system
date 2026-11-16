@@ -6,4 +6,5 @@ return [
     'choose_date' => 'Pumili ng petsa',
     'clear_date' => 'Alisin ang petsa',
     'invalid_date' => 'Hindi iyon ang petsa. Gamitin ang dd/mm/yyyy.',
+    'dismiss' => 'Isara',
 ];

@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\ComplaintPrivacyService;
+use App\Services\ComplaintPublicationService;
 use Database\Seeders\DepartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -144,25 +145,79 @@ class PrivacyGatedComplaintTest extends TestCase
 
     // ── The publication gate ───────────────────────────────────────────
 
-    public function test_the_office_cannot_ask_for_publication_before_the_report_is_settled_verified_and_redacted(): void
+    public function test_the_office_cannot_ask_for_publication_by_hand_any_more(): void
+    {
+        $this->assertFalse(
+            \Illuminate\Support\Facades\Route::has('staff.complaints.publication-request'),
+            'The manual publication request is gone; resolution is the handoff.',
+        );
+    }
+
+    public function test_a_report_is_not_sent_to_the_mayors_office_until_it_is_resolved_and_verified(): void
     {
         $complaint = $this->gatedComplaint();
+        $publication = app(ComplaintPublicationService::class);
 
-        $this->actingAs($this->hrStaff)
-            ->post(route('staff.complaints.publication-request', $complaint))
-            ->assertSessionHasErrors('publication');
+        $this->assertFalse($publication->autoSubmit($complaint, $this->hrStaff));
+        $this->assertNull($complaint->fresh()->publicationStatus());
 
+        // Verified but still in progress: still not ready to hand off.
+        $complaint->update([
+            'status' => ComplaintStatus::InProgress->value,
+            'review_status' => 'verified',
+            'verified_at' => now(),
+        ]);
+
+        $this->assertFalse($publication->autoSubmit($complaint->fresh(), $this->hrStaff));
         $this->assertNull($complaint->fresh()->publicationStatus());
     }
 
-    public function test_the_office_asks_the_mayors_office_once_the_report_is_ready(): void
+    public function test_resolving_a_verified_report_sends_it_to_the_mayors_office_automatically(): void
     {
-        $complaint = $this->gatedComplaint(ready: true);
+        $complaint = $this->gatedComplaint();
+        $complaint->update([
+            'status' => ComplaintStatus::InProgress->value,
+            'review_status' => 'verified',
+            'verified_at' => now(),
+            'confirmed_priority' => 'routine',
+        ]);
 
         $this->actingAs($this->hrStaff)
-            ->post(route('staff.complaints.publication-request', $complaint))
+            ->put(route('staff.complaints.update', $complaint), [
+                'status' => ComplaintStatus::Resolved->value,
+                'note' => 'The establishment was inspected and the report was verified.',
+            ])
             ->assertRedirect(route('staff.complaints.show', $complaint));
 
+        $complaint->refresh();
+
+        $this->assertSame(PublicationStatus::Pending, $complaint->publicationStatus());
+        $this->assertNotNull($complaint->publication_requested_at);
+        $this->assertSame($this->hrStaff->id, $complaint->publication_requested_by);
+
+        // The resident is told the report is with the Mayor's office.
+        $this->assertSame(
+            1,
+            Notification::where('user_id', $this->resident->id)
+                ->where('type', Notification::COMPLAINT_PUBLICATION_REQUESTED)
+                ->where('subject_id', $complaint->id)
+                ->count(),
+        );
+    }
+
+    public function test_the_handoff_does_not_need_the_department_to_redact_first(): void
+    {
+        $complaint = $this->gatedComplaint();
+        $complaint->update([
+            'status' => ComplaintStatus::Resolved->value,
+            'review_status' => 'verified',
+            'verified_at' => now(),
+        ]);
+
+        $this->assertNull($complaint->redacted_title);
+        $this->assertNull($complaint->redacted_description);
+
+        $this->assertTrue(app(ComplaintPublicationService::class)->autoSubmit($complaint, $this->hrStaff));
         $this->assertSame(PublicationStatus::Pending, $complaint->fresh()->publicationStatus());
     }
 
@@ -311,8 +366,77 @@ class PrivacyGatedComplaintTest extends TestCase
             ->assertOk()
             ->assertSee('A resident reports how they were treated at the counter')
             ->assertSee('Approve publication')
-            // The name of the party stays in the handling office.
-            ->assertDontSee('Sari Sari Store');
+            // The Mayor's office sees the name so it can redact the copy.
+            ->assertSee('Sari Sari Store')
+            ->assertSee(__('staff.publication.redact_title'));
+    }
+
+    public function test_the_review_page_rebuilt_as_a_decision_workspace_keeps_its_shape(): void
+    {
+        $complaint = $this->gatedComplaint(ready: true);
+        $complaint->update([
+            'publication_status' => PublicationStatus::Pending->value,
+            'publication_requested_at' => now(),
+            'publication_requested_by' => $this->hrStaff->id,
+        ]);
+
+        $response = $this->actingAs($this->mayorStaff)
+            ->get(route('staff.publication-requests.show', $complaint));
+
+        $response->assertOk();
+
+        $html = $response->getContent();
+
+        // One h1, and the shell-C header trio.
+        $this->assertSame(1, substr_count($html, '<h1'));
+
+        // The decide bar: labelled region, the approve form posting to the
+        // approve route, and the decline disclosure with its required note.
+        $response->assertSee(__('staff.publication.decide_label'), false);
+        $response->assertSee(route('staff.publication-requests.approve', $complaint), false);
+        $response->assertSee('publication-decide__decline', false);
+        $response->assertSee('publication-note-decline', false);
+
+        // The privacy panel is always visible and says the name is never published.
+        $response->assertSee(__('staff.publication.privacy_kicker'));
+        $response->assertSee(__('staff.publication.named_party_hint'));
+
+        // The two-stage editor and the public preview are both on the page.
+        $response->assertSee('publication-stage__number', false);
+        $response->assertSee(__('staff.publication.redact_stage_1'));
+        $response->assertSee(__('staff.publication.redact_stage_2'));
+        $response->assertSee('publication-preview__card', false);
+    }
+
+    public function test_approval_is_refused_until_the_mayor_saves_the_redacted_copy(): void
+    {
+        $complaint = $this->gatedComplaint(ready: true);
+        $complaint->update([
+            'publication_status' => PublicationStatus::Pending->value,
+            'redacted_title' => null,
+            'redacted_description' => null,
+        ]);
+
+        $this->actingAs($this->mayorStaff)
+            ->post(route('staff.publication-requests.approve', $complaint))
+            ->assertSessionHasErrors('publication');
+
+        $this->assertSame(PublicationStatus::Pending, $complaint->fresh()->publicationStatus());
+
+        // Save the copy, then the approval goes through.
+        $this->actingAs($this->mayorStaff)
+            ->post(route('staff.publication-requests.redaction', $complaint), [
+                'redacted_title' => 'An establishment was reported to the office',
+                'redacted_description' => 'An establishment in the municipality was reported for giving out plastic bags.',
+                'redaction_note' => 'The business name was removed.',
+            ])
+            ->assertRedirect(route('staff.publication-requests.show', $complaint));
+
+        $this->actingAs($this->mayorStaff)
+            ->post(route('staff.publication-requests.approve', $complaint))
+            ->assertRedirect(route('staff.publication-requests.index'));
+
+        $this->assertSame(PublicationStatus::Approved, $complaint->fresh()->publicationStatus());
     }
 
     public function test_the_review_page_is_refused_outside_the_mayors_office(): void
@@ -350,32 +474,35 @@ class PrivacyGatedComplaintTest extends TestCase
             ->assertRedirect(route('staff.publication-requests.show', $complaint));
     }
 
-    public function test_the_office_ticks_what_must_not_appear_and_the_system_fills_the_redacted_copy(): void
+    public function test_the_mayors_office_ticks_what_must_not_appear_and_the_system_fills_the_redacted_copy(): void
     {
-        $complaint = $this->gatedComplaint();
+        $complaint = $this->gatedComplaint(ready: true);
         $complaint->update([
             'title' => 'Sari Sari Store gives plastic bags at the counter',
             'description' => 'Sari Sari Store gives plastic bags for every purchase, without exception, every time.',
+            'publication_status' => PublicationStatus::Pending->value,
+            'redacted_title' => null,
+            'redacted_description' => null,
         ]);
 
-        $this->actingAs($this->hrStaff)
-            ->get(route('staff.complaints.show', $complaint))
+        $this->actingAs($this->mayorStaff)
+            ->get(route('staff.publication-requests.show', $complaint))
             ->assertOk();
 
         // Ticking fills the fields; nothing is written until the office saves.
-        $this->post(route('staff.complaints.redact', $complaint), ['strip_party' => '1'])
-            ->assertRedirect(route('staff.complaints.show', $complaint))
-            ->assertSessionHas('status', __('staff.moderation.quick_done'))
+        $this->post(route('staff.publication-requests.redact-draft', $complaint), ['strip_party' => '1'])
+            ->assertRedirect(route('staff.publication-requests.show', $complaint))
+            ->assertSessionHas('status', __('staff.publication.redact_draft_done'))
             ->assertSessionHas('_old_input.redacted_title', 'an establishment gives plastic bags at the counter');
 
         $this->assertNull($complaint->fresh()->redacted_title);
 
         // The office reviews the filled-in copy and saves it as the public one.
-        $this->post(route('staff.complaints.moderate', $complaint), [
+        $this->post(route('staff.publication-requests.redaction', $complaint), [
             'redacted_title' => 'an establishment gives plastic bags at the counter',
             'redacted_description' => 'an establishment gives plastic bags for every purchase, without exception, every time.',
-            'moderation_reason' => 'Name of the party removed from the public copy.',
-        ])->assertRedirect(route('staff.complaints.show', $complaint));
+            'redaction_note' => 'Name of the party removed from the public copy.',
+        ])->assertRedirect(route('staff.publication-requests.show', $complaint));
 
         $complaint->refresh();
 
@@ -390,70 +517,109 @@ class PrivacyGatedComplaintTest extends TestCase
         // amount of string removal can prove it is gone. The ticked copy is
         // replaced with a safe generic one instead.
         $complaint = $this->gatedComplaint(ready: true);
-        $complaint->update(['redacted_title' => null, 'redacted_description' => null]);
+        $complaint->update([
+            'publication_status' => PublicationStatus::Pending->value,
+            'redacted_title' => null,
+            'redacted_description' => null,
+        ]);
 
-        $this->actingAs($this->hrStaff)
-            ->get(route('staff.complaints.show', $complaint))
+        $this->actingAs($this->mayorStaff)
+            ->get(route('staff.publication-requests.show', $complaint))
             ->assertOk();
 
-        $this->post(route('staff.complaints.redact', $complaint), ['strip_party' => '1'])
-            ->assertRedirect(route('staff.complaints.show', $complaint))
+        $this->post(route('staff.publication-requests.redact-draft', $complaint), ['strip_party' => '1'])
+            ->assertRedirect(route('staff.publication-requests.show', $complaint))
             ->assertSessionHas('_old_input.redacted_title', 'An establishment in the municipality was reported to the office');
 
         $this->assertNull($complaint->fresh()->redacted_title);
     }
 
-    public function test_a_tick_is_required_for_the_quick_redaction(): void
+    public function test_a_tick_is_required_for_the_redaction_draft(): void
     {
         $complaint = $this->gatedComplaint(ready: true);
-        $complaint->update(['redacted_title' => null]);
+        $complaint->update([
+            'publication_status' => PublicationStatus::Pending->value,
+            'redacted_title' => null,
+        ]);
 
-        // The browser flow starts on the ticket page, which is why the
-        // redirect back lands there.
-        $this->actingAs($this->hrStaff)
-            ->get(route('staff.complaints.show', $complaint))
+        $this->actingAs($this->mayorStaff)
+            ->get(route('staff.publication-requests.show', $complaint))
             ->assertOk();
 
-        $this->post(route('staff.complaints.redact', $complaint), [])
-            ->assertRedirect(route('staff.complaints.show', $complaint))
-            ->assertSessionHas('error', __('staff.moderation.quick_nothing'));
+        $this->post(route('staff.publication-requests.redact-draft', $complaint), [])
+            ->assertRedirect(route('staff.publication-requests.show', $complaint))
+            ->assertSessionHas('error', __('staff.publication.redact_draft_nothing'));
 
         $this->assertNull($complaint->fresh()->redacted_title);
     }
 
-    public function test_the_quick_redact_leaves_the_saved_copy_untouched_until_the_office_saves(): void
+    public function test_the_redaction_draft_leaves_the_saved_copy_untouched_until_the_office_saves(): void
     {
         $complaint = $this->gatedComplaint(ready: true);
         $complaint->update([
+            'publication_status' => PublicationStatus::Pending->value,
             'redacted_title' => 'The office words',
             'redacted_description' => 'The office words, kept.',
         ]);
 
-        $this->actingAs($this->hrStaff)
-            ->get(route('staff.complaints.show', $complaint))
+        $this->actingAs($this->mayorStaff)
+            ->get(route('staff.publication-requests.show', $complaint))
             ->assertOk();
 
-        $this->post(route('staff.complaints.redact', $complaint), ['strip_party' => '1'])
-            ->assertRedirect(route('staff.complaints.show', $complaint))
+        $this->post(route('staff.publication-requests.redact-draft', $complaint), ['strip_party' => '1'])
+            ->assertRedirect(route('staff.publication-requests.show', $complaint))
             ->assertSessionHas('_old_input.redacted_title', 'An establishment in the municipality was reported to the office');
 
         // The office's saved copy is untouched — saving is what writes.
         $this->assertSame('The office words', $complaint->fresh()->redacted_title);
     }
 
-    public function test_the_quick_redact_is_a_verifier_only_action(): void
+    public function test_the_redaction_draft_is_a_mayors_office_action(): void
     {
         $complaint = $this->gatedComplaint(ready: true);
+        $complaint->update(['publication_status' => PublicationStatus::Pending->value]);
 
-        $nonVerifier = User::factory()->create([
-            'role' => 'staff',
-            'department_id' => $this->department('MENRO')->id,
-            'can_verify' => false,
+        $this->actingAs($this->hrStaff)
+            ->post(route('staff.publication-requests.redact-draft', $complaint), ['strip_party' => '1'])
+            ->assertForbidden();
+    }
+
+    public function test_the_handling_office_cannot_write_the_public_copy(): void
+    {
+        $complaint = $this->gatedComplaint(ready: true);
+        $complaint->update([
+            'publication_status' => PublicationStatus::Pending->value,
+            'redacted_title' => 'The saved public copy',
+            'redacted_description' => 'The saved public copy, written by the Mayor\'s office.',
         ]);
 
-        $this->actingAs($nonVerifier)
-            ->post(route('staff.complaints.redact', $complaint), ['strip_party' => '1'])
+        $this->actingAs($this->hrStaff)
+            ->post(route('staff.publication-requests.redaction', $complaint), [
+                'redacted_title' => 'The handling office words',
+                'redacted_description' => 'The handling office should never be able to write this.',
+            ])
             ->assertForbidden();
+
+        $this->assertSame('The saved public copy', $complaint->fresh()->redacted_title);
+    }
+
+    public function test_the_handling_office_cannot_redact_through_the_moderation_form(): void
+    {
+        $complaint = $this->gatedComplaint(ready: true);
+        $complaint->update([
+            'redacted_title' => 'The saved public copy',
+            'redacted_description' => 'The saved public copy, written by the Mayor\'s office.',
+        ]);
+
+        $this->actingAs($this->hrStaff)
+            ->post(route('staff.complaints.moderate', $complaint), [
+                'redacted_title' => 'The handling office words',
+                'redacted_description' => 'This must never be written by the handling office.',
+                'moderation_reason' => 'Trying to write the public copy from the wrong office.',
+            ])
+            ->assertSessionHasErrors('redacted_title');
+
+        $this->assertSame('The saved public copy', $complaint->fresh()->redacted_title);
     }
 
     public function test_a_gated_report_cannot_be_filed_without_the_resident_acknowledging_it(): void
@@ -469,33 +635,47 @@ class PrivacyGatedComplaintTest extends TestCase
             ->assertSessionHasErrors('privacy_ack');
     }
 
-    public function test_the_publication_checklist_shows_the_gate_states(): void
+    public function test_public_presentation_is_only_offered_to_the_mayors_office(): void
     {
         $complaint = $this->gatedComplaint(ready: true);
 
         $this->actingAs($this->hrStaff)
             ->get(route('staff.complaints.show', $complaint))
             ->assertOk()
-            ->assertSee(__('staff.publication.checklist_title'))
-            ->assertSee(__('staff.publication.checklist_redacted'));
+            ->assertDontSee(__('staff.moderation.title'));
 
-        $ordinary = $this->file('garbage');
+        // The ticket page only opens for a report assigned to the viewer's
+        // office, so move this one to the Mayor's office to see its panel.
+        $complaint->update(['department_id' => $this->department('OM')->id]);
 
-        $this->actingAs($this->hrStaff)
-            ->get(route('staff.complaints.show', $ordinary))
+        $this->actingAs($this->mayorStaff)
+            ->get(route('staff.complaints.show', $complaint))
             ->assertOk()
-            ->assertDontSee(__('staff.publication.checklist_title'));
+            ->assertSee(__('staff.moderation.title'));
     }
 
-    public function test_the_resident_is_told_when_the_office_asks_for_publication(): void
+    public function test_the_handoff_notifies_the_resident_only_once(): void
     {
-        $complaint = $this->gatedComplaint(ready: true);
+        $complaint = $this->gatedComplaint();
+        $complaint->update([
+            'status' => ComplaintStatus::InProgress->value,
+            'review_status' => 'verified',
+            'verified_at' => now(),
+            'confirmed_priority' => 'routine',
+        ]);
 
         $this->actingAs($this->hrStaff)
-            ->post(route('staff.complaints.publication-request', $complaint), [
-                'publication_note' => 'Asking the Mayor\'s office to publish.',
+            ->put(route('staff.complaints.update', $complaint), [
+                'status' => ComplaintStatus::Resolved->value,
+                'note' => 'The establishment was inspected and the report was verified.',
             ])
             ->assertRedirect(route('staff.complaints.show', $complaint));
+
+        // A second call (for example from another save on the ticket) is a
+        // no-op: the report already has a publication state.
+        $this->assertFalse(
+            app(ComplaintPublicationService::class)->autoSubmit($complaint->fresh(), $this->hrStaff),
+        );
 
         $this->assertSame(
             1,
@@ -504,6 +684,18 @@ class PrivacyGatedComplaintTest extends TestCase
                 ->where('subject_id', $complaint->id)
                 ->count(),
         );
+    }
+
+    public function test_the_handling_office_ticket_does_not_offer_public_presentation(): void
+    {
+        $complaint = $this->gatedComplaint(ready: true);
+
+        $this->actingAs($this->hrStaff)
+            ->get(route('staff.complaints.show', $complaint))
+            ->assertOk()
+            ->assertDontSee(__('staff.moderation.title'))
+            ->assertDontSee('name="redacted_title"', false)
+            ->assertDontSee('name="redacted_description"', false);
     }
 
     public function test_the_mayors_office_is_the_approval_office(): void

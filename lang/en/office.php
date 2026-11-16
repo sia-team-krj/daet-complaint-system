@@ -1,0 +1,90 @@
+<?php
+
+return [
+    'title' => 'Manage office',
+    'lede' => ':office — staff accounts, invitations, verification rights and the office audit trail.',
+    'back_to_dashboard' => 'Back to dashboard',
+
+    'metrics' => [
+        'members' => 'People in office',
+        'active' => 'Active accounts',
+        'verifiers' => 'Verifiers',
+    ],
+
+    'members' => [
+        'title' => 'Staff accounts',
+        'description' => 'Activate, deactivate, or grant verification rights. Profiles, department transfers and removals stay with the global administrator.',
+        'empty' => 'No staff accounts in this office yet.',
+        'you' => 'You',
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+        'verifier' => 'Verifier',
+        'deactivate' => 'Deactivate',
+        'activate' => 'Activate',
+        'grant_verification' => 'Grant verification',
+        'revoke_verification' => 'Revoke verification',
+        'peer_note' => 'Department Administrators manage this office together. Their roles and accounts are changed only by the global administrator.',
+    ],
+
+    'add' => [
+        'title' => 'Add a staff account',
+        'description' => 'Choose an invitation link or an emailed temporary password. You never choose a password for someone else.',
+        'first_name' => 'First name',
+        'last_name' => 'Last name',
+        'email' => 'Email',
+        'contact' => 'Mobile number',
+        'contact_optional' => 'Optional',
+        'method' => 'Onboarding method',
+        'invitation' => 'Invitation link',
+        'temp_password' => 'Emailed temporary password',
+        'expiry' => 'Invitation expires',
+        'expiry_24' => '24 hours',
+        'expiry_48' => '48 hours',
+        'expiry_168' => '7 days',
+        'submit' => 'Add staff account',
+        'note' => 'The account is scoped to :office. Department transfers are not available here.',
+    ],
+
+    'invitations' => [
+        'title' => 'Open invitations',
+        'description' => 'Single-use links waiting for their recipient.',
+        'empty' => 'No open invitations.',
+        'expires' => 'Expires :date',
+        'copy' => 'Copy link',
+        'revoke' => 'Revoke',
+        'revoke_confirm' => 'Revoke this invitation?',
+    ],
+
+
+    'statistics' => [
+        'title' => 'Office statistics',
+        'kicker' => 'Office performance',
+        'lede' => 'Performance, workload and common complaints for :office. Counts are office-scoped and privacy-safe (no resident identities).',
+        'kpi_aria' => 'Office performance indicators',
+        'on_hold' => 'On hold',
+        'on_hold_meta' => 'Open complaints currently on hold',
+        'avg_first_action' => 'Avg. first action',
+        'avg_first_action_meta' => 'From filing to the first office action',
+        'vs_previous' => 'vs previous period',
+        'quick_filters' => 'Quick complaint filters',
+        'workload_sub' => 'Team capacity and how open work is distributed across this office',
+        'drilldown_hint' => 'Use the quick filters above or the complaint queue for a detailed, privacy-safe list.',
+    ],
+
+    'audit' => [
+        'title' => 'Office audit trail',
+        'lede' => 'Account, invitation and complaint actions recorded for :office.',
+        'description' => 'Only this office’s records are shown. Resident actions are not listed here.',
+        'empty' => 'No audit entries yet.',
+        'system' => 'System',
+        'unknown' => 'Unknown',
+        'by' => 'by',
+        'open' => 'Open office audit trail',
+        'back' => 'Back to manage office',
+        'date' => 'When',
+        'action' => 'Action',
+        'actor' => 'Actor',
+        'details' => 'Details',
+        'pagination' => 'Office audit pages',
+    ],
+];

@@ -35,6 +35,9 @@ return [
     'staff_invitations' => 'Staff invitations',
     'workspace' => 'Workspace',
     'complaint_queue' => 'Complaint queue',
+    // An ordinary staff member works the cases the office handed them, so
+    // their list is their own work — not the office queue.
+    'my_work' => 'My work',
     'my_activity' => 'My activity',
     'department_activity' => 'Office activity',
     'verification' => 'Verification',
@@ -44,8 +47,13 @@ return [
     'assigned_department' => 'Assigned department',
     'department_pending' => 'Department pending',
     'department_account' => 'Department Account',
+    'office' => 'Office',
+    'manage_office' => 'Manage office',
+    'office_statistics' => 'Office statistics',
+    'office_audit' => 'Office audit trail',
     'citizen' => 'Citizen',
     'administrator' => 'Administrator',
+    'department_administrator' => 'Department Administrator',
     'staff' => 'Staff',
     'log_out' => 'Log out',
     'operations' => 'Operations',

@@ -163,6 +163,9 @@ class ComplaintReviewWorkflowTest extends TestCase
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,
+            // A verifier carries the office's whole queue; an ordinary staff
+            // member sees only the work assigned to them.
+            'can_verify' => true,
         ]);
         $admin = User::factory()->create(['role' => 'admin']);
         $resident = User::factory()->create([
@@ -185,7 +188,7 @@ class ComplaintReviewWorkflowTest extends TestCase
             ->get(route('staff.complaints.show', $complaint))
             ->assertOk()
             ->assertSee('Masked neighbor')
-            ->assertSee('Identity hidden from staff')
+            ->assertSee('Identity protected · Staff view')
             ->assertDontSee('RealFirst')
             ->assertDontSee('real.resident@example.test')
             ->assertDontSee('09171234567');
@@ -335,15 +338,24 @@ class ComplaintReviewWorkflowTest extends TestCase
         $this->assertSame(ComplaintStatus::Submitted->value, $complaint->fresh()->status);
     }
 
-    public function test_a_residents_consent_is_enough_to_publish_before_verification(): void
+    public function test_a_residents_consent_does_not_publish_an_unverified_report(): void
     {
-        // Verification answers "is this report accurate", not "did this resident
-        // agree to be public". The two are now independent, so a complaint the
-        // resident published is listed even while it is still awaiting review.
+        // The resident decides to publish; the office decides when the public
+        // record may carry it. Consent alone does not put an unverified report
+        // on the register — the office's verification does.
         $complaint = Complaint::factory()->create([
             'is_public' => true,
             'review_status' => ComplaintReviewStatus::Pending->value,
             'confirmed_priority' => null,
+            'verified_at' => null,
+        ]);
+
+        $this->assertFalse(Complaint::public()->whereKey($complaint->id)->exists());
+        $this->assertFalse($complaint->fresh()->isPubliclyVisible());
+
+        $complaint->update([
+            'review_status' => ComplaintReviewStatus::Verified->value,
+            'verified_at' => now(),
         ]);
 
         $this->assertTrue(Complaint::public()->whereKey($complaint->id)->exists());

@@ -8,9 +8,10 @@ namespace App\Enums;
  * A complaint in a category that names somebody (a member of personnel, a
  * business) is filed private. It reaches the public transparency register
  * only when the office has settled it, the information has been verified as
- * true, the sensitive parts have been redacted, and the Mayor's office has
- * approved it. A complaint that is genuinely a privacy concern is declined
- * and stays private for good.
+ * true, the Mayor's office has redacted the public copy, and the Mayor's
+ * office has approved it. The handoff is automatic once the report is
+ * resolved and verified. A complaint that is genuinely a privacy concern is
+ * declined and stays private for good.
  */
 enum PublicationStatus: string
 {

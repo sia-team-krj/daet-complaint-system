@@ -23,24 +23,24 @@
                     <p class="empty-state__body">{{ __('staff.publication.queue_empty_body') }}</p>
                 </div>
             @else
-                <ul class="report-list" role="list">
+                <ul class="publication-requests__list" role="list">
                     @foreach ($requests as $request)
-                        <li class="report-row" role="listitem">
-                            <div class="report-row__main">
-                                <div class="report-row__head">
-                                    <span class="report-row__ticket">{{ $request->ticket_id }}</span>
-                                    @if ($request->department)
-                                        <span class="dept-badge" data-dept="{{ $request->department->code }}">{{ $request->department->code }}</span>
-                                    @endif
+                        <li role="listitem">
+                            <div class="publication-requests__row">
+                                <div class="publication-requests__row-main">
+                                    <div class="report-row__head">
+                                        <span class="report-row__ticket">{{ $request->ticket_id }}</span>
+                                        @if ($request->department)
+                                            <span class="dept-badge" data-dept="{{ $request->department->code }}">{{ $request->department->code }}</span>
+                                        @endif
+                                    </div>
+                                    <h3 class="publication-requests__title">{{ $request->title }}</h3>
+                                    <p class="publication-requests__meta">
+                                        {{ $request->category_label ?? $request->category }}
+                                        <span aria-hidden="true">&middot;</span> {{ $request->department?->name ?? __('nav.departments') }}
+                                    </p>
                                 </div>
-                                <h3 class="report-row__title">{{ $request->title }}</h3>
-                                <p class="report-row__meta">
-                                    {{ $request->category_label ?? $request->category }}
-                                    · {{ $request->department?->name ?? __('nav.departments') }}
-                                </p>
-                            </div>
-                            <div class="report-row__actions">
-                                <a class="admin-button admin-button--secondary" href="{{ route('staff.publication-requests.show', $request) }}">
+                                <a class="tr-button publication-requests__open" href="{{ route('staff.publication-requests.show', $request) }}">
                                     {{ __('staff.publication.open') }}
                                 </a>
                             </div>

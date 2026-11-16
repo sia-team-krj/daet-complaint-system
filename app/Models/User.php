@@ -129,7 +129,12 @@ class User extends Authenticatable
      */
     public function canVerifyComplaints(): bool
     {
-        return $this->role === 'admin' || (bool) $this->can_verify;
+        // A Department Administrator is the office's standing verifier: the
+        // role exists to keep the office moving, so it does not depend on the
+        // per-account can_verify flag that ordinary staff need.
+        return $this->role === 'admin'
+            || $this->role === 'department_admin'
+            || (bool) $this->can_verify;
     }
 
     public function markEmailAsVerified(): void
@@ -221,10 +226,29 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    /** Returns true for both staff AND admin */
+    /**
+     * A Department Administrator runs one office: staff management, the
+     * office's queue, verification, analytics and its audit trail. They are
+     * not a global administrator and never see another office.
+     */
+    public function isDepartmentAdmin(): bool
+    {
+        return $this->role === 'department_admin';
+    }
+
+    /**
+     * An ordinary staff member or the Department Administrator of an office.
+     * Use this for office-scoped checks; use isAdmin() for global powers.
+     */
+    public function isDepartmentStaff(): bool
+    {
+        return in_array($this->role, ['staff', 'department_admin'], true);
+    }
+
+    /** Returns true for staff, Department Administrators and admins. */
     public function isStaff(): bool
     {
-        return in_array($this->role, ['staff', 'admin']);
+        return in_array($this->role, ['staff', 'department_admin', 'admin'], true);
     }
 
     public function isCitizen(): bool
@@ -241,7 +265,7 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             'admin' => 'admin.dashboard',
-            'staff' => 'staff.dashboard',
+            'staff', 'department_admin' => 'staff.dashboard',
             default => 'complaints.index',
         };
     }
@@ -304,7 +328,7 @@ class User extends Authenticatable
 
     public function scopeStaff($query)
     {
-        return $query->whereIn('role', ['staff', 'admin']);
+        return $query->whereIn('role', ['staff', 'department_admin', 'admin']);
     }
 
     public function scopeForDepartment($query, int $departmentId)

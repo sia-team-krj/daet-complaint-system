@@ -130,6 +130,11 @@ class ComplaintBarangayTest extends TestCase
             'description' => 'A section of the perimeter fence came down in the wind.',
         ]);
 
+        // The register is verified-only now: consent to publish is not enough
+        // for an unverified report to appear, so mark both verified first.
+        $g->update(['review_status' => 'verified', 'verified_at' => now()]);
+        $c->update(['review_status' => 'verified', 'verified_at' => now()]);
+
         $this->assertTrue($g->isPubliclyVisible(), 'The first complaint is not on the public feed.');
         $this->assertTrue($c->isPubliclyVisible(), 'The second complaint is not on the public feed.');
 
@@ -155,6 +160,10 @@ class ComplaintBarangayTest extends TestCase
             'longitude' => 122.9432,
             'visibility' => 'public',
         ]);
+
+        // The register is verified-only now: consent to publish is not enough
+        // for an unverified report to appear, so verify before the page loads.
+        $complaint->update(['review_status' => 'verified', 'verified_at' => now()]);
 
         $locator = app(\App\Services\BarangayLocator::class);
         $guessed = $locator->locate($complaint->latitude, $complaint->longitude);

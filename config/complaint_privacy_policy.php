@@ -8,17 +8,20 @@
  * business. For those, two things are true that are not true of the other
  * categories:
  *
- *  1. The name of the party is captured in a private field that never leaves
- *     the office — it is not rendered on the transparency page, not part of
- *     the public search text, and not shown to anyone outside the handling
- *     office.
+ *  1. The name of the party is captured in a private field that is not
+ *     rendered on the transparency page and is not part of the public search
+ *     text. The handling office and the Mayor's office see it so the public
+ *     copy can be checked; nobody else does.
  *
  *  2. The complaint is filed private and cannot reach the public register
  *     until every one of these is true:
  *       - the office has settled it (resolved or closed),
  *       - the information has been verified as true,
- *       - the sensitive parts have been redacted,
+ *       - the Mayor's office has redacted the public copy,
  *       - the Mayor's office has approved the publication.
+ *
+ * The handoff is automatic once the office resolves a verified report. The
+ * handling office never writes the public copy and never asks by hand.
  *
  * A category that is genuinely a privacy concern is never published, and the
  * resident is told so.

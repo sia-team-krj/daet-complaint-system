@@ -107,4 +107,22 @@ enum ComplaintStatus: string
     {
         return in_array($next, $this->allowedTransitions());
     }
+
+    /**
+     * Transitions a staff member or administrator may apply by hand.
+     *
+     * `Closed` is deliberately absent: a resolved report is confirmed by the
+     * resident who filed it (ComplaintController@close), or by the scheduled
+     * `complaints:auto-close-resolved` command after the grace period — never
+     * by the office or an administrator from the status form.
+     *
+     * @return ComplaintStatus[]
+     */
+    public function allowedManualTransitions(): array
+    {
+        return array_values(array_filter(
+            $this->allowedTransitions(),
+            fn (self $status): bool => $status !== self::Closed,
+        ));
+    }
 }

@@ -119,7 +119,7 @@
                                     </div>
                                 @endif
 
-                                @if($user->role === 'staff')
+                                @if($user->isDepartmentStaff())
                                     <div class="settings-field">
                                         <span class="settings-field__label">{{ __('settings.profile.department') }}</span>
                                         <input type="text" class="settings-input" value="{{ $user->department?->name ?? '—' }}" disabled>
@@ -278,7 +278,7 @@
                                 @endforeach
                             </fieldset>
 
-                            @if($user->role === 'staff')
+                            @if($user->isDepartmentStaff())
                                 <fieldset class="settings-group">
                                     <legend class="settings-group__legend">{{ __('settings.notifications.default_queue_view') }}</legend>
                                     <div class="settings-field">

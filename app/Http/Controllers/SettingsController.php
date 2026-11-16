@@ -168,8 +168,8 @@ class SettingsController extends Controller
                 'channels' => $validated['channels'] ?? [],
                 'events' => $validated['events'] ?? [],
             ],
-            'default_queue_view' => $user->role === 'staff' ? ($validated['default_queue_view'] ?? null) : null,
-            'daily_digest' => $user->role === 'staff' ? (bool) ($validated['daily_digest'] ?? false) : false,
+            'default_queue_view' => $user->isDepartmentStaff() ? ($validated['default_queue_view'] ?? null) : null,
+            'daily_digest' => $user->isDepartmentStaff() ? (bool) ($validated['daily_digest'] ?? false) : false,
         ])->save();
 
         return redirect()->route('settings', ['tab' => 'notifications'])

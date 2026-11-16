@@ -34,6 +34,9 @@ class ComplaintDepartmentRoutingTest extends TestCase
         $this->engineeringStaff = User::factory()->create([
             'role' => 'staff',
             'department_id' => Department::where('code', 'ENG')->first()->id,
+            // A verifier carries the office's whole queue; an ordinary staff
+            // member sees only the work assigned to them.
+            'can_verify' => true,
         ]);
         $this->menroStaff = User::factory()->create([
             'role' => 'staff',

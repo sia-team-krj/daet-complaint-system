@@ -5,8 +5,8 @@
         $logoRoute = auth()->user()->homeRouteName();
         $logoUrl = route($logoRoute);
         $navRole = auth()->user()->role;
-        $navDept = $navRole === 'staff' ? auth()->user()->department : null;
-        $showNavIdentity = in_array($navRole, ['admin', 'staff'], true);
+        $navDept = auth()->user()->isDepartmentStaff() ? auth()->user()->department : null;
+        $showNavIdentity = in_array($navRole, ['admin', 'staff', 'department_admin'], true);
       @endphp
       <a href="{{ $logoUrl }}" class="navbar-logo group" aria-label="Daet Listens dashboard">
         <div class="logo-icon">
@@ -16,7 +16,7 @@
           <span class="logo-name">DAET LISTENS</span>
           <span class="logo-sub">LGU Daet · Camarines Norte</span>
         </div>
-        @if($navRole === 'staff')
+        @if(auth()->user()->isDepartmentStaff())
           <span class="nav-dept-account" data-dept="{{ $navDept?->code }}" aria-label="{{ __('nav.department_account') }}{{ $navDept?->code ? ' · '.$navDept->code : '' }}">
             <svg class="nav-dept-account__icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V8l6-4 6 4v13"/><path d="M10 10h4"/></svg>
             <span class="nav-dept-account__text"><span class="nav-dept-account__label">{{ __('nav.department') }}</span>@if($navDept?->code)<span class="nav-dept-account__sep" aria-hidden="true"> · </span><span class="nav-dept-account__code">{{ $navDept->code }}</span>@endif</span>
@@ -94,6 +94,11 @@
                 <span class="dropdown-identity">
                   @if($navRole === 'admin')
                     <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                  @elseif($navRole === 'department_admin')
+                    <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
+                    @if($navDept)
+                      <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
+                    @endif
                   @elseif($navDept)
                     <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
                   @else
@@ -168,6 +173,12 @@
                   <span class="dropdown-identity">
                     @if($navRole === 'admin')
                       <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                    @elseif($navRole === 'department_admin')
+                      <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
+                      @if($navDept)
+                        <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
+                        <span class="dropdown-identity__name">{{ $navDept->name }}</span>
+                      @endif
                     @elseif($navDept)
                       <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
                       <span class="dropdown-identity__name">{{ $navDept->name }}</span>
@@ -251,6 +262,12 @@
             <div class="mobile-user-identity">
               @if($navRole === 'admin')
                 <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+              @elseif($navRole === 'department_admin')
+                <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
+                @if($navDept)
+                  <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
+                  <span class="mobile-user-identity__label">{{ $navDept->name }}</span>
+                @endif
               @elseif($navDept)
                 <span class="dept-badge" data-dept="{{ $navDept->code }}">{{ $navDept->code }}</span>
                 <span class="mobile-user-identity__label">{{ $navDept->name }}</span>
@@ -285,8 +302,12 @@
 
       @if(auth()->user()->role === 'admin')
         <a href="{{ route('admin.dashboard') }}" class="mobile-nav-link">{{ __('nav.admin_dashboard') }}</a>
-      @elseif(auth()->user()->role === 'staff')
+      @elseif(auth()->user()->isDepartmentStaff())
         <a href="{{ route('staff.dashboard') }}" class="mobile-nav-link">{{ __('nav.staff_dashboard') }}</a>
+        @if(auth()->user()->isDepartmentAdmin())
+          <a href="{{ route('staff.office.index') }}" class="mobile-nav-link">{{ __('nav.manage_office') }}</a>
+          <a href="{{ route('staff.office.audit.index') }}" class="mobile-nav-link">{{ __('nav.office_audit') }}</a>
+        @endif
       @endif
       <div class="mobile-divider"></div>
 

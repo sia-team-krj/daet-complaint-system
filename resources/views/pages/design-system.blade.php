@@ -296,6 +296,17 @@
         <p class="ds-note" style="margin-top:12px">Forms: <code>data-loading-submit</code> (global auto-applies to non-GET forms). Fetch: <code>window.daetActionLoading.setBusy(el, true|false)</code>. Livewire: <code>wire:loading.class="is-loading" wire:loading.attr="aria-busy=true" wire:target="…"</code>. Opt out with <code>data-loading="off"</code>/<code>data-loading-managed</code>.</p>
     </section>
 
+    {{-- ═══ TOAST (§5.48) ═══ --}}
+    <section class="ds-section" aria-labelledby="ds-toast">
+        <h2 class="ds-h2" id="ds-toast">Toast — §5.48</h2>
+        <p class="ds-note">A status that says “done”, then gets out of the way. Without JavaScript it is the inline notice below; with JavaScript it floats under the navbar, fades in, and dismisses itself after about 4 seconds. Hovering or focusing it pauses the clock, the close button and <kbd>Esc</kbd> dismiss it, and errors stay until dismissed. Markup: <code>x-toast</code>; behaviour: <code>resources/js/toast.js</code>.</p>
+        <div style="display:grid; gap:12px; max-width:520px;">
+            <x-toast :message="__('feedback.sent_rating')" variant="success" preview />
+            <x-toast :message="__('feedback.errors.suggestion_limit')" variant="error" preview />
+        </div>
+        <p class="ds-note" style="margin-top:12px">On <code>/feedback</code> the success toast is the thank-you. It lives at <code>--z-overlay</code> (1100), so it sits above the navbar and the drawer; on a phone it spans the width with 16px gutters.</p>
+    </section>
+
     {{-- ═══ FORM CONTROLS ═══ --}}
     <section class="ds-section" aria-labelledby="ds-forms">
         <h2 class="ds-h2" id="ds-forms">Search, select, chips</h2>

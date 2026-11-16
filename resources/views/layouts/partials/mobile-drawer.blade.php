@@ -10,9 +10,10 @@
 @php
     $role = auth()->user()->role;
     $name = auth()->user()->full_name;
-    $department = $role === 'staff' ? auth()->user()->department : null;
+    $department = auth()->user()->isDepartmentStaff() ? auth()->user()->department : null;
     $roleLabel = match ($role) {
         'admin' => __('nav.administrator'),
+        'department_admin' => __('nav.department_administrator'),
         'staff' => $department?->name ?? __('nav.department_pending'),
         default => __('nav.citizen'),
     };
@@ -29,6 +30,11 @@
             <span class="mobile-nav-drawer__role nav-identity nav-identity--on-dark">
                 @if($role === 'admin')
                     <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                @elseif($role === 'department_admin')
+                    <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
+                    @if($department)
+                        <span class="mobile-nav-drawer__role-label">{{ __('nav.department_account') }} · {{ $department->code }}</span>
+                    @endif
                 @elseif($role === 'staff')
                     @if($department)
                         <span class="mobile-nav-drawer__role-label">{{ __('nav.department_account') }} · {{ $department->code }}</span>
@@ -57,11 +63,11 @@
                 <li><a href="{{ route('admin.staff.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('admin.staff.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.staff.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path></svg><span>{{ __('nav.staff_accounts') }}</span></a></li>
                 <li><a href="{{ route('admin.invitations.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('admin.invitations.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.invitations.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"></path><path d="m22 8-10 6L2 8"></path></svg><span>{{ __('nav.staff_invitations') }}</span></a></li>
             </ul>
-        @elseif($role === 'staff')
+        @elseif(auth()->user()->isDepartmentStaff())
             <p class="mobile-nav-drawer__group">{{ __('nav.workspace') }}</p>
             <ul class="mobile-nav-drawer__list">
                 <li><a href="{{ route('staff.dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('staff.dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
-                <li><a href="{{ route('staff.complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ __('nav.complaint_queue') }}</span></a></li>
+                <li><a href="{{ route('staff.complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ auth()->user()->canVerifyComplaints() ? __('nav.complaint_queue') : __('nav.my_work') }}</span></a></li>
                 <li><a href="{{ route('staff.activity.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.activity.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.activity.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('staff.bottom_nav.activity') }}</span></a></li>
             </ul>
             @if(auth()->user()->canVerifyComplaints())
@@ -69,6 +75,14 @@
                 <ul class="mobile-nav-drawer__list">
                     <li><a href="{{ route('staff.complaints.index', ['review' => 'pending']) }}" class="mobile-nav-drawer__item {{ request()->query('review') === 'pending' ? 'is-active' : '' }}" @if(request()->query('review') === 'pending') aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12l2 2 4-4"></path><path d="M12 3l7 4v5c0 4.4-3 8.3-7 9-4-.7-7-4.6-7-9V7z"></path></svg><span>{{ __('nav.needs_verification') }}</span></a></li>
                     <li><a href="{{ route('staff.complaints.index', ['review' => 'needs_information']) }}" class="mobile-nav-drawer__item {{ request()->query('review') === 'needs_information' ? 'is-active' : '' }}" @if(request()->query('review') === 'needs_information') aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><path d="M12 16.5v.01"></path></svg><span>{{ __('nav.waiting_on_resident') }}</span></a></li>
+                </ul>
+            @endif
+            @if(auth()->user()->isDepartmentAdmin())
+                <p class="mobile-nav-drawer__group">{{ __('nav.office') }}</p>
+                <ul class="mobile-nav-drawer__list">
+                    <li><a href="{{ route('staff.office.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.office.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.office.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"></path><path d="M6 21V8l6-4 6 4v13"></path><path d="M10 10h4"></path></svg><span>{{ __('nav.manage_office') }}</span></a></li>
+                    <li><a href="{{ route('staff.office.statistics.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.office.statistics.*') ? 'is-active' : '' }}" @if(request()->routeIs('staff.office.statistics.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 14l3-3 3 3 4-5"></path></svg><span>{{ __('nav.office_statistics') }}</span></a></li>
+                    <li><a href="{{ route('staff.office.audit.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.office.audit.*') ? 'is-active' : '' }}" @if(request()->routeIs('staff.office.audit.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('nav.office_audit') }}</span></a></li>
                 </ul>
             @endif
             <p class="mobile-nav-drawer__group">{{ __('nav.legal') }}</p>

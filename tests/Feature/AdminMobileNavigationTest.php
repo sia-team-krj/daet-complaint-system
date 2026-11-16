@@ -121,18 +121,15 @@ class AdminMobileNavigationTest extends TestCase
         $menu = substr($content, $start, $end - $start);
 
         $dashboard = strpos($menu, 'Admin Dashboard');
-        $complaints = strpos($menu, 'My Complaints');
-        $account = strpos($menu, 'My Account');
+        $settings = strpos($menu, 'Settings');
         $signOut = strpos($menu, 'Sign Out');
 
         $this->assertIsInt($dashboard);
-        $this->assertIsInt($complaints);
-        $this->assertIsInt($account);
+        $this->assertIsInt($settings);
         $this->assertIsInt($signOut);
 
-        $this->assertLessThan($complaints, $dashboard, 'Admin Dashboard must be the first menu item.');
-        $this->assertLessThan($account, $complaints, 'My Complaints must follow Admin Dashboard.');
-        $this->assertLessThan($signOut, $account, 'My Account must follow My Complaints.');
+        $this->assertLessThan($settings, $dashboard, 'Admin Dashboard must be the first menu item.');
+        $this->assertLessThan($signOut, $settings, 'Settings must follow Admin Dashboard.');
         $this->assertStringContainsString('dropdown-logout', $menu, 'Sign Out must stay visually separated.');
     }
 }

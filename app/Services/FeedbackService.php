@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ComplaintStatus;
 use App\Enums\FeedbackStatus;
 use App\Models\Department;
 use App\Models\Feedback;
@@ -12,14 +13,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * Resident feedback: the ratings and the suggestions.
  *
- * A rating counts from the moment it is given. A suggestion waits for the
- * administration to read it, because a suggestion is prose about the portal
- * and prose goes out reviewed.
+ * A rating counts from the moment it is given, and it is final — a resident
+ * rates an office once, so the number cannot be quietly moved later. A
+ * suggestion waits for the administration to read it, because a suggestion is
+ * prose about the portal and prose goes out reviewed.
  *
- * The offices a resident can rate are the ones they have actually dealt
- * with. A rating of an office you never wrote to says nothing about the
- * office, and a portal that lets anyone rate anything is a portal nobody
- * trusts.
+ * The offices a resident can rate are the ones that have actually finished a
+ * report for them: resolved or closed. A rating of an office you never dealt
+ * with says nothing about the office, and a rating of work still in progress
+ * says nothing about the finished service.
  */
 class FeedbackService
 {
@@ -29,19 +31,30 @@ class FeedbackService
     public const MAX_OFFICES = 8;
 
     /**
-     * The offices this resident has dealt with, most recent first.
+     * The municipality's day. "One suggestion a day" means the day a Daet
+     * resident lives in, not the UTC day the server stores timestamps in.
+     */
+    public const DAY_TIMEZONE = 'Asia/Manila';
+
+    /**
+     * The offices that have resolved or closed a report for this resident,
+     * most recent first.
      *
      * @return Collection<int, Department>
      */
     public function officesFor(User $user): Collection
     {
-        // The offices this resident has written to, most recent first. The
-        // department id and the date it was last written to are selected
-        // together: Postgres will not order a DISTINCT query by a column it
-        // did not select.
+        // The offices that finished a report for this resident, most recent
+        // first. The department id and the date it was last touched are
+        // selected together: Postgres will not order a DISTINCT query by a
+        // column it did not select.
         $recent = DB::table('complaints')
             ->where('user_id', $user->id)
             ->whereNotNull('department_id')
+            ->whereIn('status', [
+                ComplaintStatus::Resolved->value,
+                ComplaintStatus::Closed->value,
+            ])
             ->select('department_id', DB::raw('MAX(updated_at) as last_touched'))
             ->groupBy('department_id')
             ->orderByDesc('last_touched')
@@ -55,41 +68,28 @@ class FeedbackService
     }
 
     /**
-     * Record a rating of the portal or of an office.
+     * Record a rating of the portal or of an office — once.
      *
-     * A resident's later rating replaces their earlier one for the same
-     * scope: they change their mind, and the number should follow.
+     * A rating is final: the first one stands, and a later submit for the same
+     * scope returns that same row unchanged. The partial unique indexes in the
+     * migration make the same promise at the database, and createOrFirst turns
+     * the losing side of a simultaneous submit into the existing row.
      */
     public function recordRating(User $user, ?Department $department, int $rating): Feedback
     {
-        return DB::transaction(function () use ($user, $department, $rating): Feedback {
-            $existing = Feedback::query()
-                ->where('user_id', $user->id)
-                ->where('kind', Feedback::KIND_RATING)
-                ->where('department_id', $department?->id)
-                ->latest('id')
-                ->first();
-
-            $attributes = [
+        return Feedback::query()->createOrFirst(
+            [
+                'user_id' => $user->id,
+                'kind' => Feedback::KIND_RATING,
+                'department_id' => $department?->id,
+            ],
+            [
                 'rating' => $rating,
                 'status' => FeedbackStatus::Published->value,
                 'published_at' => now(),
                 'reviewed_at' => now(),
-                'reviewed_by' => $user->id,
-            ];
-
-            if ($existing !== null) {
-                $existing->update($attributes);
-
-                return $existing->fresh();
-            }
-
-            return Feedback::create($attributes + [
-                'user_id' => $user->id,
-                'kind' => Feedback::KIND_RATING,
-                'department_id' => $department?->id,
-            ]);
-        });
+            ],
+        );
     }
 
     /**
@@ -103,6 +103,23 @@ class FeedbackService
             'body' => $body,
             'status' => FeedbackStatus::Pending->value,
         ]);
+    }
+
+    /**
+     * Whether this resident has already used today's suggestion.
+     *
+     * Counts every suggestion sent since midnight in Daet, whatever its
+     * status: publishing or withholding it does not give the day back.
+     */
+    public function hasSuggestedToday(User $user): bool
+    {
+        $startOfDay = now(self::DAY_TIMEZONE)->startOfDay()->utc();
+
+        return Feedback::query()
+            ->where('user_id', $user->id)
+            ->where('kind', Feedback::KIND_SUGGESTION)
+            ->where('created_at', '>=', $startOfDay)
+            ->exists();
     }
 
     /**

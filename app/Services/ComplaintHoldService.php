@@ -42,6 +42,16 @@ class ComplaintHoldService
      */
     public function putOnHold(Complaint $complaint, User $actor, array $input): void
     {
+        // The work on a finished report (resolved, rejected, closed) cannot
+        // be paused — there is nothing left to pause. A hold that was already
+        // in place can still be taken off: the office clears it, never takes
+        // a new one.
+        if ($complaint->statusEnum->isClosed()) {
+            throw ValidationException::withMessages([
+                'hold' => 'There is no work left to pause on this report.',
+            ]);
+        }
+
         if ($complaint->isOnHold()) {
             throw ValidationException::withMessages([
                 'hold' => 'This complaint is already on hold.',

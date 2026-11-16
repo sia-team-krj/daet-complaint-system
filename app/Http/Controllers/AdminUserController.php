@@ -16,7 +16,7 @@ use Illuminate\View\View;
 
 class AdminUserController extends Controller
 {
-    private const ROLES = ['citizen', 'staff', 'admin'];
+    private const ROLES = ['citizen', 'staff', 'department_admin', 'admin'];
 
     private const STATUSES = ['active', 'inactive'];
 
@@ -171,16 +171,17 @@ class AdminUserController extends Controller
         ]);
 
         $role = $validated['role'];
-        $departmentId = $role === 'staff' ? ($validated['department_id'] ?? null) : null;
+        $requiresDepartment = in_array($role, ['staff', 'department_admin'], true);
+        $departmentId = $requiresDepartment ? ($validated['department_id'] ?? null) : null;
         $isCurrentUser = $user->is(Auth::user());
 
-        if ($role === 'staff' && ! $departmentId) {
+        if ($requiresDepartment && ! $departmentId) {
             return back()
                 ->withInput()
-                ->withErrors(['department_id' => 'Staff accounts must be assigned to a department.']);
+                ->withErrors(['department_id' => 'Staff and Department Administrator accounts must be assigned to a department.']);
         }
 
-        if ($role === 'staff' && ! Department::query()
+        if ($requiresDepartment && ! Department::query()
             ->whereKey($departmentId)
             ->where('is_active', true)
             ->exists()) {
@@ -195,13 +196,15 @@ class AdminUserController extends Controller
                 ->withErrors(['role' => 'You cannot change your own administrator role.']);
         }
 
-        if ($user->role === 'staff' && $role !== 'staff' && $user->assignedComplaints()->exists()) {
+        if ($user->isDepartmentStaff()
+            && ! in_array($role, ['staff', 'department_admin'], true)
+            && $user->assignedComplaints()->exists()) {
             return back()
                 ->withInput()
-                ->withErrors(['role' => 'Reassign this staff member\'s complaints before changing their role.']);
+                ->withErrors(['role' => 'Reassign this office member\'s complaints before changing their role.']);
         }
 
-        if ($role === 'staff' && $user->assignedComplaints()
+        if ($requiresDepartment && $user->assignedComplaints()
             ->where('department_id', '!=', $departmentId)
             ->exists()) {
             return back()
@@ -278,9 +281,12 @@ class AdminUserController extends Controller
             }
 
             if (in_array('role', $changedFields, true)) {
+                $previousRoleLabel = __('roles.' . $oldValues['role']);
+                $newRoleLabel = __('roles.' . $updates['role']);
+
                 $activityLogger->log(
                     'user.role_updated',
-                    "{$user->full_name}'s role changed from {$oldValues['role']} to {$updates['role']}.",
+                    "{$user->full_name}'s role changed from {$previousRoleLabel} to {$newRoleLabel}.",
                     $user,
                     departmentId: $updates['department_id'] ? (int) $updates['department_id'] : null,
                     metadata: [

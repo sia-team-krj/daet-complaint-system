@@ -13,16 +13,21 @@ return [
     'fields' => [
         'named_party_person' => 'Name of the person concerned',
         'named_party_business' => 'Name of the business concerned',
-        'named_party_hint_person' => 'Only the office handling this report sees this name. It is never shown on the public page.',
-        'named_party_hint_business' => 'Only the office handling this report sees this name. It is never shown on the public page.',
+        'named_party_hint_person' => 'Seen by the office handling this report and by the Mayor\'s office. It is never shown on the public page.',
+        'named_party_hint_business' => 'Seen by the office handling this report and by the Mayor\'s office. It is never shown on the public page.',
         'named_party_position' => 'Their position or office',
         'named_party_position_hint' => 'Optional. It helps the office find the right person.',
     ],
 
     'visibility' => [
         'gated_title' => 'This report names someone.',
-        'gated_body' => 'Because it names a person or a business, it is filed private. It is published only if the office settles it, the information is verified as true, the sensitive parts are redacted, and the Mayor\'s office approves it. You will be told either way.',
-        'gated_ack' => 'I understand this report names somebody and will be filed private. It will appear on the transparency page only if the office settles it, the information is verified as true, the sensitive parts are redacted, and the Mayor\'s office approves it. I will be told either way.',
+        'gated_body' => 'Because it names a person or a business, it is filed private. When the office resolves it and verifies the information is true, it goes automatically to the Mayor\'s office, which redacts the public copy and decides whether to publish it. You will be told either way.',
+        'gated_ack' => 'I understand this report names somebody and will be filed private. When the office resolves it and verifies the information is true, it goes automatically to the Mayor\'s office, which redacts the public copy and decides whether to publish it. I will be told either way.',
+        'public_title' => 'Publish on the transparency page',
+        'public_note' => 'Anyone can read it there once the office verifies your report — under your display alias, never your real name. You can make it private again at any time.',
+        'private_title' => 'Just me',
+        'private_note' => 'Only you and the staff handling your report can see it. It will not appear on the public page.',
+        'footnote' => 'Reports appear on the public page only after the office verifies them, and are held back automatically if they read as spam or unrelated to municipal services. Staff may also remove sensitive details from the public page, but they cannot change this choice — and you will always see your own report exactly as you filed it.',
     ],
 
     'page' => [

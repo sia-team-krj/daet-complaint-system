@@ -17,9 +17,9 @@ class ComplaintPolicy
             return true;
         }
 
-        // Staff can view complaints in their department
-        if ($user->role === 'staff') {
-            return $complaint->department_id === $user->department_id;
+        // Staff and Department Administrators see their own office's work.
+        if ($user->isDepartmentStaff()) {
+            return (int) $complaint->department_id === (int) $user->department_id;
         }
 
         // Citizen can only view their own complaints
@@ -60,13 +60,30 @@ class ComplaintPolicy
             return true;
         }
 
-        // Staff can only change status for complaints in their department
-        if ($user->role === 'staff') {
-            return $complaint->department_id === $user->department_id;
+        // Staff and Department Administrators can only change status for
+        // complaints in their own office.
+        if ($user->isDepartmentStaff()) {
+            return (int) $complaint->department_id === (int) $user->department_id;
         }
 
         // Citizens cannot change status
         return false;
+    }
+
+    /**
+     * Office verifiers (Department Administrators and staff with verification
+     * rights) may assign their office's work to an active member of that same
+     * office. The global administrator remains the cross-office fallback.
+     */
+    public function assign(User $user, Complaint $complaint): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $user->isDepartmentStaff()
+            && $user->canVerifyComplaints()
+            && (int) $complaint->department_id === (int) $user->department_id;
     }
 
     /**
@@ -94,6 +111,6 @@ class ComplaintPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'staff', 'citizen']);
+        return in_array($user->role, ['admin', 'staff', 'department_admin', 'citizen'], true);
     }
 }

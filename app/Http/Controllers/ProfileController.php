@@ -29,7 +29,7 @@ class ProfileController extends Controller
         // Role-specific data
         $stats = match ($user->role) {
             'citizen' => $this->getCitizenStats($user),
-            'staff' => $this->getStaffStats($user),
+            'staff', 'department_admin' => $this->getStaffStats($user),
             'admin' => $this->getAdminStats(),
             default => [],
         };

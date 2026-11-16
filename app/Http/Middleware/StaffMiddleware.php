@@ -22,13 +22,13 @@ class StaffMiddleware
         }
 
         // Must be staff or admin (admin can access staff panel too)
-        if (!in_array($user->role, ['staff', 'admin'])) {
+        if (!in_array($user->role, ['staff', 'department_admin', 'admin'])) {
             return redirect()->route('dashboard')
                 ->with('error', 'Access denied. Staff only.');
         }
 
         // Staff must have department assigned
-        if ($user->role === 'staff' && !$user->department_id) {
+        if ($user->isDepartmentStaff() && !$user->department_id) {
             return redirect()->route('dashboard')
                 ->with('error', 'Your account is not assigned to any department. Please contact admin.');
         }

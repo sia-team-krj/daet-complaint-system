@@ -1,0 +1,90 @@
+<?php
+
+return [
+    'title' => 'Pamahalaan ang tanggapan',
+    'lede' => ':office — mga account ng staff, imbitasyon, karapatang mag-verify at talaan ng audit ng tanggapan.',
+    'back_to_dashboard' => 'Bumalik sa panel',
+
+    'metrics' => [
+        'members' => 'Mga tao sa tanggapan',
+        'active' => 'Aktibong account',
+        'verifiers' => 'Mga verifier',
+    ],
+
+    'members' => [
+        'title' => 'Mga account ng staff',
+        'description' => 'I-activate, i-deactivate, o bigyan ng karapatang mag-verify. Ang profile, paglilipat ng departamento at pagtanggal ay nasa global administrator pa rin.',
+        'empty' => 'Wala pang account ng staff sa tanggapang ito.',
+        'you' => 'Ikaw',
+        'active' => 'Aktibo',
+        'inactive' => 'Hindi aktibo',
+        'verifier' => 'Verifier',
+        'deactivate' => 'I-deactivate',
+        'activate' => 'I-activate',
+        'grant_verification' => 'Bigyan ng beripikasyon',
+        'revoke_verification' => 'Alisin ang beripikasyon',
+        'peer_note' => 'Magkasamang pinamamahalaan ng mga Department Administrator ang tanggapang ito. Ang kanilang role at account ay binabago lamang ng global administrator.',
+    ],
+
+    'add' => [
+        'title' => 'Magdagdag ng account ng staff',
+        'description' => 'Pumili ng invitation link o emailed temporary password. Hindi ka pumipili ng password para sa iba.',
+        'first_name' => 'Pangalan',
+        'last_name' => 'Apelyido',
+        'email' => 'Email',
+        'contact' => 'Numero ng mobile',
+        'contact_optional' => 'Opsyonal',
+        'method' => 'Paraan ng onboarding',
+        'invitation' => 'Invitation link',
+        'temp_password' => 'Emailed temporary password',
+        'expiry' => 'Mag-e-expire ang imbitasyon',
+        'expiry_24' => '24 oras',
+        'expiry_48' => '48 oras',
+        'expiry_168' => '7 araw',
+        'submit' => 'Idagdag ang staff',
+        'note' => 'Ang account ay para lamang sa :office. Walang paglilipat ng departamento dito.',
+    ],
+
+    'invitations' => [
+        'title' => 'Mga bukas na imbitasyon',
+        'description' => 'Mga single-use link na naghihintay sa tatanggap.',
+        'empty' => 'Walang bukas na imbitasyon.',
+        'expires' => 'Mag-e-expire sa :date',
+        'copy' => 'Kopyahin ang link',
+        'revoke' => 'Bawiin',
+        'revoke_confirm' => 'Bawiin ang imbitasyong ito?',
+    ],
+
+
+    'statistics' => [
+        'title' => 'Estadistika ng tanggapan',
+        'kicker' => 'Pagganap ng tanggapan',
+        'lede' => 'Pagganap, workload, at karaniwang reklamo para sa :office. Saklaw lang ng tanggapan ang bilang at ligtas sa privacy (walang pagkakakilanlan ng residente).',
+        'kpi_aria' => 'Mga tagapagpahiwatig ng pagganap ng tanggapan',
+        'on_hold' => 'Nakahold',
+        'on_hold_meta' => 'Mga bukas na reklamong kasalukuyang nakahold',
+        'avg_first_action' => 'Avg. unang aksyon',
+        'avg_first_action_meta' => 'Mula sa paghain hanggang sa unang aksyon ng tanggapan',
+        'vs_previous' => 'kumpara sa nakaraang panahon',
+        'quick_filters' => 'Mabilis na filter ng reklamo',
+        'workload_sub' => 'Kapasidad ng koponan at kung paano nahahati ang bukas na gawain sa tanggapang ito',
+        'drilldown_hint' => 'Gamitin ang mabilis na filter sa itaas o ang pila ng reklamo para sa detalyado at privacy-safe na listahan.',
+    ],
+
+    'audit' => [
+        'title' => 'Talaan ng audit ng tanggapan',
+        'lede' => 'Mga aksyon sa account, imbitasyon at reklamo na naitala para sa :office.',
+        'description' => 'Tanging mga tala ng tanggapang ito ang ipinapakita. Hindi nakalista dito ang mga aksyon ng residente.',
+        'empty' => 'Wala pang tala sa audit.',
+        'system' => 'Sistema',
+        'unknown' => 'Hindi kilala',
+        'by' => 'ni',
+        'open' => 'Buksan ang talaan ng audit ng tanggapan',
+        'back' => 'Bumalik sa pamamahala ng tanggapan',
+        'date' => 'Kailan',
+        'action' => 'Aksyon',
+        'actor' => 'Gumawa',
+        'details' => 'Detalye',
+        'pagination' => 'Mga pahina ng audit ng tanggapan',
+    ],
+];

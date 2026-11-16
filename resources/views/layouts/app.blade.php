@@ -81,7 +81,11 @@
 <body
     @auth
         data-role="{{ auth()->user()->role }}"
-        class="w-full max-w-full overflow-x-clip bg-white is-auth role-{{ auth()->user()->role }} text-size-{{ auth()->user()->text_size ?? 'normal' }} {{ $bodyClass ?? '' }} @yield('body-class')"
+        {{-- Department Administrators share the staff workspace shell, so
+             they carry the role-staff compatibility class alongside their own
+             role. The raw role stays on data-role and in role-department_admin
+             for anything that needs to distinguish the manager. --}}
+        class="w-full max-w-full overflow-x-clip bg-white is-auth role-{{ auth()->user()->role }} {{ auth()->user()->isDepartmentStaff() ? 'role-staff' : '' }} text-size-{{ auth()->user()->text_size ?? 'normal' }} {{ $bodyClass ?? '' }} @yield('body-class')"
     @else
         data-role="guest"
         class="w-full max-w-full overflow-x-clip bg-white role-guest {{ $bodyClass ?? '' }} @yield('body-class')"

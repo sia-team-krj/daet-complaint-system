@@ -7,6 +7,7 @@ use App\Models\Complaint;
 use App\Models\Department;
 use App\Models\Feedback;
 use App\Models\User;
+use App\Services\FeedbackService;
 use Database\Seeders\DepartmentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,10 +15,11 @@ use Tests\TestCase;
 /**
  * Resident feedback.
  *
- * A rating counts from the moment it is given; a suggestion waits for the
- * administration to read it. A resident rates the portal and the offices they
- * have actually dealt with — a rating of an office you never wrote to says
- * nothing about the office.
+ * A rating counts from the moment it is given and is final; a suggestion waits
+ * for the administration to read it and is limited to one per Daet day. A
+ * resident rates only the offices that have resolved or closed a report for
+ * them — a rating of unfinished work, or of an office they never dealt with,
+ * says nothing about the service.
  */
 class FeedbackTest extends TestCase
 {
@@ -40,14 +42,14 @@ class FeedbackTest extends TestCase
         $response->assertSee(__('feedback.portal_title'));
     }
 
-    public function test_a_resident_can_rate_the_portal_and_the_offices_they_dealt_with(): void
+    public function test_a_resident_can_rate_the_portal_and_the_offices_that_finished_a_report(): void
     {
         $user = User::factory()->create(['role' => 'citizen']);
         $engineering = Department::where('code', 'ENG')->firstOrFail();
         $environment = Department::where('code', 'MENRO')->firstOrFail();
 
         $this->complaint($user, $engineering);
-        $this->complaint($user, $environment);
+        $this->complaint($user, $environment, 'Closed');
 
         $response = $this->actingAs($user)->post(route('feedback.store'), [
             'portal_rating' => 5,
@@ -84,7 +86,51 @@ class FeedbackTest extends TestCase
         );
     }
 
-    public function test_a_rating_replaces_the_residents_earlier_one(): void
+    public function test_an_office_with_only_unfinished_work_cannot_be_rated(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+        $engineering = Department::where('code', 'ENG')->firstOrFail();
+
+        foreach (['Submitted', 'Under Review', 'In Progress'] as $status) {
+            $this->complaint($user, $engineering, $status);
+        }
+
+        $this->actingAs($user)->post(route('feedback.store'), [
+            'office_ratings' => [$engineering->id => 5],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            0,
+            Feedback::where('user_id', $user->id)->where('department_id', $engineering->id)->count(),
+            'Work still in progress is not a finished service to rate.',
+        );
+    }
+
+    public function test_only_resolved_or_closed_offices_are_offered(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+        $engineering = Department::where('code', 'ENG')->firstOrFail();
+        $environment = Department::where('code', 'MENRO')->firstOrFail();
+        $mayor = Department::where('code', 'OM')->firstOrFail();
+
+        $this->complaint($user, $engineering);
+        $this->complaint($user, $environment, 'Closed');
+        $this->complaint($user, $mayor, 'In Progress');
+
+        $offices = app(FeedbackService::class)->officesFor($user);
+
+        $this->assertTrue($offices->contains('id', $engineering->id));
+        $this->assertTrue($offices->contains('id', $environment->id));
+        $this->assertFalse($offices->contains('id', $mayor->id));
+
+        $this->actingAs($user)->get(route('feedback.index'))
+            ->assertOk()
+            ->assertSee($engineering->name)
+            ->assertSee($environment->name)
+            ->assertDontSee($mayor->name);
+    }
+
+    public function test_a_rating_cannot_be_changed_once_it_is_sent(): void
     {
         $user = User::factory()->create(['role' => 'citizen']);
 
@@ -92,7 +138,28 @@ class FeedbackTest extends TestCase
         $this->actingAs($user)->post(route('feedback.store'), ['portal_rating' => 5]);
 
         $this->assertSame(1, Feedback::where('user_id', $user->id)->whereNull('department_id')->count());
-        $this->assertSame(5, Feedback::where('user_id', $user->id)->whereNull('department_id')->value('rating'));
+        $this->assertSame(2, Feedback::where('user_id', $user->id)->whereNull('department_id')->value('rating'));
+    }
+
+    public function test_the_page_shows_an_existing_rating_as_a_locked_score(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+        $engineering = Department::where('code', 'ENG')->firstOrFail();
+
+        $this->complaint($user, $engineering);
+
+        $this->actingAs($user)->post(route('feedback.store'), [
+            'portal_rating' => 4,
+            'office_ratings' => [$engineering->id => 3],
+        ]);
+
+        $this->actingAs($user)->get(route('feedback.index'))
+            ->assertOk()
+            ->assertSee(__('feedback.rating_locked'))
+            ->assertSee(__('feedback.rated_aria', ['rating' => 4]))
+            ->assertSee('4 / 5')
+            ->assertDontSee('name="portal_rating"', false)
+            ->assertDontSee('name="office_ratings['.$engineering->id.']"', false);
     }
 
     public function test_a_suggestion_waits_to_be_read(): void
@@ -107,6 +174,106 @@ class FeedbackTest extends TestCase
 
         $this->assertSame(FeedbackStatus::Pending, $suggestion->statusEnum());
         $this->assertNull($suggestion->published_at);
+    }
+
+    public function test_a_resident_can_send_one_suggestion_a_day(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($user)->post(route('feedback.store'), [
+            'suggestion' => 'Please add SMS alerts.',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($user)->post(route('feedback.store'), [
+            'suggestion' => 'A second suggestion on the same day.',
+        ])->assertSessionHas('error');
+
+        $this->assertSame(
+            1,
+            Feedback::where('user_id', $user->id)->where('kind', Feedback::KIND_SUGGESTION)->count(),
+        );
+    }
+
+    public function test_staff_are_limited_to_one_suggestion_a_day_too(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+
+        $this->actingAs($staff)->post(route('feedback.store'), [
+            'suggestion' => 'Please add SMS alerts.',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($staff)->post(route('feedback.store'), [
+            'suggestion' => 'A second suggestion on the same day.',
+        ])->assertSessionHas('error');
+
+        $this->assertSame(
+            1,
+            Feedback::where('user_id', $staff->id)->where('kind', Feedback::KIND_SUGGESTION)->count(),
+        );
+    }
+
+    public function test_an_administrator_is_exempt_from_the_daily_suggestion_limit(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('feedback.store'), [
+            'suggestion' => 'First note from the administration.',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->post(route('feedback.store'), [
+            'suggestion' => 'Second note from the administration.',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            2,
+            Feedback::where('user_id', $admin->id)->where('kind', Feedback::KIND_SUGGESTION)->count(),
+        );
+    }
+
+    public function test_the_page_disables_the_suggestion_box_once_one_has_been_sent_today(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($user)->post(route('feedback.store'), [
+            'suggestion' => 'Please add SMS alerts.',
+        ]);
+
+        $this->actingAs($user)->get(route('feedback.index'))
+            ->assertOk()
+            ->assertSee(__('feedback.suggestion_limit'))
+            ->assertDontSee(__('feedback.nothing_to_send'))
+            ->assertSee('id="feedback-suggestion"', false)
+            ->assertSee('disabled', false);
+    }
+
+    public function test_the_page_disables_submit_when_nothing_is_left_to_send(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($user)->post(route('feedback.store'), [
+            'portal_rating' => 5,
+            'suggestion' => 'Please add SMS alerts.',
+        ]);
+
+        $this->actingAs($user)->get(route('feedback.index'))
+            ->assertOk()
+            ->assertSee(__('feedback.suggestion_limit'))
+            ->assertSee(__('feedback.already_submitted_all'))
+            ->assertSee(__('feedback.already_submitted'))
+            ->assertSee('disabled', false);
+    }
+
+    public function test_the_thank_you_is_rendered_as_a_toast(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+
+        $this->followingRedirects()
+            ->actingAs($user)
+            ->post(route('feedback.store'), ['portal_rating' => 5])
+            ->assertOk()
+            ->assertSee('data-toast', false)
+            ->assertSee('toast--success', false)
+            ->assertSee(__('feedback.sent_rating'));
     }
 
     public function test_the_administration_publishes_a_suggestion(): void
@@ -206,7 +373,7 @@ class FeedbackTest extends TestCase
         foreach ([5, 4, 3] as $rating) {
             $user = User::factory()->create(['role' => 'citizen']);
 
-            // An office can only be rated by someone who wrote to it.
+            // An office can only be rated by someone it finished a report for.
             $this->complaint($user, $engineering);
 
             $this->actingAs($user)->post(route('feedback.store'), [
@@ -214,13 +381,13 @@ class FeedbackTest extends TestCase
             ]);
         }
 
-        $average = app(\App\Services\FeedbackService::class)->averageFor($engineering);
+        $average = app(FeedbackService::class)->averageFor($engineering);
 
         $this->assertSame(4.0, $average['average']);
         $this->assertSame(3, $average['count']);
     }
 
-    private function complaint(User $user, Department $department): Complaint
+    private function complaint(User $user, Department $department, string $status = 'Resolved'): Complaint
     {
         return Complaint::create([
             'ticket_id' => 'COMP-2026-'.str_pad((string) Complaint::count() + 1, 5, '0', STR_PAD_LEFT),
@@ -229,9 +396,11 @@ class FeedbackTest extends TestCase
             'category' => 'road_damage',
             'title' => 'Large pothole on the main road',
             'description' => 'A large pothole has opened up on the main road near the market.',
-            'status' => 'Submitted',
+            'status' => $status,
             'review_status' => 'pending',
             'content_fingerprint' => \Illuminate\Support\Str::random(40),
+            'resolved_at' => $status === 'Resolved' ? now() : null,
+            'closed_at' => $status === 'Closed' ? now() : null,
         ]);
     }
 }

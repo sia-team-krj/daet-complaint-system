@@ -307,7 +307,7 @@ class DepartmentVerificationTest extends TestCase
     {
         $complaint = $this->complaint();
 
-        for ($round = 1; $round <= 2; $round++) {
+        for ($round = 1; $round <= 3; $round++) {
             $this->actingAs($this->verifier)
                 ->post(route('staff.complaints.verification.request-information', $complaint), [
                     'question' => "Round {$round}: please attach a wider photo of the whole structure.",
@@ -321,15 +321,15 @@ class DepartmentVerificationTest extends TestCase
             ]);
         }
 
-        $this->assertSame(2, $complaint->informationRequests()->count());
+        $this->assertSame(3, $complaint->informationRequests()->count());
 
         $this->actingAs($this->verifier)
             ->post(route('staff.complaints.verification.request-information', $complaint), [
-                'question' => 'Round 3: please provide yet another photo of the structure.',
+                'question' => 'Round 4: please provide yet another photo of the structure.',
             ])
             ->assertSessionHasErrors('question');
 
-        $this->assertSame(2, $complaint->informationRequests()->count(), 'The cap must hold.');
+        $this->assertSame(3, $complaint->informationRequests()->count(), 'The cap must hold.');
     }
 
     public function test_verifying_closes_any_outstanding_information_request(): void

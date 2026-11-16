@@ -194,6 +194,100 @@ class ComplaintHoldTest extends TestCase
         $this->assertSame(HoldReason::AwaitingMaterials, $complaint->fresh()->holdReasonEnum());
     }
 
+    // ── A finished report has nothing left to pause ───────────────────
+
+    public function test_the_pause_control_is_not_offered_on_a_resolved_report(): void
+    {
+        $complaint = $this->finishedComplaint(ComplaintStatus::Resolved);
+
+        $staffPage = $this->actingAs($this->staff)
+            ->get(route('staff.complaints.show', $complaint));
+
+        $staffPage->assertOk();
+        $staffPage->assertDontSee('Put the work on hold');
+        $staffPage->assertDontSee(route('staff.complaints.hold', $complaint), false);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $adminPage = $this->actingAs($admin)
+            ->get(route('admin.complaints.show', $complaint));
+
+        $adminPage->assertOk();
+        $adminPage->assertDontSee('Put the work on hold');
+        $adminPage->assertDontSee(route('staff.complaints.hold', $complaint), false);
+    }
+
+    public function test_a_resolved_report_cannot_be_put_on_hold(): void
+    {
+        $complaint = $this->finishedComplaint(ComplaintStatus::Resolved);
+
+        $this->actingAs($this->staff)
+            ->post(route('staff.complaints.hold', $complaint), [
+                'hold_reason' => HoldReason::AwaitingFunds->value,
+                'hold_note' => 'The budget for this repair has not been released yet.',
+            ])
+            ->assertSessionHasErrors('hold');
+
+        $this->assertFalse($complaint->fresh()->isOnHold());
+    }
+
+    public function test_a_rejected_report_cannot_be_put_on_hold(): void
+    {
+        $complaint = $this->finishedComplaint(ComplaintStatus::Rejected);
+
+        $this->actingAs($this->staff)
+            ->post(route('staff.complaints.hold', $complaint), [
+                'hold_reason' => HoldReason::AwaitingFunds->value,
+                'hold_note' => 'The budget for this repair has not been released yet.',
+            ])
+            ->assertSessionHasErrors('hold');
+
+        $this->assertFalse($complaint->fresh()->isOnHold());
+    }
+
+    public function test_a_closed_report_cannot_be_put_on_hold(): void
+    {
+        $complaint = $this->finishedComplaint(ComplaintStatus::Closed);
+
+        $this->actingAs($this->staff)
+            ->post(route('staff.complaints.hold', $complaint), [
+                'hold_reason' => HoldReason::AwaitingFunds->value,
+                'hold_note' => 'The budget for this repair has not been released yet.',
+            ])
+            ->assertSessionHasErrors('hold');
+
+        $this->assertFalse($complaint->fresh()->isOnHold());
+    }
+
+    public function test_an_on_hold_report_can_still_be_taken_off_hold_once_it_is_resolved(): void
+    {
+        $complaint = $this->finishedComplaint(ComplaintStatus::Resolved);
+
+        // A hold taken before the work was finished is not stranded by the
+        // finish: the office still sees the state and can take it off.
+        $complaint->update([
+            'hold_reason' => HoldReason::AwaitingMaterials->value,
+            'hold_note' => 'The asphalt for this stretch of road is not in stock.',
+            'hold_started_at' => now()->subDay(),
+            'hold_started_by' => $this->staff->id,
+        ]);
+
+        $page = $this->actingAs($this->staff)
+            ->get(route('staff.complaints.show', $complaint));
+
+        $page->assertOk();
+        $page->assertDontSee('Put the work on hold');
+        $page->assertSee('Take the hold off and carry on');
+
+        $this->actingAs($this->staff)
+            ->post(route('staff.complaints.resume', $complaint), [
+                'hold_note' => 'The materials arrived; the crew finished the repair.',
+            ])
+            ->assertRedirect(route('staff.complaints.show', $complaint));
+
+        $this->assertFalse($complaint->fresh()->isOnHold());
+    }
+
     // ── The clock ──────────────────────────────────────────────────────
 
     public function test_a_complaint_on_hold_is_not_late(): void
@@ -312,6 +406,14 @@ class ComplaintHoldTest extends TestCase
         if ($heldMinutes > 0) {
             $complaint->update(['hold_started_at' => now()->subMinutes($heldMinutes)]);
         }
+    }
+
+    private function finishedComplaint(ComplaintStatus $status): Complaint
+    {
+        $complaint = $this->complaint();
+        $complaint->update(['status' => $status->value]);
+
+        return $complaint->fresh();
     }
 
     private function complaint(int $verifiedDaysAgo = 1): Complaint

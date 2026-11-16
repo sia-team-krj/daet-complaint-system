@@ -12,6 +12,7 @@ use App\Http\Controllers\AdminFeedbackController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentAdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationRedemptionController;
 use App\Http\Controllers\LegalController;
@@ -188,6 +189,12 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     Route::get('/complaints/{complaint}/updates/{log}/evidence/{index}', [ComplaintController::class, 'updateEvidence'])
         ->whereNumber('index')
         ->name('complaints.updates.evidence');
+    // The photos the resident attached to a verification reply (the detail a
+    // verifier asked for). Same family as evidence photos: owner, department
+    // and admin only, streamed through the application.
+    Route::get('/complaints/{complaint}/information/{informationRequest}/evidence/{index}', [ComplaintController::class, 'informationEvidence'])
+        ->whereNumber('index')
+        ->name('complaints.information.evidence');
     Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show');
     // The resident's half of the verification loop: answering a verifier's
     // request for better evidence. Every other complaint route is read-only.
@@ -213,7 +220,7 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password.change'])
+Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin', 'force.password.change'])
     ->prefix('staff')
     ->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
@@ -244,10 +251,6 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password
         // or admin action that can act on a public listing.
         Route::post('/complaints/{complaint}/moderation', [StaffController::class, 'moderate'])
             ->name('staff.complaints.moderate');
-        // The quick-fill for the public copy: the office ticks what must not
-        // appear, the system writes a safe redacted title and description.
-        Route::post('/complaints/{complaint}/redact', [StaffController::class, 'redact'])
-            ->name('staff.complaints.redact');
 
         // Department-led verification. Verify/reject stays on the established
         // staff.complaints.review endpoint; these two actions are new.
@@ -256,10 +259,9 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password
         Route::post('/complaints/{complaint}/verification/delegate', [ComplaintVerificationController::class, 'delegate'])
             ->name('staff.complaints.verification.delegate');
 
-        // Publication of a report that names somebody. The owning office asks
-        // for it; the Mayor's office decides.
-        Route::post('/complaints/{complaint}/publication-request', [StaffController::class, 'publicationRequest'])
-            ->name('staff.complaints.publication-request');
+        // Publication of a report that names somebody. The handoff is
+        // automatic when the office resolves and verifies the report; the
+        // Mayor's office redacts the public copy and decides.
         Route::get('/publication-requests', [StaffController::class, 'publicationRequests'])
             ->name('staff.publication-requests.index');
         // The decider's review of one request. Separate from the ticket: the
@@ -267,6 +269,10 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password
         // ticket page rightly refuses those.
         Route::get('/publication-requests/{complaint}', [StaffController::class, 'publicationReview'])
             ->name('staff.publication-requests.show');
+        Route::post('/publication-requests/{complaint}/redact-draft', [StaffController::class, 'publicationRedactDraft'])
+            ->name('staff.publication-requests.redact-draft');
+        Route::post('/publication-requests/{complaint}/redaction', [StaffController::class, 'publicationSaveRedaction'])
+            ->name('staff.publication-requests.redaction');
         Route::post('/publication-requests/{complaint}/approve', [StaffController::class, 'publicationApprove'])
             ->name('staff.publication-requests.approve');
         Route::post('/publication-requests/{complaint}/decline', [StaffController::class, 'publicationDecline'])
@@ -279,6 +285,32 @@ Route::middleware(['auth', 'email.verified', 'role:staff,admin', 'force.password
             ->name('staff.complaints.hold');
         Route::post('/complaints/{complaint}/resume', [StaffController::class, 'resume'])
             ->name('staff.complaints.resume');
+
+        // The office management surface. Only a Department Administrator of
+        // this office reaches these actions; the controller checks the role
+        // and the office again, because the URL is never the authority.
+        Route::get('/office', [DepartmentAdminController::class, 'index'])
+            ->name('staff.office.index');
+        Route::get('/office/statistics', [DepartmentAdminController::class, 'statistics'])
+            ->name('staff.office.statistics.index');
+        Route::get('/office/statistics/browser', [DepartmentAdminController::class, 'statisticsBrowser'])
+            ->name('staff.office.statistics.browser');
+        Route::get('/office/statistics/export', [DepartmentAdminController::class, 'statisticsExport'])
+            ->name('staff.office.statistics.export');
+        Route::get('/office/statistics/print', [DepartmentAdminController::class, 'statisticsPrint'])
+            ->name('staff.office.statistics.print');
+        Route::patch('/office/invitations/{invitation}/revoke', [DepartmentAdminController::class, 'revokeInvitation'])
+            ->name('staff.office.invitations.revoke');
+        Route::post('/office/staff', [DepartmentAdminController::class, 'storeStaff'])
+            ->name('staff.office.staff.store');
+        Route::post('/office/staff/{user}/toggle', [DepartmentAdminController::class, 'toggleStaffStatus'])
+            ->name('staff.office.staff.toggle');
+        Route::post('/office/staff/{user}/toggle-verification', [DepartmentAdminController::class, 'toggleStaffVerification'])
+            ->name('staff.office.staff.toggle-verification');
+        Route::post('/office/complaints/{complaint}/assign', [DepartmentAdminController::class, 'assignComplaint'])
+            ->name('staff.office.complaints.assign');
+        Route::get('/office/audit', [DepartmentAdminController::class, 'auditIndex'])
+            ->name('staff.office.audit.index');
     });
 
 /*
@@ -316,6 +348,13 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
             ->name('admin.complaints.verification.request-information');
         Route::post('/complaints/{complaint}/moderation', [AdminController::class, 'moderateComplaint'])
             ->name('admin.complaints.moderate');
+        // Release a report the automated intake marked review/spam. No UI to
+        // undo a false positive had existed — a flagged report was invisible
+        // forever, even when it was a legitimate resident complaint. The
+        // action is deliberately admin-side (the office never touches their
+        // own flag), reason-bearing, and audit-logged.
+        Route::put('/complaints/{complaint}/clear-spam-flag', [AdminController::class, 'clearSpamFlag'])
+            ->name('admin.complaints.clear-spam-flag');
         Route::get('/departments', [AdminController::class, 'departmentsIndex'])->name('admin.departments.index');
         // Reading what residents asked for. A suggestion goes out reviewed, so
         // somebody has to read it first.

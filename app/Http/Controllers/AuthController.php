@@ -209,7 +209,7 @@ class AuthController extends Controller
         if (in_array($user->locale, array_keys(config('localization.supported', [])), true)) {
             $request->session()->put('locale', $user->locale);
         }
-        if (in_array($user->role, ['staff', 'admin'], true)) {
+        if (in_array($user->role, ['staff', 'department_admin', 'admin'], true)) {
             $activityLogger->log(
                 'auth.login',
                 "{$user->full_name} signed in.",
@@ -244,7 +244,7 @@ class AuthController extends Controller
     {
         $user = Auth::user();
 
-        if ($user && in_array($user->role, ['staff', 'admin'], true)) {
+        if ($user && in_array($user->role, ['staff', 'department_admin', 'admin'], true)) {
             $activityLogger->log(
                 'auth.logout',
                 "{$user->full_name} signed out.",
@@ -369,7 +369,7 @@ class AuthController extends Controller
                     'password_expires_at' => null,
                 ])->save();
 
-                if (in_array($user->role, ['staff', 'admin'], true)) {
+                if (in_array($user->role, ['staff', 'department_admin', 'admin'], true)) {
                     $activityLogger->log(
                         'auth.password_reset',
                         "{$user->full_name} reset their account password.",

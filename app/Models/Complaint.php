@@ -409,13 +409,38 @@ class Complaint extends Model
      * A complaint in a privacy-gated category is the one exception, and it is
      * not the resident's consent that carries it: those complaints name
      * somebody, so they are filed private and reach the register only when the
-     * office has settled them, the information has been verified, the
-     * sensitive parts have been redacted and the Mayor's office has approved
+     * office has settled them, the information has been verified, the Mayor's
+     * office has redacted the public copy and the Mayor's office has approved
      * the publication. See ComplaintPrivacyService.
      */
+    /**
+     * Whether the report has been verified (or has already been settled).
+     *
+     * An ordinary consented report is not shown on the public register until
+     * at least this much is known to be true — a resident's consent is an
+     * instruction to publish, not a promise that the report is accurate.
+     * Settling a report implies the office verified it first, so Resolved or
+     * Closed passes too (covers legacy rows filed before verification existed).
+     * `verified_at` survives a later needs-information round — an open or
+     * answered ask must not un-publish a report that is already verified.
+     */
+    public function isVerifiedForPublic(): bool
+    {
+        return $this->isVerified()
+            || $this->verified_at !== null
+            || in_array($this->statusEnum, [ComplaintStatus::Resolved, ComplaintStatus::Closed], true);
+    }
+
     public function isPubliclyVisible(): bool
     {
         if ($this->hidden_from_public || $this->isModerationFlagged()) {
+            return false;
+        }
+
+        // Consent to publish is the resident's call; when it is published is
+        // not. An unverified report stays off the public record until the
+        // office has verified it (or settled it, which implies the same).
+        if (! $this->isVerifiedForPublic()) {
             return false;
         }
 
@@ -646,6 +671,14 @@ class Complaint extends Model
             // whole value of the register.
             ->where('status', '!=', ComplaintStatus::Rejected->value)
             ->where(function ($query) {
+                // Consent to publish is not a promise the report is true:
+                // an ordinary report goes on the register only once it is
+                // verified (or already settled, which implies the same).
+                $query->where('review_status', ComplaintReviewStatus::Verified->value)
+                    ->orWhereNotNull('verified_at')
+                    ->orWhereIn('status', [ComplaintStatus::Resolved->value, ComplaintStatus::Closed->value]);
+            })
+            ->where(function ($query) {
                 // A complaint the resident agreed to publish, or one the
                 // Mayor's office approved for publication after the office
                 // redacted it.
@@ -670,6 +703,61 @@ class Complaint extends Model
     public function scopeForDepartment($query, int $departmentId)
     {
         return $query->where('department_id', $departmentId);
+    }
+
+    /**
+     * The work this staff member is allowed to see.
+     *
+     * A verifier — the Department Administrator, or staff with verification
+     * rights — carries the office's whole queue. An ordinary staff member
+     * works the cases the office handed them, so they see only those:
+     * assigned to them now, or assigned to them at some point. A case they
+     * worked and then passed on stays readable to them — their own history
+     * is theirs — but the rest of the office's work is not.
+     *
+     * The assignment trail is the audit log: every hand-over writes
+     * `complaint.assignment_updated` with the new assignee in its metadata.
+     */
+    public function scopeVisibleToStaff($query, User $user)
+    {
+        if ($user->canVerifyComplaints()) {
+            return $query;
+        }
+
+        $complaintMorph = (new self)->getMorphClass();
+
+        return $query->where(function ($inner) use ($user, $complaintMorph) {
+            $inner->where('complaints.assigned_staff_id', $user->id)
+                ->orWhereIn('complaints.id', function ($assigned) use ($user, $complaintMorph) {
+                    $assigned->select('subject_id')
+                        ->from('activity_logs')
+                        ->where('action', 'complaint.assignment_updated')
+                        ->where('subject_type', $complaintMorph)
+                        ->whereJsonContains('metadata->assigned_staff_id', $user->id);
+                });
+        });
+    }
+
+    /**
+     * May this staff member open this complaint at all?
+     *
+     * The single check the staff workspace uses, so the queue, the ticket and
+     * the live-ticket poll all agree on who may read what.
+     */
+    public static function isVisibleToStaff(self $complaint, User $user): bool
+    {
+        if (! $user->isDepartmentStaff()) {
+            return false;
+        }
+
+        if ($user->canVerifyComplaints()) {
+            return (int) $complaint->department_id === (int) $user->department_id;
+        }
+
+        return self::query()
+            ->visibleToStaff($user)
+            ->whereKey($complaint->getKey())
+            ->exists();
     }
 
     // ─────────────────────────────────────────────

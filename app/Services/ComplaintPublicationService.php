@@ -8,23 +8,26 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * The publication workflow for complaints that name somebody.
  *
  * A gated complaint — how you were treated at the LGU, the plastic policy —
- * is filed private. It can only be published once:
+ * is filed private. It is handed to the Mayor's office automatically once:
  *
  *   1. the owning office has settled it (resolved or closed),
  *   2. the information has been verified as true,
- *   3. the sensitive parts have been redacted,
  *
- * and then the owning office asks the Mayor's office to approve it. The
- * Mayor's office either approves — and the redacted version goes on the
- * public register — or declines, and the complaint is never published.
+ * and then the Mayor's office redacts the public copy and either approves it
+ * — and the redacted version goes on the public register — or declines, and
+ * the complaint is never published.
+ *
+ * The handling office never writes the public copy and never asks for the
+ * handoff by hand: resolving a verified report is the handoff.
  *
  * The name of the party never appears on the public register in either case.
- * The resident is notified of the request, the approval, and the refusal.
+ * The resident is notified of the handoff, the approval, and the refusal.
  */
 class ComplaintPublicationService
 {
@@ -35,53 +38,117 @@ class ComplaintPublicationService
     }
 
     /**
-     * The owning office asks the Mayor's office to publish the complaint.
+     * Send a settled, verified report to the Mayor's office.
      *
-     * Refused unless the complaint is settled, verified and redacted: asking
-     * for publication before those is asking the Mayor's office to sign off
-     * on something that is not ready.
+     * Idempotent: a report that already has a publication state is left alone.
+     * This is called when a department resolves a complaint and when a review
+     * decision makes a settled report verified, so it does not matter which
+     * of the two lands last.
      */
-    public function request(Complaint $complaint, User $actor, ?string $note = null): void
+    public function autoSubmit(Complaint $complaint, ?User $actor = null): bool
     {
-        abort_unless($complaint->isPrivacyGated(), 422, 'This complaint is not in a category that needs a publication decision.');
-
-        $blockers = $this->blockersBeforeRequest($complaint);
-
-        if ($blockers !== []) {
-            throw ValidationException::withMessages([
-                'publication' => $blockers,
-            ]);
+        if (! $complaint->isPrivacyGated()) {
+            return false;
         }
 
-        if ($complaint->publicationStatus() === PublicationStatus::Approved) {
-            throw ValidationException::withMessages([
-                'publication' => 'This complaint has already been approved for publication.',
-            ]);
+        if ($complaint->publicationStatus() !== null) {
+            return false;
         }
 
-        DB::transaction(function () use ($complaint, $actor, $note) {
+        if (ComplaintPrivacyService::handoffBlockers($complaint) !== []) {
+            return false;
+        }
+
+        DB::transaction(function () use ($complaint, $actor): void {
             $complaint->update([
                 'publication_status' => PublicationStatus::Pending->value,
                 'publication_requested_at' => now(),
-                'publication_requested_by' => $actor->id,
-                'publication_note' => $note,
+                'publication_requested_by' => $actor?->id,
+                'publication_note' => null,
             ]);
 
             $complaint->refresh();
 
             $this->activityLogger->log(
                 'complaint.publication_requested',
-                "{$actor->full_name} asked the Mayor's office to publish complaint {$complaint->ticket_id}.",
+                "Complaint {$complaint->ticket_id} was sent automatically to the Mayor's office for publication review.",
                 $complaint,
                 metadata: [
                     'publication_status' => PublicationStatus::Pending->value,
-                    'note' => $note,
+                    'automatic' => true,
                 ],
+                actor: $actor,
             );
         });
 
-        $this->notifyApprovalOffice($complaint, $actor);
-        $this->notifyResidentOfRequest($complaint, $actor);
+        try {
+            $this->notifyApprovalOffice($complaint, $actor);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        try {
+            $this->notifyResidentOfHandoff($complaint, $actor);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return true;
+    }
+
+    /**
+     * Save the redacted public copy. Only the Mayor's office may write it, and
+     * only while the report is waiting for its decision.
+     */
+    public function saveRedaction(
+        Complaint $complaint,
+        User $actor,
+        ?string $title,
+        ?string $description,
+        ?string $note = null,
+    ): void {
+        abort_unless($complaint->isPrivacyGated(), 422, 'This complaint is not in a category that needs a publication decision.');
+        abort_unless(
+            ComplaintPrivacyService::canApprove($actor),
+            403,
+            'Only the Mayor\'s office can redact a report for publication.',
+        );
+
+        if ($complaint->publicationStatus() !== PublicationStatus::Pending) {
+            throw ValidationException::withMessages([
+                'publication' => 'This report is not waiting for a publication decision.',
+            ]);
+        }
+
+        $title = $this->clean($title);
+        $description = $this->clean($description);
+
+        if ($title === null || $description === null) {
+            throw ValidationException::withMessages([
+                'redacted_title' => 'Write both the redacted title and the redacted description before saving.',
+            ]);
+        }
+
+        DB::transaction(function () use ($complaint, $actor, $title, $description, $note): void {
+            $complaint->update([
+                'redacted_title' => $title,
+                'redacted_description' => $description,
+            ]);
+
+            $complaint->refresh();
+
+            $this->activityLogger->log(
+                'complaint.publication_redacted',
+                "{$actor->full_name} saved the redacted public copy for complaint {$complaint->ticket_id}.",
+                $complaint,
+                metadata: [
+                    'redacted_title' => $title,
+                    'redacted_description' => $description,
+                    'note' => $this->clean($note),
+                ],
+                actor: $actor,
+            );
+        });
     }
 
     /**
@@ -113,17 +180,21 @@ class ComplaintPublicationService
             'Only the Mayor\'s office can decide whether this complaint is published.',
         );
 
-        if ($status === PublicationStatus::Approved) {
-            $blockers = $this->blockersBeforeRequest($complaint);
-
-            if ($blockers !== []) {
-                throw ValidationException::withMessages([
-                    'publication' => $blockers,
-                ]);
-            }
+        if ($complaint->publicationStatus() !== PublicationStatus::Pending) {
+            throw ValidationException::withMessages([
+                'publication' => 'This report is not waiting for a publication decision.',
+            ]);
         }
 
-        DB::transaction(function () use ($complaint, $actor, $status, $note) {
+        $blockers = ComplaintPrivacyService::approvalBlockers($complaint);
+
+        if ($blockers !== []) {
+            throw ValidationException::withMessages([
+                'publication' => $blockers,
+            ]);
+        }
+
+        DB::transaction(function () use ($complaint, $actor, $status, $note): void {
             $complaint->update([
                 'publication_status' => $status->value,
                 'publication_decided_at' => now(),
@@ -145,41 +216,23 @@ class ComplaintPublicationService
                     'publication_status' => $status->value,
                     'note' => $note,
                 ],
+                actor: $actor,
             );
         });
 
-        $this->notifyResident($complaint, $actor, $status, $note);
+        try {
+            $this->notifyResident($complaint, $actor, $status, $note);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     /**
-     * What has to be true before the Mayor's office is even asked.
-     *
-     * @return list<string>
+     * Tell the resident that their report is with the Mayor's office for a
+     * publication decision. The handoff is automatic, so the message says
+     * what happened rather than asking them to do anything.
      */
-    private function blockersBeforeRequest(Complaint $complaint): array
-    {
-        $blockers = [];
-
-        if (! ComplaintPrivacyService::isSettled($complaint)) {
-            $blockers[] = 'Settle this report first — resolve or close it.';
-        }
-
-        if (! ComplaintPrivacyService::isVerified($complaint)) {
-            $blockers[] = 'Verify that the information is true before asking for publication.';
-        }
-
-        if (! ComplaintPrivacyService::isRedacted($complaint)) {
-            $blockers[] = 'Write the redacted title and description before asking for publication.';
-        }
-
-        return $blockers;
-    }
-
-    /**
-     * Tell the resident that the office has asked the Mayor's office to
-     * decide whether their report appears on the transparency page.
-     */
-    private function notifyResidentOfRequest(Complaint $complaint, User $actor): void
+    private function notifyResidentOfHandoff(Complaint $complaint, ?User $actor): void
     {
         $resident = $complaint->user;
 
@@ -190,7 +243,7 @@ class ComplaintPublicationService
         $this->notifications->notifyUser(
             $resident,
             Notification::COMPLAINT_PUBLICATION_REQUESTED,
-            "{$complaint->ticket_id}: the office asked the Mayor's office to publish your report",
+            "{$complaint->ticket_id}: your report is with the Mayor's office for publication review",
             $actor,
             [
                 'ticket_id' => $complaint->ticket_id,
@@ -201,12 +254,12 @@ class ComplaintPublicationService
     }
 
     /**
-     * Tell the Mayor's office there is a publication request waiting.
+     * Tell the Mayor's office there is a publication decision waiting.
      */
-    private function notifyApprovalOffice(Complaint $complaint, User $actor): void
+    private function notifyApprovalOffice(Complaint $complaint, ?User $actor): void
     {
         $recipients = User::query()
-            ->where('role', 'staff')
+            ->whereIn('role', ['staff', 'department_admin'])
             ->where('is_active', true)
             ->whereHas('department', fn ($query) => $query->where('code', ComplaintPrivacyService::approvalOfficeCode()))
             ->get();
@@ -259,5 +312,16 @@ class ComplaintPublicationService
             ],
             $complaint,
         );
+    }
+
+    private function clean(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 }

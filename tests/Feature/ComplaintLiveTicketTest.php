@@ -43,6 +43,9 @@ class ComplaintLiveTicketTest extends TestCase
         $this->staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $this->department->id,
+            // A verifier carries the office's whole queue; an ordinary staff
+            // member sees only the work assigned to them.
+            'can_verify' => true,
         ]);
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->resident = User::factory()->create(['role' => 'citizen']);

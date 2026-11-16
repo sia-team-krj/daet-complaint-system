@@ -6,11 +6,13 @@
     $isCurrentUser = auth()->id() === $user->id;
     $roleLabel = match ($user->role) {
         'admin' => 'Administrator',
+        'department_admin' => 'Department Administrator',
         'staff' => 'Staff',
         default => 'Resident',
     };
     $roleClass = match ($user->role) {
         'admin' => 'admin-role-badge--admin',
+        'department_admin' => 'admin-role-badge--department-admin',
         'staff' => 'admin-role-badge--staff',
         default => 'admin-role-badge--citizen',
     };
@@ -82,8 +84,8 @@
                             <dd>{{ $user->updated_at?->format('F j, Y \a\t g:i A') ?: 'Not available' }}</dd>
                         </div>
                         <div>
-                            <dt>{{ $user->role === 'staff' ? 'Assigned complaints' : 'Complaints filed' }}</dt>
-                            <dd>{{ number_format($user->role === 'staff' ? $user->assigned_complaints_count : $user->complaints_count) }}</dd>
+                            <dt>{{ $user->isDepartmentStaff() ? 'Assigned complaints' : 'Complaints filed' }}</dt>
+                            <dd>{{ number_format($user->isDepartmentStaff() ? $user->assigned_complaints_count : $user->complaints_count) }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -149,6 +151,7 @@
                                 <select name="role" class="admin-input" required>
                                     <option value="citizen" @selected(old('role', $user->role) === 'citizen')>Resident</option>
                                     <option value="staff" @selected(old('role', $user->role) === 'staff')>Staff</option>
+                                    <option value="department_admin" @selected(old('role', $user->role) === 'department_admin')>Department Administrator</option>
                                     <option value="admin" @selected(old('role', $user->role) === 'admin')>Administrator</option>
                                 </select>
                             @endif
@@ -168,7 +171,7 @@
                                 @endforeach
                             </select>
                             @error('department_id')<span class="admin-field-error">{{ $message }}</span>@enderror
-                            <small class="admin-field-help">Required when the role is Staff. Reassign assigned complaints before changing a staff role or department.</small>
+                            <small class="admin-field-help">Required for Staff and Department Administrator. Reassign assigned complaints before changing an office role or department. A Department Administrator manages one office and does not gain global administrator powers.</small>
                         </label>
                     </div>
 

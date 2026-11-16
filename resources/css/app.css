@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./components/toast.css";
 @import "./pages/complaint-create.css";
 @import "./pages/complaint-success.css";
 @import "./pages/complaint-show.css";
@@ -9,6 +10,7 @@
 @import "./pages/feedback.css";
 @import "./pages/settings.css";
 @import "./pages/staff-complaint.css";
+@import "./pages/publication-review.css";
 @import "./pages/admin-workspace.css";
 @import "./pages/admin-dashboard.css";
 @import "./pages/analytics.css";
@@ -3721,6 +3723,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     background: color-mix(in srgb, var(--gold-500) 10%, transparent);
     color: rgba(255, 255, 255, 0.88);
     border: 1px solid color-mix(in srgb, var(--gold-500) 22%, transparent);
+}
+.nav-identity__badge--department-admin {
+    background: color-mix(in srgb, var(--gold-500) 14%, transparent);
+    color: var(--gold-300);
+    border: 1px solid color-mix(in srgb, var(--gold-500) 38%, transparent);
 }
 .nav-identity__label {
     font-size: 12px;
@@ -8558,6 +8565,12 @@ select.staff-input option {
     border-color: rgba(59, 130, 246, 0.26);
 }
 
+.admin-role-badge--department-admin {
+    color: var(--gold-300);
+    background: color-mix(in srgb, var(--gold-500) 12%, transparent);
+    border-color: color-mix(in srgb, var(--gold-500) 28%, transparent);
+}
+
 .admin-role-badge--citizen {
     color: #bbf7d0;
     background: rgba(63, 203, 111, 0.1);
@@ -9592,7 +9605,7 @@ select.staff-input option {
 /* Admin queue filters: desktop neutral, mobile collapsible */
 @media (min-width: 641px) {
   .admin-queue-filters-collapsible { display: contents !important; }
-  .admin-queue-filters-collapsible > summary.admin-queue-filters-toggle { display: none !important; }
+  .admin-queue-filters-collapsible > summary { display: none !important; }
   .admin-queue-filters-collapsible__body { display: contents !important; }
   details.admin-queue-filters-collapsible::details-content { content-visibility: visible; display: contents; }
 }
@@ -10065,4 +10078,327 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
 }
 @media (min-width: 768px) {
   body.role-staff .nav-dept-account { margin-left: 6px; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Office management — the Department Administrator's own surface.
+   One office, one card stack. No new colours: the role badge uses the gold
+   accent, state badges use the shared success/danger tints. See
+   docs/design-system.md §5.49.
+   ───────────────────────────────────────────────────────────────────────── */
+.office-banner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.office-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+    align-items: start;
+    gap: 20px;
+    margin-top: 16px;
+}
+
+.office-stack {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+}
+
+.office-panel {
+    padding: 20px;
+}
+
+.office-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.office-panel__title {
+    margin: 0;
+    color: var(--navy-900);
+    font: 700 18px/1.25 var(--font-sans);
+}
+
+.office-panel__description {
+    max-width: 70ch;
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.office-member-list,
+.office-invitation-list,
+.office-audit-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.office-member {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.office-member:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.office-member__identity {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+}
+
+.office-member__avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-800);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.office-member__name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.office-member__meta {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.office-member__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 7px;
+}
+
+.office-member__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.office-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    background: var(--navy-50);
+    color: var(--navy-700);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.office-badge--role {
+    color: var(--gold-700);
+    background: color-mix(in srgb, var(--gold-500) 14%, transparent);
+    border-color: color-mix(in srgb, var(--gold-500) 32%, transparent);
+}
+
+.office-badge--active {
+    color: var(--success);
+    background: var(--success-tint);
+    border-color: color-mix(in srgb, var(--success) 28%, transparent);
+}
+
+.office-badge--inactive {
+    color: var(--danger);
+    background: var(--danger-tint);
+    border-color: color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+.office-badge--verifier {
+    color: var(--navy-700);
+    background: var(--navy-50);
+    border-color: var(--line);
+}
+
+.office-form {
+    display: grid;
+    gap: 16px;
+}
+
+.office-form__row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.office-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.office-field > span {
+    color: var(--faint);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.office-field small {
+    color: var(--faint);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.office-input {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: 400 13px/1.4 var(--font-sans);
+}
+
+.office-input:focus {
+    outline: none;
+    border-color: var(--gold-500);
+    box-shadow: var(--ring);
+}
+
+.office-input--link {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.office-help {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.office-error {
+    color: var(--danger);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.office-form__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.office-empty {
+    margin: 0;
+    padding: 22px 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+.office-invitation {
+    display: grid;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.office-invitation:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.office-invitation form {
+    justify-self: start;
+}
+
+.office-audit-item {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.office-audit-item:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.office-audit-item__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.office-audit-item__copy {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.office-pagination {
+    margin-top: 16px;
+}
+
+@media (max-width: 1023px) {
+    .office-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .office-form__row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .office-member {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .office-member__actions {
+        justify-content: flex-start;
+    }
+
+    .office-banner .staff-button {
+        width: 100%;
+    }
 }

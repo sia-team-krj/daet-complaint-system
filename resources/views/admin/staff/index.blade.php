@@ -20,22 +20,30 @@
     <section class="admin-table-wrap" aria-label="Staff accounts">
         <table class="admin-table">
             <thead>
-                <tr><th>Name</th><th>Email</th><th>Department</th><th>Contact</th><th>Status</th><th>Manage access</th></tr>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Contact</th><th>Status</th><th>Manage access</th></tr>
             </thead>
             <tbody>
                 @forelse($staff as $staffMember)
                     <tr>
                         <td><span class="admin-ticket-id">{{ $staffMember->full_name }}</span></td>
                         <td>{{ $staffMember->email }}</td>
+                        <td>
+                            <span class="admin-role-badge {{ $staffMember->isDepartmentAdmin() ? 'admin-role-badge--department-admin' : 'admin-role-badge--staff' }}">
+                                {{ $staffMember->isDepartmentAdmin() ? 'Department Administrator' : 'Staff' }}
+                            </span>
+                        </td>
                         <td>{{ $staffMember->department?->name ?? 'Unassigned' }}</td>
                         <td class="admin-muted-cell">{{ $staffMember->contact_number ?? 'Not provided' }}</td>
                         <td>
                             <span class="admin-status {{ $staffMember->is_active ? 'admin-status--active' : 'admin-status--revoked' }}">{{ $staffMember->is_active ? 'Active' : 'Inactive' }}</span>
-                            @if($staffMember->can_verify)
+                            @if($staffMember->canVerifyComplaints())
                                 <span class="admin-status admin-status--ready">Verifier</span>
                             @endif
                         </td>
                         <td>
+                            @if($staffMember->isDepartmentAdmin())
+                                <a href="{{ route('admin.users.show', $staffMember) }}" class="admin-button admin-button--compact admin-button--secondary">Manage role</a>
+                            @else
                             <div class="admin-staff-actions">
                                 <form data-loading-submit method="POST" action="{{ route('admin.staff.update-department', $staffMember) }}">
                                     @csrf
@@ -58,10 +66,11 @@
                                     <button type="submit" class="admin-button admin-button--compact {{ $staffMember->is_active ? 'admin-button--danger-ghost' : 'admin-button--secondary' }}">{{ $staffMember->is_active ? 'Deactivate' : 'Activate' }}</button>
                                 </form>
                             </div>
+                            @endif
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="admin-empty-cell">No staff accounts have been created.</td></tr>
+                    <tr><td colspan="7" class="admin-empty-cell">No staff accounts have been created.</td></tr>
                 @endforelse
             </tbody>
         </table>

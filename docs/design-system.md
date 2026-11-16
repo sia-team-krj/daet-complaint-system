@@ -333,6 +333,15 @@ stack is left-aligned as one block (h1 left, privacy `margin: 12px 0 0`
 left, CTA `margin-top: 12px` left, updated left).
 Workspace shells (staff/admin) keep `padding-top: 48px` since their shell
 already offsets the navbar.
+**On navy (the banner), a chip that reads on white must not be reused as-is:**
+a dark label on a navy field disappears. On the staff ticket the banner chips
+carry their own on-navy treatment — the ticket id takes the gold accent
+(`--gold-300`, gold on navy), the priority pill
+(`.status-pill--neutral|info|warning|danger`) takes its family hue as a
+tint (`color-mix` of the matching `--status-*-dot` at ~32% over the navy)
+with `--surface` text, and the deadline chip keeps its light
+`--status-*-bg` / `--status-*-text` family (§5.38) so it stays readable on
+the navy field.
 States: disclosure open/closed (chevron rotates 180°); no interactive states on text.
 Mobile: h1 28px; banner stays ~200px; nothing is hidden, the disclosure popover
 clamps to `calc(100vw - 48px)`.
@@ -749,17 +758,22 @@ renders. Tokens: `--status-resolved-*`, `--navy-900`, `--gold-300/500`,
 Why: resolution and closure are different decisions — the office finishes the
 work, the resident confirms it is done for them.
 
-### 5.31 Navbar identity indicator (staff/admin) — `.nav-identity`
+### 5.31 Navbar identity indicator (staff / Department Administrator / admin) — `.nav-identity`
 Purpose: make the current account context unmistakable in the fixed top bar
-without opening any menu. Staff/department accounts and administrators see who
-they are operating as on desktop and mobile; citizens see no extra chrome.
-Anatomy: `.nav-identity` (inline, on the navy navbar) contains either an admin
-role badge (`.nav-identity__badge--admin`, `--gold-300` text on a gold-500 tint,
-6px radius, 10px/700 uppercase) or a department context: the canonical
-`.dept-badge[data-dept="CODE"]` (§3.2/§5.11, department colour tokens) plus
-`.nav-identity__label` (12px/500, light on navy, truncated). Staff with no
-assigned department render a neutral staff badge (`.nav-identity__badge--staff`)
-plus the "Department pending" label.
+without opening any menu. Staff, Department Administrators, and global
+administrators see who they are operating as on desktop and mobile; citizens
+see no extra chrome.
+Anatomy: `.nav-identity` (inline, on the navy navbar) contains a role badge and,
+for office roles, the canonical department context. The global administrator
+renders `.nav-identity__badge--admin` (`--gold-300` on a gold-500 tint, 6px
+radius, 10px/700 uppercase). A Department Administrator renders
+`.nav-identity__badge--department-admin` (the same gold family, a stronger
+border) together with `.dept-badge[data-dept="CODE"]` (§3.2/§5.11) so the office
+and the role are both visible. Ordinary staff render the department context (the
+dept badge plus `.nav-identity__label`, 12px/500, light on navy, truncated) or a
+neutral `.nav-identity__badge--staff` plus the "Department pending" label when
+no department is assigned. The label text comes from `roles.*` / `nav.*` lang
+keys (`en` + `fil`) — never a raw role string.
 Placements (targeted): desktop `nav-actions` (before the account dropdown),
 compact/tablet `nav-mobile-right` where visible, and a direct `.nav-identity-bar`
 child of `.navbar-flex` for the `body.is-auth` ≤640px shared-drawer mode (so
@@ -1170,6 +1184,13 @@ States, and the family each belongs to:
 | Met | `.sla-chip--met` | `--status-resolved-bg` / `--status-resolved-text` | The work was done in time |
 | Not applicable | `.sla-chip--none` | `--surface-soft` / `--muted` | Nothing is owed yet — not verified |
 
+**The class name is the contract:** `ComplaintSlaState::badgeClass()` returns
+these exact names (`sla-chip--on-track`, `sla-chip--due-soon`,
+`sla-chip--overdue`, `sla-chip--met`, `sla-chip--none`, `sla-chip--on-hold`) —
+the view renders `class="sla-chip {{ badgeClass() }}"`. A different name
+leaves the chip unstyled, and an unstyled chip inherits the page text colour,
+which is invisible on the navy ticket banner (§5.1).
+
 The colour is the status family the meaning belongs to, not decoration: a chip
 that is late must not be dressed the same as one that is comfortable.
 
@@ -1275,8 +1296,13 @@ Variants:
 - **`.moderation-panel--light`** — the shared moderation component
   (`resources/views/components/moderation-panel.blade.php`) re-toned for a
   light page. The markup is one component used by staff and admin; only the
-  surface tone changes. The office can **withhold or redact**, never publish:
-  the resident's visibility choice is stated, not offered as a control.
+  surface tone changes. It is shown on the staff ticket only to the Mayor's
+  office (and administrators), because public presentation is that office's
+  work; every other department settles and verifies the report. For an
+  ordinary report the office can **withhold or redact**, never publish: the
+  resident's visibility choice is stated, not offered as a control. For a
+  privacy-gated report the redaction fields are not rendered at all; the panel
+  says the Mayor's office writes the public copy.
 
 Behaviour:
 - Ask and delegate are shown only when the viewer can verify and the report
@@ -1285,9 +1311,11 @@ Behaviour:
 - The delegation select excludes the viewer and the assigned worker — the
   separation-of-duties rule — so the refused options are not offered.
 - The ask form is not shown while a request is open or answered; the state
-  box replaces it. Round 2 is the cap, and the page says so.
-- Moderation is available to every staff member in the department, not only
-  verifiers, because it is a content decision rather than a verification one.
+  box replaces it. Round 3 is the cap, and the page says so.
+- Moderation is available only to the Mayor's office (and administrators),
+  and only to an account that can verify complaints, because the panel is
+  guarded by the same service that authorizes the save. Other departments do
+  not see public presentation at all.
 - The review form itself (review decision / confirmed priority / verification
   method) is verifier-only, like the follow-up: a non-verifier sees the
   read-only state line (`staff.verification.read_only_body`), never a Save
@@ -1295,14 +1323,12 @@ Behaviour:
 - The internal note is written to the immutable log with `is_internal = true`
   and never rendered on the resident page, the public timeline or the
   transparency register.
-- **Quick redaction** (privacy-gated reports only, verifier-only like the
-  rest of the panel): the panel offers to write the redacted title and
-  description from the parts the office ticked must not appear. Ticking
-  files a safe draft into the fields — either the office's own text with
-  the ticked spans removed, or, when the name cannot be proven gone, a
-  generic copy that carries no identifying detail at all. Nothing is
-  written until the office reviews, adjusts and saves; a saved copy is
-  never silently replaced.
+- **A privacy-gated report gets no redaction control here.** The handling
+  office settles and verifies; resolving a verified report hands it to the
+  Mayor's office automatically. The redaction draft and saved public copy
+  live only on the Mayor's office review page, which is the single writer of
+  the public copy. The handling-office ticket shows only the publication
+  state.
 
 Tokens: `--navy-900`, `--navy-800`, `--gold-500`, `--surface`,
 `--surface-soft`, `--line`, `--line-soft`, `--text`, `--muted`, `--faint`,
@@ -1732,16 +1758,28 @@ suggestion.
   ascending and the row is reversed (`flex-direction: row-reverse`), which is
   what lets the CSS fill the stars from the left as the rating rises. The
   focus ring is drawn on the star, not on the hidden radio.
-- **Only the offices a resident has actually written to can be rated.** A
+- **Only offices that have resolved or closed a report can be rated.** A
   rating of an office you never dealt with says nothing about the office, and
-  a portal that lets anyone rate anything is a portal nobody trusts.
-- **A rating counts from the moment it is given; a suggestion waits for the
-  administration to read it.** A suggestion is prose about the portal, and
-  prose goes out reviewed — the same rule the public register already follows
-  for a complaint. The administration reads them in *Resident feedback* in the
-  admin workspace, and publishes or withholds them one at a time.
-- A resident's later rating replaces their earlier one for the same scope:
-  they change their mind, and the number follows.
+  a rating of work still in progress says nothing about the finished service.
+  A submitted/under-review/in-progress report is not yet a service to score.
+- **A rating counts from the moment it is given, and it is final.** The first
+  rating for the portal or an office is the rating; the page renders it as a
+  read-only score and the server refuses to overwrite it. The partial unique
+  indexes in the migration (`feedback_rating_portal_unique`,
+  `feedback_rating_office_unique`) make that a database rule, not a UI one.
+- **A suggestion waits for the administration to read it.** A suggestion is
+  prose about the portal, and prose goes out reviewed — the same rule the
+  public register already follows for a complaint. The administration reads
+  them in *Resident feedback* in the admin workspace, and publishes or
+  withholds them one at a time.
+- **One suggestion per calendar day.** The day is the municipality's
+  (`Asia/Manila`), not the server's UTC day. Staff are limited too; only
+  administrators — who read the queue rather than write to it — are exempt.
+  At the limit the box is disabled with the reason and when it opens again;
+  the server refuses an injected suggestion rather than silently dropping it.
+- **The thank-you is a toast, not a banner at the top of the page.** It uses
+  the shared `.toast` (§5.48), fades after about 4 seconds, pauses on
+  hover/focus, and dismisses on the close button or `Esc`.
 
 Tokens: `--surface`, `--surface-card`, `--surface-page`, `--surface-input`,
 `--surface-soft`, `--line`, `--line-soft`, `--border-default`,
@@ -1755,43 +1793,174 @@ for a resident to say the service was good, or that the portal was hard to
 use, or that an office had handled their report well — and no way for the
 municipality to hear any of it.
 
-### 5.47 Publication checklist — `.publication-checklist`
+### 5.48 Toast — `.toast` (the acknowledgement that leaves)
 
-Purpose: a report that names somebody passes through a fixed gate before it
-can appear on the transparency page — settle, verify, redact, the office
-asks, the Mayor's office approves. The steps were scattered across three
-panels and two pages, and the office could not tell what came next or what
-was missing. The checklist renders the same gate as one ordered, live list,
-so the office always knows where the report stands and what is on them.
+Purpose: say "done" where the person is looking, then get out of the way. The
+feedback page used to thank a resident with an inline flash at the top of a long
+page; after submitting, the eye is at the button, so the message was easy to
+miss and the only way to clear it was to navigate again.
 
 Anatomy:
-- **`.publication-checklist`** — a `.moderation-panel--light` card, the
-  same visual family as the moderation panel it sits above.
-- **`.publication-checklist__steps`** — an ordered `<ol>` of the gate steps.
-- **`.publication-checklist__item`** — one step: `.is-done` (a tick in a
-  green ring, the label darkens), the pending state (the step number, the
-  label muted), and `.is-blocked` (a cross in a red ring, the label coloured
-  for the one outcome that ends the gate — the Mayor's office declined).
-- **`.publication-checklist__verdict`** — the one-line conclusion: waiting
-  on the Mayor's office; approved; declined (stays private for good).
+- **`.toast`** — the base is an ordinary inline notice: `--success-tint` fill,
+  1px `--success` border, `--radius-sm`, 12/16px padding, icon + message. This
+  is what renders with JavaScript off; nothing is hidden and no dead close
+  button is shown.
+- **`.toast--error`** — the refusal variant: `--danger-tint` / `--danger`.
+  Errors never auto-dismiss, because a refusal is a fact the reader should not
+  have to catch before it disappears.
+- **`.toast__icon`** — 20px line icon (check for success, alert for error),
+  `aria-hidden`; the variant is also carried by the text and role.
+- **`.toast__message`** — the sentence; it is the whole content.
+- **`.toast__close`** — 44×44 target with the shared focus ring. The component
+  does not render it when JavaScript is off.
+- **`.toast--floating`** — added by `toast.js`: `position: fixed` under the
+  navbar (`top: calc(var(--navbar-height) + 16px)`), right-aligned on desktop,
+  full width with 16px gutters on a phone, `z-index: var(--z-overlay)` (1100),
+  `--shadow-lift`.
+- **`.is-visible`** / **`.is-leaving`** — the fade in and out. The base stays
+  inline until the floating state is real, so a failed script leaves a readable
+  notice rather than an invisible one.
 
 Behaviour:
-- Shown only on reports in a privacy-gated category; it is a status view,
-  never a control — every step is live state (settled / verified / redacted
-  / asked / approved), read from the same services the server enforces.
-- The name of the party is never rendered here.
-- No step can be ticked by hand — doing the work flips the states; nothing
-  on the card is an action.
+- `toast.js` binds `[data-toast]` (one per page), reads
+  `data-toast-duration` (0 = stay until dismissed), upgrades the element, and
+  schedules the dismissal. Hover or focus pauses the clock; leaving or blurring
+  resumes it.
+- Close button, `Esc`, or the timer dismiss it; the node removes itself after
+  the fade (a timeout fallback covers reduced-motion, where there is no
+  `transitionend`).
+- `role="status"` for success (polite) and `role="alert"` for error (assertive).
+- `prefers-reduced-motion: reduce` removes the transition; the visibility
+  still changes.
+- The markup contract is `data-toast`, `data-toast-duration`,
+  `data-toast-close`.
 
-Tokens: `--text`, `--muted`, `--faint`, `--line`, `--line-soft`,
-`--surface-soft`, `--success`, `--error-text`, `--radius-sm`. **No new
-colours.**
+Tokens: `--success`, `--success-tint`, `--danger`, `--danger-tint`,
+`--surface`, `--radius-sm`, `--shadow-lift`, `--focus-gold`, `--z-overlay`,
+`--navbar-height`. **No new colours.**
 
-Why: a gate the office cannot see reads as a process they are failing, not
-a process with a shape. One ordered, live list tells them what is done,
-what is on them and what belongs to the Mayor's office — and a resident who
-is told in the language of the same gate understands why their report is
-still private.
+Why: a thank-you that waits at the top of the page does not read as a response
+to the button that was just pressed. A floater that fades is the
+acknowledgement; the inline base is the same message for a browser that never
+runs the script.
+
+Demo: `/design-system` → “Toast — §5.48”.
+
+### 5.50 Assigned work — what an ordinary staff member sees
+
+Purpose: an office is bigger than one person. The **verifier** — the
+Department Administrator, or staff with verification rights — carries the
+office's whole queue: they settle whether a report is genuine, so they must
+see everything. An **ordinary staff member** works the cases the office hands
+them; the rest of the office's work is not theirs to read, to count, or to
+act on.
+
+The rule, in one line: **a non-verifier sees the complaints assigned to them
+— now, or at some point.**
+
+Anatomy:
+- **Scope:** `Complaint::visibleToStaff($user)` — the single query scope the
+  staff workspace uses for the queue, the dashboard counters, the priority
+  list, the recent-activity feed and the average resolution time. A verifier
+  is not filtered at all; a non-verifier is filtered to
+  `assigned_staff_id = me` **or** a complaint whose assignment trail
+  (`complaint.assignment_updated` in the audit log) names them — a case they
+  worked and then passed on stays readable to them.
+- **Access:** `Complaint::isVisibleToStaff($complaint, $user)` — the single
+  check behind the ticket (`staff.complaints.show`), the live-ticket poll
+  (`staff.complaints.state`) and the status-update write
+  (`staff.complaints.update`). A complaint outside the scope is 403, not a
+  soft link.
+- **Copy:** for a non-verifier the nav item and the queue heading read **“My
+  work”** (`nav.my_work`), and an empty list says *“Nothing is assigned to
+  you yet”* with the line that tells them who hands them work — never a dead
+  end. A verifier keeps “Complaint queue”.
+- **Working powers:** a non-verifier keeps the powers they have on their own
+  cases — status updates, official responses, internal notes. They never get
+  verification, review, assignment or moderation: those are the verifier's.
+
+Why: the queue is a shared surface with a narrow one underneath. A person who
+only carries three cases should not be handed the office's thirteen, and the
+counters on their dashboard should describe their work, not the office's.
+
+### 5.49 Office management surface — `.office-*` (Department Administrator)
+
+Purpose: give a Department Administrator one place to run their own office —
+staff accounts, invitations, verification rights, complaint assignment, and the
+office audit trail — without crossing into global administration. The role is
+office-scoped: it never sees another office, never changes a profile, never
+transfers or removes anyone, and never appoints a peer. The global
+administrator remains the fallback for everything outside that boundary.
+
+Anatomy:
+- **Shell:** the staff workspace shell (Shell B/C patterns already used by
+  staff pages) with `.tr-banner` / `.tr-container`, a `.staff-metric-grid` strip
+  for office counts, and a two-column `.office-grid` (main stack + aside stack)
+  that collapses to one column below 1024px.
+- **`.office-banner`** — banner content row with the page title/lede and a
+  secondary back action (`.staff-button.staff-button--secondary`).
+- **`.office-grid` / `.office-stack`** — layout only. Main holds staff accounts
+  and “Add a staff account”; aside holds open invitations and the audit-trail
+  entry point.
+- **`.office-panel`** (`.tr-card.office-panel`) — one responsibility per card.
+  Header: `.office-panel__header` → `.office-panel__title` (18px/700 navy) +
+  `.office-panel__description` (12px muted, max 70ch). Body content is a list or
+  form; never both in the same visual block unless separated by the panel header
+  rule.
+- **`.office-member-list` / `.office-member`** — semantic `<ul>/<li>` rows.
+  Identity: `.office-member__avatar` (initials, navy-50), `.office-member__name`
+  (13px/700, with a small “You” badge when relevant), `.office-member__meta`
+  (email, 11px muted), `.office-member__badges` (`.office-badge` chips for role,
+  active/inactive, verifier). Actions: `.office-member__actions` with compact
+  secondary forms/buttons (`.staff-button--secondary.staff-button--compact`) for
+  activate/deactivate and grant/revoke verification.
+- **`.office-badge`** — 10px/700 inline chip on existing tints: neutral
+  `--navy-50/--navy-700`, role `--gold-700` on a gold-500 tint, active
+  `--success`/`--success-tint`, inactive `--danger`/`--danger-tint`, verifier
+  neutral navy. **No new colours.**
+- **`.office-form` / `.office-form__row` / `.office-field`** — labelled inputs
+  (11px/700 uppercase label, 42px controls, `--ring` focus). Onboarding method is
+  explicit: invitation link or emailed temporary password only; the form never
+  offers a manager-chosen password. Expiry applies to invitation links. Two
+  columns at ≥641px, one below.
+- **`.office-invitation-list` / `.office-invitation`** — open single-use
+  invitations with invitee, expiry, a readonly link field
+  (`.office-input--link`, selectable) and a revoke form (with confirmation).
+- **`.office-audit-list` / `.office-audit-item`** — the office-scoped audit
+  trail: action label, timestamp, description, actor and role badges. Resident
+  actions are not listed; only staff/Department Administrator/admin actors and
+  system records for the office appear.
+- **States:** `.office-empty` for no members/invitations/entries; `.office-help`
+  for boundary notes (peer protection, office scope); `.office-error` for field
+  validation. Success/error feedback uses the existing staff flash pattern
+  (`staff.partials.flash`).
+
+Behaviour & boundaries (LOCKED for this role):
+- **Peer protection:** Department Administrator rows render no management
+  controls; the page states that their roles/accounts are changed only by the
+  global administrator. The controller refuses peer/self management.
+- **Staff-only management:** activate/deactivate and verification grants apply to
+  ordinary `staff` accounts in the same office only. No profile edits, no
+  department transfers, no removals.
+- **Assignment:** the staff complaint ticket shows a Department
+  Administrator–only assignment panel (built from the existing
+  `.staff-action-panel` / `.staff-field`, §5.40) listing active members of the
+  same office only. It assigns; it never transfers across offices.
+- **Onboarding:** invitation link or emailed temporary password only. Invitation
+  redemption creates a `staff` account; appointment to Department Administrator
+  is a separate global-admin action.
+- **Privacy:** the office audit trail and all office surfaces respect the public
+  privacy boundary — anonymous complainant identities remain masked to this role.
+- **i18n:** all copy from `office.*`, `roles.*`, `nav.*` keys in `en` + `fil`.
+
+Tokens: `--navy-900/800/700/50`, `--gold-700/500/300`, `--surface`,
+`--surface-soft`, `--text`, `--muted`, `--faint`, `--line`, `--line-soft`,
+`--success`/`--success-tint`, `--danger`/`--danger-tint`, `--ring`,
+`--radius-sm/lg`, `--shadow-card`, `--font-sans`. **No new colours or fonts.**
+
+Why: an office needs day-to-day management without giving anyone the keys to the
+whole municipality. One scoped surface, built from existing tokens and the
+staff workspace grammar, keeps the boundary visible in the UI and in the code.
 
 ## 6. The z-index contract — **LOCKED**
 | Layer | z-index |
@@ -1953,7 +2122,7 @@ These are the things that broke before.
 | Error page (401/403/404/419/429/500/503 + generic 4xx/5xx) | D | no banner — standalone brand header | no | no | one 640px error card: 64px icon, code kicker, h1, message, ONE gold primary + one secondary | the card is the whole page; no list and no data chrome |
 | Admin dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles from real metrics | no | dark tables + dept chips | treat separately: admin shell |
 | Staff dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles | no | dark tables | treat separately |
-| Publication decision (`/staff/publication-requests/{complaint}`) | C | no banner — back link + h1 + ONE line | no | no | redacted-copy block (ticket + dept chip) + publication panel, without the named party | the decider never sees the name of the party |
+| Publication decision (`/staff/publication-requests/{complaint}`) | C | no banner — back link + h1 + ONE line | no | no | context strip → privacy panel (name, never published) → two-column work area (original report + two-stage redaction editor; sticky public-copy preview) → sticky decision bar (gold Approve disabled until a copy is saved; Decline `<details>` disclosure with required note) | the decider sees the name so it can redact it; the name never reaches the public payload |
 
 **Hero/choices repeated from before failure:** no cream, no Cormorant, no ~50px
 mystery gap under the navbar; every list page shares the banner gradient with the
@@ -2000,7 +2169,35 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+- 2026-11-16 · Staff workspace (queue, dashboard, ticket) · **an ordinary staff member sees only the work assigned to them.** A verifier (Department Administrator, or staff with `can_verify`) keeps the office's whole queue; an ordinary staff member now sees only the complaints assigned to them — now, or assigned to them at some point (the assignment trail is the audit log). The scope is one query scope (`Complaint::visibleToStaff`) and one access check (`Complaint::isVisibleToStaff`) behind the queue, the dashboard counters, the priority list, the recent-activity feed, the ticket, the live-ticket poll and the status-update write; a complaint outside the scope is 403. Their nav item and queue heading read “My work” (`nav.my_work`) and an empty list says what is missing and who assigns it. §5.50 documents the rule. Files: `app/Models/Complaint.php`, `app/Http/Controllers/StaffController.php`, `resources/views/staff/partials/sidebar.blade.php`, `resources/views/layouts/partials/mobile-drawer.blade.php`, `resources/views/staff/complaints/partials/list.blade.php`, `lang/{en,fil}/{nav,staff}.php`, `tests/Feature/StaffAssignedWorkScopeTest.php` (new). New tokens: none.
 
+- 2026-11-16 · Staff ticket banner, staff queue · **the banner chips are readable on navy, and the deadline chip is styled at all.** `ComplaintSlaState::badgeClass()` returned `sla-overdue` while the stylesheet (and §5.38) key off `sla-chip--overdue`, so the chip rendered with no family and inherited the page text colour — invisible on the navy banner and unstyled in the queue. The enum now returns the documented names. On the navy banner the ticket id takes the gold accent and the priority pill (`.status-pill--neutral|info|warning|danger`) takes its family hue as a tint with `--surface` text (§5.1). Files: `app/Enums/ComplaintSlaState.php`, `resources/views/staff/complaints/show.blade.php`. New tokens: none.
+
+- 2026-11-16 · Staff complaint detail `/staff/complaints/{complaint}` · **the ticket is two aligned columns under a full-width header, and one full-width column below 1024px.** The complaint cards are two independent flex columns inside one CSS grid — `.staff-detail-col--main` (complaint description → activity history → resident evidence → review & verification → verification follow-up → **Add official response**) and `.staff-detail-col--side` (resident information → complaint location/map → assignment picker → pause work) — so both columns start at the same top edge and a short card never opens a hole in the other column. Desktop keeps the dashboard's `1.45fr / 0.75fr` proportions with a 24px column gap; 1024–1279px gives the sidebar column a 260px floor so the complaint column keeps the rest; ≤1023px dissolves the column wrappers (`display: contents`) so every card is a grid item at `width: 100%` and the reading order is resident → location → description → timeline → **official response** → evidence → review → follow-up → assignment → pause → the other panels (each card carries a `staff-detail-card--*` order slot). Files: `resources/views/staff/complaints/show.blade.php`, `tests/Feature/StaffComplaintLayoutTest.php` (new). New tokens: none.
+- 2026-11-16 · Staff complaint detail · **the back link reads “Back to Staff Dashboard”, not a raw key.** The link used `staff.dashboard.back`, which exists nowhere in the language files, so the page printed the key itself; it now uses the existing `staff.back` string (en + fil). Files: `resources/views/staff/complaints/show.blade.php`. New tokens: none.
+
+- 2026-11-16 · Staff complaint detail `/staff/complaints/{complaint}` · **the ticket is two aligned columns under a full-width header.** The complaint cards were placed as items of one shared grid with a fixed column on each card (`grid-column: 1` / `grid-column: 2`), so the browser laid them out in shared grid rows: the right-hand cards took the first rows and the left-hand cards started two rows lower, leaving a tall empty band in the right column and pushing the description/timeline down. The detail area is now a CSS grid of **two independent flex columns** — `.staff-detail-col--main` (complaint description → activity history → evidence → review/verification → follow-up) and `.staff-detail-col--side` (resident information → complaint location/map → assignment, official response and the other action panels) — so both columns start at the same top edge, each card stacks independently, and the column gap is a single 24px with a 20px rhythm inside each column (matching the dashboard's `1.45fr / 0.75fr` proportions). ≤1023px collapses to one column: the column wrappers dissolve (`display: contents`) so every card is a grid item and the phone order stays who/where → description → the rest → actions. Files: `resources/views/staff/complaints/show.blade.php`. New tokens: none (reuses `.tr-card`/`.workspace-card`, existing spacing scale and `--line-soft`/`--surface-soft`).
+
+- 2026-11-16 · Staff/office stat cards · **Standardized top stat cards to the dashboard pattern** (`dept-stats` / `dept-stat` + `tr-stat__icon` tones, §5.x dashboard/department stats) on `/staff/office`, `/staff/activity`, and `/staff/department-activity` (replaced `staff-metric-grid`/`staff-metric` for consistency). New Office statistics (DA-only, in progress) must use the same `dept-stats` KPI cards; see `docs/office-statistics-plan.md`. Files: `resources/views/staff/office/index.blade.php`, `resources/views/staff/activity/index.blade.php`, `resources/views/staff/activity/department.blade.php`. New tokens: none.
+- 2026-11-15 · Staff workspace, admin users, navbar · **Department Administrator — an office-scoped manager role.** New `department_admin` role (DB constraint + model helpers, office-scoped policies/verification/assignment) with a staff-workspace “Manage office” surface (`.office-*`, §5.49): staff accounts, invitation/temp-password onboarding, verification grants, same-office complaint assignment, and an office audit trail that excludes resident actions. Navbar/mobile drawer/staff sidebar/dashboard identity show the “Department Administrator” label + office badge (§5.31); global admin appoints/revokes the role and department archiving is blocked while a manager is attached. Files: migration `2026_11_15_000000_add_department_admin_role_to_users_table.php`, `app/Http/Controllers/DepartmentAdminController.php`, `app/Support/TemporaryPassword.php`, `app/Models/{User,Department}.php`, `app/Policies/ComplaintPolicy.php`, `app/Services/{ComplaintVerificationService,NotificationService,ComplaintPublicationService}.php`, controllers/middleware/routes/views/CSS/lang as listed in `docs/design-changelog.md`, `tests/Feature/DepartmentAdminRoleTest.php`. New tokens: none (reuses `--success/--danger` tints and gold/navy tokens; new `.office-*` components and badge variants documented in §5.49/§5.31). See `docs/design-changelog.md` for verification evidence.
+- 2026-11-13 · Filing form · **the register publishes verified reports only — the filing step says so.** An ordinary consented report is held off the transparency register, the map, the stats and the detail page until the office verifies it (`verified_at` or settled status); a needs-information round no longer un-publishes it. Files: `app/Models/Complaint.php`, `database/factories/ComplaintFactory.php`, `resources/views/complaints/create.blade.php`, `lang/{en,fil}/complaint_create.php`, `tests/Feature/{ComplaintVisibilityConsentTest,ComplaintReviewWorkflowTest,ComplaintBarangayTest}.php`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+- 2026-11-13 · Admin ticket · **an administrator can release an automated spam/review flag, with a reason.** A legitimate report the intake detector flagged stayed invisible forever with no way to overrule it; the admin ticket's moderation panel now carries a release form (reason required) for `review`/`spam` flags — admin-only, audit-logged (`complaint.spam_flag_cleared`); after release the verified consented report republishes. Files: `app/Http/Controllers/AdminController.php`, `routes/web.php`, `resources/views/admin/complaints/show.blade.php`, `tests/Feature/ClearSpamFlagTest.php` (new). New tokens: none. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Staff ticket · **the verification follow-up cap is three rounds.** The ping-pong breaker moves from two to three: after three cleared rounds the ask is refused with "three times" copy (en+fil) and the ticket shows the rounds-exhausted line; `MAX_INFORMATION_ROUNDS = 3`; a test now pins the third allowed / fourth refused behaviour. Files: `app/Services/ComplaintVerificationService.php`, `lang/{en,fil}/staff.php`, `docs/design-system.md` (§5.40), `tests/Feature/InformationRoundsCapTest.php` (new). New tokens: none. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Staff ticket, resident ticket · **verification follow-up shows the resident's reply photos.** A verifier asked for a closer photo, the resident attached one, and nothing rendered it anywhere; now both the staff answered box and the resident's own answered box show a photo grid of the reply attachments, streamed privately from MinIO by a new `complaints.information.evidence` route (owner, owning department, admin only). Files: `app/Http/Controllers/ComplaintController.php`, `routes/web.php`, `resources/views/{staff/complaints/show,complaints/show}.blade.php`, `resources/css/pages/staff-complaint.css`, `lang/{en,fil}/{staff,complaint_show}.php`, `tests/Feature/InformationResponsePhotosTest.php` (new). New tokens: none — the grid reuses `--surface-soft`, `--line-soft`, `--radius-sm`, `--ring`. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Publication decision queue + review page · **card interiors get padding; the queue rows get a real layout.** The `.tr-card` shell carries no padding by design and the review page left every card element flush against its borders, so all cards now get `20px` (16px mobile); the publication queue rows were rendering as the transparency register's `.report-row` 5-track grid anchor with an unstyled `.admin-button` on the staff shell, and now use a flex row — ticket/dept/category/title left, a right-aligned `.tr-button` "Open the report" on the right (full-width ≤640px). Files: `resources/views/staff/publication-requests/{index,show}.blade.php`, `resources/css/pages/publication-review.css`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Publication decision `/staff/publication-requests/{complaint}` · **rebuilt as a two-column decision workspace — Shell C, a live preview and a sticky decision bar.** Back link + h1 + one line (no banner); one-line context strip; an always-visible privacy panel (“Never published”, the named party); left column = original report + a two-stage redaction editor (Stage 1 ticks/draft → Stage 2 the public copy, navy Save); sticky right rail = the live “What would be published” preview with an amber warning until a copy is saved; sticky bottom decision bar — status + hint, ONE gold `Approve publication` (disabled until saved) and a `<details>`-disclosure `Decline` with the required note (works without JS). Replaces the stacked single column and the `.admin-button` classes that rendered unstyled on the staff shell. Files: `resources/views/staff/publication-requests/show.blade.php`, `resources/css/pages/publication-review.css` (new), `resources/css/app.css`, `lang/{en,fil}/staff.php`, `tests/Feature/PrivacyGatedComplaintTest.php`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Staff ticket, admin ticket · **a finished report has nothing left to pause — the hold panel only offers the way back.** The “Put the work on hold” control is gone for `Resolved`/`Rejected`/`Closed` reports on every department's ticket and on the admin ticket; `x-hold-panel` renders nothing for a finished report unless a hold is already in place — then it shows only the hold state and the way to take it off — and `ComplaintHoldService::putOnHold()` refuses finished reports server-side; a hold taken before the work was finished stays clearable (resume). Files: `app/Services/ComplaintHoldService.php`, `resources/views/components/hold-panel.blade.php`, `resources/views/{staff/complaints/show,admin/complaints/show}.blade.php`, `tests/Feature/ComplaintHoldTest.php`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+- 2026-11-13 · Staff ticket, admin ticket · **closure is the resident's or the system's — never the office's.** The staff response card and the admin status dropdown no longer offer `Closed`; the staff ticket for a resolved report shows a “Waiting for the resident to confirm” card instead of a form the office cannot legally complete; `ComplaintStatus::allowedManualTransitions()` (the `Resolved → Closed` lifecycle stays for the resident and `complaints:auto-close-resolved`) drives both dropdowns, and `StaffController@update` / `AdminController@complaintUpdate` refuse `Closed` server-side. Files: `app/Enums/ComplaintStatus.php`, `app/Http/Controllers/{StaffController,AdminController}.php`, `resources/views/{staff/complaints/show,admin/complaints/show}.blade.php`, `lang/{en,fil}/staff.php`, `tests/Feature/ResidentOnlyClosureTest.php` (new). New tokens: none — the card reuses `--status-resolved-*`, `.tr-card`, `.tr-h2`. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Staff ticket · **public presentation belongs to the Mayor's office, and the publication checklist is gone.** The "Public presentation" moderation panel is no longer rendered on a department's ticket unless the viewer is the Mayor's office (or an administrator) and can verify complaints — every other department settles and verifies the report and never sees a public-presentation control. The publication checklist card has been removed from the ticket, along with its component, styles, language keys and test; the publication panel already states where the report stands. Files: `resources/views/staff/complaints/show.blade.php`, `resources/views/components/publication-checklist.blade.php` (removed), `resources/css/pages/staff-complaint.css`, `lang/{en,fil}/staff.php`, `tests/Feature/{PrivacyGatedComplaintTest,ComplaintVisibilityConsentTest}.php`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+
+- 2026-11-13 · Feedback `/feedback` · **ratings are final, only finished work is rateable, one suggestion a day, and the thank-you is a real toast.** A resident could resubmit the same rating, the office list included reports still in progress, and suggestions were unlimited; the thank-you was an inline flash that only disappeared on the next navigation. The page now offers only offices that have **resolved or closed** a report, renders an existing rating as a read-only score (server and partial unique indexes refuse a second one), allows **one suggestion per Daet calendar day** (staff included, admins exempt) and disables the box with the reason and the next opening, and shows the success message as the shared **`.toast`** (§5.48) that floats under the navbar and fades after about 4 seconds. Files: `app/Services/FeedbackService.php`, `app/Http/Controllers/FeedbackController.php`, `resources/views/feedback/index.blade.php`, `resources/views/components/{star-rating,toast}.blade.php`, `resources/css/components/toast.css`, `resources/css/pages/feedback.css`, `resources/js/{app,toast}.js`, `database/migrations/2026_11_13_000006_lock_resident_ratings.php`, `lang/{en,fil}/{feedback,common}.php`, `tests/Feature/FeedbackTest.php`, `resources/views/pages/design-system.blade.php`. New tokens: none.
+- 2026-11-13 · Staff ticket, publication decision · **resolving a verified gated report hands it to the Mayor's office automatically, and only the Mayor's office writes the public copy.** The handling office no longer asks for publication or redacts: the publication panel is a status view on its ticket, the moderation panel hides the redaction fields for a gated report and the service refuses them, and the redaction editor (ticks to draft, then save) lives on `/staff/publication-requests/{complaint}` beside the named party and the original report. The checklist is four live steps — settled → verified → with the Mayor's office → approved — and its handoff step turns on from the publication state that resolution sets. Approval is still an explicit Mayor's office click and is refused until the redacted copy is saved; existing reports and their data are unchanged. Files: `app/Services/{ComplaintPublicationService,ComplaintPrivacyService,ComplaintModerationService}.php`, `app/Http/Controllers/{StaffController,AdminController}.php`, `routes/web.php`, `resources/views/components/{publication-panel,publication-checklist,moderation-panel}.blade.php`, `resources/views/staff/{complaints/show,publication-requests/show}.blade.php`, `lang/{en,fil}/{staff,complaint_create,complaint_show}.php`, `tests/Feature/PrivacyGatedComplaintTest.php`. New tokens: none. See `docs/design-changelog.md` for the verification evidence.
 - 2026-11-13 · Staff ticket, filing form, notifications · **the publication flow shows everyone their part — the complainant acknowledges the gate, the office sees the checklist, and the resident is told when the office asks.** Reports that name somebody passed through a gate the office had to reverse-engineer (the order lived across three panels and two pages), and the resident was told only on the decision — never when the office asked, and never made to confirm they understood the filing was private. (1) **A publication checklist** on the staff ticket, above the moderation panel and shown only on gated reports: an ordered `<ol>` of the gate steps — settle → verified → redacted → the office asks → the Mayor's office approves — each rendered live from the same services the server enforces (a tick, a number, a red cross for the one ending that is a refusal), with a one-line verdict when the office waits on the Mayor's office, when it approved, or when it declined. It is a status view, never a control — no step can be flipped by hand. New `.publication-checklist` rules in `staff-complaint.css` on existing tokens only (§5.47); no new colours. (2) **The resident is told when the office asks.** The service docblock promised it ("the resident is notified of the request, the approval, and the refusal") but only the decision was ever sent; now `ComplaintPublicationService::request` also notifies the resident with a `complaint.publication_requested` notification that lands on their own ticket. (3) **The filing form makes the complainant acknowledge the gate.** For a category that names somebody, a required "I understand…" checkbox — shown only for those categories, enforced on the server (`privacy_ack`) — states plainly that the report is filed private and appears on the transparency page only after settle, verify, redact and the Mayor's office's approval, and that the resident will be told either way. Files: `resources/views/components/publication-checklist.blade.php` (new), `resources/css/pages/staff-complaint.css`, `resources/views/staff/complaints/show.blade.php`, `resources/views/complaints/create.blade.php`, `app/Services/ComplaintPublicationService.php`, `app/Http/Controllers/ComplaintController.php`, `lang/{en,fil}/{staff,complaint_create}.php`, `tests/Feature/PrivacyGatedComplaintTest.php`, `docs/design-system.md` (§5.47, this entry), `docs/design-changelog.md`. New tokens: none.
 
 - 2026-11-13 · Moderation/redaction panel · **quick redact works again, with clearer sections.** The privacy-gated quick-redact helper was nested inside the main moderation form (invalid HTML), breaking submission in the browser. Quick redact is now a separate form/section (staff context) and the panel is reorganized into clearer visibility, redacted-copy, evidence and reason/save sections with token-based styling and en+fil state hints. Files: `resources/views/components/moderation-panel.blade.php`, `resources/views/staff/complaints/show.blade.php`, `resources/css/app.css`, `resources/css/pages/staff-complaint.css`, `lang/{en,fil}/staff.php`. New tokens: none.
@@ -2783,3 +2980,6 @@ Every UI task appends here: **(date · page · what changed).**
 
 - 2026-11-13 · Staff complaint detail `/staff/complaints/{id}` · **review form collapses after verification.** The "Review and verification form" card stayed fully expanded after a complaint was verified, taking up space for a form the office no longer needed to fill. It now collapses behind a toggle button (SVG chevron icon) once the complaint is verified and the viewer can verify; the read-only record (review status, suggested priority, confirmed priority) stays visible above the collapse so the confirmed priority remains on screen. The toggle persists the choice in `localStorage`, so it survives reloads and Livewire re-renders, and uses `[hidden]` (never `style.display`) per §7. Button text toggles between "Minimize" and "Show form" with `aria-label`, en+fil. Files: `resources/views/staff/complaints/show.blade.php`, `lang/{en,fil}/staff.php`. New tokens: none.
 - 2026-11-13 · Complaint filing (`/complaints/create`) · **privacy-gated reports surface the missing acknowledgment.** Submitting a category that names somebody without the required "I understand…" acknowledgment showed "Check the highlighted fields. The privacy ack field must be accepted." but never highlighted a field or moved the wizard to it. Server-error mapping now routes `privacy_ack` (and `named_party` / `named_party_position`) to the correct step so the wizard lands on the privacy/describe step, and client validation requires the gated acknowledgment and named-party fields before advancing. Files: `resources/views/complaints/create.blade.php`. New tokens: none. Screenshots waived by owner (2026-11-13).
+
+- 2026-11-13 · Staff complaint detail `/staff/complaints/{id}` · **redesigned to the publication-requests protocol.** The page used a bespoke inline-styled banner, hand-rolled card headers, and a custom back link that diverged from `/staff/publication-requests/{id}`. Rebuilt to follow the publication-requests design protocol: `tr-banner` header with `tr-h1`/`tr-privacy`, `ticket-id` + `dept-badge` in `report-row__head`, `report-row__meta` for category/department, `tr-h2` for all card section titles, publication-requests-style back link (`← Back to Staff Dashboard`), `tr-card` cards throughout, tokens only (no hard-coded hex). The collapsible review/verification form (minimize button with SVG chevron, `localStorage` persistence, `[hidden]` visibility per §7) is retained. New `staff.back` lang key (en+fil). Files: `resources/views/staff/complaints/show.blade.php`, `lang/{en,fil}/staff.php`. New tokens: none.
+- 2026-11-13 · Staff publication decision `/staff/publication-requests/{id}` · **spacing and type fixed to design system.** The redacted-copy section used off-scale spacing (`margin-bottom: 20px`, `margin-top: 18px`) and a non-scale `h3` at `font-size: 17px`. All spacing now uses the design system scale (4·8·12·16·24·32·48): `margin-bottom: 24px` on the card, `margin-top: 16px`/`24px` on headings, `margin-top: 8px`/`margin-bottom: 12px` on paragraphs. The non-scale `h3` was replaced with `tr-h2` (20px/700). Redundant inline `color`/`margin` declarations removed. No new colours, tokens, or components. Files: `resources/views/staff/publication-requests/show.blade.php`.

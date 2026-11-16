@@ -704,12 +704,20 @@
                     <a href="{{ route('privacy') }}">Privacy Policy</a>.
                 </li>
                 <li>
-                    <strong>Republic Act No. 11032</strong>, the Anti-Junk Email Act, applies to
-                    electronic messages sent through this service. The portal sends you messages about
-                    your account and your complaints - verification codes, password resets, status
-                    updates - because you asked for the service and those messages are necessary to
-                    deliver it. We do not send marketing email.
+                    <strong>Republic Act No. 11032</strong>, the Ease of Doing Business and
+                    Efficient Government Service Delivery Act of 2018, governs how Philippine
+                    government offices deliver services promptly, efficiently and
+                    citizen-centered, including maximum processing times for simple, complex and
+                    highly technical transactions. The deadlines this service enforces on its
+                    offices — the response clock on your complaints and the "overdue" marker — are
+                    the Municipality's own internal service standards, adopted in pursuit of that
+                    framework. They are not statutory time limits, and missing one is not a
+                    violation of the Act.
                 </li>
+                <li>The portal sends only messages about your account and your complaints -
+                    verification codes, password resets, status updates - because you asked for the
+                    service and those messages are necessary to deliver it. We do not send
+                    marketing email.</li>
                 <li>Local ordinances of the Municipality of Daet and applicable national legislation govern how complaints are received, processed, and retained.</li>
             </ul>
         </section>

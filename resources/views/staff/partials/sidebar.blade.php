@@ -20,10 +20,19 @@
                 <p class="staff-sidebar-section-label">{{ __('nav.workspace') }}</p>
                 <ul>
                     <li><a href="{{ route('staff.dashboard') }}" class="{{ request()->routeIs('staff.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('staff.dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
-                    <li><a href="{{ route('staff.complaints.index') }}" class="{{ request()->routeIs('staff.complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ __('nav.complaint_queue') }}</span></a></li>
+                    <li><a href="{{ route('staff.complaints.index') }}" class="{{ request()->routeIs('staff.complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ auth()->user()->canVerifyComplaints() ? __('nav.complaint_queue') : __('nav.my_work') }}</span></a></li>
                     <li><a href="{{ route('staff.activity.index') }}" class="{{ request()->routeIs('staff.activity.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.activity.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('nav.my_activity') }}</span></a></li>
                     <li><a href="{{ route('staff.department-activity.index') }}" class="{{ request()->routeIs('staff.department-activity.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.department-activity.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path></svg><span>{{ __('nav.department_activity') }}</span></a></li>
                 </ul>
+
+                @if(auth()->user()->isDepartmentAdmin())
+                    <p class="staff-sidebar-section-label">{{ __('nav.office') }}</p>
+                    <ul>
+                        <li><a href="{{ route('staff.office.index') }}" class="{{ request()->routeIs('staff.office.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.office.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"></path><path d="M6 21V8l6-4 6 4v13"></path><path d="M10 10h4"></path></svg><span>{{ __('nav.manage_office') }}</span></a></li>
+                        <li><a href="{{ route('staff.office.statistics.index') }}" class="{{ request()->routeIs('staff.office.statistics.*') ? 'is-active' : '' }}" @if(request()->routeIs('staff.office.statistics.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 14l3-3 3 3 4-5"></path></svg><span>{{ __('nav.office_statistics') }}</span></a></li>
+                        <li><a href="{{ route('staff.office.audit.index') }}" class="{{ request()->routeIs('staff.office.audit.*') ? 'is-active' : '' }}" @if(request()->routeIs('staff.office.audit.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('nav.office_audit') }}</span></a></li>
+                    </ul>
+                @endif
 
                 @if(auth()->user()->canVerifyComplaints())
                     <p class="staff-sidebar-section-label">{{ __('nav.verification') }}</p>

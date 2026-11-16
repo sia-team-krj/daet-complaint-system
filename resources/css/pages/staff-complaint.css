@@ -510,6 +510,34 @@
     white-space: pre-line;
 }
 
+.staff-action-panel__photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.staff-action-panel__photo {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+    aspect-ratio: 1;
+}
+
+.staff-action-panel__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.staff-action-panel__photo:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
 .staff-field {
     display: block;
     margin-bottom: 14px;
@@ -974,85 +1002,3 @@
     }
 }
 
-/* ── The publication checklist (reports that name somebody) ──────────
-   The ordered gate a report must pass before it can appear on the
-   transparency page, shown to the office handling it. Same visual family
-   as the moderation panels it sits beside. No new colours.
-   ──────────────────────────────────────────────────────────────────── */
-.publication-checklist__steps {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 0;
-    padding: 2px 0 0;
-}
-
-.publication-checklist__item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--faint);
-}
-
-.publication-checklist__item.is-done {
-    color: var(--text);
-}
-
-.publication-checklist__item.is-blocked .publication-checklist__label {
-    color: var(--error-text);
-}
-
-.publication-checklist__icon {
-    flex: 0 0 22px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border: 1px solid var(--line);
-    border-radius: 50%;
-    color: var(--faint);
-    font-size: 12px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-
-.publication-checklist__item.is-done .publication-checklist__icon {
-    border-color: var(--success);
-    color: var(--success);
-}
-
-.publication-checklist__item.is-blocked .publication-checklist__icon {
-    border-color: var(--error-text);
-    color: var(--error-text);
-}
-
-.publication-checklist__label {
-    font-size: 13.5px;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0;
-    text-transform: none;
-}
-
-.publication-checklist__verdict {
-    margin: 14px 0 0;
-    padding: 12px 14px;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius-sm);
-    background: var(--surface-soft);
-    color: var(--muted);
-    font-size: 12.5px;
-    line-height: 1.5;
-}
-
-.publication-checklist__verdict.is-approved {
-    border-color: var(--success);
-    color: var(--text);
-}
-
-.publication-checklist__verdict.is-declined {
-    border-color: var(--error-text);
-    color: var(--error-text);
-}

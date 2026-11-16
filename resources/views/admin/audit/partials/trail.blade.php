@@ -32,7 +32,10 @@
                         $systemName = __('audit.system');
                         $department = $log->department;
                         $actorName = $log->actor?->full_name ?? $log->actor_name ?? $systemName;
-                        $actorRole = ucfirst((string) ($log->actor?->role ?? $log->actor_role ?? $systemName));
+                        $actorRoleKey = (string) ($log->actor?->role ?? $log->actor_role ?? '');
+                        $actorRole = $actorRoleKey !== '' && \Illuminate\Support\Facades\Lang::has('roles.' . $actorRoleKey)
+                            ? __('roles.' . $actorRoleKey)
+                            : ($actorRoleKey !== '' ? ucfirst($actorRoleKey) : $systemName);
                         $deptName = $department?->name ?? __('audit.system_wide');
                         $logAt = $log->created_at?->copy()->setTimezone($auditTz);
                         $dayKey = $logAt?->toDateString();

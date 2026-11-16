@@ -273,6 +273,9 @@ class StaffActionPanelsTest extends TestCase
             'status' => ComplaintStatus::UnderReview->value,
             'review_status' => 'pending',
             'confirmed_priority' => 'elevated',
+            // An ordinary staff member works the cases the office hands them,
+            // so the case under test is assigned to them.
+            'assigned_staff_id' => $this->regularStaff->id,
         ], $attributes));
     }
 }

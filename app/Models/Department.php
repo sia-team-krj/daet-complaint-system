@@ -32,11 +32,25 @@ class Department extends Model
     }
 
     /**
-     * All staff members (users) belonging to this department.
+     * Everyone who works in this office's staff workspace.
+     *
+     * Department Administrators are included because they are part of the
+     * office, but a manager must never be able to act on a peer manager. The
+     * management controller still restricts its actions to role = staff.
      */
     public function staff(): HasMany
     {
-        return $this->hasMany(User::class)->where('role', 'staff');
+        return $this->hasMany(User::class)->whereIn('role', ['staff', 'department_admin']);
+    }
+
+    /**
+     * The office's Department Administrators. Used by the archive guard: an
+     * office with a manager attached cannot be archived until the global
+     * administrator revokes the role.
+     */
+    public function departmentAdmins(): HasMany
+    {
+        return $this->hasMany(User::class)->where('role', 'department_admin');
     }
 
     public function invitationCodes(): HasMany

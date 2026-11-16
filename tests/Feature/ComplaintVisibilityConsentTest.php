@@ -66,7 +66,38 @@ class ComplaintVisibilityConsentTest extends TestCase
         $complaint = $this->fileComplaint($user, ['visibility' => 'public']);
 
         $this->assertTrue($complaint->is_public);
-        $this->assertTrue($complaint->isPubliclyVisible());
+        $this->assertFalse(
+            $complaint->isPubliclyVisible(),
+            'Consent to publish is the resident’s call; publication waits for the office to verify the report.',
+        );
+
+        // Once the office verifies it, it joins the public register.
+        $complaint->update([
+            'review_status' => ComplaintReviewStatus::Verified->value,
+            'verified_at' => now(),
+        ]);
+
+        $this->assertTrue($complaint->fresh()->isPubliclyVisible());
+    }
+
+    public function test_an_unverified_public_report_is_held_back_until_the_office_verifies_it(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+        $complaint = $this->fileComplaint($user, ['visibility' => 'public']);
+
+        $this->assertFalse(
+            Complaint::query()->public()->whereKey($complaint->id)->exists(),
+            'The register must not show an unverified report, even with the resident’s public consent.',
+        );
+        $this->get(route('transparency.complaints.show', $complaint))->assertNotFound();
+
+        $complaint->update([
+            'review_status' => ComplaintReviewStatus::Verified->value,
+            'verified_at' => now(),
+        ]);
+
+        $this->assertTrue(Complaint::query()->public()->whereKey($complaint->id)->exists());
+        $this->get(route('transparency.complaints.show', $complaint))->assertOk();
     }
 
     public function test_a_resident_can_change_their_own_visibility_after_filing(): void
@@ -398,7 +429,7 @@ class ComplaintVisibilityConsentTest extends TestCase
 
     public function test_the_staff_page_offers_moderation_and_not_publication(): void
     {
-        $department = Department::where('code', 'ENG')->firstOrFail();
+        $department = Department::where('code', 'OM')->firstOrFail();
         $staff = User::factory()->create([
             'role' => 'staff',
             'department_id' => $department->id,

@@ -341,13 +341,13 @@
         <div class="identity-name">{{ $user->full_name }}</div>
         <div class="identity-email">{{ $user->email }}</div>
         
-        <span class="role-badge role-{{ $user->role }}">
-          {{ ucfirst($user->role) }}
+        <span class="role-badge {{ $user->isDepartmentAdmin() ? 'role-staff' : 'role-' . $user->role }}">
+          {{ __('roles.' . $user->role) }}
         </span>
         
         <div class="member-since">Member since {{ $user->created_at->format('F Y') }}</div>
         
-        @if($user->role === 'staff' && $user->department)
+        @if($user->isDepartmentStaff() && $user->department)
           <div class="dept-badge">Assigned to: {{ $user->department->name }}</div>
         @endif
         
@@ -368,7 +368,7 @@
           </div>
         @endif
         
-        @if($user->role === 'staff' && isset($stats))
+        @if($user->isDepartmentStaff() && isset($stats))
           <div class="stats-row">
             <div class="stat-item">
               <div class="stat-value">{{ $stats['handled'] ?? 0 }}</div>
@@ -450,7 +450,7 @@
               @error('email')<span style="color: var(--red); font-size: 11px;">{{ $message }}</span>@enderror
             </div>
             
-            @if($user->role === 'staff' && $user->department)
+            @if($user->isDepartmentStaff() && $user->department)
               <div class="form-group">
                 <label class="form-label">Department</label>
                 <input type="text" class="form-input" value="{{ $user->department->name }}" disabled>

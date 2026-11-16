@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
+use App\Models\ComplaintInformationRequest;
 use App\Models\ComplaintLog;
 use App\Models\Department;
 use App\Models\User;
@@ -436,7 +437,7 @@ class ComplaintController extends Controller
 
         $this->authorize('view', $complaint);
 
-        if ($log->is_internal && ! in_array(Auth::user()->role, ['staff', 'admin'], true)) {
+        if ($log->is_internal && ! in_array(Auth::user()->role, ['staff', 'department_admin', 'admin'], true)) {
             abort(403);
         }
 
@@ -447,6 +448,30 @@ class ComplaintController extends Controller
         }
 
         return $this->streamPrivateImage($paths[$index], 'complaint-update', $index);
+    }
+
+    /**
+     * Stream a photo attached to a resident's verification reply.
+     *
+     * Photos the resident sends in answer to a question are not public; the
+     * verifier needs them, the public does not. Same ownership rule as the
+     * report's other private files: the owner, the department, an admin.
+     */
+    public function informationEvidence(Complaint $complaint, ComplaintInformationRequest $informationRequest, int $index): StreamedResponse
+    {
+        if ((int) $informationRequest->complaint_id !== (int) $complaint->id) {
+            abort(404);
+        }
+
+        $this->authorize('view', $complaint);
+
+        $paths = $informationRequest->response_image_paths;
+
+        if (! is_array($paths) || ! array_key_exists($index, $paths)) {
+            abort(404);
+        }
+
+        return $this->streamPrivateImage($paths[$index], 'information-response', $index);
     }
 
     /**

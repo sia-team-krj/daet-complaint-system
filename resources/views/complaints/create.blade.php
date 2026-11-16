@@ -368,16 +368,16 @@
                                     <label class="visibility-option">
                                         <input type="radio" name="visibility" value="private" @checked(old('visibility', 'private') === 'private')>
                                         <span class="visibility-option__body">
-                                            <span class="visibility-option__title">Just me</span>
-                                            <span class="visibility-option__note">Only you and the staff handling your report can see it. It will not appear on the public page.</span>
+                                            <span class="visibility-option__title">{{ __('complaint_create.visibility.private_title') }}</span>
+                                            <span class="visibility-option__note">{{ __('complaint_create.visibility.private_note') }}</span>
                                         </span>
                                     </label>
 
                                     <label class="visibility-option">
                                         <input type="radio" name="visibility" value="public" @checked(old('visibility') === 'public')>
                                         <span class="visibility-option__body">
-                                            <span class="visibility-option__title">Publish on the transparency page</span>
-                                            <span class="visibility-option__note">Anyone can read it there under your display alias, never your real name. You can make it private again at any time.</span>
+                                            <span class="visibility-option__title">{{ __('complaint_create.visibility.public_title') }}</span>
+                                            <span class="visibility-option__note">{{ __('complaint_create.visibility.public_note') }}</span>
                                         </span>
                                     </label>
                                 </fieldset>
@@ -404,9 +404,7 @@
 
                                 <button type="button" class="fc-toggle" id="visibility-why-toggle" aria-expanded="false" aria-controls="visibility-footnote">{{ __('complaint_create.wizard.why_toggle') }}</button>
                                 <p class="visibility-footnote" id="visibility-footnote">
-                                    Reports that turn out to be spam or unrelated to municipal services are held back automatically. Staff may also
-                                    remove sensitive details from the public page, but they cannot change this choice - and you will always see your
-                                    own report exactly as you filed it.
+                                    {{ __('complaint_create.visibility.footnote') }}
                                 </p>
                             </div>
                         </div>

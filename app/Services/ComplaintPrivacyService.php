@@ -21,8 +21,12 @@ use App\Models\User;
  *
  *   1. the owning office has settled it — resolved or closed,
  *   2. the information has been verified as true,
- *   3. the sensitive parts have been redacted (a redacted title or description),
+ *   3. the Mayor's office has redacted the public copy,
  *   4. the Mayor's office has approved the publication.
+ *
+ * The handoff is automatic: once the owning office resolves a verified report,
+ * it goes to the Mayor's office without a separate request. Redaction belongs
+ * to the Mayor's office too — the handling office never writes the public copy.
  *
  * A complaint that is genuinely a privacy concern is declined, and it is never
  * published. The resident is told what happened either way.
@@ -130,37 +134,42 @@ class ComplaintPrivacyService
     }
 
     /**
-     * Whether the complaint may be published at all, and if not, why.
+     * What still has to happen before a settled report can be sent to the
+     * Mayor's office. Redaction is deliberately absent: the Mayor's office
+     * writes the public copy after the handoff.
      *
-     * `includeApproval` — the Mayor's office has to approve publication, and
-     * that is always outstanding until it happens, so it is not something the
-     * office can act on. The publication panel lists what is still missing
-     * before the report can be *asked* for, and so leaves it out; it keeps it
-     * for the full "what must be true to publish" picture.
-     *
-     * @return array{ok: bool, reasons: list<string>}
+     * @return list<string>
      */
-    public static function publicationBlockers(Complaint $complaint, bool $includeApproval = true): array
+    public static function handoffBlockers(Complaint $complaint): array
     {
         $reasons = [];
 
         if (! self::isSettled($complaint)) {
-            $reasons[] = 'The office has not settled this report yet.';
+            $reasons[] = 'The office has not resolved this report yet.';
         }
 
         if (! self::isVerified($complaint)) {
             $reasons[] = 'The information has not been verified as true.';
         }
 
+        return $reasons;
+    }
+
+    /**
+     * What still has to happen before the Mayor's office can approve the
+     * publication: the report must be settled, verified and redacted.
+     *
+     * @return list<string>
+     */
+    public static function approvalBlockers(Complaint $complaint): array
+    {
+        $reasons = self::handoffBlockers($complaint);
+
         if (! self::isRedacted($complaint)) {
-            $reasons[] = 'The sensitive parts have not been redacted.';
+            $reasons[] = 'The Mayor\'s office has not saved the redacted public copy.';
         }
 
-        if ($includeApproval && $complaint->publicationStatus() !== PublicationStatus::Approved) {
-            $reasons[] = 'The Mayor\'s office has not approved the publication.';
-        }
-
-        return ['ok' => $reasons === [], 'reasons' => $reasons];
+        return $reasons;
     }
 
     /**

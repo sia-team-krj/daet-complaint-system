@@ -1,0 +1,125 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TOAST — a status that says "done", then gets out of the way.
+
+   The base is an ordinary inline notice, so the message survives with
+   JavaScript off. toast.js adds `.toast--floating` and then `.is-visible`,
+   which is what pins it under the navbar and fades it. The close button is
+   not rendered at all in the no-JavaScript state (the component omits it),
+   and is hidden here until the floating state is real.
+
+   Docs: docs/design-system.md §5.48.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--success);
+    border-radius: var(--radius-sm);
+    background: var(--success-tint);
+    color: var(--success);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.toast--error {
+    border-color: var(--danger);
+    background: var(--danger-tint);
+    color: var(--danger);
+}
+
+.toast__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+}
+
+.toast__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.toast__message {
+    flex: 1 1 auto;
+    margin: 0;
+}
+
+.toast__close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    margin: -8px -8px -8px 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.toast__close:hover {
+    background: var(--surface);
+}
+
+.toast__close:focus-visible {
+    outline: 2px solid var(--focus-gold);
+    outline-offset: 2px;
+}
+
+.toast__close svg {
+    width: 16px;
+    height: 16px;
+}
+
+.toast--floating {
+    position: fixed;
+    top: calc(var(--navbar-height) + 16px);
+    right: 24px;
+    left: auto;
+    width: min(420px, calc(100vw - 48px));
+    margin: 0;
+    z-index: var(--z-overlay);
+    box-shadow: var(--shadow-lift);
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.toast--floating .toast__close {
+    display: inline-flex;
+}
+
+.toast--floating.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.toast--floating.is-leaving {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+}
+
+@media (max-width: 640px) {
+    .toast--floating {
+        top: calc(var(--navbar-height) + 12px);
+        right: 16px;
+        left: 16px;
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast--floating {
+        transition: none;
+    }
+}

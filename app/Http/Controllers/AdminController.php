@@ -16,9 +16,11 @@ use App\Models\InvitationCode;
 use App\Notifications\StaffWelcomeNotification;
 use App\Services\ActivityLogger;
 use App\Support\QueueFingerprint;
+use App\Support\TemporaryPassword;
 use App\Support\TicketFingerprint;
 use App\Services\AuditDirectory;
 use App\Services\ComplaintModerationService;
+use App\Services\ComplaintPublicationService;
 use App\Services\ComplaintSlaService;
 use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
@@ -316,6 +318,19 @@ class AdminController extends Controller
 
         if (Department::query()->where('is_active', true)->count() <= 1) {
             return back()->with('error', 'The last active department cannot be archived. Create another office first.');
+        }
+
+        // A Department Administrator is attached to the office, not to the
+        // archive. Revoke the role first so no manager is left holding an
+        // office that no longer exists.
+        $departmentAdmins = $department->departmentAdmins()->count();
+        if ($departmentAdmins > 0) {
+            return back()->with(
+                'error',
+                "{$department->name} still has {$departmentAdmins} "
+                    .($departmentAdmins === 1 ? 'Department Administrator' : 'Department Administrators')
+                    .'. Revoke the role before archiving.',
+            );
         }
 
         $openComplaints = $department->complaints()
@@ -1206,12 +1221,19 @@ class AdminController extends Controller
 
         $complaint->load(['user', 'department', 'logs.actor', 'logs.evidences', 'assignedStaff', 'reviewedBy']);
 
-        $statuses = ComplaintStatus::cases();
+        // The administrator cannot close a resolved report either, so the
+        // Closed option is not offered — unless the report is already closed,
+        // in which case the current value stays visible as the selection.
+        $statuses = array_values(array_filter(
+            ComplaintStatus::cases(),
+            fn (ComplaintStatus $status): bool => $status !== ComplaintStatus::Closed
+                || $complaint->statusEnum === ComplaintStatus::Closed,
+        ));
         // Passes the complaint's current office so an archived one still shows
         // as the selected value instead of the select silently falling through
         // to its first option and displaying the wrong department.
         $departments = $this->assignableDepartments($complaint->department);
-        $staffMembers = User::where('role', 'staff')
+        $staffMembers = User::whereIn('role', ['staff', 'department_admin'])
             ->with('department')
             ->orderBy('first_name')
             ->get();
@@ -1252,7 +1274,7 @@ class AdminController extends Controller
     /**
      * Update complaint status, department, or staff assignment
      */
-    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintWorkService $work, ComplaintUpdateDelivery $ticketUpdates): RedirectResponse
+    public function complaintUpdate(Request $request, Complaint $complaint, ActivityLogger $activityLogger, ComplaintVerificationService $verification, NotificationService $notifications, ComplaintWorkService $work, ComplaintUpdateDelivery $ticketUpdates, ComplaintPublicationService $publication): RedirectResponse
     {
         $validated = $request->validate([
             'status' => ['nullable', Rule::enum(ComplaintStatus::class)],
@@ -1330,7 +1352,7 @@ class AdminController extends Controller
                 : null;
             $targetDepartmentId = (int) ($validated['department_id'] ?? $complaint->department_id);
 
-            if ($staff && $staff->role === 'staff' && (int) $staff->department_id === $targetDepartmentId) {
+            if ($staff && $staff->isDepartmentStaff() && (int) $staff->department_id === $targetDepartmentId) {
                 $updates['assigned_staff_id'] = $staff->id;
                 $assignedStaff = $staff;
                 $logEntries[] = "Assigned to staff: {$staff->full_name}";
@@ -1342,6 +1364,11 @@ class AdminController extends Controller
         $evidence = ['paths' => [], 'rows' => []];
         if (isset($validated['status'])) {
             $newStatus = ComplaintStatus::from($validated['status']);
+            // Closing is not an administrative decision either: only the
+            // resident confirms a resolution, or the system auto-closes it.
+            if ($newStatus === ComplaintStatus::Closed && $oldStatus !== ComplaintStatus::Closed) {
+                return back()->with('error', __('staff.closure.resident_only'));
+            }
             if (! $complaint->isVerified() && $newStatus !== ComplaintStatus::Submitted) {
                 return back()->with('error', 'This complaint must pass review before its status can advance.');
             }
@@ -1387,6 +1414,15 @@ class AdminController extends Controller
         // Apply updates
         if (! empty($updates)) {
             $complaint->update($updates);
+
+            // Resolving or verifying a report that names somebody hands it to
+            // the Mayor's office automatically. Reported rather than thrown so
+            // the update the administrator already committed is never undone.
+            try {
+                $publication->autoSubmit($complaint, Auth::user());
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }
 
         // Create log entry
@@ -1605,6 +1641,55 @@ class AdminController extends Controller
     }
 
     /**
+     * Clear the automated intake flag on a report a person has reviewed.
+     *
+     * The detector is a heuristic — wrong often enough that a legitimate
+     * complaint gets buried forever if a person cannot overrule it. Clearing
+     * the flag restores the report to the ordinary flow: it appears on the
+     * register again once verified (never automatically). The original flag
+     * and reason stay in the audit trail; the resident's consent and the
+     * office's silence both make no difference here — this is content
+     * moderation, not publication.
+     */
+    public function clearSpamFlag(
+        Request $request,
+        Complaint $complaint,
+        ActivityLogger $activityLogger,
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'clear_flag_reason' => ['required', 'string', 'min:10', 'max:1000'],
+        ], [
+            'clear_flag_reason.required' => 'Give a reason — clearing the flag is permanent and is recorded.',
+            'clear_flag_reason.min' => 'Say a little more — the resident and the audit trail deserve a real reason.',
+        ]);
+
+        $flag = $complaint->spam_status;
+
+        if (! in_array($flag, ['review', 'spam'], true)) {
+            return back()->with('error', 'This report is not flagged as review or spam.');
+        }
+
+        $complaint->update(['spam_status' => 'clear']);
+
+        $activityLogger->log(
+            'complaint.spam_flag_cleared',
+            "Complaint {$complaint->ticket_id}: administrators cleared the automated {$flag} flag. Reason: {$validated['clear_flag_reason']}",
+            $complaint,
+            metadata: [
+                'previous_spam_status' => $flag,
+                'spam_score' => $complaint->spam_score,
+                'spam_reasons' => $complaint->spam_reasons,
+                'reason' => $validated['clear_flag_reason'],
+                'resident_visibility_untouched' => true,
+            ],
+        );
+
+        return redirect()
+            ->route('admin.complaints.show', $complaint)
+            ->with('status', 'The flag is cleared — it stays in the audit trail. The report republishes once it is verified.');
+    }
+
+    /**
      * Offices that may be assigned work right now.
      *
      * Active offices, plus `$current` when it is archived. The archived one is
@@ -1628,7 +1713,7 @@ class AdminController extends Controller
      */
     public function staffIndex(): View
     {
-        $staff = User::where('role', 'staff')
+        $staff = User::whereIn('role', ['staff', 'department_admin'])
             ->with('department')
             ->withCount('assignedComplaints')
             ->get();
@@ -1817,7 +1902,7 @@ class AdminController extends Controller
         $isManual = $method === 'manual_password';
         $tempPassword = $isManual
             ? (string) $validated['temporary_password']
-            : $this->generateStrongPassword(14);
+            : TemporaryPassword::generate(14);
 
         $staff = DB::transaction(function () use ($validated, $email, $departmentId, $tempPassword, $tempExpiryHours, $method, $activityLogger): User {
             $staff = User::create([
@@ -1887,28 +1972,6 @@ class AdminController extends Controller
                     ? 'Staff account created. Welcome email and verification code sent.'
                     : 'Staff account created. Welcome email sent, but the verification code could not be sent.',
             );
-    }
-
-    /**
-     * Strong temporary password: guaranteed upper, lower and digit,
-     * length clamped to the requested window (12–16 by default).
-     */
-    private function generateStrongPassword(int $length = 14): string
-    {
-        $length = max(12, min(16, $length));
-        $upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-        $lower = 'abcdefghijkmnpqrstuvwxyz';
-        $digits = '23456789';
-        $all = $upper.$lower.$digits;
-
-        $pick = fn (string $chars) => $chars[random_int(0, strlen($chars) - 1)];
-
-        $password = $pick($upper).$pick($lower).$pick($digits);
-        for ($i = 3; $i < $length; $i++) {
-            $password .= $pick($all);
-        }
-
-        return substr(str_shuffle($password), 0, $length);
     }
 
     /**

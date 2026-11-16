@@ -23,7 +23,7 @@ use Illuminate\Validation\ValidationException;
 class ComplaintVerificationService
 {
     /** How many times a complaint may go back to the resident before escalating. */
-    public const MAX_INFORMATION_ROUNDS = 2;
+    public const MAX_INFORMATION_ROUNDS = 3;
 
     /**
      * Decide whether this actor may settle complaints at all, and on this one.
@@ -38,8 +38,9 @@ class ComplaintVerificationService
             ]);
         }
 
-        // Admin works across departments, so the scope check applies to staff only.
-        if ($actor->role === 'staff' && (int) $actor->department_id !== (int) $complaint->department_id) {
+        // Admin works across departments, so the scope check applies to the
+        // office roles only.
+        if ($actor->isDepartmentStaff() && (int) $actor->department_id !== (int) $complaint->department_id) {
             throw ValidationException::withMessages([
                 'verification' => 'This complaint belongs to another department.',
             ]);
@@ -182,7 +183,7 @@ class ComplaintVerificationService
 
         if ($round > self::MAX_INFORMATION_ROUNDS) {
             throw ValidationException::withMessages([
-                'question' => 'This complaint has already been sent back to the resident twice. Ask an administrator to review it.',
+                'question' => 'This complaint has already been sent back to the resident three times. Ask an administrator to review it.',
             ]);
         }
 
@@ -217,13 +218,13 @@ class ComplaintVerificationService
         $this->authorize($actor, $complaint);
         $this->authorizeNoSelfConflict($complaint, $verifier->id);
 
-        if ($verifier->role !== 'staff' && $verifier->role !== 'admin') {
+        if (! in_array($verifier->role, ['staff', 'department_admin', 'admin'], true)) {
             throw ValidationException::withMessages([
                 'verifying_staff_id' => 'Verification can only be handed to staff.',
             ]);
         }
 
-        if ($verifier->role === 'staff'
+        if ($verifier->isDepartmentStaff()
             && (int) $verifier->department_id !== (int) $complaint->department_id) {
             throw ValidationException::withMessages([
                 'verifying_staff_id' => 'That person works in another department.',

@@ -76,7 +76,7 @@ return [
         'public_state' => 'Kasalukuyang nailathala sa ilalim ng iyong display alias.',
         'private_state' => 'Kasalukuyang pribado. Ikaw at ang kawani lamang ang makakakita nito.',
         'gated_state' => 'Pribado — binabanggit nito ang isang tao',
-        'gated_body' => 'Dahil binabanggit ng ulat na ito ang isang tao o negosyo, nananatili itong hindi nakikita sa pampublikong pahina. Iipublish lamang ito kung ayusin ito ng tanggapan, beripikado ang impormasyon bilang totoo, nai-redact ang sensitibong detalye, at aprubahan ng tanggapan ng Alkalde. Ise-info ka man kaya, at tulad ng dati ay sa iyo dumating ang bawat update ng ulat na ito.',
+        'gated_body' => 'Dahil binabanggit ng ulat na ito ang isang tao o negosyo, nananatili itong hindi nakikita sa pampublikong pahina. Kapag naayos ng tanggapan at naberipikado ang impormasyon bilang totoo, awtomatiko itong napupunta sa tanggapan ng Alkalde, na nagre-redact ng pampublikong kopya at nagpapasya kung ilalathala ito. Ise-info ka man kaya, at tulad ng dati ay sa iyo dumating ang bawat update ng ulat na ito.',
     ],
 
     'hold' => [
@@ -100,6 +100,7 @@ return [
         'asked_by_department' => 'Tinatanong ng departamento · :time',
         'thanks' => 'Salamat. Nasa departamento na ang iyong sagot at itutuloy nila ang pagsusuri.',
         'reply_label' => 'Ang iyong sagot',
+        'reply_photo_alt' => 'Larawan sa sagot :index',
         'reply_placeholder' => 'Ilarawan ang nakikita mo, o magdagdag ng makakatulong sa departamento na suriin ito.',
         'photos_label' => 'Magdagdag ng mga larawan',
         'photos_optional' => 'opsyonal, hanggang 5',

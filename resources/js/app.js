@@ -22,6 +22,9 @@ import { initializeDateFields } from "./date-field";
 // The settings page (docs/design-system.md §5.45). It binds to [data-settings-form]
 // and does nothing on any other page.
 import { initializeSettings } from "./settings";
+// Status toasts (docs/design-system.md §5.48). It binds to [data-toast] and
+// leaves the inline notice alone when JavaScript is off.
+import { initializeToasts } from "./toast";
 
 const normalizeSearchValue = (value) => value.trim().toLocaleLowerCase();
 
@@ -459,6 +462,8 @@ const initializeSharedComponents = () => {
     initializeDateFields();
     // The settings page.
     initializeSettings();
+    // The thank-you and any later status toast.
+    initializeToasts();
 };
 
 const registerRegistrationFieldLifecycle = () => {

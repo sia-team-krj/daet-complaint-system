@@ -67,6 +67,7 @@
                         <option value="">All roles</option>
                         <option value="citizen" @selected($role === 'citizen')>Resident</option>
                         <option value="staff" @selected($role === 'staff')>Staff</option>
+                        <option value="department_admin" @selected($role === 'department_admin')>Department Administrator</option>
                         <option value="admin" @selected($role === 'admin')>Administrator</option>
                     </select>
                 </label>
@@ -119,11 +120,13 @@
                             @php
                                 $directoryRole = match ($directoryUser->role) {
                                     'admin' => 'Administrator',
+                                    'department_admin' => 'Department Administrator',
                                     'staff' => 'Staff',
                                     default => 'Resident',
                                 };
                                 $directoryRoleClass = match ($directoryUser->role) {
                                     'admin' => 'admin-role-badge--admin',
+                                    'department_admin' => 'admin-role-badge--department-admin',
                                     'staff' => 'admin-role-badge--staff',
                                     default => 'admin-role-badge--citizen',
                                 };
@@ -159,9 +162,9 @@
                                 </td>
                                 <td data-label="Activity">
                                     <span class="admin-activity-count">
-                                        {{ $directoryUser->role === 'staff' ? number_format($directoryUser->assigned_complaints_count) : number_format($directoryUser->complaints_count) }}
+                                        {{ $directoryUser->isDepartmentStaff() ? number_format($directoryUser->assigned_complaints_count) : number_format($directoryUser->complaints_count) }}
                                     </span>
-                                    <small class="admin-table-subtext">{{ $directoryUser->role === 'staff' ? 'assigned' : 'filed' }}</small>
+                                    <small class="admin-table-subtext">{{ $directoryUser->isDepartmentStaff() ? 'assigned' : 'filed' }}</small>
                                 </td>
                                 <td data-label="Joined">
                                     <span class="admin-date-cell">{{ $directoryUser->created_at?->format('M j, Y') }}</span>

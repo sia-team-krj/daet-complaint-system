@@ -35,6 +35,9 @@ return [
     'staff_invitations' => 'Mga imbitasyon sa staff',
     'workspace' => 'Workspace',
     'complaint_queue' => 'Pila ng reklamo',
+    // Ang ordinary staff ay nagtatrabaho sa mga kaso na ibinigay ng kanilang
+    // tanggapan, kaya ang listahan nila ay ang sarili nilang gawain.
+    'my_work' => 'Aking gawain',
     'my_activity' => 'Aking aktibidad',
     'department_activity' => 'Aktibidad ng tanggapan',
     'verification' => 'Beripikasyon',
@@ -44,8 +47,13 @@ return [
     'assigned_department' => 'Nakatalagang departamento',
     'department_pending' => 'Nakabinbin ang departamento',
     'department_account' => 'Account ng Departamento',
+    'office' => 'Tanggapan',
+    'manage_office' => 'Pamahalaan ang tanggapan',
+    'office_statistics' => 'Estadistika ng tanggapan',
+    'office_audit' => 'Talaan ng audit ng tanggapan',
     'citizen' => 'Mamamayan',
     'administrator' => 'Administrator',
+    'department_administrator' => 'Administrador ng Departamento',
     'staff' => 'Staff',
     'log_out' => 'Mag-log out',
     'operations' => 'Mga Operasyon',
