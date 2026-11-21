@@ -7,6 +7,9 @@ import "./leaflet";
 // The staff proof-capture picker (docs/design-system.md §5.36). Staff-only:
 // it binds to [data-proof-capture] and does nothing on any resident page.
 import { initializeProofCaptures } from "./proof-capture";
+// The resident identity photo capture + submit gate (/identity/verify).
+// Binds to [data-identity-photo] and does nothing on any other page.
+import { initializeIdentityPhotos } from "./identity-photo";
 // The live queue (docs/design-system.md §5.36). Staff- and admin-only: it
 // binds to [data-live-queue] and does nothing on a resident page.
 import { initializeLiveQueues } from "./live-queue";
@@ -453,6 +456,8 @@ const initializeSharedComponents = () => {
     initializePasswordToggles();
     // Staff-only: finds nothing on a resident page.
     initializeProofCaptures();
+    // Resident identity photo capture + submit gate (/identity/verify).
+    initializeIdentityPhotos();
     // Staff- and admin-only: finds nothing on a resident page.
     initializeLiveQueues();
     initializeLiveTickets();

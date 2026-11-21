@@ -127,5 +127,78 @@
             @endforelse
         </div>
     </section>
+
+    <section class="admin-panel" aria-labelledby="feedback-complaint-pending-title">
+        <div class="admin-panel-heading">
+            <div>
+                <h2 id="feedback-complaint-pending-title" class="admin-panel-title">{{ __('admin_settings.feedback.complaint_pending_title') }}</h2>
+                <p class="admin-section-description">{{ __('admin_settings.feedback.complaint_pending_lede') }}</p>
+            </div>
+            @if($pendingComplaintFeedback->total() > 0)
+                <span class="admin-directory-count">{{ number_format($pendingComplaintFeedback->total()) }}</span>
+            @endif
+        </div>
+        <div class="admin-panel-body admin-form-stack">
+            @forelse($pendingComplaintFeedback as $item)
+                <article class="admin-feedback-item">
+                    <p class="admin-feedback-item__meta">
+                        <a href="{{ route('admin.complaints.show', $item->complaint) }}" class="admin-text-link">{{ $item->complaint->ticket_id }}</a>
+                        · {{ __('admin_settings.feedback.col_rating') }}: {{ $item->rating }}/5
+                        · {{ $item->user?->display_alias ?: __('feedback.community_member') }}
+                        · {{ $item->created_at->diffForHumans() }}
+                    </p>
+                    <p class="admin-feedback-item__body">{{ $item->comment }}</p>
+                    <div class="admin-feedback-item__actions">
+                        <form data-loading-submit method="POST" action="{{ route('admin.complaint-feedback.publish', $item) }}">
+                            @csrf
+                            <button type="submit" class="admin-button admin-button--primary admin-button--compact">{{ __('admin_settings.feedback.publish') }}</button>
+                        </form>
+                        <form data-loading-submit method="POST" action="{{ route('admin.complaint-feedback.withhold', $item) }}">
+                            @csrf
+                            <button type="submit" class="admin-button admin-button--secondary admin-button--compact">{{ __('admin_settings.feedback.withhold') }}</button>
+                        </form>
+                    </div>
+                </article>
+            @empty
+                <div class="admin-empty-state">
+                    <h3>{{ __('admin_settings.feedback.complaint_pending_empty') }}</h3>
+                </div>
+            @endforelse
+
+            @if($pendingComplaintFeedback->hasPages())
+                <div class="admin-pagination-wrap">
+                    <p class="admin-pager-summary" aria-live="polite">{{ __('pagination.page_of', ['page' => $pendingComplaintFeedback->currentPage(), 'last' => $pendingComplaintFeedback->lastPage(), 'count' => $pendingComplaintFeedback->perPage()]) }}</p>
+                    <div class="admin-pagination">{{ $pendingComplaintFeedback->links('pagination::workspace', ['ariaLabel' => __('pagination.label')]) }}</div>
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="feedback-complaint-published-title">
+        <div class="admin-panel-heading">
+            <div>
+                <h2 id="feedback-complaint-published-title" class="admin-panel-title">{{ __('admin_settings.feedback.complaint_published_title') }}</h2>
+                <p class="admin-section-description">{{ __('admin_settings.feedback.complaint_published_lede') }}</p>
+            </div>
+        </div>
+        <div class="admin-panel-body admin-form-stack">
+            @forelse($publishedComplaintFeedback as $item)
+                <article class="admin-feedback-item admin-feedback-item--published">
+                    <p class="admin-feedback-item__meta">
+                        <a href="{{ route('admin.complaints.show', $item->complaint) }}" class="admin-text-link">{{ $item->complaint->ticket_id }}</a>
+                        · {{ __('admin_settings.feedback.col_rating') }}: {{ $item->rating }}/5
+                        · {{ $item->user?->display_alias ?: __('feedback.community_member') }}
+                        · {{ $item->published_at?->diffForHumans() }}
+                    </p>
+                    <p class="admin-feedback-item__body">{{ $item->comment }}</p>
+                </article>
+            @empty
+                <div class="admin-empty-state">
+                    <h3>{{ __('admin_settings.feedback.complaint_published_empty') }}</h3>
+                </div>
+            @endforelse
+        </div>
+    </section>
+
 </div>
 @endsection

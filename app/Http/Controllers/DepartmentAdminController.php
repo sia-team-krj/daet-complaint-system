@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\BuildsComplaintCategoryBoard;
 use App\Http\Controllers\Concerns\SoftNavigation;
 use App\Models\ActivityLog;
 use App\Models\Complaint;
+use App\Models\ComplaintCategory;
+use App\Models\ComplaintCategoryGroup;
 use App\Models\Department;
 use App\Models\InvitationCode;
 use App\Models\User;
 use App\Notifications\StaffWelcomeNotification;
 use App\Services\ActivityLogger;
+use App\Services\ComplaintCategoryManager;
 use App\Services\DepartmentAnalyticsService;
 use App\Services\EmailVerificationService;
 use App\Services\NotificationService;
 use App\Services\StaffInvitationDelivery;
+use App\Services\StaffPerformanceService;
 use App\Support\AnalyticsPeriod;
+use App\Support\ComplaintTaxonomyOptions;
 use App\Support\TemporaryPassword;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +45,7 @@ use Throwable;
  */
 class DepartmentAdminController extends Controller
 {
-    use SoftNavigation;
+    use BuildsComplaintCategoryBoard, SoftNavigation;
 
     /** Invitations shown on the office page. */
     private const INVITATION_PAGE_SIZE = 10;
@@ -320,8 +326,24 @@ class DepartmentAdminController extends Controller
             ? "the Department Administrator of {$office->name}"
             : "a verifier in {$office->name}";
 
-        DB::transaction(function () use ($complaint, $assignee, $office, $previousAssigneeId, $previousAssignee, $activityLogger, $actorLabel): void {
+        $statusValue = $complaint->statusEnum->value;
+
+        DB::transaction(function () use ($complaint, $assignee, $office, $previousAssigneeId, $previousAssignee, $activityLogger, $actorLabel, $statusValue): void {
             $complaint->update(['assigned_staff_id' => $assignee?->id]);
+
+            \App\Models\ComplaintLog::create([
+                'complaint_id' => $complaint->id,
+                'actor_id' => \Illuminate\Support\Facades\Auth::id(),
+                'previous_status' => $statusValue,
+                'new_status' => $statusValue,
+                'comment' => $assignee !== null
+                    ? "Assigned to {$assignee->full_name}."
+                    : 'Personnel assignment removed.',
+                'public_comment' => $assignee !== null
+                    ? 'timeline.assigned_public'
+                    : 'timeline.unassigned_public',
+                'is_internal' => false,
+            ]);
 
             $activityLogger->log(
                 'complaint.assignment_updated',
@@ -462,6 +484,167 @@ class DepartmentAdminController extends Controller
     }
 
     /**
+     * The office's category manager.
+     *
+     * A Department Administrator may add categories under shared problem
+     * types and edit only the categories that route to their own office.
+     * Problem types themselves stay with the global admin.
+     */
+    public function categories(Request $request): View
+    {
+        $office = $this->office();
+        $status = $this->categoryStatus($request->query('status'));
+        $board = $this->categoryBoard($office, $status, false);
+
+        return view('staff.office.categories', [
+            ...$board,
+            'office' => $office,
+            'groupsForSelect' => ComplaintCategoryGroup::query()
+                ->orderBy('sort_order')
+                ->orderBy('label_en')
+                ->get(),
+            'groupsForCreate' => ComplaintCategoryGroup::query()
+                ->active()
+                ->orderBy('sort_order')
+                ->orderBy('label_en')
+                ->get(),
+            'icons' => ComplaintTaxonomyOptions::icons(),
+            'colors' => ComplaintTaxonomyOptions::colors(),
+            'intakeModes' => ComplaintTaxonomyOptions::intakeModes(),
+        ]);
+    }
+
+    public function storeCategory(
+        Request $request,
+        ComplaintCategoryManager $manager,
+    ): RedirectResponse {
+        $office = $this->office();
+        $validated = $request->validate(
+            $this->staffCategoryRules(creating: true, office: $office),
+            [],
+            $this->categoryAttributeNames(),
+        );
+
+        $category = $manager->createCategory($validated, $office);
+
+        return redirect()
+            ->route('staff.office.categories.index', ['status' => 'all'])
+            ->with('status', __('admin_categories.flash.category_created'))
+            ->with('highlight', 'category-'.$category->id);
+    }
+
+    public function updateCategory(
+        Request $request,
+        ComplaintCategory $category,
+        ComplaintCategoryManager $manager,
+    ): RedirectResponse {
+        $office = $this->office();
+        $this->assertCategoryBelongsToOffice($category, $office);
+
+        $validated = $request->validate(
+            $this->staffCategoryRules(creating: false, office: $office, ignoreCategory: $category),
+            [],
+            $this->categoryAttributeNames(),
+        );
+
+        $manager->updateCategory($category, $validated, $office);
+
+        return redirect()
+            ->route('staff.office.categories.index', ['status' => 'all'])
+            ->with('status', __('admin_categories.flash.category_updated'))
+            ->with('highlight', 'category-'.$category->id);
+    }
+
+    public function toggleCategory(
+        ComplaintCategory $category,
+        ComplaintCategoryManager $manager,
+    ): RedirectResponse {
+        $office = $this->office();
+        $this->assertCategoryBelongsToOffice($category, $office);
+
+        $wasActive = $category->is_active;
+        $manager->toggleCategory($category, office: $office);
+
+        return back()->with(
+            'status',
+            $wasActive
+                ? __('admin_categories.flash.category_archived')
+                : __('admin_categories.flash.category_restored'),
+        );
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function staffCategoryRules(bool $creating, ?\App\Models\Department $office = null, ?ComplaintCategory $ignoreCategory = null): array
+    {
+        $groupExists = Rule::exists('complaint_category_groups', 'id');
+
+        if ($creating) {
+            $groupExists->where('is_active', true);
+        }
+
+        return [
+            'group_id' => ['required', 'integer', $groupExists],
+            'label_en' => [
+                'required',
+                'string',
+                'max:80',
+                function (string $attribute, mixed $value, \Closure $fail) use ($office, $ignoreCategory): void {
+                    $label = trim((string) $value);
+                    $departmentId = $office?->id ?? $ignoreCategory?->department_id;
+
+                    if ($label === '' || $departmentId === null) {
+                        return;
+                    }
+
+                    $exists = ComplaintCategory::query()
+                        ->where('department_id', $departmentId)
+                        ->when($ignoreCategory, fn ($query) => $query->whereKeyNot($ignoreCategory->id))
+                        ->whereRaw('LOWER(TRIM(label_en)) = ?', [mb_strtolower($label)])
+                        ->exists();
+
+                    if ($exists) {
+                        $fail(__('admin_categories.validation.category_duplicate_office'));
+                    }
+                },
+            ],
+            'label_fil' => ['nullable', 'string', 'max:80'],
+            'helper_en' => ['nullable', 'string', 'max:160'],
+            'helper_fil' => ['nullable', 'string', 'max:160'],
+            'icon' => ['required', Rule::in(ComplaintTaxonomyOptions::ICONS)],
+            'color' => ['required', Rule::in(ComplaintTaxonomyOptions::COLORS)],
+            'intake_mode' => ['required', Rule::in(ComplaintTaxonomyOptions::INTAKE_MODES)],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function categoryAttributeNames(): array
+    {
+        return [
+            'label_en' => strtolower(__('admin_categories.form.label_en')),
+            'label_fil' => strtolower(__('admin_categories.form.label_fil')),
+            'helper_en' => strtolower(__('admin_categories.form.helper_en')),
+            'helper_fil' => strtolower(__('admin_categories.form.helper_fil')),
+            'group_id' => strtolower(__('admin_categories.form.group')),
+            'intake_mode' => strtolower(__('admin_categories.form.intake')),
+            'sort_order' => strtolower(__('admin_categories.form.sort_order')),
+        ];
+    }
+
+    private function assertCategoryBelongsToOffice(ComplaintCategory $category, Department $office): void
+    {
+        abort_unless(
+            (int) $category->department_id === (int) $office->id,
+            403,
+            'That category belongs to another office.',
+        );
+    }
+
+    /**
      * The signed-in Department Administrator's active office.
      */
     private function office(): Department
@@ -570,5 +753,46 @@ class DepartmentAdminController extends Controller
                 ->route('staff.office.index')
                 ->with('error', "The invitation for {$email} was created but the email could not be sent. Copy its link from the invitation list and share it manually.");
         }
+    }
+
+    public function staffPerformanceExport(Request $request, User $user, StaffPerformanceService $performance): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $office = $this->office();
+        $this->assertOfficeMember($user, $office);
+        $period = $this->staffPerformancePeriod($request);
+
+        return $performance->exportCsv($user, $period);
+    }
+
+    public function staffPerformancePrint(Request $request, User $user, StaffPerformanceService $performance): View
+    {
+        $office = $this->office();
+        $this->assertOfficeMember($user, $office);
+        $period = $this->staffPerformancePeriod($request);
+        $report = $performance->report($user, $period);
+
+        return view('staff.activity.performance-print', array_merge($report, [
+            'generatedAt' => now(),
+            'backUrl' => route('staff.office.index'),
+        ]));
+    }
+
+    private function assertOfficeMember(User $user, Department $office): void
+    {
+        abort_unless(in_array($user->role, ['staff', 'department_admin'], true), 403, 'Only office members can have a performance report.');
+        abort_unless((int) $user->department_id === (int) $office->id, 403, 'That account belongs to another office.');
+    }
+
+    private function staffPerformancePeriod(Request $request): AnalyticsPeriod
+    {
+        $preset = (string) $request->query('period', '7d');
+
+        if (! in_array($preset, ['today', '7d', '30d'], true)) {
+            $preset = '7d';
+        }
+
+        $request->merge(['period' => $preset]);
+
+        return AnalyticsPeriod::fromRequest($request);
     }
 }

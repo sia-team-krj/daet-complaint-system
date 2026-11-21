@@ -18,11 +18,32 @@
 
     @include('admin.partials.flash')
 
-    @if($complaint->isModerationFlagged())
+    @if($complaint->isModerationFlagged() || $complaint->isMarked())
         <section class="admin-moderation-panel" aria-labelledby="moderation-title">
             <div>
-                <h2 id="moderation-title">Moderation review required</h2>
-                <p>{{ $complaint->moderationLabel() }} · Score {{ $complaint->spam_score }}/100 @if($complaint->duplicate_of_id) · {{ (int) round($complaint->similarity_score * 100) }}% similar @endif</p>
+                <h2 id="moderation-title">
+                    @if($complaint->isMarkingPendingReview())
+                        Marking review required
+                    @elseif($complaint->isSpamConfirmed())
+                        Spam confirmed (quarantined)
+                    @elseif($complaint->isMarked())
+                        Report marking
+                    @else
+                        Moderation review required
+                    @endif
+                </h2>
+                <p>
+                    {{ $complaint->moderationLabel() }} · Score {{ $complaint->spam_score }}/100
+                    @if($complaint->duplicate_of_id) · {{ (int) round($complaint->similarity_score * 100) }}% similar @endif
+                    @if($complaint->isSpamConfirmed() && $complaint->spam_confirmed_at)
+                        · Confirmed {{ $complaint->spam_confirmed_at->format('M j, Y g:i A') }}
+                    @endif
+                </p>
+                @if($complaint->isSpamConfirmed())
+                    <p style="margin-top: 6px; color: var(--muted); font-size: 13px;">
+                        This report is kept as an audit record and excluded from normal/public flows. Uploaded evidence files were purged to save storage.
+                    </p>
+                @endif
             </div>
             @if($complaint->spam_reasons)
                 <ul>
@@ -32,7 +53,42 @@
             @if($complaint->duplicate_of_id && $complaint->duplicateOf)
                 <a href="{{ route('admin.complaints.show', $complaint->duplicateOf) }}" class="admin-text-link">Compare with {{ $complaint->duplicateOf->ticket_id }}</a>
             @endif
-            @if(in_array($complaint->spam_status, ['review', 'spam'], true))
+
+            @if($complaint->isMarked())
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft);">
+                    <p style="margin: 0 0 6px; font-size: 13px;"><strong>Staff marking:</strong> {{ $complaint->markingEnum()?->label() }}</p>
+                    @if($complaint->mark_description)<p style="margin: 0 0 4px; font-size: 13px;"><strong>Description:</strong> {{ $complaint->mark_description }}</p>@endif
+                    @if($complaint->mark_comment)<p style="margin: 0 0 4px; font-size: 13px;"><strong>Comment:</strong> {{ $complaint->mark_comment }}</p>@endif
+                    <p style="margin: 0; font-size: 12px; color: var(--muted);">
+                        Marked {{ $complaint->marked_at?->format('M j, Y g:i A') }}
+                        @if($complaint->isMarkingConfirmed()) · Confirmed {{ $complaint->marking_confirmed_at?->format('M j, Y g:i A') }} @endif
+                        @if($complaint->isMarkingDismissed()) · Dismissed {{ $complaint->marking_dismissed_at?->format('M j, Y g:i A') }} @endif
+                        @if($complaint->isMarkingPendingReview()) · Pending admin review @endif
+                    </p>
+                </div>
+
+                @if($complaint->isMarkingPendingReview())
+                    <form data-loading-submit method="POST" action="{{ route('admin.complaints.confirm-marking', $complaint) }}" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px;">
+                        @csrf
+                        @method('PUT')
+                        <label for="confirm-marking-reason" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">Confirm marking</label>
+                        <textarea id="confirm-marking-reason" name="confirm_marking_reason" class="admin-input" rows="2" required minlength="10" maxlength="1000" placeholder="Confirm this marking because…">{{ old('confirm_marking_reason') }}</textarea>
+                        @error('confirm_marking_reason')<p class="admin-field-error">{{ $message }}</p>@enderror
+                        <button type="submit" class="admin-button admin-button--danger-ghost">Confirm marking</button>
+                    </form>
+
+                    <form data-loading-submit method="POST" action="{{ route('admin.complaints.dismiss-marking', $complaint) }}" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px;">
+                        @csrf
+                        @method('PUT')
+                        <label for="dismiss-marking-reason" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">Dismiss marking — false positive</label>
+                        <textarea id="dismiss-marking-reason" name="dismiss_marking_reason" class="admin-input" rows="2" required minlength="10" maxlength="1000" placeholder="Dismiss this marking because…">{{ old('dismiss_marking_reason') }}</textarea>
+                        @error('dismiss_marking_reason')<p class="admin-field-error">{{ $message }}</p>@enderror
+                        <button type="submit" class="admin-button">Dismiss marking</button>
+                    </form>
+                @endif
+            @endif
+
+            @if(in_array($complaint->spam_status, ['review', 'spam'], true) && ! $complaint->isSpamConfirmed())
                 <form data-loading-submit method="POST" action="{{ route('admin.complaints.clear-spam-flag', $complaint) }}" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px;">
                     @csrf
                     @method('PUT')
@@ -40,6 +96,16 @@
                     <textarea id="clear-spam-flag-reason" name="clear_flag_reason" class="admin-input" rows="2" required minlength="10" maxlength="1000" placeholder="Reviewed and this is not spam because…">{{ old('clear_flag_reason') }}</textarea>
                     @error('clear_flag_reason')<p class="admin-field-error">{{ $message }}</p>@enderror
                     <button type="submit" class="admin-button admin-button--danger-ghost">Release the flag — not spam</button>
+                </form>
+
+                <form data-loading-submit method="POST" action="{{ route('admin.complaints.confirm-spam', $complaint) }}" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px;" onsubmit="return confirm('Confirm this report as spam? Uploaded evidence files will be purged and the report will be quarantined as an audit record.');">
+                    @csrf
+                    @method('PUT')
+                    <label for="confirm-spam-reason" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">Confirm as spam — quarantine</label>
+                    <textarea id="confirm-spam-reason" name="confirm_spam_reason" class="admin-input" rows="2" required minlength="10" maxlength="1000" placeholder="Reviewed and this is spam/junk because…">{{ old('confirm_spam_reason') }}</textarea>
+                    @error('confirm_spam_reason')<p class="admin-field-error">{{ $message }}</p>@enderror
+                    <p style="margin: 0; color: var(--muted); font-size: 13px;">Use this for real spam/junk. It keeps a minimal audit record but removes uploaded evidence/photos to save storage and hides the report from normal/public flows.</p>
+                    <button type="submit" class="admin-button admin-button--danger-ghost">Confirm as spam (quarantine & purge files)</button>
                 </form>
             @endif
         </section>
@@ -82,7 +148,7 @@
                 </div>
                 <div class="admin-panel-body">
                     <dl class="admin-detail-list">
-                        <div><dt>Category</dt><dd>{{ str($complaint->category)->replace('_', ' ')->title() }}</dd></div>
+                        <div><dt>Category</dt><dd>{{ \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? str($complaint->category)->replace('_', ' ')->title() }}</dd></div>
                         <div><dt>Review status</dt><dd>{{ $complaint->reviewStatusEnum->label() }}</dd></div>
                         <div><dt>Suggested priority</dt><dd>{{ $complaint->suggestedPriorityEnum->label() }}</dd></div>
                         <div><dt>Confirmed priority</dt><dd>{{ $complaint->confirmedPriorityEnum?->label() ?? 'Awaiting confirmation' }}</dd></div>
@@ -116,8 +182,17 @@
                     --}}
                     @if($complaint->latitude !== null && $complaint->longitude !== null)
                         <div class="admin-prose-block">
-                            <h2>Exact coordinates</h2>
-                            <p class="admin-coords">
+                            <h2>Exact location</h2>
+                            <div
+                                id="admin-complaint-map"
+                                class="admin-complaint-map"
+                                style="height: 280px; border: 1px solid var(--line-soft); border-radius: var(--radius, 8px); overflow: hidden; isolation: isolate; z-index: 0; background: var(--navy-50);"
+                                role="region"
+                                aria-label="Exact complaint location map"
+                                data-latitude="{{ (float) $complaint->latitude }}"
+                                data-longitude="{{ (float) $complaint->longitude }}"
+                            ></div>
+                            <p class="admin-coords" style="margin-top: 8px;">
                                 {{ number_format((float) $complaint->latitude, 6) }},
                                 {{ number_format((float) $complaint->longitude, 6) }}
                             </p>
@@ -362,25 +437,70 @@
     (() => {
         const department = document.querySelector('[data-complaint-department]');
         const assignedStaff = document.querySelector('[data-assigned-staff]');
-        if (!department || !assignedStaff) return;
+        if (department && assignedStaff) {
+            const syncStaffOptions = () => {
+                const departmentId = department.value;
+                let selectedIsVisible = false;
 
-        const syncStaffOptions = () => {
-            const departmentId = department.value;
-            let selectedIsVisible = false;
+                [...assignedStaff.options].forEach((option) => {
+                    if (!option.value) return;
+                    const isVisible = departmentId !== '' && option.dataset.departmentId === departmentId;
+                    option.hidden = !isVisible;
+                    option.disabled = !isVisible;
+                    if (isVisible && option.selected) selectedIsVisible = true;
+                });
 
-            [...assignedStaff.options].forEach((option) => {
-                if (!option.value) return;
-                const isVisible = departmentId !== '' && option.dataset.departmentId === departmentId;
-                option.hidden = !isVisible;
-                option.disabled = !isVisible;
-                if (isVisible && option.selected) selectedIsVisible = true;
-            });
+                if (!selectedIsVisible) assignedStaff.value = '';
+            };
 
-            if (!selectedIsVisible) assignedStaff.value = '';
+            department.addEventListener('change', syncStaffOptions);
+            syncStaffOptions();
+        }
+
+        const mapElement = document.getElementById('admin-complaint-map');
+        if (!mapElement) return;
+
+        const buildComplaintMap = () => {
+            if (mapElement.dataset.mapInitialized === 'true') return;
+            mapElement.dataset.mapInitialized = 'true';
+
+            const latitude = Number.parseFloat(mapElement.dataset.latitude);
+            const longitude = Number.parseFloat(mapElement.dataset.longitude);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+            const map = window.L.map(mapElement, { scrollWheelZoom: false }).setView([latitude, longitude], 16);
+            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors',
+            }).addTo(map);
+            window.L.marker([latitude, longitude]).addTo(map);
+
+            const remeasure = () => map.invalidateSize({ animate: false });
+            remeasure();
+            window.setTimeout(remeasure, 150);
+            window.addEventListener('resize', remeasure);
+            window.addEventListener('orientationchange', remeasure);
+
+            if ('IntersectionObserver' in window) {
+                new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) remeasure();
+                    });
+                }, { threshold: 0.1 }).observe(mapElement);
+            }
         };
 
-        department.addEventListener('change', syncStaffOptions);
-        syncStaffOptions();
+        if (window.whenLeafletReady) {
+            window.whenLeafletReady(buildComplaintMap, {
+                onUnavailable: () => {
+                    mapElement.innerHTML = '<p style="padding:16px;color:var(--muted);font-size:13px;">Map unavailable. Coordinates are shown below.</p>';
+                },
+            });
+        } else if (window.L && window.L.map) {
+            buildComplaintMap();
+        } else {
+            mapElement.innerHTML = '<p style="padding:16px;color:var(--muted);font-size:13px;">Map unavailable. Coordinates are shown below.</p>';
+        }
     })();
 </script>
 @endpush

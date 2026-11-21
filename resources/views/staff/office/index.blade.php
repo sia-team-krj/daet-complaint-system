@@ -15,7 +15,10 @@
                     <h1 class="tr-h1">{{ __('office.title') }}</h1>
                     <p class="tr-privacy">{{ __('office.lede', ['office' => $office->name]) }}</p>
                 </div>
-                <a href="{{ route('staff.dashboard') }}" class="staff-button staff-button--secondary">{{ __('office.back_to_dashboard') }}</a>
+                <div class="office-banner__actions">
+                    <a href="{{ route('staff.office.categories.index') }}" class="staff-button staff-button--primary">{{ __('nav.manage_categories') }}</a>
+                    <a href="{{ route('staff.dashboard') }}" class="staff-button staff-button--secondary">{{ __('office.back_to_dashboard') }}</a>
+                </div>
             </div>
         </div>
     </header>
@@ -89,6 +92,16 @@
                                                 @if($member->canVerifyComplaints())
                                                     <span class="office-badge office-badge--verifier">{{ __('office.members.verifier') }}</span>
                                                 @endif
+                                            </div>
+                                            <div class="office-member__performance" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center;">
+                                                <span style="font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-secondary, var(--muted));">{{ __('staff.performance.title') }}</span>
+                                                @foreach(['today' => __('staff.performance.today'), '7d' => __('staff.performance.last_7_days'), '30d' => __('staff.performance.last_30_days')] as $p => $pLabel)
+                                                    <span style="display:inline-flex; gap:6px; align-items:center; font-size:13px;">
+                                                        <span style="color:var(--text-secondary, var(--muted));">{{ $pLabel }}:</span>
+                                                        <a href="{{ route('staff.office.staff.performance.export', ['user' => $member, 'period' => $p]) }}" class="staff-button staff-button--secondary staff-button--compact" download>CSV</a>
+                                                        <a href="{{ route('staff.office.staff.performance.print', ['user' => $member, 'period' => $p]) }}" class="staff-button staff-button--secondary staff-button--compact" target="_blank" rel="noopener">PDF</a>
+                                                    </span>
+                                                @endforeach
                                             </div>
                                         </div>
                                     </div>

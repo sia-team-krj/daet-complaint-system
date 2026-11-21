@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Department;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\IdentityVerificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,35 @@ class AdminUserController extends Controller
     private const ROLES = ['citizen', 'staff', 'department_admin', 'admin'];
 
     private const STATUSES = ['active', 'inactive'];
+
+    /**
+     * Admin reverses a verified resident's identity status.
+     */
+    public function identityRevoke(User $user, Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+        abort_unless($user->isCitizen(), 403);
+
+        $latest = $user->latestIdentityVerification();
+
+        if ($latest === null || ! $latest->isApproved()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+
+        app(IdentityVerificationService::class)->revoke(
+            auth()->user(),
+            $user,
+            $latest,
+            $validated['reason'],
+        );
+
+        return redirect()->route('admin.users.show', $user)
+            ->with('status', __('identity.admin.revoked'));
+    }
 
     /**
      * Display the searchable, filterable account directory.
@@ -362,5 +392,48 @@ class AdminUserController extends Controller
         $status = $wasActive ? 'deactivated' : 'activated';
 
         return back()->with('status', "User account {$status}.");
+    }
+
+    /**
+     * Mark an account's email as verified without the email verification flow.
+     */
+    public function verifyEmail(User $user, ActivityLogger $activityLogger): RedirectResponse
+    {
+        if ($user->hasVerifiedEmail()) {
+            // Clean up any stale verification codes that could keep redirecting
+            // a verified account back to the verification screen.
+            \App\Models\EmailVerificationCode::query()
+                ->where('user_id', $user->id)
+                ->whereNull('consumed_at')
+                ->update(['consumed_at' => now()]);
+
+            return back()->with('status', 'This email address is already verified.');
+        }
+
+        DB::transaction(function () use ($user, $activityLogger): void {
+            $user->markEmailAsVerified();
+
+            // Clear any outstanding verification codes so the user is not sent
+            // back to the email verification screen after an admin override.
+            \App\Models\EmailVerificationCode::query()
+                ->where('user_id', $user->id)
+                ->whereNull('consumed_at')
+                ->update(['consumed_at' => now()]);
+
+            $user->refresh();
+
+            $activityLogger->log(
+                'user.email_verified',
+                "{$user->full_name}'s email address was marked as verified by an administrator.",
+                $user,
+                departmentId: $user->department_id ? (int) $user->department_id : null,
+                metadata: [
+                    'email' => $user->email,
+                    'verified_by_admin' => true,
+                ],
+            );
+        });
+
+        return back()->with('status', 'Email address marked as verified.');
     }
 }

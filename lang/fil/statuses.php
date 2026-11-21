@@ -10,6 +10,11 @@ return [
         'closed' => 'Sarado',
     ],
 
+    'complaint_marking' => [
+        'misleading' => 'Nakakalito',
+        'spam' => 'Spam',
+    ],
+
     'review_status' => [
         'pending' => 'Naghihintay ng beripikasyon',
         'verified' => 'Na-verify',

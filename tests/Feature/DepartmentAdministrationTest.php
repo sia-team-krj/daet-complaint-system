@@ -23,10 +23,10 @@ use Tests\TestCase;
  * every complaint, staff account, and audit row that office ever held. That is
  * why there is no delete anywhere in this feature and archive takes its place.
  *
- * The routing assertions matter for the same reason. DepartmentRouter maps
- * complaint categories to office *codes*, so archiving an office that the router
- * resolves silently changes where new complaints land — which is the entire
- * point of archiving, and invisible from the departments page.
+ * The routing assertions matter for the same reason. Complaint categories
+ * reference an office by id, so archiving an office changes where new
+ * complaints land — which is the entire point of archiving, and invisible from
+ * the departments page.
  */
 class DepartmentAdministrationTest extends TestCase
 {
@@ -126,26 +126,20 @@ class DepartmentAdministrationTest extends TestCase
     /**
      * The code's consequence is stated where the code is chosen.
      *
-     * Only five codes auto-route complaints. An admin who picks a different one
-     * and finds out weeks later that the new office received nothing has no way
-     * back to this page, so the page has to say it up front.
+     * Codes are identifiers now; categories point at the office itself. The
+     * page has to say that, or an admin keeps looking for a list of magic codes
+     * that no longer exists.
      */
-    public function test_the_create_page_explains_that_only_five_codes_route_automatically(): void
+    public function test_the_create_page_explains_that_categories_route_to_offices(): void
     {
         $html = $this->actingAs($this->admin)
             ->get(route('admin.departments.create'))
             ->assertOk()
             ->getContent();
 
-        foreach (DepartmentRouter::ROUTABLE_CODES as $code) {
-            $this->assertStringContainsString($code, $html, "The routable code {$code} is not named on the create page.");
-        }
-
-        $this->assertStringContainsString(
-            'receives nothing on its own',
-            $html,
-            'The create page does not warn that a non-routable code receives nothing automatically.',
-        );
+        $this->assertStringContainsString(route('admin.categories.index'), $html);
+        $this->assertStringContainsString('Complaint categories', $html);
+        $this->assertStringNotContainsString('receives nothing on its own', $html);
     }
 
     /** The codes already taken are listed, so uniqueness is checkable by eye. */
@@ -227,14 +221,13 @@ class DepartmentAdministrationTest extends TestCase
     }
 
     /**
-     * The code is a routing key, not a label.
+     * The code is a label now, not a routing key.
      *
-     * DepartmentRouter maps categories to codes. Renaming ENG would leave
-     * road_damage, flooding, and streetlight resolving to nothing — and the
-     * complaint would be filed with no department at all, which is the failure
-     * this refusal prevents.
+     * Categories hold the office id, so renaming ENG cannot strand road_damage,
+     * flooding or streetlight. This test proves the protection was removed for
+     * the right reason: routing follows the office, not the string.
      */
-    public function test_a_routable_code_cannot_be_renamed(): void
+    public function test_a_code_can_be_renamed_without_stranding_its_categories(): void
     {
         $engineering = Department::where('code', 'ENG')->firstOrFail();
 
@@ -244,15 +237,21 @@ class DepartmentAdministrationTest extends TestCase
                 'code' => 'ENGR',
                 'description' => null,
             ])
-            ->assertSessionHasErrors('code');
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
 
-        $this->assertSame('ENG', $engineering->fresh()->code, 'The routing code must be unchanged.');
+        $this->assertSame('ENGR', $engineering->fresh()->code);
+
+        $routed = DepartmentRouter::resolve('road_damage');
+        $this->assertNotNull($routed);
+        $this->assertSame($engineering->id, $routed->id);
+        $this->assertSame('ENGR', $routed->code);
     }
 
-    public function test_a_non_routable_code_can_be_renamed(): void
+    public function test_a_new_office_code_can_be_renamed(): void
     {
-        // Every office the municipality runs is a routing key now, so the code
-        // that is free to change is one an administrator creates.
+        // Codes are labels. Renaming one must not change which office its
+        // categories point at, because the category stores the office id.
         $this->actingAs($this->admin)
             ->post(route('admin.departments.store'), [
                 'name' => 'Liaison Office',

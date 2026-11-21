@@ -1,0 +1,523 @@
+/* ==========================================================================
+   Public ticket tracking — /track
+
+   Two states on one route:
+   - Lookup: a centered dark stage with one ticket form.
+   - Result: a progress-only public record (header, 5-step trail, public
+     updates, privacy notice, actions). Reuses the public detail family
+     (.pt-banner, .pt-card, .pt-steps, .pt-updates, .hold-notice) and adds
+     only the tracker layout.
+
+   Token-only. Scoped to .track-page / .page-complaint-track. See
+   docs/design-system.md §5.53.
+   ========================================================================== */
+
+.track-page {
+    min-height: calc(100svh - var(--navbar-h));
+    background: var(--bg);
+    color: var(--text);
+}
+
+.track-container {
+    max-width: 760px;
+}
+
+/* ── Lookup: one dark stage, one white card ─────────────────────────────── */
+
+.track-page--lookup {
+    display: flex;
+    flex-direction: column;
+    background:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 14px),
+        linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 62%, var(--navy-600) 100%);
+}
+
+.track-container--lookup {
+    max-width: 560px;
+}
+
+.track-lookup-stage {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    padding: 48px 0 64px;
+}
+
+.track-lookup-title {
+    margin: 0 0 20px;
+    color: var(--surface);
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+}
+
+.track-lookup {
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+}
+
+@media (min-width: 768px) {
+    .track-lookup {
+        padding: 28px 32px;
+    }
+}
+
+@media (max-width: 767px) {
+    .track-lookup-stage {
+        align-items: flex-start;
+        padding: 32px 0 48px;
+    }
+
+    .track-lookup-title {
+        margin-bottom: 16px;
+        font-size: 30px;
+    }
+}
+
+.track-form {
+    display: grid;
+    gap: 10px;
+}
+
+.track-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.track-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.track-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.track-input::placeholder {
+    color: var(--faint);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 1;
+}
+
+.track-input:hover {
+    border-color: var(--navy-100);
+}
+
+.track-input:focus {
+    border-color: var(--gold-500);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 28%, transparent);
+    outline: none;
+}
+
+.track-input[aria-invalid="true"] {
+    border-color: var(--error-text);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--error-text) 18%, transparent);
+}
+
+.track-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    margin-top: 2px;
+    padding: 0 24px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--navy-800);
+    color: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.track-submit:hover {
+    background: var(--navy-700);
+}
+
+.track-submit:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 35%, transparent);
+    outline: none;
+}
+
+.track-hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.track-alert {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--error-line);
+    border-radius: var(--radius-sm);
+    background: var(--error-bg);
+    color: var(--error-text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.track-alert svg {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+}
+
+.track-alert strong {
+    display: block;
+    font-weight: 700;
+}
+
+.track-alert p {
+    margin: 2px 0 0;
+}
+
+.track-privacy-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 18px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.track-privacy-note svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    margin-top: 2px;
+}
+
+/* ── Result header ──────────────────────────────────────────────────────── */
+
+.track-banner--result {
+    padding-bottom: 56px;
+}
+
+.track-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px 24px;
+    margin-bottom: 16px;
+}
+
+.track-header__ref {
+    min-width: 0;
+}
+
+.track-ref-label {
+    margin: 0 0 4px;
+    color: color-mix(in srgb, var(--surface) 72%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.track-ref-number {
+    margin: 0;
+    color: var(--surface);
+    font-family: var(--font-mono);
+    font-size: clamp(22px, 4vw, 30px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
+}
+
+.track-public-title {
+    margin: 8px 0 0;
+    color: color-mix(in srgb, var(--surface) 92%, transparent);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.track-public-copy {
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.track-feedback-lede {
+    margin-bottom: 12px;
+}
+
+.track-header__status {
+    flex: 0 0 auto;
+}
+
+.track-status {
+    height: 34px;
+    padding: 0 14px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+}
+
+.track-status .pt-pill__dot {
+    width: 7px;
+    height: 7px;
+}
+
+.track-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 24px;
+    margin: 0;
+    padding-top: 18px;
+    border-top: 1px solid color-mix(in srgb, var(--surface) 18%, transparent);
+}
+
+.track-meta__item {
+    min-width: 0;
+}
+
+.track-meta__item--department {
+    grid-column: 1 / -1;
+}
+
+.track-meta__item dt {
+    margin: 0 0 2px;
+    color: color-mix(in srgb, var(--surface) 70%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.track-meta__item dd {
+    margin: 0;
+    color: var(--surface);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+@media (min-width: 768px) {
+    .track-banner--result {
+        padding-bottom: 64px;
+    }
+}
+
+@media (max-width: 767px) {
+    .track-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
+/* ── Result stack & cards ───────────────────────────────────────────────── */
+
+.track-result-stack {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: -32px;
+    padding-bottom: 48px;
+}
+
+@media (min-width: 768px) {
+    .track-result-stack {
+        gap: 16px;
+    }
+}
+
+.track-card--progress .pt-steps {
+    margin-top: 4px;
+}
+
+.track-note {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--navy-50);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.track-note svg {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+}
+
+.track-note strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.track-note p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.track-note--waiting {
+    background: var(--status-progress-bg);
+    color: var(--status-progress-text);
+}
+
+.track-note--rejected {
+    background: var(--status-rejected-bg);
+    color: var(--status-rejected-text);
+}
+
+.pt-whatmeans + .track-note {
+    margin-top: 12px;
+}
+
+/* Timeline "Latest" marker (track-only) */
+.track-update-latest {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: var(--radius-pill);
+    background: var(--navy-700);
+    color: var(--surface);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── Privacy notice & actions ───────────────────────────────────────────── */
+
+.track-privacy-card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.track-privacy-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--navy-50);
+    color: var(--navy-700);
+}
+
+.track-privacy-card__icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.track-privacy-card__body h2 {
+    margin-bottom: 6px;
+}
+
+.track-actions__copy {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.track-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.track-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 20px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.track-btn--primary {
+    background: var(--navy-800);
+    color: var(--surface);
+}
+
+.track-btn--primary:hover {
+    background: var(--navy-700);
+}
+
+.track-btn--secondary {
+    border-color: var(--line);
+    background: var(--surface);
+    color: var(--navy-800);
+}
+
+.track-btn--secondary:hover {
+    border-color: var(--navy-100);
+    background: var(--navy-50);
+}
+
+.track-btn:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 35%, transparent);
+    outline: none;
+}
+
+@media (max-width: 640px) {
+    .track-actions-bar {
+        flex-direction: column;
+    }
+
+    .track-actions-bar .track-btn {
+        width: 100%;
+    }
+
+    .track-privacy-card {
+        grid-template-columns: 36px minmax(0, 1fr);
+    }
+
+    .track-privacy-card__icon {
+        width: 36px;
+        height: 36px;
+    }
+}

@@ -158,21 +158,9 @@
 
                                         <label class="admin-field">
                                             <span>Office code</span>
-                                            <input type="text" name="code" class="admin-input" value="{{ old('code', $department->code) }}" required maxlength="10" pattern="[A-Z0-9]+"
-                                                   @disabled(in_array($department->code, $routableCodes, true))>
+                                            <input type="text" name="code" class="admin-input" value="{{ old('code', $department->code) }}" required maxlength="10" pattern="[A-Z0-9]+">
                                             @error('code')<span class="admin-field-error">{{ $message }}</span>@enderror
-                                            @if(in_array($department->code, $routableCodes, true))
-                                                {{-- Stated, not hidden. A disabled input with no
-                                                     explanation reads as a bug; this one says
-                                                     why and what to do instead. --}}
-                                                <span class="admin-field-hint">
-                                                    Locked. This code routes complaint categories automatically, so renaming it
-                                                    would strand every category mapped to it. Archive this office and create a
-                                                    replacement if the code has to change.
-                                                </span>
-                                            @else
-                                                <span class="admin-field-hint">Short uppercase identifier, e.g. OM. Used in filters and exports.</span>
-                                            @endif
+                                            <span class="admin-field-hint">Short uppercase identifier, e.g. OM. Used in filters and exports. Safe to rename: categories point at the office, not the code.</span>
                                         </label>
 
                                         <label class="admin-field">

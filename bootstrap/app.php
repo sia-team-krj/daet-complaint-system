@@ -81,6 +81,8 @@ return Application::configure(basePath: dirname(__DIR__))
             "admin" => \App\Http\Middleware\AdminMiddleware::class,
             "force.password.change" => \App\Http\Middleware\ForcePasswordChange::class,
             "email.verified" => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            "identity.verified" => \App\Http\Middleware\EnsureResidentIsVerified::class,
+            "admin.2fa" => \App\Http\Middleware\EnsureAdminTwoFactor::class,
             // The analytics is parked: the code stays, the routes refuse, and
             // nothing in the interface points at it.
             "analytics.paused" => \App\Http\Middleware\AnalyticsPaused::class,
@@ -188,6 +190,16 @@ return Application::configure(basePath: dirname(__DIR__))
         // are asked — before the automatic closer would close it for them.
         $schedule->command('complaints:remind-resolution')
             ->dailyAt('08:15')
+            ->withoutOverlapping();
+
+        // Pending identity submissions expire and orphan identity files are swept.
+        $schedule->command('identity:purge')
+            ->hourly()
+            ->withoutOverlapping();
+
+        // Daily operational monitor for identity verification health.
+        $schedule->command('identity:monitor')
+            ->dailyAt('08:20')
             ->withoutOverlapping();
     })
     ->create();

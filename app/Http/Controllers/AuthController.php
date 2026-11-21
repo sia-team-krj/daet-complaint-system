@@ -202,6 +202,16 @@ class AuthController extends Controller
 
         RateLimiter::clear($key);
         $request->session()->regenerate();
+        // A new sign-in starts a fresh second-factor state. Without this, a
+        // session that had already passed 2FA for another account could carry
+        // the marker into this login.
+        $request->session()->forget([
+            '2fa.passed_at',
+            '2fa.setup_authorized',
+            '2fa.failed',
+            '2fa.pending',
+            '2fa.pending_until',
+        ]);
 
         $user = Auth::user();
         // Saved profile language wins on login; if none is saved, keep the
@@ -215,6 +225,24 @@ class AuthController extends Controller
                 "{$user->full_name} signed in.",
                 $user,
             );
+        }
+
+        // An administrator must pass TOTP before reaching the workspace. An
+        // admin who has not enrolled is sent to setup instead of the challenge.
+        if ($user->isAdmin() && config('admin.two_factor.required')) {
+            if (! $user->hasTwoFactorEnabled()) {
+                return redirect()
+                    ->route('settings.two-factor.show')
+                    ->with('status', __('settings.two_factor.setup_required'));
+            }
+
+            $request->session()->put('2fa.pending', true);
+            $request->session()->put(
+                '2fa.pending_until',
+                now()->addMinutes((int) config('admin.two_factor.challenge_minutes', 10))->timestamp,
+            );
+
+            return redirect()->route('two-factor.challenge');
         }
 
         // Never land on a notification poll endpoint if url.intended was

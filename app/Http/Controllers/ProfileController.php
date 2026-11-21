@@ -229,6 +229,16 @@ class ProfileController extends Controller
             $user,
         );
 
+        if ($user->isAdmin()) {
+            $request->session()->forget([
+                '2fa.passed_at',
+                '2fa.setup_authorized',
+                '2fa.pending',
+                '2fa.pending_until',
+                '2fa.failed',
+            ]);
+        }
+
         return redirect()->route('profile')
             ->with('status', 'Password updated successfully.');
     }

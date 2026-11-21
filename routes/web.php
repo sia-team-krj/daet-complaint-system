@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\AdminAnalyticsController;
+use App\Http\Controllers\AdminCategoryController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminFaqController;
 use App\Http\Controllers\AdminInvitationController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminIdentityController;
+use App\Http\Controllers\IdentityVerificationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailVerificationController;
@@ -24,6 +28,8 @@ use App\Http\Controllers\ComplaintVerificationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\TransparencyController;
+use App\Http\Controllers\TwoFactorChallengeController;
+use App\Http\Controllers\TwoFactorSetupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -72,6 +78,12 @@ Route::get('/transparency/complaints/browser', [TransparencyController::class, '
     ->middleware('throttle:60,1');
 Route::get('/transparency/complaints/{complaint}', [TransparencyController::class, 'show'])
     ->name('transparency.complaints.show');
+
+// Public ticket tracking. The ticket number is the only secret; the controller
+// decides whether the viewer is allowed to see the full record instead.
+Route::get('/track', [ComplaintController::class, 'track'])
+    ->name('complaints.track')
+    ->middleware('throttle:20,1');
 Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'publicEvidence'])
     ->whereNumber('index')
     ->name('transparency.complaints.evidence');
@@ -170,6 +182,21 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     Route::get('/settings/download-data', [SettingsController::class, 'downloadData'])->name('settings.download-data');
     Route::post('/settings/delete-account', [SettingsController::class, 'deleteAccount'])->name('settings.delete-account');
 
+    // ── ADMIN TWO-FACTOR AUTHENTICATION ──
+    // Setup lives outside the admin group on purpose: an admin who has not
+    // enrolled yet must be able to reach it without being bounced by admin.2fa.
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/settings/security/two-factor', [TwoFactorSetupController::class, 'show'])->name('settings.two-factor.show');
+        Route::post('/settings/security/two-factor/start', [TwoFactorSetupController::class, 'start'])->name('settings.two-factor.start');
+        Route::post('/settings/security/two-factor', [TwoFactorSetupController::class, 'enable'])->name('settings.two-factor.enable');
+        Route::post('/settings/security/two-factor/recovery-codes', [TwoFactorSetupController::class, 'recoveryCodes'])->name('settings.two-factor.recovery-codes');
+        Route::post('/settings/security/two-factor/re-enroll', [TwoFactorSetupController::class, 'reEnroll'])->name('settings.two-factor.re-enroll');
+        Route::post('/settings/security/two-factor/disable', [TwoFactorSetupController::class, 'disable'])->name('settings.two-factor.disable');
+
+        Route::get('/two-factor/challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+        Route::post('/two-factor/challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
+    });
+
     // ── NOTIFICATIONS ──
     // The in-app bell. Read state lives in the database, so the badge, the
     // dropdown and any later email digest can never disagree.
@@ -179,10 +206,15 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     Route::get('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
+    // ── RESIDENT IDENTITY VERIFICATION ──
+    Route::get('/identity/verify', [IdentityVerificationController::class, 'show'])->name('identity.verify.show');
+    Route::post('/identity/verify', [IdentityVerificationController::class, 'store'])->name('identity.verify.store');
+    Route::post('/identity/verify/cancel', [IdentityVerificationController::class, 'cancel'])->name('identity.verify.cancel');
+
     // ── COMPLAINTS ──────────────────────────
     Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
-    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
-    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create')->middleware('identity.verified');
+    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store')->middleware('identity.verified');
     Route::get('/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'evidence'])
         ->whereNumber('index')
         ->name('complaints.evidence');
@@ -210,8 +242,14 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     // they do not act.
     Route::post('/complaints/{complaint}/close', [ComplaintController::class, 'close'])
         ->name('complaints.close');
+    // How the resident rates the handling of this complaint, once finished.
+    Route::post('/complaints/{complaint}/feedback', [ComplaintController::class, 'storeFeedback'])
+        ->name('complaints.feedback.store');
+    // Sub-ticketing: when a finished complaint is not satisfied, or the same
+    // issue persists, the owner files a follow-up that becomes its child ticket.
+    Route::post('/complaints/{complaint}/follow-up', [ComplaintController::class, 'storeFollowUp'])
+        ->name('complaints.follow_up.store');
     Route::get('/complaints/{complaint}/success', [ComplaintController::class, 'success'])->name('complaints.success');
-    Route::get('/track', [ComplaintController::class, 'track'])->name('complaints.track');
 });
 
 /*
@@ -220,7 +258,7 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin', 'force.password.change'])
+Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin', 'force.password.change', 'admin.2fa'])
     ->prefix('staff')
     ->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
@@ -233,6 +271,8 @@ Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin'
             Route::get('/analytics/print', [StaffAnalyticsController::class, 'print'])->name('staff.analytics.print');
         });
         Route::get('/activity', [StaffController::class, 'activityIndex'])->name('staff.activity.index');
+        Route::get('/activity/export', [StaffController::class, 'activityExport'])->name('staff.activity.export');
+        Route::get('/activity/print', [StaffController::class, 'activityPrint'])->name('staff.activity.print');
         // The office's own trail — what everyone in the office has done, as
         // against "my activity", which is what this member has done.
         Route::get('/department-activity', [StaffController::class, 'departmentActivity'])->name('staff.department-activity.index');
@@ -251,6 +291,13 @@ Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin'
         // or admin action that can act on a public listing.
         Route::post('/complaints/{complaint}/moderation', [StaffController::class, 'moderate'])
             ->name('staff.complaints.moderate');
+
+        // Office staff mark a report as misleading or spam — the office's own
+        // rejection of the report, with the reason and comment on record and
+        // office management (the Office of the Mayor, or the super admin)
+        // notified for review.
+        Route::post('/complaints/{complaint}/mark-misleading-spam', [StaffController::class, 'markMisleadingOrSpam'])
+            ->name('staff.complaints.mark-misleading-spam');
 
         // Department-led verification. Verify/reject stays on the established
         // staff.complaints.review endpoint; these two actions are new.
@@ -307,8 +354,22 @@ Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin'
             ->name('staff.office.staff.toggle');
         Route::post('/office/staff/{user}/toggle-verification', [DepartmentAdminController::class, 'toggleStaffVerification'])
             ->name('staff.office.staff.toggle-verification');
+        Route::get('/office/staff/{user}/performance/export', [DepartmentAdminController::class, 'staffPerformanceExport'])
+            ->name('staff.office.staff.performance.export');
+        Route::get('/office/staff/{user}/performance/print', [DepartmentAdminController::class, 'staffPerformancePrint'])
+            ->name('staff.office.staff.performance.print');
         Route::post('/office/complaints/{complaint}/assign', [DepartmentAdminController::class, 'assignComplaint'])
             ->name('staff.office.complaints.assign');
+        // Categories are scoped to this office. A Department Administrator may
+        // add one under any shared problem type and edit only their own rows.
+        Route::get('/office/categories', [DepartmentAdminController::class, 'categories'])
+            ->name('staff.office.categories.index');
+        Route::post('/office/categories', [DepartmentAdminController::class, 'storeCategory'])
+            ->name('staff.office.categories.store');
+        Route::put('/office/categories/{category}', [DepartmentAdminController::class, 'updateCategory'])
+            ->name('staff.office.categories.update');
+        Route::post('/office/categories/{category}/toggle', [DepartmentAdminController::class, 'toggleCategory'])
+            ->name('staff.office.categories.toggle');
         Route::get('/office/audit', [DepartmentAdminController::class, 'auditIndex'])
             ->name('staff.office.audit.index');
     });
@@ -319,7 +380,7 @@ Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin'
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.change'])
+Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.change', 'admin.2fa'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', [
@@ -355,12 +416,34 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
         // own flag), reason-bearing, and audit-logged.
         Route::put('/complaints/{complaint}/clear-spam-flag', [AdminController::class, 'clearSpamFlag'])
             ->name('admin.complaints.clear-spam-flag');
+        // Confirm a report as spam/junk: quarantine the audit record and purge
+        // uploaded evidence files to limit storage abuse.
+        Route::put('/complaints/{complaint}/confirm-spam', [AdminController::class, 'confirmSpam'])
+            ->name('admin.complaints.confirm-spam');
+        // Review a staff misleading/spam marking. Confirming upholds it (and
+        // affects resident trust score); dismissing clears it as a false positive.
+        Route::put('/complaints/{complaint}/confirm-marking', [AdminController::class, 'confirmMarking'])
+            ->name('admin.complaints.confirm-marking');
+        Route::put('/complaints/{complaint}/dismiss-marking', [AdminController::class, 'dismissMarking'])
+            ->name('admin.complaints.dismiss-marking');
         Route::get('/departments', [AdminController::class, 'departmentsIndex'])->name('admin.departments.index');
         // Reading what residents asked for. A suggestion goes out reviewed, so
         // somebody has to read it first.
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('admin.feedback.index');
         Route::post('/feedback/{feedback}/publish', [AdminFeedbackController::class, 'publish'])->name('admin.feedback.publish');
         Route::post('/feedback/{feedback}/withhold', [AdminFeedbackController::class, 'withhold'])->name('admin.feedback.withhold');
+        Route::post('/complaint-feedback/{complaintFeedback}/publish', [AdminFeedbackController::class, 'publishComplaint'])->name('admin.complaint-feedback.publish');
+        Route::post('/complaint-feedback/{complaintFeedback}/withhold', [AdminFeedbackController::class, 'withholdComplaint'])->name('admin.complaint-feedback.withhold');
+        // The landing-page FAQ is municipal copy, not a translation key. The
+        // super admin owns it here so a question can change without a deploy.
+        Route::get('/faqs', [AdminFaqController::class, 'index'])->name('admin.faqs.index');
+        Route::post('/faqs', [AdminFaqController::class, 'store'])->name('admin.faqs.store');
+        Route::put('/faqs/{faq}', [AdminFaqController::class, 'update'])->name('admin.faqs.update');
+        Route::post('/faqs/{faq}/toggle', [AdminFaqController::class, 'toggle'])->name('admin.faqs.toggle');
+        Route::post('/faqs/{faq}/move/{direction}', [AdminFaqController::class, 'move'])
+            ->whereIn('direction', ['up', 'down'])
+            ->name('admin.faqs.move');
+        Route::delete('/faqs/{faq}', [AdminFaqController::class, 'destroy'])->name('admin.faqs.destroy');
         // Creation has its own page rather than a panel beside the list. The
         // directory is for scanning offices; a form wedged under it meant the
         // only way to add one was to scroll past every office, and on a phone
@@ -376,10 +459,19 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
         Route::put('/departments/{department}', [AdminController::class, 'departmentUpdate'])->name('admin.departments.update');
         Route::post('/departments/{department}/archive', [AdminController::class, 'departmentArchive'])->name('admin.departments.archive');
         Route::post('/departments/{department}/restore', [AdminController::class, 'departmentRestore'])->name('admin.departments.restore');
+        // Resident identity review (global admin only).
+        Route::get('/identity', [AdminIdentityController::class, 'index'])->name('admin.identity.index');
+        Route::get('/identity/{verification}', [AdminIdentityController::class, 'show'])->name('admin.identity.show');
+        Route::get('/identity/{verification}/document/{side}', [AdminIdentityController::class, 'document'])->whereIn('side', ['id_front', 'selfie'])->name('admin.identity.document');
+        Route::post('/identity/{verification}/approve', [AdminIdentityController::class, 'approve'])->name('admin.identity.approve');
+        Route::post('/identity/{verification}/reject', [AdminIdentityController::class, 'reject'])->name('admin.identity.reject');
+
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('admin.users.show');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
         Route::post('/users/{user}/toggle', [AdminUserController::class, 'toggle'])->name('admin.users.toggle');
+        Route::post('/users/{user}/verify-email', [AdminUserController::class, 'verifyEmail'])->name('admin.users.verify-email');
+        Route::post('/users/{user}/identity/revoke', [AdminUserController::class, 'identityRevoke'])->name('admin.users.identity.revoke');
         Route::get('/staff', [AdminController::class, 'staffIndex'])->name('admin.staff.index');
         Route::get('/staff/create', [AdminController::class, 'staffCreate'])->name('admin.staff.create');
         Route::get('/staff/created', [AdminController::class, 'staffCreated'])->name('admin.staff.created');
@@ -395,7 +487,14 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
         Route::get('/audit-trail/browser', [AdminController::class, 'auditBrowser'])->name('admin.audit.browser');
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('admin.settings.index');
         Route::put('/settings', [AdminSettingsController::class, 'update'])->name('admin.settings.update');
-        Route::post('/settings/categories', [AdminSettingsController::class, 'storeCategory'])->name('admin.settings.categories.store');
-        Route::put('/settings/categories/{category}', [AdminSettingsController::class, 'updateCategory'])->name('admin.settings.categories.update');
-        Route::post('/settings/categories/{category}/toggle', [AdminSettingsController::class, 'toggleCategory'])->name('admin.settings.categories.toggle');
+
+        // The taxonomy has its own page. It is a directory with archive as a
+        // filter, not five cramped fields inside system settings.
+        Route::get('/categories', [AdminCategoryController::class, 'index'])->name('admin.categories.index');
+        Route::post('/categories/problem-types', [AdminCategoryController::class, 'storeGroup'])->name('admin.categories.groups.store');
+        Route::put('/categories/problem-types/{group}', [AdminCategoryController::class, 'updateGroup'])->name('admin.categories.groups.update');
+        Route::post('/categories/problem-types/{group}/toggle', [AdminCategoryController::class, 'toggleGroup'])->name('admin.categories.groups.toggle');
+        Route::post('/categories', [AdminCategoryController::class, 'storeCategory'])->name('admin.categories.store');
+        Route::put('/categories/{category}', [AdminCategoryController::class, 'updateCategory'])->name('admin.categories.update');
+        Route::post('/categories/{category}/toggle', [AdminCategoryController::class, 'toggleCategory'])->name('admin.categories.toggle');
     });

@@ -18,6 +18,7 @@ class ComplaintLog extends Model
         'previous_status',
         'new_status',
         'comment',
+        'public_comment',
         'documentation_paths',
         'is_internal',
     ];
@@ -103,5 +104,29 @@ class ComplaintLog extends Model
     public function scopeInternal($query)
     {
         return $query->where('is_internal', true);
+    }
+
+    /**
+     * Resolve the comment shown on public transparency pages.
+     *
+     * Some timeline events include personnel details for the resident and
+     * staff, but must be generalized before public display.
+     */
+    public function publicDisplayComment(): ?string
+    {
+        $public = trim((string) ($this->public_comment ?? ''));
+        if ($public !== '') {
+            if (str_starts_with($public, 'timeline.')) {
+                $translated = __($public);
+
+                return $translated !== $public ? $translated : $public;
+            }
+
+            return $public;
+        }
+
+        $comment = trim((string) ($this->comment ?? ''));
+
+        return $comment !== '' ? $comment : null;
     }
 }

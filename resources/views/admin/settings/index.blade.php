@@ -46,30 +46,9 @@
 
   <section class="admin-panel">
     <div class="admin-panel-heading"><h2 class="admin-panel-title">{{ __('admin_settings.categories') }}</h2></div>
-    <div class="admin-panel-body admin-form-stack">
+    <div class="admin-panel-body">
       <p>{{ __('admin_settings.categories_hint') }}</p>
-      <form data-loading-submit method="POST" action="{{ route('admin.settings.categories.store') }}" class="admin-form-grid">
-        @csrf
-        <label class="admin-field"><span>{{ __('admin_settings.key') }}</span><input type="text" name="key" class="admin-input" required placeholder="road_damage"></label>
-        <label class="admin-field"><span>{{ __('admin_settings.label_en') }}</span><input type="text" name="label_en" class="admin-input" required></label>
-        <label class="admin-field"><span>{{ __('admin_settings.label_fil') }}</span><input type="text" name="label_fil" class="admin-input"></label>
-        <button type="submit" class="admin-button admin-button--primary">{{ __('admin_settings.add') }}</button>
-      </form>
-      <ul>
-        @foreach($categories as $cat)
-          <li>
-            <form data-loading-submit method="POST" action="{{ route('admin.settings.categories.update', $cat) }}" class="admin-form-grid">
-              @csrf @method('PUT')
-              <span>{{ $cat->key }} — {{ $cat->label() }} ({{ $cat->is_active ? __('admin_settings.active') : __('admin_settings.deactivate') }})</span>
-              <label class="admin-field"><span>{{ __('admin_settings.label_en') }}</span><input type="text" name="label_en" class="admin-input" value="{{ $cat->label_en }}" required></label>
-              <label class="admin-field"><span>{{ __('admin_settings.label_fil') }}</span><input type="text" name="label_fil" class="admin-input" value="{{ $cat->label_fil }}"></label>
-              <label><input type="checkbox" name="is_active" value="1" @checked($cat->is_active)> {{ __('admin_settings.active') }}</label>
-              <button type="submit" class="admin-button admin-button--secondary">{{ __('admin_settings.save') }}</button>
-            </form>
-            <form data-loading-submit method="POST" action="{{ route('admin.settings.categories.toggle', $cat) }}">@csrf<button type="submit" class="admin-button admin-button--secondary">{{ $cat->is_active ? __('admin_settings.deactivate') : __('admin_settings.activate') }}</button></form>
-          </li>
-        @endforeach
-      </ul>
+      <a href="{{ route('admin.categories.index') }}" class="admin-button admin-button--secondary">{{ __('nav.complaint_categories') }}</a>
     </div>
   </section>
 </div>

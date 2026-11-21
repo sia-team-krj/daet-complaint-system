@@ -10,10 +10,10 @@ use App\Services\DepartmentRouter;
 use App\Services\FeedbackService;
 use App\Services\TransparencyFeed;
 use App\Http\Controllers\Concerns\SoftNavigation;
+use App\Support\ComplaintProgress;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 /**
@@ -231,7 +231,8 @@ class TransparencyController extends Controller
     {
         $this->ensurePublicComplaint($complaint);
 
-        $complaint->load(['department', 'user']);
+        $complaint->load(['department', 'user', 'assignedStaff']);
+        $complaint->setRelation('feedback', $complaint->feedback()->published()->first());
         $logs = $complaint->logs()
             ->where('is_internal', false)
             ->get()
@@ -246,7 +247,7 @@ class TransparencyController extends Controller
             'description' => $this->publicDescription($complaint),
             'categoryLabel' => $feed->categoryLabel($complaint->category),
             'reporter' => $reporter !== '' ? $reporter : 'Community member',
-            'progressSteps' => $this->progressSteps($complaint, $logs),
+            'progressSteps' => ComplaintProgress::steps($complaint, $logs),
         ]);
     }
 
@@ -255,71 +256,6 @@ class TransparencyController extends Controller
         if (! $complaint->isPubliclyVisible() || $complaint->spam_status === 'spam') {
             abort(404);
         }
-    }
-
-    /**
-     * Build a compact, date-aware progress trail for a public complaint.
-     *
-     * @param  Collection<int, \App\Models\ComplaintLog>  $logs
-     * @return array<int, array{status: string, label: string, date: string|null, state: string}>
-     */
-    private function progressSteps(Complaint $complaint, Collection $logs): array
-    {
-        $statuses = [
-            ComplaintStatus::Submitted,
-            ComplaintStatus::UnderReview,
-            ComplaintStatus::InProgress,
-            ComplaintStatus::Resolved,
-            ComplaintStatus::Closed,
-        ];
-        $current = $complaint->statusEnum;
-        $rejected = $current === ComplaintStatus::Rejected;
-        $closed = $current === ComplaintStatus::Closed;
-
-        if ($closed) {
-            $currentIndex = count($statuses); // all done, no current
-        } elseif ($rejected) {
-            $lastProgressLog = $logs->reject(fn ($log): bool => $log->new_status === ComplaintStatus::Rejected->value)->last();
-            $lastReached = $lastProgressLog?->new_status;
-            $currentIndex = max(0, (int) array_search($lastReached, $statuses, true));
-        } else {
-            $currentIndex = (int) array_search($current, $statuses, true);
-        }
-
-        $lastDate = null;
-
-        return collect($statuses)->map(function (ComplaintStatus $status, int $index) use ($logs, $complaint, $currentIndex, $rejected, &$lastDate): array {
-            $log = $logs->first(fn ($entry): bool => $entry->new_status === $status->value);
-            $state = match (true) {
-                $rejected && $index < $currentIndex => 'complete',
-                $rejected && $index === $currentIndex => 'rejected',
-                $rejected => 'stopped',
-                $index < $currentIndex => 'complete',
-                $index === $currentIndex => 'current',
-                default => 'upcoming',
-            };
-
-            if ($status === ComplaintStatus::Submitted) {
-                $rawDate = $complaint->created_at;
-            } else {
-                $rawDate = $log?->created_at;
-            }
-
-            $formatted = null;
-            if ($rawDate !== null && ($lastDate === null || $rawDate->greaterThanOrEqualTo($lastDate))) {
-                $formatted = $rawDate->format('M j, Y');
-                $lastDate = $rawDate;
-            } elseif ($state === 'complete') {
-                $formatted = null; // will render "Done"
-            }
-
-            return [
-                'status' => $status->value,
-                'label' => $status->label(),
-                'date' => $formatted,
-                'state' => $state,
-            ];
-        })->all();
     }
 
     /**

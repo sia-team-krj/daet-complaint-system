@@ -229,6 +229,16 @@ body.page-staff-dashboard .staff-sidebar-badge {
     display: inline-flex; align-items: center; justify-content: center;
 }
 
+body.page-staff-dashboard .staff-sidebar-badge--amber {
+    background: var(--status-progress-bg, rgba(217, 119, 6, 0.15));
+    color: var(--status-progress-text, var(--gold-700));
+}
+
+body.page-staff-dashboard .staff-sidebar-link-label {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 /* ─── Main workspace ─────────────────────────────────────────────────────── */
 body.page-staff-dashboard .staff-workspace {
     min-width: 0;

@@ -6,7 +6,7 @@
         $logoUrl = route($logoRoute);
         $navRole = auth()->user()->role;
         $navDept = auth()->user()->isDepartmentStaff() ? auth()->user()->department : null;
-        $showNavIdentity = in_array($navRole, ['admin', 'staff', 'department_admin'], true);
+        $showNavIdentity = in_array($navRole, ['staff', 'department_admin'], true);
       @endphp
       <a href="{{ $logoUrl }}" class="navbar-logo group" aria-label="Daet Listens dashboard">
         <div class="logo-icon">
@@ -23,16 +23,6 @@
           </span>
         @endif
       </a>
-
-      {{-- The Administrator badge is a direct child of the bar so that at ≤640px
-           (the only width it renders — see .nav-identity-bar display rules) it
-           sits immediately after the logo, while the bell stays immediately left
-           of the hamburger. At ≥641px it is display:none. --}}
-      @if($navRole === 'admin')
-        <span class="nav-identity-bar nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
-          <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
-        </span>
-      @endif
 
       <ul class="nav-links">
         @if(auth()->user()->role === 'citizen')
@@ -73,12 +63,6 @@
           <li><a href="{{ route('complaints.create') }}" class="btn-nav-cta">{{ __('nav.file_complaint') }}</a></li>
         @endif
 
-        @if($navRole === 'admin')
-          <li class="nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
-            <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
-          </li>
-        @endif
-
         <li class="nav-dropdown-wrap">
           <button type="button" class="nav-user-btn" id="user-menu-btn" data-user-menu-toggle aria-controls="user-dropdown" aria-expanded="false">
             <div class="user-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</div>
@@ -93,7 +77,8 @@
               @if($showNavIdentity)
                 <span class="dropdown-identity">
                   @if($navRole === 'admin')
-                    <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                    {{-- The Administrator badge was removed from the navbar
+                         identity; global admins no longer get a role chip. --}}
                   @elseif($navRole === 'department_admin')
                     <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
                     @if($navDept)
@@ -142,11 +127,6 @@
       </ul>
 
       <div class="nav-mobile-right">
-        @if($showNavIdentity && $navRole === 'admin')
-          <span class="nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
-            <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
-          </span>
-        @endif
         @if(auth()->user()->role === 'admin')
           {{-- Admins keep the left workspace drawer for sections; the top-right
                trigger is an account popover, matching the desktop hierarchy. --}}
@@ -172,7 +152,8 @@
                 @if($showNavIdentity)
                   <span class="dropdown-identity">
                     @if($navRole === 'admin')
-                      <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                      {{-- The Administrator badge was removed from the navbar
+                           identity; global admins no longer get a role chip. --}}
                     @elseif($navRole === 'department_admin')
                       <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
                       @if($navDept)
@@ -225,11 +206,6 @@
           @if(auth()->user()->role === 'citizen' && !request()->routeIs('complaints.index'))
             <a href="{{ route('complaints.create') }}" class="btn-nav-cta nav-cta-sm hidden sm:flex">{{ __('nav.file') }}</a>
           @endif
-          @if($navRole === 'admin')
-            <span class="nav-identity nav-identity--on-dark" aria-label="{{ __('nav.administrator') }}">
-              <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
-            </span>
-          @endif
           <button id="mobile-menu-btn" data-mobile-menu-toggle aria-controls="mobile-menu" aria-label="{{ __('nav.open_navigation') }}" aria-expanded="false" class="hamburger-btn" type="button">
             <span class="hamburger-line"></span>
             <span class="hamburger-line"></span>
@@ -261,7 +237,8 @@
           @if($showNavIdentity)
             <div class="mobile-user-identity">
               @if($navRole === 'admin')
-                <span class="nav-identity__badge nav-identity__badge--admin">{{ __('nav.administrator') }}</span>
+                {{-- The Administrator badge was removed from the navbar
+                     identity; global admins no longer get a role chip. --}}
               @elseif($navRole === 'department_admin')
                 <span class="nav-identity__badge nav-identity__badge--department-admin">{{ __('nav.department_administrator') }}</span>
                 @if($navDept)

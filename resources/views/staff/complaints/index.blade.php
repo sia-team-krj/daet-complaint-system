@@ -79,13 +79,20 @@
                        @if($scope === 'finished') aria-current="true" @endif>
                         {{ __('staff.queue_scope.scope_finished') }}
                     </a>
+                    @if(request()->filled('assigned_staff_id'))
+                        <a href="{{ route('staff.complaints.index', array_merge(request()->except(['scope']), ['scope' => 'all'])) }}"
+                           class="status-chip {{ $scope === 'all' ? 'selected' : '' }}"
+                           @if($scope === 'all') aria-current="true" @endif>
+                            {{ __('staff.queue_scope.scope_all') }}
+                        </a>
+                    @endif
 
                     <a href="{{ route('staff.complaints.index', array_merge(request()->except(['overdue']), $overdue ? [] : ['overdue' => 1])) }}"
                        class="status-chip {{ $overdue ? 'selected' : '' }}"
                        @if($overdue) aria-current="true" @endif>
                         {{ __('staff.sla.overdue_filter') }}
                     </a>
-                    @if(request()->filled('status') || request()->filled('review') || request()->filled('priority') || request()->filled('search') || $overdue)
+                    @if(request()->filled('status') || request()->filled('review') || request()->filled('priority') || request()->filled('search') || request()->filled('assigned_staff_id') || $overdue)
                         <a href="{{ route('staff.complaints.index', ['scope' => $scope]) }}" class="tr-clear">Clear</a>
                     @endif
                 </div>

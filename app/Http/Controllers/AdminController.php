@@ -26,7 +26,6 @@ use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
 use App\Services\ComplaintWorkService;
 use App\Services\EmailVerificationService;
-use App\Services\DepartmentRouter;
 use App\Services\NotificationService;
 use App\Services\StaffInvitationDelivery;
 use Closure;
@@ -63,6 +62,7 @@ class AdminController extends Controller
         $stats = [
             'total' => Complaint::count(),
             'unassigned' => Complaint::whereNull('department_id')->count(),
+            'flagged' => Complaint::flagged()->count(),
             'inProgress' => Complaint::where('status', ComplaintStatus::InProgress->value)->count(),
             'resolvedToday' => Complaint::where('status', ComplaintStatus::Resolved->value)
                 ->whereDate('updated_at', today())->count(),
@@ -184,19 +184,12 @@ class AdminController extends Controller
             'showArchived' => $showArchived,
             'archivedCount' => Department::query()->where('is_active', false)->count(),
             'activeCount' => Department::query()->where('is_active', true)->count(),
-            // Every office a new one could replace. Used by the create form to
-            // warn that a code is already spoken for.
-            'routableCodes' => DepartmentRouter::ROUTABLE_CODES,
         ]);
     }
 
     public function departmentCreate(): View
     {
         return view('admin.departments.create', [
-            // Shown on the page where the code is actually chosen. Without it an
-            // admin reasonably expects a new office to start receiving reports
-            // by itself, and only five codes do.
-            'routableCodes' => DepartmentRouter::ROUTABLE_CODES,
             'existingCodes' => Department::orderBy('code')->pluck('code'),
         ]);
     }
@@ -259,17 +252,9 @@ class AdminController extends Controller
             'code' => 'office code',
         ]);
 
-        // The router maps categories to offices by code, so a code is not a free
-        // label — it is a live routing key. Renaming one that the router
-        // resolves silently strands every complaint category pointing at it.
-        // Refuse rather than accept a change the operator cannot see the effect of.
-        if ($validated['code'] !== $department->code && in_array($department->code, DepartmentRouter::ROUTABLE_CODES, true)) {
-            throw ValidationException::withMessages([
-                'code' => "Office code {$department->code} routes complaint categories automatically and cannot be changed. "
-                    .'Archive this office and create a replacement if the code itself has to change.',
-            ]);
-        }
-
+        // Categories reference the office by id now, so the code is a label,
+        // not a routing key. Renaming it cannot strand anything; the taxonomy
+        // cache still refreshes through the Department model event.
         $before = $department->only(['name', 'code', 'description']);
 
         $department->update($validated);
@@ -1302,6 +1287,8 @@ class AdminController extends Controller
         $assignedStaff = null;
         $updates = [];
         $logEntries = [];
+        $publicLogEntries = [];
+        $assignmentPublicComment = null;
 
         $reviewInputProvided = array_key_exists('review_status', $validated)
             || array_key_exists('confirmed_priority', $validated)
@@ -1353,9 +1340,18 @@ class AdminController extends Controller
             $targetDepartmentId = (int) ($validated['department_id'] ?? $complaint->department_id);
 
             if ($staff && $staff->isDepartmentStaff() && (int) $staff->department_id === $targetDepartmentId) {
-                $updates['assigned_staff_id'] = $staff->id;
-                $assignedStaff = $staff;
-                $logEntries[] = "Assigned to staff: {$staff->full_name}";
+                if ((int) $oldAssignedStaffId !== (int) $staff->id) {
+                    $updates['assigned_staff_id'] = $staff->id;
+                    $assignedStaff = $staff;
+                    $logEntries[] = "Assigned to staff: {$staff->full_name}";
+                    $publicLogEntries[] = 'timeline.assigned_public';
+                    $assignmentPublicComment = 'timeline.assigned_public';
+                }
+            } elseif (($validated['assigned_staff_id'] === null || $validated['assigned_staff_id'] === '') && $oldAssignedStaffId !== null) {
+                $updates['assigned_staff_id'] = null;
+                $logEntries[] = 'Personnel assignment removed';
+                $publicLogEntries[] = 'timeline.unassigned_public';
+                $assignmentPublicComment = 'timeline.unassigned_public';
             }
         }
 
@@ -1427,8 +1423,16 @@ class AdminController extends Controller
 
         // Create log entry
         $note = $validated['staff_note'] ?? null;
+        $publicNote = null;
         if (! empty($logEntries)) {
             $note = ($note ? $note."\n" : '').implode('; ', $logEntries);
+            if (! empty($publicLogEntries)) {
+                // Personnel details are visible to the resident/staff, but the
+                // public transparency timeline must not expose staff identity.
+                $publicNote = in_array($assignmentPublicComment, ['timeline.assigned_public', 'timeline.unassigned_public'], true)
+                    ? $assignmentPublicComment
+                    : null;
+            }
         }
 
         if (isset($updates['status']) || $note) {
@@ -1437,6 +1441,7 @@ class AdminController extends Controller
                 'previous_status' => $oldStatus->value,
                 'new_status' => $updates['status'] ?? $oldStatus->value,
                 'comment' => $note,
+                'public_comment' => $publicNote,
                 'documentation_paths' => $documentationPaths !== [] ? $documentationPaths : null,
                 'actor_id' => Auth::id(),
             ]);
@@ -1669,6 +1674,10 @@ class AdminController extends Controller
             return back()->with('error', 'This report is not flagged as review or spam.');
         }
 
+        if ($complaint->isSpamConfirmed()) {
+            return back()->with('error', 'This report has already been confirmed as spam.');
+        }
+
         $complaint->update(['spam_status' => 'clear']);
 
         $activityLogger->log(
@@ -1687,6 +1696,212 @@ class AdminController extends Controller
         return redirect()
             ->route('admin.complaints.show', $complaint)
             ->with('status', 'The flag is cleared — it stays in the audit trail. The report republishes once it is verified.');
+    }
+
+    /**
+     * Confirm a flagged report as spam/junk.
+     *
+     * Unlike releasing a false positive, this keeps the report quarantined and
+     * out of normal/public flows. To reduce storage pressure from abusive
+     * submissions, uploaded evidence files are purged while a minimal audit
+     * record of the complaint and moderation decision is retained.
+     */
+    public function confirmSpam(
+        Request $request,
+        Complaint $complaint,
+        ActivityLogger $activityLogger,
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'confirm_spam_reason' => ['required', 'string', 'min:10', 'max:1000'],
+        ], [
+            'confirm_spam_reason.required' => 'Give a reason — confirming spam is recorded.',
+            'confirm_spam_reason.min' => 'Say a little more — the audit trail needs a clear reason.',
+        ]);
+
+        $flag = $complaint->spam_status;
+
+        if (! in_array($flag, ['review', 'spam'], true)) {
+            return back()->with('error', 'Only flagged reports can be confirmed as spam.');
+        }
+
+        if ($complaint->isSpamConfirmed()) {
+            return back()->with('error', 'This report is already confirmed as spam.');
+        }
+
+        $complaint->loadMissing(['evidences', 'logs', 'informationRequests']);
+
+        $paths = [];
+
+        foreach ($complaint->allImagePaths() as $path) {
+            if (is_string($path) && trim($path) !== '') {
+                $paths[] = $path;
+            }
+        }
+
+        foreach ((array) ($complaint->withheld_image_paths ?? []) as $path) {
+            if (is_string($path) && trim($path) !== '') {
+                $paths[] = $path;
+            }
+        }
+
+        foreach ($complaint->evidences as $evidence) {
+            if (is_string($evidence->path) && trim($evidence->path) !== '') {
+                $paths[] = $evidence->path;
+            }
+        }
+
+        foreach ($complaint->logs as $log) {
+            foreach ((array) ($log->documentation_paths ?? []) as $path) {
+                if (is_string($path) && trim($path) !== '') {
+                    $paths[] = $path;
+                }
+            }
+        }
+
+        foreach ($complaint->informationRequests as $infoRequest) {
+            foreach ((array) ($infoRequest->response_image_paths ?? []) as $path) {
+                if (is_string($path) && trim($path) !== '') {
+                    $paths[] = $path;
+                }
+            }
+        }
+
+        $paths = array_values(array_unique($paths));
+        $deletedFiles = 0;
+        $disk = Storage::disk('minio');
+
+        foreach ($paths as $path) {
+            try {
+                if ($disk->exists($path) && $disk->delete($path)) {
+                    $deletedFiles++;
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        DB::transaction(function () use ($complaint, $validated): void {
+            $complaint->evidences()->delete();
+
+            foreach ($complaint->logs as $log) {
+                if (! empty($log->documentation_paths)) {
+                    $log->forceFill(['documentation_paths' => null])->saveQuietly();
+                }
+            }
+
+            foreach ($complaint->informationRequests as $infoRequest) {
+                if (! empty($infoRequest->response_image_paths)) {
+                    $infoRequest->forceFill(['response_image_paths' => null])->saveQuietly();
+                }
+            }
+
+            $complaint->forceFill([
+                'spam_status' => 'spam',
+                'spam_confirmed_at' => now(),
+                'spam_confirmed_by' => Auth::id(),
+                'image_path' => null,
+                'image_paths' => [],
+                'withheld_image_paths' => [],
+                // Confirmed spam must never surface publicly.
+                'hidden_from_public' => true,
+                'is_public' => false,
+            ])->save();
+        });
+
+        $activityLogger->log(
+            'complaint.spam_confirmed',
+            "Complaint {$complaint->ticket_id}: administrators confirmed the report as spam. Reason: {$validated['confirm_spam_reason']}",
+            $complaint,
+            metadata: [
+                'previous_spam_status' => $flag,
+                'spam_status' => 'spam',
+                'spam_score' => $complaint->spam_score,
+                'spam_reasons' => $complaint->spam_reasons,
+                'reason' => $validated['confirm_spam_reason'],
+                'evidence_files_purged' => count($paths),
+                'evidence_files_deleted' => $deletedFiles,
+            ],
+        );
+
+        return redirect()
+            ->route('admin.complaints.show', $complaint)
+            ->with('status', 'Report confirmed as spam. Uploaded evidence files were purged and the report is kept as a quarantined audit record.');
+    }
+
+    /**
+     * Confirm a staff misleading/spam marking after admin review.
+     */
+    public function confirmMarking(
+        Request $request,
+        Complaint $complaint,
+        ActivityLogger $activityLogger,
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'confirm_marking_reason' => ['required', 'string', 'min:10', 'max:1000'],
+        ]);
+
+        if (! $complaint->isMarkingPendingReview()) {
+            return back()->with('error', 'This marking is not pending admin review.');
+        }
+
+        $complaint->update([
+            'marking_confirmed_at' => now(),
+            'marking_confirmed_by' => Auth::id(),
+            'marking_dismissed_at' => null,
+            'marking_dismissed_by' => null,
+        ]);
+
+        $activityLogger->log(
+            'complaint.marking_confirmed',
+            "Complaint {$complaint->ticket_id}: administrators confirmed the {$complaint->markingEnum()?->label()} marking. Reason: {$validated['confirm_marking_reason']}",
+            $complaint,
+            metadata: [
+                'marking' => $complaint->markingEnum()?->value,
+                'reason' => $validated['confirm_marking_reason'],
+            ],
+        );
+
+        return redirect()
+            ->route('admin.complaints.show', $complaint)
+            ->with('status', 'The marking has been confirmed.');
+    }
+
+    /**
+     * Dismiss a staff misleading/spam marking as a false positive.
+     */
+    public function dismissMarking(
+        Request $request,
+        Complaint $complaint,
+        ActivityLogger $activityLogger,
+    ): RedirectResponse {
+        $validated = $request->validate([
+            'dismiss_marking_reason' => ['required', 'string', 'min:10', 'max:1000'],
+        ]);
+
+        if (! $complaint->isMarkingPendingReview()) {
+            return back()->with('error', 'This marking is not pending admin review.');
+        }
+
+        $complaint->update([
+            'marking_dismissed_at' => now(),
+            'marking_dismissed_by' => Auth::id(),
+            'marking_confirmed_at' => null,
+            'marking_confirmed_by' => null,
+        ]);
+
+        $activityLogger->log(
+            'complaint.marking_dismissed',
+            "Complaint {$complaint->ticket_id}: administrators dismissed the {$complaint->markingEnum()?->label()} marking. Reason: {$validated['dismiss_marking_reason']}",
+            $complaint,
+            metadata: [
+                'marking' => $complaint->markingEnum()?->value,
+                'reason' => $validated['dismiss_marking_reason'],
+            ],
+        );
+
+        return redirect()
+            ->route('admin.complaints.show', $complaint)
+            ->with('status', 'The marking has been dismissed.');
     }
 
     /**

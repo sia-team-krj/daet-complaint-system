@@ -320,6 +320,42 @@ body:has(.settings-page) > main {
     outline-offset: 2px;
 }
 
+/* The settings grammar's select — the same token set as the inputs above, so
+   the ID type dropdown on the identity page reads as one control family. */
+.settings-select {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    background: var(--surface-input);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+.settings-select:hover {
+    border-color: var(--border-strong);
+}
+
+.settings-select:focus {
+    border-color: var(--focus-gold);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+    outline: none;
+}
+
+.settings-select[aria-invalid="true"] {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.15);
+}
+
+.settings-select:disabled {
+    background: var(--surface-soft);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
 /* ── The save row ───────────────────────────────────────────────────── */
 
 .settings-save-row {
@@ -506,6 +542,311 @@ body:has(.settings-page) > main {
     line-height: 1.45;
 }
 
+/* ── Resident identity verification — status, steps, capture, consent ─
+   The /identity/verify redesign (docs/design-system.md §5.58). Token-only;
+   no new colours. The base rules are the phone layout and the shared
+   settings overrides carry the wider screens.
+   ──────────────────────────────────────────────────────────────────── */
+
+/* The identity page sits a touch tighter under the fixed navbar (10px) than
+   the settings-wide offset, so the resident content starts closer to the top. */
+.identity-verify.settings-page {
+    padding: calc(var(--navbar-height, 64px) + 10px) 0 40px;
+}
+
+.identity-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.identity-status__note {
+    margin: 0;
+    max-width: 56ch;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.identity-status .status-pill.status-pill--unverified {
+    background: var(--surface-soft);
+    color: var(--text-muted);
+}
+
+.identity-status .status-pill.status-pill--unverified .status-pill__dot {
+    background: var(--faint);
+}
+
+.identity-steps {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.identity-steps__item {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.identity-steps__marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.identity-steps__item--done .identity-steps__marker {
+    background: var(--navy-700);
+    border-color: var(--navy-700);
+    color: var(--surface);
+}
+
+.identity-steps__item--current .identity-steps__marker {
+    border-color: var(--gold-500);
+    color: var(--gold-700);
+    box-shadow: var(--ring);
+}
+
+.identity-steps__label {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text-secondary);
+}
+
+.identity-steps__item.is-current .identity-steps__label {
+    color: var(--navy-900);
+}
+
+.identity-privacy {
+    margin: 0;
+}
+
+/* ── Identity photo capture zones ───────────────────────────────────── */
+
+.identity-photo {
+    display: grid;
+    gap: 12px;
+}
+
+.identity-photo__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.identity-photo__icon {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--navy-50);
+    color: var(--navy-700);
+}
+
+.identity-photo__icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.identity-photo__heading {
+    min-width: 0;
+}
+
+.identity-photo__title {
+    margin: 0;
+    color: var(--navy-900);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.identity-photo__hint {
+    margin: 2px 0 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.identity-photo__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.identity-photo__upload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--navy-700);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.identity-photo__upload:hover { background: var(--navy-50); }
+.identity-photo__upload:focus-visible { outline: none; box-shadow: var(--ring); }
+
+.identity-photo__file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.identity-photo__preview {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+}
+
+.identity-photo__preview[hidden] { display: none; }
+
+.identity-photo__preview img {
+    display: block;
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: var(--surface);
+}
+
+.identity-photo__preview-actions {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    justify-content: center;
+    background: linear-gradient(transparent, rgba(7, 18, 38, 0.65));
+}
+
+/* Minimal overlay actions: small circular SVG buttons on the photo itself. */
+.identity-photo__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--navy-900);
+    box-shadow: 0 2px 10px rgba(7, 18, 38, 0.35);
+    cursor: pointer;
+}
+
+.identity-photo__icon-btn:hover { background: var(--surface-soft); }
+.identity-photo__icon-btn:focus-visible { outline: 2px solid var(--focus-gold); outline-offset: 2px; }
+.identity-photo__icon-btn--danger { color: var(--danger); }
+.identity-photo__icon-btn--capture { background: var(--gold-500); color: var(--navy-900); }
+
+/* Once a photo is held, the entry actions (camera / upload) retire — the
+   overlay is the only action surface. */
+.identity-photo:has(.identity-photo__preview:not([hidden])) .identity-photo__actions {
+    display: none;
+}
+
+.identity-photo__camera {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--navy-950);
+}
+
+.identity-photo__camera[hidden] { display: none; }
+
+.identity-photo__camera video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: var(--navy-950);
+}
+
+.identity-photo__camera-actions {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    justify-content: center;
+    background: linear-gradient(transparent, rgba(7, 18, 38, 0.65));
+}
+
+.identity-photo__state {
+    margin: 0;
+    min-height: 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.identity-photo__state:empty { display: none; }
+
+/* ── Identity consent rows ──────────────────────────────────────────── */
+
+.identity-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 44px;
+}
+
+.identity-consent input[type="checkbox"] {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    accent-color: var(--gold-500);
+    border-radius: var(--radius-sm);
+}
+
+.identity-consent__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.identity-consent__label .required-mark {
+    color: var(--danger);
+}
+
 /* ── Narrow screens ─────────────────────────────────────────────────── */
 
 @media (min-width: 1024px) {
@@ -522,6 +863,10 @@ body:has(.settings-page) > main {
     .settings-tab {
         width: 100%;
     }
+}
+
+@media (min-width: 1024px) {
+    .identity-status { gap: 12px; }
 }
 
 @media (max-width: 700px) {

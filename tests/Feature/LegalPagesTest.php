@@ -69,6 +69,8 @@ class LegalPagesTest extends TestCase
         $this->assertStringContainsString('display alias', $html);
         $this->assertStringContainsString('barangay level', $html);
         $this->assertStringContainsString('not a precise coordinate', $html);
+        $this->assertStringContainsString('Anyone with your ticket number', $html);
+        $this->assertStringContainsString('does not show the report', $html);
 
         // And the register itself must be showing the alias, not the name.
         $this->seed(DepartmentSeeder::class);
@@ -121,7 +123,9 @@ class LegalPagesTest extends TestCase
         // Upload limits come from the controller's validation rules; the ticket
         // prefix comes from the model's generator; visibility starts private.
         $this->assertStringContainsString('up to five', $html);
-        $this->assertStringContainsString('DLT-', $html);
+        $this->assertStringContainsString('COMP-', $html);
+        $this->assertStringContainsString('with or without hyphens', $html);
+        $this->assertStringContainsString('progress only', $html);
         $this->assertStringContainsString('starts private', $html);
         $this->assertStringContainsString('5 MB', $html);
     }

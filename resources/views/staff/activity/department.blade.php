@@ -63,9 +63,8 @@
                     $complaintUrl = $complaint ? route('staff.complaints.show', $complaint) : null;
                     $statusKey = str($complaint?->status ?? 'submitted')->slug('_')->toString();
                     $reviewKey = str($complaint?->review_status ?? 'pending')->slug('_')->toString();
-                    $categoryLabel = $complaint?->category
-                        ? str($complaint->category)->replace('_', ' ')->title()->toString()
-                        : __('staff.dashboard.category_fallback');
+                    $categoryLabel = \App\Services\DepartmentRouter::categoryLabel($complaint?->category)
+                        ?? __('staff.dashboard.category_fallback');
                     $activityText = $entry->display_detail;
                     if (! empty($entry->display_note)) {
                         $activityText .= ' · ' . __('staff.dashboard.note_label') . ' ' . $entry->display_note;

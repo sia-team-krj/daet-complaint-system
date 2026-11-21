@@ -376,6 +376,18 @@
                     @endif
                 </div>
 
+                {{-- Office marking — a field officer or inspector may reject
+                     a report as misleading or spam. The field officer always
+                     writes a description and a comment; the panel returns as
+                     the read-only record once the report is rejected. --}}
+                @include('staff.complaints.partials.marking-panel', [
+                    'complaint' => $complaint,
+                    'user' => $user,
+                    'canMark' => $user->isDepartmentStaff()
+                        && $complaint->statusEnum->isOpen()
+                        && ! $complaint->isMarked(),
+                ])
+
                 {{-- 5. Verification follow-up — the two actions the November
                      rewrite dropped: ask the resident for better evidence, and
                      hand verification to another verifier. The server has
@@ -567,7 +579,10 @@
                         {{ $complaint->category_label ?? $complaint->category }}
                         · {{ $complaint->department?->name ?? __('nav.departments') }}
                     </p>
-                    @php $residentAlias = $complaint->user?->staff_safe_name ?? 'Resident unavailable'; @endphp
+                    @php
+                        $residentAlias = $complaint->user?->staff_safe_name ?? 'Resident unavailable';
+                        $trust = $complaint->user?->trustScoreSummary();
+                    @endphp
                     <div style="display: flex; align-items: center; gap: 12px; margin-top: 14px;">
                         <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--navy-800); color: var(--gold-300); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0;">
                             {{ strtoupper(substr($residentAlias, 0, 1)) }}
@@ -577,6 +592,15 @@
                             <span style="font-size: 11px; color: var(--faint);">Identity protected · Staff view</span>
                         </div>
                     </div>
+                    @if($trust)
+                        <div style="margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--surface-soft);">
+                            <div style="display: flex; justify-content: space-between; gap: 8px; align-items: center;">
+                                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">{{ __('staff.trust.title') }}</span>
+                                <strong style="font-size: 13px; color: var(--navy-900);">{{ $trust['score'] }}/100</strong>
+                            </div>
+                            <p style="margin: 4px 0 0; font-size: 12px; color: var(--text);">{{ $trust['label'] }} · {{ __('staff.trust.summary', ['good' => $trust['good'], 'bad' => $trust['bad']]) }}</p>
+                        </div>
+                    @endif
                     <p style="font-size: 11px; color: var(--faint); line-height: 1.45; margin: 10px 0 0; border-top: 1px solid var(--line-soft); padding-top: 8px;">
                         Strict privacy controls apply. Personal contact details remain confidential.
                     </p>
@@ -1085,12 +1109,13 @@
         .staff-detail-card--response { order: 5; }
         .staff-detail-card--evidence { order: 6; }
         .staff-detail-card--review { order: 7; }
-        .staff-detail-card--followup { order: 8; }
-        .staff-detail-card--assignment { order: 9; }
-        .staff-detail-card--hold { order: 10; }
+        .staff-detail-card--marking { order: 8; }
+        .staff-detail-card--followup { order: 9; }
+        .staff-detail-card--assignment { order: 10; }
+        .staff-detail-card--hold { order: 11; }
         .staff-detail-card--moderation,
         .staff-detail-card--publication,
-        .staff-detail-card--closure { order: 11; }
+        .staff-detail-card--closure { order: 12; }
     }
 
     @media (max-width: 599px) {

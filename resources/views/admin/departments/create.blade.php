@@ -61,31 +61,25 @@
         </form>
     </section>
 
-    {{-- Stated here because this is where the code is chosen, and it is the one
-         thing an admin cannot discover afterwards. Five codes auto-route
-         complaints; every other office receives nothing automatically and has to
-         be fed by hand. Finding that out weeks later, when the new office sits
-         empty, is the failure this paragraph prevents. --}}
+    {{-- Stated here because this is where the code is chosen. Categories now
+         point at the office, so the code is a human identifier rather than a
+         routing key; the paragraph tells an admin what the code is for and how
+         to give it meaning. --}}
     <section class="admin-panel admin-department-routing-note">
         <div class="admin-panel-heading">
             <h2 class="admin-panel-title">What happens to the code you choose</h2>
         </div>
         <div class="admin-panel-body">
             <p>
-                Complaints are routed automatically for
-                <strong>{{ count($routableCodes) }} codes</strong> -
-                {{ implode(', ', $routableCodes) }}. Those are the codes residents' complaint
-                categories are mapped to.
+                The code is a short identifier used in filters and exports. Complaint categories
+                route to the office through the
+                <a href="{{ route('admin.categories.index') }}">complaint categories</a>
+                page, so an office receives work as soon as a category names it.
             </p>
             <p>
-                Any other code creates an office that receives nothing on its own. It can still hold
-                staff, still issue invitations, and can be assigned complaints by hand - but the
-                router will not send work to it.
-            </p>
-            <p>
-                A code can be changed at any time while the office is not routing automatically.
-                Once an office is archived, creating a replacement with the code you want is the way
-                to give it back.
+                A new office starts active and can hold staff, issue invitations, and receive
+                categories immediately. The code can be changed at any time without stranding the
+                categories already mapped to the office.
             </p>
         </div>
     </section>

@@ -273,6 +273,25 @@ class NotificationDeliveryTest extends TestCase
         $this->assertStringContainsString('COMP-', $notification->title);
     }
 
+    public function test_a_resident_is_told_when_their_complaint_is_flagged_for_moderation(): void
+    {
+        $this->actingAs($this->resident)->post(route('complaints.store'), [
+            'category' => 'road_damage',
+            'title' => 'Free money now',
+            'description' => 'Click here for a guaranteed profit lottery winner crypto giveaway.',
+            'barangay' => \App\Models\User::BARANGAYS[0],
+            'image' => $this->complaintEvidence(),
+            'terms' => '1',
+        ])->assertRedirect();
+
+        $notification = Notification::where('user_id', $this->resident->id)->sole();
+
+        $this->assertSame(Notification::COMPLAINT_MODERATION_FLAGGED, $notification->type);
+        $this->assertStringContainsString('COMP-', $notification->title);
+        $this->assertSame('review', $notification->context['spam_status']);
+        $this->assertSame(30, $notification->context['spam_score']);
+    }
+
     public function test_a_status_change_tells_the_resident(): void
     {
         $complaint = $this->complaint;

@@ -6,6 +6,7 @@
 @endpush
 
 @php
+    use App\Models\ComplaintCategoryGroup;
     $dashboardRoute = auth()->user()?->homeRouteName() ?? 'complaints.index';
 @endphp
 
@@ -51,6 +52,67 @@
     border: 1.5px solid rgba(255, 255, 255, 0.35);
   }
   .lp-btn--secondary:hover { border-color: rgba(255, 255, 255, 0.6); color: var(--surface); }
+
+  /* Hero: inline ticket tracker (replaces the secondary CTA) */
+  .lp-track-form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 48px;
+    padding: 4px 6px 4px 16px;
+    border: 1.5px solid color-mix(in srgb, var(--surface) 35%, transparent);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--surface);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .lp-track-form:hover,
+  .lp-track-form:focus-within {
+    border-color: color-mix(in srgb, var(--surface) 60%, transparent);
+  }
+  .lp-track-form:focus-within {
+    box-shadow: var(--ring);
+  }
+  .lp-track-form__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    outline: none;
+  }
+  .lp-track-form__input::placeholder {
+    color: color-mix(in srgb, var(--surface) 65%, transparent);
+    font-weight: 500;
+  }
+  .lp-track-form__submit {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--surface);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .lp-track-form__submit:hover {
+    background: color-mix(in srgb, var(--surface) 12%, transparent);
+  }
+  .lp-track-form__submit:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold-500) 55%, transparent);
+  }
   @media (max-width: 767px) {
     .lp-btn { min-height: 48px; width: 100%; font-size: 16px; }
   }
@@ -122,10 +184,12 @@
   }
 
   .lp-hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; }
-  .lp-hero__ctas .lp-btn--secondary { flex: 0 0 auto; }
+  .lp-hero__ctas .lp-btn--secondary,
+  .lp-hero__ctas .lp-track-form { flex: 0 1 280px; min-width: 220px; }
   @media (max-width: 767px) {
     .lp-hero__ctas { flex-direction: column; }
-    .lp-hero__ctas .lp-btn--secondary { width: 100%; }
+    .lp-hero__ctas .lp-btn--secondary,
+    .lp-hero__ctas .lp-track-form { width: 100%; min-width: 0; flex: 0 0 auto; }
   }
 
   .lp-hero__reassurance {
@@ -607,9 +671,26 @@
             <a href="{{ route('register') }}" wire:navigate class="lp-btn lp-btn--primary" data-sticky-anchor>
               {{ __('landing.primary_cta') }}
             </a>
-            <a href="{{ route('login') }}" wire:navigate class="lp-btn lp-btn--secondary">
-              {{ __('landing.secondary_cta') }}
-            </a>
+            <form method="GET" action="{{ route('complaints.track') }}" class="lp-track-form" role="search" aria-label="{{ __('landing.track_form_label') }}">
+              <label for="lp-track-ticket" class="sr-only">{{ __('complaint_track.lookup.label') }}</label>
+              <input
+                id="lp-track-ticket"
+                name="ticket_id"
+                type="text"
+                class="lp-track-form__input"
+                placeholder="{{ __('landing.track_placeholder') }}"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                maxlength="40"
+              >
+              <button type="submit" class="lp-track-form__submit" aria-label="{{ __('landing.track_submit') }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7"></circle>
+                  <path d="m20 20-3.5-3.5"></path>
+                </svg>
+              </button>
+            </form>
           @endauth
         </div>
 
@@ -703,18 +784,19 @@
       <p class="lp-section__sub">{{ __('landing.categories_subtitle') }}</p>
 
       @php
-        $tiles = [
-            ['category' => 'road_damage', 'label' => __('complaint_create.groups.roads.label')],
-            ['category' => 'garbage', 'label' => __('complaint_create.groups.waste.label')],
-            ['category' => 'others', 'label' => __('complaint_create.groups.other.label')],
-        ];
+        $groups = ComplaintCategoryGroup::active()
+            ->orderBy('sort_order')
+            ->orderBy('label_en')
+            ->get();
         $tileHref = auth()->check() ? route('complaints.create') : route('register');
       @endphp
       <div class="lp-tiles">
-        @foreach($tiles as $tile)
+        @foreach($groups as $group)
           <a class="lp-tile" href="{{ $tileHref }}" wire:navigate>
-            @include('pages.transparency.partials.category-icon', ['category' => $tile['category']])
-            <span class="lp-tile__label">{{ $tile['label'] }}</span>
+            <span class="cat-icon cat-icon--{{ $group->color }}" aria-hidden="true">
+              @include('complaints.partials.tile-icon', ['icon' => $group->icon])
+            </span>
+            <span class="lp-tile__label">{{ $group->label() }}</span>
           </a>
         @endforeach
       </div>
@@ -839,23 +921,21 @@
         @endforeach
       </div>
 
-      {{-- FAQ — emergency question intentionally absent: no LGU-confirmed emergency number yet (see report). --}}
-      <div class="lp-faq">
-        @foreach([
-            ['q' => __('landing.faq_1_q'), 'a' => __('landing.faq_1_a')],
-            ['q' => __('landing.faq_2_q'), 'a' => __('landing.faq_2_a')],
-            ['q' => __('landing.faq_3_q'), 'a' => __('landing.faq_3_a')],
-            ['q' => __('landing.faq_5_q'), 'a' => __('landing.faq_5_a')],
-        ] as $item)
-          <details class="lp-faq__item">
-            <summary class="lp-faq__question">
-              {{ $item['q'] }}
-              <svg class="lp-faq__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </summary>
-            <div class="lp-faq__answer"><p>{{ $item['a'] }}</p></div>
-          </details>
-        @endforeach
-      </div>
+      {{-- FAQ — managed at /admin/faqs. Hidden entirely when nothing is published.
+           Emergency question intentionally absent: no LGU-confirmed emergency number yet (see report). --}}
+      @if($faqs->isNotEmpty())
+        <div class="lp-faq">
+          @foreach($faqs as $faq)
+            <details class="lp-faq__item">
+              <summary class="lp-faq__question">
+                {{ $faq->question() }}
+                <svg class="lp-faq__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </summary>
+              <div class="lp-faq__answer"><p>{!! nl2br(e($faq->answer())) !!}</p></div>
+            </details>
+          @endforeach
+        </div>
+      @endif
     </div>
   </section>
 

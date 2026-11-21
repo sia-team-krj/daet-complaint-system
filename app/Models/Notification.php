@@ -39,6 +39,13 @@ class Notification extends Model
     /** A verifier or administrator settled the review decision. */
     public const COMPLAINT_REVIEW_UPDATED = 'complaint.review_updated';
 
+    /**
+     * Office staff marked the report misleading or spam — the office's
+     * rejection of the report. Sent to the Office of the Mayor and the
+     * super admin for management review.
+     */
+    public const COMPLAINT_MARKED_MISLEADING_OR_SPAM = 'complaint.marked_misleading_or_spam';
+
     /** A complaint was handed to a staff member to work. */
     public const COMPLAINT_ASSIGNED = 'complaint.assigned';
 
@@ -62,6 +69,14 @@ class Notification extends Model
 
     /** The work was resolved; the resident has not confirmed it yet. */
     public const COMPLAINT_RESOLUTION_REMINDER = 'complaint.resolution_reminder';
+
+    /** The moderation detector flagged the report; the resident is told. */
+    public const COMPLAINT_MODERATION_FLAGGED = 'complaint.moderation_flagged';
+
+    public const IDENTITY_SUBMITTED = 'identity.submitted';
+    public const IDENTITY_APPROVED = 'identity.approved';
+    public const IDENTITY_REJECTED = 'identity.rejected';
+    public const IDENTITY_REVOKED = 'identity.revoked';
 
     protected $fillable = [
         'user_id',
@@ -151,7 +166,13 @@ class Notification extends Model
             self::COMPLAINT_INFORMATION_STALE => 'waiting',
             self::COMPLAINT_STATUS_CHANGED => 'status',
             self::COMPLAINT_REVIEW_UPDATED => 'review',
+            self::COMPLAINT_MARKED_MISLEADING_OR_SPAM => 'status',
+            self::COMPLAINT_MODERATION_FLAGGED => 'review',
             self::COMPLAINT_ASSIGNED => 'handover',
+            self::IDENTITY_SUBMITTED => 'verify',
+            self::IDENTITY_APPROVED => 'verify',
+            self::IDENTITY_REJECTED => 'status',
+            self::IDENTITY_REVOKED => 'handover',
             default => 'bell',
         };
     }
@@ -166,12 +187,26 @@ class Notification extends Model
     public function destination(): ?string
     {
         $complaint = $this->subject;
+        $recipient = $this->user;
+
+        if (in_array($this->type, [
+            self::IDENTITY_SUBMITTED,
+            self::IDENTITY_APPROVED,
+            self::IDENTITY_REJECTED,
+            self::IDENTITY_REVOKED,
+        ], true)) {
+            if ($recipient?->isAdmin()) {
+                return route('admin.identity.show', ['verification' => $this->subject_id]);
+            }
+
+            if ($recipient?->isCitizen()) {
+                return route('identity.verify.show');
+            }
+        }
 
         if (! $complaint instanceof Complaint || $complaint->id === null) {
             return null;
         }
-
-        $recipient = $this->user;
 
         if ($recipient?->role === 'citizen') {
             return route('complaints.show', $complaint);
@@ -208,6 +243,8 @@ class Notification extends Model
             self::COMPLAINT_INFORMATION_STALE => 'Waiting on resident',
             self::COMPLAINT_STATUS_CHANGED => 'Status changed',
             self::COMPLAINT_REVIEW_UPDATED => 'Review updated',
+            self::COMPLAINT_MARKED_MISLEADING_OR_SPAM => 'Marked misleading or spam',
+            self::COMPLAINT_MODERATION_FLAGGED => 'Flagged for review',
             self::COMPLAINT_ASSIGNED => 'Assigned to you',
             self::COMPLAINT_PUT_ON_HOLD => 'Work paused',
             self::COMPLAINT_HOLD_REMOVED => 'Work resumed',
@@ -215,6 +252,10 @@ class Notification extends Model
             self::COMPLAINT_PUBLICATION_REQUESTED => 'Publication decision needed',
             self::COMPLAINT_PUBLICATION_APPROVED => 'Published',
             self::COMPLAINT_PUBLICATION_DECLINED => 'Not published',
+            self::IDENTITY_SUBMITTED => 'Identity submitted',
+            self::IDENTITY_APPROVED => 'Identity approved',
+            self::IDENTITY_REJECTED => 'Identity rejected',
+            self::IDENTITY_REVOKED => 'Identity revoked',
             default => 'Update',
         };
     }

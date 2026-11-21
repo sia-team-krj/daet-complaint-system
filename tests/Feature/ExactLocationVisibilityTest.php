@@ -148,21 +148,21 @@ class ExactLocationVisibilityTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        // The card is <div class="detail-card"><div class="detail-card-header">…
-        // <span class="detail-card-title">Location</span>…</div><div
-        // class="detail-card-body">…coordinates…</div></div>, so the marker sits
-        // inside the header. Slicing from the card that contains the *body*
-        // picks up the whole thing, header included.
+        // The card is <section class="pt-card rd-order-location"
+        // aria-labelledby="pcs-location-heading">…<h2 id="pcs-location-heading">
+        // Location</h2>…<div id="complaint-map">…</div>…coordinates…</section>,
+        // so the marker sits inside the header. Slicing from the card that
+        // contains the body picks up the whole thing, header included.
         $card = $this->sliceContaining(
             $body,
-            'detail-card',
-            'detail-card-title">Location<',
+            'pt-card',
+            'pcs-location-heading">Location<',
         );
 
         $this->assertStringContainsString(
-            'detail-card-body',
+            'id="complaint-map"',
             $card,
-            'The location card was sliced to its header, which cannot hold the coordinates.',
+            'The location card was sliced to its header, which cannot hold the map.',
         );
 
         $this->assertStringContainsString($this->formatted(self::LAT), $card);
@@ -397,8 +397,8 @@ class ExactLocationVisibilityTest extends TestCase
     /**
      * The markup of the element carrying a class that contains a given marker.
      *
-     * The resident's page has sixteen `detail-card` elements, only one of which
-     * is the location, so slicing to the first match would read whichever card
+     * The resident's page has several `pt-card` elements, only one of which is
+     * the location, so slicing to the first match would read whichever card
      * happened to come first and prove nothing about location.
      */
     private function sliceContaining(string $html, string $class, string $marker): string

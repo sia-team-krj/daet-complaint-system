@@ -10,19 +10,26 @@ use Illuminate\Support\Facades\Hash;
 class UserSeeder extends Seeder
 {
     /**
-     * Seed the application's users: one administrator, one department
-     * verifier, three staff accounts (one per office), and eight residents.
+     * Seed the application's users: one super admin, department administrators,
+     * field staff, verifiers, and residents.
      *
      * Demo credentials (local/presentation only):
      *
-     *   admin@daetlistens.gov.ph        Admin@1234    (System Administrator)
-     *   verifier@daetlistens.gov.ph     Verifier@1234 (Engineering — can verify)
-     *   engineering@daetlistens.gov.ph  Staff@1234    (Engineering field staff)
-     *   mayor@daetlistens.gov.ph        Staff@1234    (Mayor's Office staff)
-     *   menro@daetlistens.gov.ph        Staff@1234    (MENRO staff)
-     *   Residents (8):                  Test@1234
-     *   pedro@gmail.com · nena@gmail.com · jose@gmail.com · maria.santos@gmail.com
-     *   rodel.villanueva@gmail.com · liza.ocampo@gmail.com · gabriel.reyes@gmail.com · carmen.delarosa@gmail.com
+     *   admin@daetlistens.gov.ph         Admin@1234      (System Administrator)
+     *   deptadmin.eng@daetlistens.gov.ph DeptAdmin@1234 (Engineering — Dept Admin)
+     *   deptadmin.om@daetlistens.gov.ph  DeptAdmin@1234 (Mayor's Office — Dept Admin)
+     *   deptadmin.menro@daetlistens.gov.ph DeptAdmin@1234 (MENRO — Dept Admin)
+     *   verifier.eng@daetlistens.gov.ph  Verifier@1234  (Engineering — Verifier)
+     *   verifier.om@daetlistens.gov.ph   Verifier@1234  (Mayor's Office — Verifier)
+     *   verifier.menro@daetlistens.gov.ph Verifier@1234 (MENRO — Verifier)
+     *   staff.eng.1@daetlistens.gov.ph   Staff@1234     (Engineering Field Staff 1)
+     *   staff.eng.2@daetlistens.gov.ph   Staff@1234     (Engineering Field Staff 2)
+     *   staff.om.1@daetlistens.gov.ph    Staff@1234     (Mayor's Office Field Staff 1)
+     *   staff.om.2@daetlistens.gov.ph    Staff@1234     (Mayor's Office Field Staff 2)
+     *   staff.menro.1@daetlistens.gov.ph Staff@1234    (MENRO Field Staff 1)
+     *   staff.menro.2@daetlistens.gov.ph Staff@1234    (MENRO Field Staff 2)
+     *   Residents (5): Test@1234
+     *   aling@gmail.com · bela@gmail.com · carlo@gmail.com · dana@gmail.com · eduardo@gmail.com
      */
     public function run(): void
     {
@@ -30,7 +37,7 @@ class UserSeeder extends Seeder
 
         $users = [];
 
-        // ── ADMIN ACCOUNT ──
+        // ── SUPER ADMIN ACCOUNT ──
         $admin = User::firstOrCreate(
             ['email' => 'admin@daetlistens.gov.ph'],
             [
@@ -43,90 +50,144 @@ class UserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $users[] = ['Admin', $admin->full_name, $admin->email, '—', 'Admin@1234'];
+        $users[] = ['Super Admin', $admin->full_name, $admin->email, '—', 'Admin@1234'];
 
-        // ── VERIFIER ACCOUNT ──
-        // One verifier for the busiest office, Engineering, so the review
-        // queue can be demonstrated end-to-end with a department-scoped
-        // verifier. Mayor's Office and MENRO tickets rely on the admin's
-        // verification powers — deliberately, so both paths are visible.
-        $verifierDept = Department::where('code', 'ENG')->firstOrFail();
-        $verifier = User::firstOrCreate(
-            ['email' => 'verifier@daetlistens.gov.ph'],
-            [
-                'first_name' => 'Ramon',
-                'last_name' => 'Villanueva',
-                'password' => Hash::make('Verifier@1234'),
-                'role' => 'staff',
-                'department_id' => $verifierDept->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-                'can_verify' => true,
-            ]
-        );
-        $users[] = ['Verifier (Engineering)', $verifier->full_name, $verifier->email, $verifierDept->name, 'Verifier@1234'];
-
-        // ── STAFF ACCOUNTS (one per office) ──
-        $staff = [
-            ['Engineering Office', 'ENG', 'Juan', 'Dela Cruz', 'engineering@daetlistens.gov.ph'],
-            ["Mayor's Office", 'OM', 'Ana', 'Garcia', 'mayor@daetlistens.gov.ph'],
-            ['Municipal Environment and Natural Resource Office', 'MENRO', 'Carlos', 'Mendoza', 'menro@daetlistens.gov.ph'],
+        // ── DEPARTMENT ADMINISTRATOR ACCOUNTS (one per department) ──
+        $deptAdminEmails = [
+            'ENG' => 'deptadmin.eng@daetlistens.gov.ph',
+            'OM'  => 'deptadmin.om@daetlistens.gov.ph',
+            'MENRO' => 'deptadmin.menro@daetlistens.gov.ph',
         ];
 
-        foreach ($staff as [$deptName, $deptCode, $firstName, $lastName, $email]) {
-            $department = Department::where('code', $deptCode)->firstOrFail();
-            $staffMember = User::firstOrCreate(
+        foreach ($deptAdminEmails as $code => $email) {
+            $dept = Department::where('code', $code)->firstOrFail();
+            $deptAdmin = User::firstOrCreate(
                 ['email' => $email],
                 [
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'password' => Hash::make('Staff@1234'),
-                    'role' => 'staff',
-                    'department_id' => $department->id,
+                    'first_name' => 'DeptAdmin',
+                    'last_name' => ucfirst(strtolower($code)),
+                    'password' => Hash::make('DeptAdmin@1234'),
+                    'role' => 'department_admin',
+                    'department_id' => $dept->id,
                     'is_active' => true,
                     'email_verified_at' => now(),
-                    // Ordinary staff: they act on verified work but cannot
-                    // verify. The verifier above holds the capability.
-                    'can_verify' => false,
+                    'can_verify' => true,
                 ]
             );
-            $users[] = ["Staff ({$deptCode})", $staffMember->full_name, $staffMember->email, $department->name, 'Staff@1234'];
+            $users[] = ['Dept. Admin (' . ucfirst($code) . ')', $deptAdmin->full_name, $deptAdmin->email, $dept->name, 'DeptAdmin@1234'];
         }
 
-        // ── CITIZEN ACCOUNTS ──
-        // Each carries a barangay, which the complaint form prefills.
-        // Names are presentation-friendly, not of anyone real.
-        $citizens = [
-            ['Pedro', 'Penduko', 'pedro@gmail.com', 'Barangay VI (Centro)'],
-            ['Nena', 'Cruz', 'nena@gmail.com', 'Barangay VI (Centro)'],
-            ['Jose', 'Batungbakal', 'jose@gmail.com', 'Barangay VIII (Salcedo)'],
-            ['Maria', 'Santos', 'maria.santos@gmail.com', 'Bagasbas'],
-            ['Rodel', 'Villanueva', 'rodel.villanueva@gmail.com', 'Barangay I (Hilahod)'],
-            ['Liza', 'Ocampo', 'liza.ocampo@gmail.com', 'Barangay IV (Mantagbac)'],
-            ['Gabriel', 'Reyes', 'gabriel.reyes@gmail.com', 'Barangay V (Pandan)'],
-            ['Carmen', 'Dela Rosa', 'carmen.delarosa@gmail.com', 'Cobangbang'],
+        // ── VERIFIER ACCOUNTS (one per department) ──
+        $verifierEmails = [
+            'ENG' => 'verifier.eng@daetlistens.gov.ph',
+            'OM'  => 'verifier.om@daetlistens.gov.ph',
+            'MENRO' => 'verifier.menro@daetlistens.gov.ph',
         ];
 
-        foreach ($citizens as [$firstName, $lastName, $email, $barangay]) {
-            $citizen = User::firstOrCreate(
+        foreach ($verifierEmails as $code => $email) {
+            $dept = Department::where('code', $code)->firstOrFail();
+            $verifier = User::firstOrCreate(
                 ['email' => $email],
                 [
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'barangay' => $barangay,
+                    'first_name' => 'Verifier',
+                    'last_name' => ucfirst($code),
+                    'password' => Hash::make('Verifier@1234'),
+                    'role' => 'staff',
+                    'department_id' => $dept->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                    'can_verify' => true,
+                ]
+            );
+            $users[] = ['Verifier (' . ucfirst($code) . ')', $verifier->full_name, $verifier->email, $dept->name, 'Verifier@1234'];
+        }
+
+        // ── FIELD STAFF ACCOUNTS (two per department) ──
+        $staffMembers = [
+            'ENG' => [
+                ['firstName' => 'Juan', 'lastName' => 'Dela Cruz', 'email' => 'staff.eng.1@daetlistens.gov.ph'],
+                ['firstName' => 'Maria', 'lastName' => 'Santos', 'email' => 'staff.eng.2@daetlistens.gov.ph'],
+            ],
+            'OM' => [
+                ['firstName' => 'Ana', 'lastName' => 'Garcia', 'email' => 'staff.om.1@daetlistens.gov.ph'],
+                ['firstName' => 'Carlos', 'lastName' => 'Reyes', 'email' => 'staff.om.2@daetlistens.gov.ph'],
+            ],
+            'MENRO' => [
+                ['firstName' => 'Luis', 'lastName' => 'Vargas', 'email' => 'staff.menro.1@daetlistens.gov.ph'],
+                ['firstName' => 'Patricia', 'lastName' => 'Cruz', 'email' => 'staff.menro.2@daetlistens.gov.ph'],
+            ],
+        ];
+
+        foreach ($staffMembers as $code => $staffList) {
+            $dept = Department::where('code', $code)->firstOrFail();
+            foreach ($staffList as $staff) {
+                $staffMember = User::firstOrCreate(
+                    ['email' => $staff['email']],
+                    [
+                        'first_name' => $staff['firstName'],
+                        'last_name' => $staff['lastName'],
+                        'password' => Hash::make('Staff@1234'),
+                        'role' => 'staff',
+                        'department_id' => $dept->id,
+                        'is_active' => true,
+                        'email_verified_at' => now(),
+                        'can_verify' => false,
+                    ]
+                );
+                $users[] = ['Staff (' . $code . ')', $staffMember->full_name, $staffMember->email, $dept->name, 'Staff@1234'];
+            }
+        }
+
+        // ── RESIDENT ACCOUNTS (5) ──
+        // Each carries a barangay, which the complaint form prefills.
+        // Names are presentation-friendly, not of anyone real.
+        // Three of them are ID-verified; two are not, so the identity-gated
+        // filing flow can be demonstrated from both sides.
+        $residents = [
+            ['firstName' => 'Aling', 'lastName' => 'Gomez', 'email' => 'aling@gmail.com', 'barangay' => 'Barangay VI (Centro)', 'identityStatus' => 'verified'],
+            ['firstName' => 'Bela', 'lastName' => 'Cruz', 'email' => 'bela@gmail.com', 'barangay' => 'Barangay I (Hilahod)', 'identityStatus' => 'verified'],
+            ['firstName' => 'Carlo', 'lastName' => 'Dela Cruz', 'email' => 'carlo@gmail.com', 'barangay' => 'Barangay IV (Mantagbac)', 'identityStatus' => 'verified'],
+            ['firstName' => 'Dana', 'lastName' => 'Santos', 'email' => 'dana@gmail.com', 'barangay' => 'Barangay VIII (Salcedo)', 'identityStatus' => 'unverified'],
+            ['firstName' => 'Eduardo', 'lastName' => 'Reyes', 'email' => 'eduardo@gmail.com', 'barangay' => 'Barangay V (Pandan)', 'identityStatus' => 'unverified'],
+        ];
+
+        foreach ($residents as $resident) {
+            $citizen = User::firstOrCreate(
+                ['email' => $resident['email']],
+                [
+                    'first_name' => $resident['firstName'],
+                    'last_name' => $resident['lastName'],
+                    'barangay' => $resident['barangay'],
                     'password' => Hash::make('Test@1234'),
                     'role' => 'citizen',
                     'department_id' => null,
                     'is_active' => true,
                     'email_verified_at' => now(),
+                    'identity_status' => $resident['identityStatus'],
+                    'identity_verified_at' => $resident['identityStatus'] === 'verified' ? now() : null,
                 ]
             );
 
             if (blank($citizen->barangay)) {
-                $citizen->forceFill(['barangay' => $barangay])->save();
+                $citizen->forceFill(['barangay' => $resident['barangay']])->save();
             }
 
-            $users[] = ['Resident', $citizen->full_name, $citizen->email, $barangay, 'Test@1234'];
+            if ($resident['identityStatus'] === 'verified') {
+                $citizen->identityVerifications()->updateOrCreate(
+                    ['user_id' => $citizen->id],
+                    [
+                        'status' => 'approved',
+                        'id_type' => 'PhilID',
+                        'id_number_hash' => hash('sha256', 'demo-id-'.$citizen->id),
+                        'submitted_at' => now(),
+                        'reviewed_at' => now(),
+                        'reviewed_by' => $admin->id,
+                        'reviewer_note' => 'Demo verification approved.',
+                    ]
+                );
+            }
+
+            $users[] = ['Resident', $citizen->full_name, $citizen->email, $resident['barangay'], 'Test@1234'];
         }
 
         $this->command->table(

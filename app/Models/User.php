@@ -74,9 +74,17 @@ class User extends Authenticatable
         'notification_preferences',
         'default_queue_view',
         'daily_digest',
+        'identity_status',
+        'identity_verified_at',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_last_used_step',
+    ];
 
     protected function casts(): array
     {
@@ -90,6 +98,12 @@ class User extends Authenticatable
             'can_verify' => 'boolean',
             'notification_preferences' => 'array',
             'daily_digest' => 'boolean',
+            'identity_status' => 'string',
+            'identity_verified_at' => 'datetime',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_recovery_codes' => 'array',
+            'two_factor_last_used_step' => 'integer',
         ];
     }
 
@@ -256,6 +270,65 @@ class User extends Authenticatable
         return $this->role === 'citizen';
     }
 
+    /** @return HasMany<IdentityVerification, $this> */
+    public function identityVerifications(): HasMany
+    {
+        return $this->hasMany(IdentityVerification::class, 'user_id')->orderByDesc('id');
+    }
+
+    public function latestIdentityVerification(): ?IdentityVerification
+    {
+        return $this->identityVerifications()->first();
+    }
+
+    public function isIdentityVerified(): bool
+    {
+        return $this->identity_status === 'verified' && $this->identity_verified_at !== null;
+    }
+
+    /**
+     * Whether the resident may file a new complaint: verified, or verification
+     * not required by config. Pending, rejected, and unverified cannot file.
+     */
+    public function canFileComplaints(): bool
+    {
+        if (! config('identity.verification_required')) {
+            return true;
+        }
+
+        if (! $this->isCitizen()) {
+            return true;
+        }
+
+        return $this->isIdentityVerified();
+    }
+
+    public function requiresIdentityVerification(): bool
+    {
+        return config('identity.verification_required') && $this->isCitizen() && ! $this->isIdentityVerified();
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null
+            && is_string($this->two_factor_secret)
+            && $this->two_factor_secret !== '';
+    }
+
+    /**
+     * Remove the authenticator and recovery codes. Used by the CLI reset and
+     * by the re-enrollment flow after the current code has been verified.
+     */
+    public function clearTwoFactor(): void
+    {
+        $this->forceFill([
+            'two_factor_secret' => null,
+            'two_factor_confirmed_at' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_last_used_step' => null,
+        ])->save();
+    }
+
     /**
      * Where this user's home is. Single source for logo + post-login/
      * post-register/verification + denial redirects.
@@ -334,6 +407,71 @@ class User extends Authenticatable
     public function scopeForDepartment($query, int $departmentId)
     {
         return $query->where('department_id', $departmentId);
+    }
+
+    // ─────────────────────────────────────────────
+    // RESIDENT TRUST / HEALTH SCORE
+    // ─────────────────────────────────────────────
+
+    /**
+     * Resident trust score (0-100). Starts at 100.
+     * Confirmed misleading/spam: -20. Clean Resolved/Closed: +5.
+     */
+    public function trustScore(): int
+    {
+        $bad = (int) $this->complaints()
+            ->where(function ($q) {
+                $q->whereNotNull('marking_confirmed_at')
+                    ->orWhereNotNull('spam_confirmed_at');
+            })
+            ->count();
+
+        $good = (int) $this->complaints()
+            ->whereIn('status', ['Resolved', 'Closed'])
+            ->whereNull('marking_confirmed_at')
+            ->whereNull('spam_confirmed_at')
+            ->count();
+
+        return max(0, min(100, 100 - (20 * $bad) + (5 * $good)));
+    }
+
+    public function trustScoreLabel(): string
+    {
+        $score = $this->trustScore();
+
+        return match (true) {
+            $score >= 80 => __('staff.trust.good'),
+            $score >= 50 => __('staff.trust.fair'),
+            default => __('staff.trust.at_risk'),
+        };
+    }
+
+    /**
+     * @return array{score:int,label:string,bad:int,good:int}
+     */
+    public function trustScoreSummary(): array
+    {
+        $bad = (int) $this->complaints()
+            ->where(function ($q) {
+                $q->whereNotNull('marking_confirmed_at')
+                    ->orWhereNotNull('spam_confirmed_at');
+            })
+            ->count();
+
+        $good = (int) $this->complaints()
+            ->whereIn('status', ['Resolved', 'Closed'])
+            ->whereNull('marking_confirmed_at')
+            ->whereNull('spam_confirmed_at')
+            ->count();
+
+        $score = max(0, min(100, 100 - (20 * $bad) + (5 * $good)));
+        $label = match (true) {
+            $score >= 80 => __('staff.trust.good'),
+            $score >= 50 => __('staff.trust.fair'),
+            default => __('staff.trust.at_risk'),
+        };
+
+        return ['score' => $score, 'label' => $label, 'bad' => $bad, 'good' => $good];
     }
 
     // ─────────────────────────────────────────────

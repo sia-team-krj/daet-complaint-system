@@ -198,6 +198,61 @@ class StaffAssignedWorkScopeTest extends TestCase
             ->assertSee(__('nav.complaint_queue'));
     }
 
+    public function test_the_dashboard_stat_cards_are_assigned_only_for_a_non_verifier(): void
+    {
+        $worker = $this->worker();
+
+        $this->complaint([
+            'assigned_staff_id' => $worker->id,
+            'status' => ComplaintStatus::InProgress,
+        ]);
+        $this->complaint([
+            'assigned_staff_id' => $worker->id,
+            'status' => ComplaintStatus::Resolved,
+            'resolved_at' => now(),
+        ]);
+        $this->complaint([
+            'assigned_staff_id' => $this->verifier()->id,
+            'status' => ComplaintStatus::InProgress,
+        ]);
+
+        $response = $this->actingAs($worker)->get(route('staff.dashboard'))->assertOk();
+
+        $response->assertSee(__('staff.dashboard.my_work_overview'));
+        $response->assertSee('Assigned to me: 2', false);
+        $response->assertSee('assigned_staff_id='.$worker->id, false);
+        $response->assertSee('scope=all', false);
+        $response->assertDontSee(__('staff.dashboard.overview'));
+        $response->assertDontSee(__('staff.stats.pending_review'));
+
+        $this->actingAs($this->verifier())
+            ->get(route('staff.dashboard'))
+            ->assertOk()
+            ->assertSee(__('staff.dashboard.overview'))
+            ->assertSee(__('staff.stats.pending_review'));
+    }
+
+    public function test_the_assigned_to_me_card_opens_every_assigned_complaint(): void
+    {
+        $worker = $this->worker();
+
+        $open = $this->complaint([
+            'assigned_staff_id' => $worker->id,
+            'status' => ComplaintStatus::InProgress,
+        ]);
+        $finished = $this->complaint([
+            'assigned_staff_id' => $worker->id,
+            'status' => ComplaintStatus::Resolved,
+            'resolved_at' => now(),
+        ]);
+
+        $this->actingAs($worker)
+            ->get(route('staff.complaints.index', ['assigned_staff_id' => $worker->id, 'scope' => 'all']))
+            ->assertOk()
+            ->assertSee($open->ticket_id)
+            ->assertSee($finished->ticket_id);
+    }
+
     public function test_a_non_verifier_cannot_post_a_status_update_for_work_that_is_not_theirs(): void
     {
         $worker = $this->worker();

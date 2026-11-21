@@ -409,11 +409,8 @@
                 </div>
 
                 <h3 class="ds-h3">Account identity (navbar, §5.31)</h3>
-                <p class="ds-note">Staff/admin context shown in the fixed top bar (desktop + mobile). On navy chrome; uses dept tokens for staff and navy/gold tokens for admin. No new colours.</p>
+                <p class="ds-note">Staff context shown in the fixed top bar (desktop + mobile). On navy chrome; uses dept tokens for staff. No new colours.</p>
                 <div style="display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; padding:12px 16px; background:var(--navy-800); border:1px solid color-mix(in srgb, var(--gold-500) 30%, transparent); border-radius:var(--radius-sm);">
-                    <span class="nav-identity nav-identity--on-dark" aria-label="Administrator">
-                        <span class="nav-identity__badge nav-identity__badge--admin">Administrator</span>
-                    </span>
                     <span class="nav-identity nav-identity--on-dark" aria-label="Engineering Office · Staff">
                         <span class="dept-badge" data-dept="ENG">ENG</span>
                         <span class="nav-identity__label">Engineering Office</span>

@@ -9,6 +9,7 @@ return [
         'copied' => 'Copied',
         'filed_with_office' => 'Filed :date · :office',
         'filed_only' => 'Filed :date',
+        'verified_by' => 'Verified: :method',
     ],
 
     'progress' => [
@@ -35,6 +36,7 @@ return [
         'no_photos' => 'No photos attached to this complaint',
         'description_label' => 'Description',
         'photos_label' => 'Attached Photos',
+        'photo_count' => ':count photo|:count photos',
     ],
 
     'location' => [
@@ -49,6 +51,7 @@ return [
         'title' => 'Report details',
         'category' => 'Category',
         'department' => 'Department',
+        'assigned_personnel' => 'Assigned personnel',
         'review_status' => 'Review status',
         'suggested_priority' => 'Suggested priority',
         'confirmed_priority' => 'Confirmed priority',
@@ -64,6 +67,12 @@ return [
         'title' => 'Updates',
         'responded_by' => 'Responded by :office',
         'staff_responses' => 'Staff Responses',
+        'empty_title' => 'No updates yet',
+        'empty_body' => 'Your report has been received. The next department update will appear here.',
+        'earlier' => 'Show earlier updates (:count)',
+        'documentation' => 'Update photos',
+        'open_documentation' => 'Open update photo :index',
+        'documentation_photo' => 'Update photo :index',
     ],
 
     'visibility' => [
@@ -77,6 +86,13 @@ return [
         'private_state' => 'Currently private. Only you and the staff handling it can see this.',
         'gated_state' => 'Private — it names someone',
         'gated_body' => 'Because this report names a person or a business, it stays off the public page. When the office resolves it and verifies the information is true, it goes automatically to the Mayor\'s office, which redacts the public copy and decides whether to publish it. You will be told either way, and every update on this report reaches you as usual.',
+        'moderation_title' => 'This report is not currently shown as you filed it.',
+        'moderation_body' => 'What you see above is your original submission, unchanged.',
+        'moderation_reason' => 'Staff recorded the reason: :reason.',
+        'moderation_generic' => 'A staff member has withheld part of it from the public page.',
+        'moderation_flag_title' => 'This report is not currently listed while it is being reviewed.',
+        'moderation_flag_body' => 'The moderation check flagged this report for review before it could be listed or published. The office will look at it, and you will hear from them either way.',
+        'moderation_reassurance' => 'Your choice of public or private is unaffected, and you can still change it using the button above.',
     ],
 
     'hold' => [
@@ -87,12 +103,26 @@ return [
 
     'help' => [
         'title' => 'Need help?',
+        'intro' => 'For concerns about this complaint, you can contact the Municipality of Daet:',
+        'fallback' => 'For concerns, contact the Municipality of Daet through the Transparency Register or visit the municipal hall.',
+        'mobile_label' => 'Mobile number',
+        'mobile_value' => '0917 000 0000',
+        'mobile_href' => '+639170000000',
+        'email_label' => 'Email',
+        'email_value' => 'helpdesk@example.com',
+        'sample_tag' => 'sample',
+        'view_transparency' => 'View public complaint updates',
+    ],
+
+    'privacy' => [
+        'public_note' => 'Only barangay-level location is shown on the public transparency page. Your exact address and coordinates stay visible to you and the office handling this report.',
     ],
 
     'action' => [
         'title_open' => 'The department needs more information',
         'title_answered' => 'We received your reply',
         'kicker' => 'Waiting on you',
+        'kicker_answered' => 'Received',
         'lede' => 'The office reviewing this complaint needs more from you before it can proceed. Answer the question below — photos help confirm the spot.',
         'fallback_question' => 'The office needs more information to finish the review of this complaint.',
         'from_office' => 'From the reviewing office',
@@ -105,6 +135,14 @@ return [
         'photos_label' => 'Add photos',
         'photos_optional' => 'Optional, up to 5',
         'photos_hint' => 'Photos taken on your phone may share their location, which helps us confirm the spot.',
+        'photos_choose' => 'Choose photos',
+        'photos_take' => 'Take photo',
+        'photos_count' => ':count / :max photos',
+        'photos_remove' => 'Remove :name',
+        'photos_preview_alt' => 'Selected photo: :name',
+        'photos_too_many' => 'You can attach up to :max photos.',
+        'photos_invalid' => 'Use JPG, PNG, or WEBP photos no larger than 5 MB each.',
+
         'submit' => 'Send to the department',
     ],
 
@@ -115,5 +153,46 @@ return [
         'submit' => 'Close this report',
         'success' => 'Thank you. Your report is now closed.',
         'log_comment' => 'Resident confirmed the resolution and closed this report.',
+    ],
+    'feedback' => [
+        'title' => 'Rate this service',
+        'lede' => 'Tell us how this complaint was handled. Your rating helps improve public service.',
+        'rating_label' => 'Your rating',
+        'comment_label' => 'Comment',
+        'optional' => '(optional)',
+        'comment_placeholder' => 'What went well, or what could be better?',
+        'moderation_note' => 'If you add a comment, it will be reviewed before it appears on the public transparency page. Your rating and comment are not shown with your name.',
+        'submit' => 'Submit feedback',
+        'your_rating' => 'Your rating',
+        'sent_pending' => 'Thank you. Your rating was saved, and your comment will be reviewed before it appears publicly.',
+        'sent_published' => 'Thank you. Your feedback has been recorded.',
+        'already_submitted' => 'You have already sent feedback for this complaint.',
+        'pending' => 'Your comment is being reviewed before it appears on the public transparency page.',
+        'withheld' => 'Your comment was reviewed and will not be shown publicly. Your rating has been recorded.',
+        'published' => 'Your comment is visible on the public transparency page for this complaint.',
+        'published_rating_only' => 'Your rating has been recorded.',
+        'errors' => [
+            'rating' => 'Please choose a rating from 1 to 5 stars.',
+        ],
+    ],
+    'follow_up' => [
+        'kicker' => 'Not satisfied?',
+        'title' => 'Follow up on this report',
+        'lede' => 'The department marked this report resolved. If it is not resolved for you, or if the same issue is still happening, you can file a follow-up. It becomes its own report, linked to this one, and gets its own reference number.',
+        'subject_label' => 'Follow-up subject',
+        'subject_placeholder' => 'What should we call this follow-up?',
+        'description_label' => 'What is still happening?',
+        'description_placeholder' => 'Describe the follow-up for the department. What is unresolved, or why this is not settled for you?',
+        'submit' => 'File the follow-up',
+        'created' => 'Your follow-up :ticket has been filed. It is now its own report with its own reference number.',
+        'parent_label' => 'Follow-up of',
+        'open_exists' => 'A follow-up for this report is already waiting on the office. You can open it below.',
+        'view_follow_up' => 'View follow-up :ticket',
+        'errors' => [
+            'title' => 'Please add a short subject for this follow-up.',
+            'description' => 'Please describe the follow-up in a little more detail.',
+            'pending' => 'This report already has a follow-up waiting on the office.',
+            'not_finished' => 'A follow-up can only be filed against a report that has been resolved or closed.',
+        ],
     ],
 ];

@@ -315,12 +315,16 @@ class ComplaintMapRenderingTest extends TestCase
 
         foreach ($containers as $template => $containerClass) {
             $source = $this->template($template);
-            // Filing styles moved to resources/css/pages/complaint-create.css
-            // (imported via app.css). Check both so the height guarantee
-            // follows the move without weakening it.
-            if ($template === 'views/complaints/create.blade.php') {
-                $css = file_get_contents(resource_path('css/pages/complaint-create.css'));
-                $this->assertIsString($css, 'Could not read complaint-create.css.');
+            // Page styles now live in resources/css/pages/*.css (imported via
+            // app.css). Check the template plus its page stylesheet so the
+            // height guarantee follows the move without weakening it.
+            $pageStyles = [
+                'views/complaints/create.blade.php' => 'complaint-create.css',
+                'views/complaints/show.blade.php' => 'complaint-show.css',
+            ];
+            if (isset($pageStyles[$template])) {
+                $css = file_get_contents(resource_path('css/pages/'.$pageStyles[$template]));
+                $this->assertIsString($css, 'Could not read '.$pageStyles[$template].'.');
                 $source .= "\n".$css;
             }
 

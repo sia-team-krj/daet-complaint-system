@@ -1,142 +1,253 @@
 @extends($mainLayout)
-@section('title', 'Track Complaint - Daet Listens')
+
+@section('title', $complaint
+    ? __('complaint_track.result.page_title', ['ticket' => $complaint->ticket_id])
+    : __('complaint_track.lookup.page_title'))
+@section('body-class', 'page-complaint-track')
+
+@push('head')
+    <meta name="robots" content="noindex, nofollow">
+@endpush
+
 @section('content')
+    @php
+        $statusEnum = $complaint?->statusEnum;
+        $statusKey = $complaint ? str($complaint->status)->slug('_') : null;
+    @endphp
 
-<style>
-  
-  :root {
-    --navy:        #142D4F;
-    --navy-mid:    #1B3A61;
-    --gold:        #C9A84C;
-    --cream:       #F5F0E8;
-    --white:       #ffffff;
-    --text-body:   #4B5563;
-    --error:       #991b1b;
-    --error-bg:    rgba(239,68,68,0.08);
-    --error-border: rgba(239,68,68,0.2);
-  }
+    <div class="pt track-page {{ $complaint ? '' : 'track-page--lookup' }}">
+        @if($complaint)
+            {{-- ── Result: progress only ─────────────────────────────────── --}}
+            <header class="pt-banner track-banner track-banner--result">
+                <div class="pt-container track-container">
+                    <div class="track-header">
+                        <div class="track-header__ref">
+                            <p class="track-ref-label">{{ __('complaint_track.result.reference_label') }}</p>
+                            <h1 class="track-ref-number">{{ $complaint->ticket_id }}</h1>
+                            @if($isPublicRecord && !empty($publicTitle))
+                                <p class="track-public-title">{{ $publicTitle }}</p>
+                            @endif
+                        </div>
+                        <div class="track-header__status">
+                            <span class="pt-pill pt-pill--{{ $statusKey }} track-status">
+                                <span class="pt-pill__dot" aria-hidden="true"></span>{{ $statusEnum->label() }}
+                            </span>
+                        </div>
+                    </div>
 
-  *, *::before, *::after { box-sizing: border-box; }
+                    <dl class="track-meta" aria-label="{{ __('complaint_track.result.reference_label') }}">
+                        <div class="track-meta__item track-meta__item--department">
+                            <dt>{{ __('complaint_track.result.department_label') }}</dt>
+                            <dd>{{ $office }}</dd>
+                        </div>
+                        <div class="track-meta__item">
+                            <dt>{{ __('complaint_track.result.filed_label') }}</dt>
+                            <dd>
+                                <time datetime="{{ $complaint->created_at?->toAtomString() }}">{{ $complaint->created_at?->locale(app()->getLocale())->translatedFormat('M j, Y') ?? __('complaint_track.result.not_available') }}</time>
+                            </dd>
+                        </div>
+                        <div class="track-meta__item">
+                            <dt>{{ __('complaint_track.result.updated_label') }}</dt>
+                            <dd>
+                                @if($lastUpdated)
+                                    <time datetime="{{ $lastUpdated->toAtomString() }}">{{ $lastUpdated->locale(app()->getLocale())->translatedFormat('M j, Y') }}</time>
+                                @else
+                                    {{ __('complaint_track.result.not_available') }}
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </header>
 
-  .track-root {
-    font-family: var(--font-sans);
-    background: var(--cream);
-    min-height: calc(100svh - var(--navbar-height));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-  }
+            <div class="pt-container track-container">
+                <div class="track-result-stack">
+                    <section class="pt-card track-card--progress" aria-labelledby="track-progress">
+                        <h2 id="track-progress">{{ __('transparency.show.progress') }}</h2>
 
-  .track-card {
-    background: var(--white);
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(11,31,58,0.08);
-    padding: 48px 40px;
-    max-width: 480px;
-    width: 100%;
-    text-align: center;
-  }
+                        @if($complaint->isOnHold())
+                            <div class="hold-notice" role="status">
+                                <span class="hold-notice__chip">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
+                                <p class="hold-notice__body">
+                                    {{ $complaint->holdNote() ?? __('complaint_show.hold.no_note') }}
+                                    @if($complaint->hold_expected_resume_at)
+                                        <span class="hold-notice__meta">{{ __('complaint_show.hold.expected_on', ['date' => $complaint->hold_expected_resume_at->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                        @endif
 
-  .track-card h2 {
-    font-family: var(--font-sans);
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 8px;
-  }
+                        @if($hasOpenInformationRequest)
+                            <div class="track-note track-note--waiting" role="status">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                <div>
+                                    <strong>{{ __('complaint_track.result.waiting_title') }}</strong>
+                                    <p>{{ __('complaint_track.result.waiting_body') }}</p>
+                                </div>
+                            </div>
+                        @endif
 
-  .track-card p {
-    color: var(--text-body);
-    margin-bottom: 32px;
-    font-size: 15px;
-  }
+                        @include('partials.complaint-steps', ['steps' => $progressSteps])
 
-  .track-form {
-    display: flex;
-    gap: 12px;
-  }
+                        @if($whatMeans !== '')
+                            <div class="pt-whatmeans">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                <p>{{ $whatMeans }}</p>
+                            </div>
+                        @endif
 
-  .track-form input {
-    flex: 1;
-    padding: 12px 16px;
-    border: 1.5px solid rgba(11,31,58,0.15);
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: var(--font-sans);
-    outline: none;
-    transition: border-color 0.2s;
-  }
+                        @if($statusEnum === \App\Enums\ComplaintStatus::Rejected)
+                            <div class="track-note track-note--rejected" role="note">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                                <div>
+                                    <strong>{{ __('complaint_track.result.rejected_title') }}</strong>
+                                    <p>{{ __('complaint_track.result.rejected_body') }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </section>
 
-  .track-form input:focus {
-    border-color: var(--gold);
-  }
+                    @if($isPublicRecord)
+                        <section class="pt-card" aria-labelledby="track-report">
+                            <h2 id="track-report">{{ __('complaint_track.result.report') }}</h2>
+                            <p class="track-public-copy">{{ $publicDescription }}</p>
+                        </section>
 
-  .track-form button {
-    padding: 12px 24px;
-    background: var(--navy);
-    color: var(--white);
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: var(--font-sans);
-    cursor: pointer;
-    transition: background 0.2s;
-  }
+                        @if($publicPhotoCount > 0)
+                            <section class="pt-card" aria-labelledby="track-evidence">
+                                <h2 id="track-evidence">
+                                    {{ __('complaint_track.result.evidence') }}
+                                    <span class="pt-count">{{ $publicPhotoCount }} {{ $publicPhotoCount === 1 ? __('complaint_track.result.photo') : __('complaint_track.result.photos') }}</span>
+                                </h2>
+                                <div class="pt-evidence">
+                                    @foreach($complaint->publicImagePaths() as $imageIndex => $imagePath)
+                                        <a href="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" target="_blank" rel="noopener" aria-label="{{ __('transparency.show.open_evidence_photo', ['index' => $imageIndex + 1]) }}">
+                                            <img src="{{ route('transparency.complaints.evidence', [$complaint, $imageIndex]) }}" alt="{{ __('transparency.show.evidence_photo', ['index' => $imageIndex + 1]) }}" loading="lazy" width="420" height="420">
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </section>
+                        @endif
+                    @endif
 
-  .track-form button:hover {
-    background: var(--navy-mid);
-  }
+                    <section class="pt-card track-card--updates" aria-labelledby="track-updates">
+                        <h2 id="track-updates">{{ __('transparency.show.updates') }}</h2>
+                        @include('complaints.partials.track-updates', [
+                            'updates' => $updates,
+                            'complaint' => $complaint,
+                            'showDocumentation' => $isPublicRecord ?? false,
+                        ])
+                    </section>
 
-  .track-link {
-    display: block;
-    margin-top: 20px;
-    color: var(--gold);
-    font-size: 14px;
-    text-decoration: none;
-  }
+                    @if($isPublicRecord)
+                        <section class="pt-card" aria-labelledby="track-details">
+                            <h2 id="track-details">{{ __('complaint_track.result.details') }}</h2>
+                            <dl class="pt-dl">
+                                <div>
+                                    <dt>{{ __('complaint_track.result.category') }}</dt>
+                                    <dd>
+                                        @include('pages.transparency.partials.category-icon', ['category' => $complaint->category])
+                                        {{ $categoryLabel }}
+                                    </dd>
+                                </div>
+                                <div class="pt-dl--full">
+                                    <dt>{{ __('complaint_track.result.area') }}</dt>
+                                    <dd>{{ $location }}</dd>
+                                </div>
+                            </dl>
+                        </section>
 
-  .track-link:hover {
-    text-decoration: underline;
-  }
+                        @if($complaint->feedback && $complaint->feedback->isPublished())
+                            <section class="pt-card" aria-labelledby="track-feedback">
+                                <h2 id="track-feedback">{{ __('transparency.show.feedback.title') }}</h2>
+                                <p class="track-public-copy track-feedback-lede">{{ __('transparency.show.feedback.lede') }}</p>
 
-  .flash-error {
-    display: flex; align-items: flex-start; gap: 12px;
-    background: var(--error-bg); border: 1px solid var(--error-border);
-    border-radius: 6px; padding: 14px 18px; margin-bottom: 20px;
-    font-size: 13px; color: var(--error); line-height: 1.6;
-  }
+                                <div class="complaint-feedback-result">
+                                    <x-star-rating
+                                        name="public-track-feedback-{{ $complaint->id }}"
+                                        :value="$complaint->feedback->rating"
+                                        :locked="true"
+                                        :label="__('transparency.show.feedback.rating_label')"
+                                    />
 
-  @media (max-width: 500px) {
-    .track-form {
-      flex-direction: column;
-    }
-  }
-</style>
+                                    @if($complaint->feedback->hasComment())
+                                        <div class="complaint-feedback-comment">
+                                            <p>{{ $complaint->feedback->comment }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </section>
+                        @endif
+                    @endif
 
-<div class="track-root">
-  <div class="track-card">
-    <h2>Track Your Complaint</h2>
-    <p>Enter your ticket ID to check the status of your filing.</p>
+                    <section class="pt-card track-privacy-card" aria-labelledby="track-privacy">
+                        <div class="track-privacy-card__icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-3.58 8-10V5l-8-3-8 3v7c0 6.42 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <div class="track-privacy-card__body">
+                            <h2 id="track-privacy">{{ $isPublicRecord ? __('complaint_track.result.privacy_title_public') : __('complaint_track.result.privacy_title') }}</h2>
+                            <p class="track-actions__copy">{{ $isPublicRecord ? __('complaint_track.result.privacy_body_public') : __('complaint_track.result.privacy_body') }}</p>
+                        </div>
+                    </section>
 
-    @if($notFound ?? false)
-      <div style="display: flex; align-items: flex-start; gap: 12px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 6px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #991b1b;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        <div>
-          No complaint found with ticket ID <strong>{{ request('ticket_id') }}</strong>.<br>
-          Please check the ID and try again.
-        </div>
-      </div>
-    @endif
+                    <div class="track-actions-bar">
+                        <a href="{{ route('complaints.track') }}" class="track-btn track-btn--primary">{{ __('complaint_track.result.track_another') }}</a>
+                        @if($isPublicRecord)
+                            <a href="{{ route('transparency.complaints.show', $complaint) }}" class="track-btn track-btn--secondary">{{ __('complaint_track.result.view_public_record') }}</a>
+                        @endif
+                        @guest
+                            <a href="{{ route('login') }}" class="track-btn track-btn--secondary">{{ __('complaint_track.result.sign_in') }}</a>
+                        @endguest
+                    </div>
+                </div>
+            </div>
+        @else
+            {{-- ── Lookup ────────────────────────────────────────────────── --}}
+            <div class="track-lookup-stage">
+                <div class="pt-container track-container track-container--lookup">
+                    <h1 class="track-lookup-title">{{ __('complaint_track.lookup.heading') }}</h1>
 
-    <form data-loading-submit method="GET" action="{{ route('complaints.track') }}" class="track-form">
-      <input type="text" name="ticket_id" placeholder="e.g. COMP-2026-A7K9P" value="{{ request('ticket_id') }}" />
-      <button type="submit">Track</button>
-    </form>
+                    <section class="pt-card track-lookup" aria-label="{{ __('complaint_track.lookup.form_label') }}">
+                        <form method="GET" action="{{ route('complaints.track') }}" class="track-form" data-loading-submit>
+                            <div class="track-field">
+                                <label class="track-label" for="ticket_id">{{ __('complaint_track.lookup.label') }}</label>
+                                <input
+                                    id="ticket_id"
+                                    name="ticket_id"
+                                    type="text"
+                                    class="track-input"
+                                    value="{{ $ticketInput }}"
+                                    placeholder="{{ __('complaint_track.lookup.placeholder') }}"
+                                    autocomplete="off"
+                                    autocapitalize="characters"
+                                    spellcheck="false"
+                                    maxlength="40"
+                                    @if($notFound) aria-invalid="true" aria-describedby="ticket-hint ticket-error" @else aria-describedby="ticket-hint" @endif
+                                >
+                            </div>
 
-    <a href="{{ route('complaints.index') }}" class="track-link">← Back to My Complaints</a>
-  </div>
-</div>
+                            @if($notFound)
+                                <div class="track-alert" id="ticket-error" role="alert">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                                    <div>
+                                        <strong>{{ __('complaint_track.lookup.not_found_title') }}</strong>
+                                        <p>{{ __('complaint_track.lookup.not_found_body') }}</p>
+                                    </div>
+                                </div>
+                            @endif
 
+                            <p class="track-hint" id="ticket-hint">{{ __('complaint_track.lookup.hint') }}</p>
+
+                            <button type="submit" class="track-submit">{{ __('complaint_track.lookup.submit') }}</button>
+                        </form>
+
+                        <p class="track-privacy-note" role="note">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                            <span>{{ __('complaint_track.lookup.privacy') }}</span>
+                        </p>
+                    </section>
+                </div>
+            </div>
+        @endif
+    </div>
 @endsection

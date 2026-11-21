@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
+use App\Enums\FeedbackStatus;
+use App\Enums\InformationRequestStatus;
 use App\Models\Complaint;
 use App\Models\ComplaintInformationRequest;
 use App\Models\ComplaintLog;
@@ -13,6 +15,7 @@ use App\Rules\WithinDaet;
 use App\Services\ActivityLogger;
 use App\Services\BarangayLocator;
 use App\Services\ComplaintDetectionService;
+use App\Services\ComplaintFollowUpService;
 use App\Services\ComplaintPrivacyService;
 use App\Services\ComplaintPriorityService;
 use App\Services\ComplaintVerificationService;
@@ -21,6 +24,8 @@ use App\Services\DepartmentRouter;
 use App\Services\NotificationService;
 use App\Services\PendingLocationUpload;
 use App\Services\PhotoLocationService;
+use App\Services\TransparencyFeed;
+use App\Support\ComplaintProgress;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,19 +41,6 @@ use Throwable;
 class ComplaintController extends Controller
 {
     use AuthorizesRequests;
-
-    /**
-     * Valid complaint categories for routing.
-     */
-    private const VALID_CATEGORIES = [
-        'road_damage',
-        'flooding',
-        'streetlight',
-        'garbage',
-        'sanitation',
-        'plastic_usage',
-        'others',
-    ];
 
     /**
      * Visibility of a complaint on the public transparency page.
@@ -203,9 +195,143 @@ class ComplaintController extends Controller
     {
         $this->authorize('view', $complaint);
 
-        $complaint->load(['department', 'logs.actor', 'informationRequests.requester']);
+        $complaint->load(['department', 'assignedStaff', 'logs.actor', 'informationRequests.requester', 'feedback.reviewer', 'parent']);
 
         return view('complaints.show', compact('complaint'));
+    }
+
+
+    /**
+     * The resident rates how this complaint was handled, once it is finished.
+     *
+     * A rating with no written comment is published immediately. A written
+     * comment is read by the administration before it appears on the public
+     * transparency page, so the resident's words go out reviewed.
+     */
+    public function storeFeedback(Request $request, Complaint $complaint): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_unless($complaint->visibilityIsOwnedBy($user), 403);
+        abort_unless($complaint->canReceiveFeedback(), 403);
+
+        if ($complaint->feedback()->exists()) {
+            return redirect()
+                ->route('complaints.show', $complaint)
+                ->with('error', __('complaint_show.feedback.already_submitted'));
+        }
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['nullable', 'string', 'max:2000'],
+        ], [
+            'rating.required' => __('complaint_show.feedback.errors.rating'),
+            'rating.between' => __('complaint_show.feedback.errors.rating'),
+        ]);
+
+        $comment = trim((string) ($validated['comment'] ?? ''));
+        $hasComment = $comment !== '';
+
+        $complaint->feedback()->create([
+            'user_id' => $user->id,
+            'rating' => (int) $validated['rating'],
+            'comment' => $hasComment ? $comment : null,
+            'status' => $hasComment ? FeedbackStatus::Pending->value : FeedbackStatus::Published->value,
+            'published_at' => $hasComment ? null : now(),
+            'reviewed_at' => $hasComment ? null : now(),
+        ]);
+
+        return redirect()
+            ->route('complaints.show', $complaint)
+            ->with('status', $hasComment
+                ? __('complaint_show.feedback.sent_pending')
+                : __('complaint_show.feedback.sent_published'));
+    }
+
+    /**
+     * File a follow-up sub-ticket against a finished complaint.
+     *
+     * The citizen's half of sub-ticketing: once the office has marked a report
+     * resolved, the resident can decide it is not resolved for them — or that the
+     * same issue persists — and open a follow-up against it. The follow-up is a
+     * child of the complaint it follows and gets its own ticket number, status
+     * and SLA; the parent itself stays closed.
+     */
+    public function storeFollowUp(
+        Request $request,
+        Complaint $complaint,
+        ComplaintFollowUpService $followUps,
+        NotificationService $notifications,
+    ): RedirectResponse {
+        $this->authorize('followUp', $complaint);
+
+        if (! $followUps->canFile($complaint)) {
+            return redirect()
+                ->route('complaints.show', $complaint)
+                ->with('error', $complaint->openFollowUp()
+                    ? __('complaint_show.follow_up.errors.pending')
+                    : __('complaint_show.follow_up.errors.not_finished'));
+        }
+
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'min:20'],
+            'images' => ['nullable', 'array', 'max:5'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'title.required' => __('complaint_show.follow_up.errors.title'),
+            'title.max' => __('complaint_show.follow_up.errors.title'),
+            'description.required' => __('complaint_show.follow_up.errors.description'),
+            'description.min' => __('complaint_show.follow_up.errors.description'),
+        ]);
+
+        $photos = $request->file('images', []);
+        if (! is_array($photos)) {
+            $photos = $photos ? [$photos] : [];
+        }
+        $storedPaths = [];
+
+        try {
+            foreach ($photos as $photo) {
+                if (! $photo instanceof UploadedFile || ! $photo->isValid()) {
+                    continue;
+                }
+                $path = $photo->store('complaints', 'minio');
+                if (! is_string($path) || $path === '') {
+                    throw new \RuntimeException('The follow-up photo could not be stored.');
+                }
+                $storedPaths[] = $path;
+            }
+        } catch (Throwable $exception) {
+            Storage::disk('minio')->delete($storedPaths);
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['images' => __('complaint_show.action.photos_invalid')]);
+        }
+
+        try {
+            $followUp = $followUps->create($complaint, $validated, $request->user(), $storedPaths);
+        } catch (Throwable $exception) {
+            Storage::disk('minio')->delete($storedPaths);
+            report($exception);
+
+            return back()
+                ->withInput()
+                ->withErrors(['description' => __('complaint_show.follow_up.errors.description')]);
+        }
+
+        // Tell the department a follow-up is waiting, the same as a new filing.
+        try {
+            $notifications->complaintNeedsVerification($followUp, $request->user());
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return redirect()
+            ->route('complaints.show', $followUp)
+            ->with('status', __('complaint_show.follow_up.created', ['ticket' => $followUp->ticket_id]));
     }
 
     /**
@@ -594,103 +720,20 @@ class ComplaintController extends Controller
         // refresh, a back button or a second tab does not lose the decision.
         $pending = $pendingUpload->pending();
 
-        // Two-level picker data: groups (resident language) → leaf categories.
-        // $categoryOptions shape is preserved for the select and #category-department-data.
-        $flatOptions = collect($categoryOptions)->flatten(1)->keyBy('value');
-        $departmentByCategory = collect($categoryOptions)
-            ->mapWithKeys(fn ($options, $department) => collect($options)->mapWithKeys(fn ($option) => [$option['value'] => $department]))
-            ->all();
-
-        $leafStyles = [
-            'road_damage' => ['icon' => 'construction', 'color' => 'roads'],
-            'flooding' => ['icon' => 'waves', 'color' => 'flood'],
-            'streetlight' => ['icon' => 'lightbulb', 'color' => 'streetlight'],
-            'garbage' => ['icon' => 'trash-2', 'color' => 'waste'],
-            'sanitation' => ['icon' => 'spray-can', 'color' => 'sanitation'],
-            'plastic_usage' => ['icon' => 'leaf', 'color' => 'waste'],
-            'park_maintenance' => ['icon' => 'trees', 'color' => 'spaces'],
-            'noise_complaint' => ['icon' => 'volume-2', 'color' => 'neighborhood'],
-            'stray_animals' => ['icon' => 'paw-print', 'color' => 'stray'],
-            'others' => ['icon' => 'circle-help', 'color' => 'other'],
-        ];
-        $defaultLeafStyle = ['icon' => 'circle-help', 'color' => 'other'];
-
-        $buildLeaf = function (string $value) use ($flatOptions, $departmentByCategory, $leafStyles, $defaultLeafStyle) {
-            $option = $flatOptions->get($value);
-            if ($option === null) {
-                return null;
-            }
-
-            $translatedLabel = __("complaint_create.leaves.{$value}.label");
-            $label = $translatedLabel === "complaint_create.leaves.{$value}.label"
-                ? $option['label']
-                : $translatedLabel;
-            $translatedHelper = __("complaint_create.leaves.{$value}.helper");
-            $helper = $translatedHelper === "complaint_create.leaves.{$value}.helper"
-                ? ''
-                : $translatedHelper;
-            $style = $leafStyles[$value] ?? $defaultLeafStyle;
-
-            return [
-                'value' => $value,
-                'label' => $label,
-                'helper' => $helper,
-                'icon' => $style['icon'],
-                'color' => $style['color'],
-                'department' => $departmentByCategory[$value] ?? "Mayor's Office",
-            ];
-        };
-
-        $categoryGroups = [];
-        $covered = [];
-        foreach (config('complaint_category_groups', []) as $groupConfig) {
-            $children = [];
-            foreach ($groupConfig['categories'] ?? [] as $value) {
-                $leaf = $buildLeaf((string) $value);
-                if ($leaf !== null) {
-                    $children[] = $leaf;
-                    $covered[] = (string) $value;
-                }
-            }
-
-            $categoryGroups[] = [
-                'key' => $groupConfig['key'],
-                'label' => __("complaint_create.groups.{$groupConfig['key']}.label"),
-                'helper' => __("complaint_create.groups.{$groupConfig['key']}.helper"),
-                'icon' => $groupConfig['icon'],
-                'color' => $groupConfig['color'],
-                'children' => $children,
-            ];
-        }
-
-        foreach ($categoryGroups as $idx => $group) {
-            if ($group['key'] !== 'other') {
-                continue;
-            }
-
-            foreach (array_keys($flatOptions->all()) as $value) {
-                if (in_array((string) $value, $covered, true)) {
-                    continue;
-                }
-
-                $leaf = $buildLeaf((string) $value);
-                if ($leaf !== null) {
-                    $categoryGroups[$idx]['children'][] = $leaf;
-                }
-            }
-
-            break;
-        }
+        // The picker is whatever the active taxonomy says it is. Groups are
+        // headings; their children carry the office and intake behaviour.
+        $categoryGroups = DepartmentRouter::residentGroups();
+        $activeCategoryKeys = DepartmentRouter::activeCategoryKeys();
 
         $intakePoliciesByCategory = [];
-        foreach (self::VALID_CATEGORIES as $categoryKey) {
-            $intakePoliciesByCategory[$categoryKey] = \App\Models\Complaint::intakePolicyFor($categoryKey);
+        foreach ($activeCategoryKeys as $categoryKey) {
+            $intakePoliciesByCategory[$categoryKey] = Complaint::intakePolicyFor($categoryKey);
         }
 
         // The categories that name somebody. The form uses this to ask for the
         // name of the party and to take the publication choice away.
         $privacyPoliciesByCategory = [];
-        foreach (self::VALID_CATEGORIES as $categoryKey) {
+        foreach ($activeCategoryKeys as $categoryKey) {
             if (! ComplaintPrivacyService::isGated($categoryKey)) {
                 continue;
             }
@@ -731,6 +774,7 @@ class ComplaintController extends Controller
         BarangayLocator $barangays,
     ) {
         $categoryInput = (string) $request->input('category', '');
+        $activeCategoryKeys = DepartmentRouter::activeCategoryKeys();
         $intakePolicy = Complaint::intakePolicyFor($categoryInput !== '' ? $categoryInput : null);
         $intakeMode = $intakePolicy['mode'];
         // A category that names somebody is governed by the privacy policy:
@@ -748,7 +792,7 @@ class ComplaintController extends Controller
         $barangayServerRequired = $intakeMode === 'proof_optional';
 
         $validated = $request->validate([
-            'category' => ['required', 'string', 'in:'.implode(',', self::VALID_CATEGORIES)],
+            'category' => ['required', 'string', Rule::in($activeCategoryKeys)],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'min:20'],
             // `images` is the current field. `image` remains accepted for old
@@ -831,8 +875,15 @@ class ComplaintController extends Controller
                 ->withErrors(['images' => 'You can attach a maximum of five photos.']);
         }
 
-        // Resolve department by category code
+        // Resolve department by category key. The taxonomy chooses a live
+        // office; the category itself already had to be active to validate.
         $department = DepartmentRouter::resolve($validated['category']);
+
+        if ($department === null) {
+            return back()
+                ->withInput()
+                ->withErrors(['category' => __('complaint_create.errors.no_office')]);
+        }
 
         // Read GPS metadata before storing the evidence photos. The first photo
         // with valid GPS wins; address/map remains the fallback for images
@@ -991,7 +1042,7 @@ class ComplaintController extends Controller
         }
 
         try {
-            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $locationStepsEnabled, $intakeMode, $activityLogger, $detector, $priorityService, $isPrivacyGated) {
+            $complaint = DB::transaction(function () use ($validated, $department, $imagePath, $imagePaths, $latitude, $longitude, $locationSource, $locationStepsEnabled, $intakeMode, $activityLogger, $detector, $priorityService, $isPrivacyGated, $notifications) {
                 // The resident's stated barangay: what they chose on the form, or
                 // failing that what they gave at registration. Never a guess — a
                 // guess from a reference point is wrong across most of a large
@@ -1068,6 +1119,12 @@ class ComplaintController extends Controller
                             'similarity_score' => $moderation['similarity_score'],
                         ],
                     );
+
+                    // The resident is told their report was flagged for review, so
+                    // they are not left waiting without knowing why it is held.
+                    // The actor is left unset here: the filer is the owner, and an
+                    // owner must not be notified about their own filing.
+                    $notifications->moderationFlagged($complaint);
                 }
 
                 $activityLogger->log(
@@ -1156,27 +1213,150 @@ class ComplaintController extends Controller
     }
 
     /**
-     * Track a complaint by ticket ID.
+     * Track a complaint by ticket number.
+     *
+     * Public on purpose: the legal documents promise a resident can check
+     * progress without an account. The ticket is the only secret, so the page
+     * shows progress and nothing else unless the viewer can already open the
+     * full record.
      */
-    public function track(Request $request)
+    public function track(Request $request, TransparencyFeed $feed)
     {
-        $complaint = null;
-        $notFound = false;
+        $ticketInput = trim((string) $request->query('ticket_id', ''));
+        $complaint = $ticketInput === '' ? null : Complaint::findByTicketId($ticketInput);
 
-        if ($request->filled('ticket_id')) {
-            $complaint = Complaint::where('ticket_id', $request->ticket_id)
-                ->with(['department', 'logs.actor'])
-                ->first();
+        if ($complaint !== null) {
+            $fullTicketUrl = $this->fullTicketUrl($complaint, $request->user());
 
-            if ($complaint) {
-                $this->authorize('view', $complaint);
-
-                return view('complaints.show', compact('complaint'));
+            if ($fullTicketUrl !== null) {
+                return redirect()->to($fullTicketUrl);
             }
-
-            $notFound = true;
         }
 
-        return view('complaints.track', compact('complaint', 'notFound'));
+        if ($complaint === null) {
+            return $this->trackResponse([
+                'complaint' => null,
+                'notFound' => $ticketInput !== '',
+                'ticketInput' => $ticketInput,
+            ]);
+        }
+
+        $isPublicRecord = $complaint->isPubliclyVisible() && $complaint->spam_status !== 'spam';
+
+        $complaint->loadMissing('department');
+        if ($isPublicRecord) {
+            $complaint->loadMissing(['user', 'assignedStaff']);
+            $complaint->setRelation('feedback', $complaint->feedback()->published()->first());
+        }
+
+        // Public logs only. Actor names and internal notes never reach this
+        // query. Documentation images are rendered only when the complaint is
+        // publicly visible on the Transparency Register.
+        $updates = $complaint->logs()
+            ->public()
+            ->reorder()
+            ->latest('created_at')
+            ->latest('id')
+            ->get();
+
+        $data = [
+            'complaint' => $complaint,
+            'notFound' => false,
+            'ticketInput' => $ticketInput,
+            'updates' => $updates,
+            'progressSteps' => ComplaintProgress::steps($complaint, $updates),
+            'whatMeans' => ComplaintProgress::whatMeans($complaint),
+            'hasOpenInformationRequest' => $complaint->informationRequests()
+                ->where('status', InformationRequestStatus::Open->value)
+                ->exists(),
+            'lastUpdated' => $updates->max('created_at'),
+            'office' => $complaint->department?->name ?? __('transparency.show.department_pending'),
+            'isPublicRecord' => $isPublicRecord,
+        ];
+
+        if ($isPublicRecord) {
+            $data['publicTitle'] = $complaint->publicTitle();
+            $data['publicDescription'] = $this->publicTrackDescription($complaint);
+            $data['categoryLabel'] = $feed->categoryLabel($complaint->category);
+            $data['location'] = $feed->publicLocation($complaint);
+            $data['publicPhotoCount'] = count($complaint->publicImagePaths());
+        }
+
+        return $this->trackResponse($data);
+    }
+
+    /**
+     * The description a public /track visitor may read, mirroring the
+     * Transparency Register: a staff redaction replaces the text; otherwise the
+     * exact written address is stripped.
+     */
+    private function publicTrackDescription(Complaint $complaint): string
+    {
+        $description = trim((string) $complaint->publicDescription());
+
+        if ($description === '') {
+            return __('transparency.show.no_description');
+        }
+
+        if ($complaint->redacted_description !== null) {
+            return $description;
+        }
+
+        $address = trim((string) $complaint->address_text);
+
+        if ($address === '') {
+            return $description;
+        }
+
+        $redacted = preg_replace(
+            '/'.preg_quote($address, '/').'/iu',
+            __('transparency.show.location_withheld'),
+            $description,
+        );
+
+        return is_string($redacted) ? $redacted : $description;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function trackResponse(array $data)
+    {
+        return response()
+            ->view('complaints.track', $data)
+            ->withHeaders([
+                'Cache-Control' => 'no-store, private',
+                'Referrer-Policy' => 'no-referrer',
+                'X-Robots-Tag' => 'noindex, nofollow',
+            ]);
+    }
+
+    /**
+     * The full ticket URL, but only when this viewer can actually reach it.
+     *
+     * `complaints.show`, the staff ticket and the admin ticket all sit behind
+     * `email.verified` and `force.password.change`. Sending an unverified owner
+     * there would bounce them away from the progress page they are allowed to
+     * read, so the reachability checks happen here, not in the view.
+     */
+    private function fullTicketUrl(Complaint $complaint, ?User $user): ?string
+    {
+        if ($user === null || $user->must_change_password || ! $user->hasVerifiedEmail()) {
+            return null;
+        }
+
+        if ($user->role === 'admin') {
+            return route('admin.complaints.show', $complaint);
+        }
+
+        if (Complaint::isVisibleToStaff($complaint, $user)) {
+            return route('staff.complaints.show', $complaint);
+        }
+
+        if ((int) $complaint->user_id === (int) $user->id) {
+            return route('complaints.show', $complaint);
+        }
+
+        return null;
     }
 }

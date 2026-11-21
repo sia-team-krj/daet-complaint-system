@@ -7,7 +7,7 @@
 
     Written against what the code actually does, not against what a template
     usually says. Every operational claim below is verifiable in this
-    repository: the barcode `DLT-` ticket prefix, the barangay-level public
+    repository: the barcode `COMP-` ticket prefix, the barangay-level public
     aggregation in TransparencyController, the alias-instead-of-name reporter
     field, the audit trail columns in the activity_logs migration, and the
     consent checkbox the registration form validates. When the behaviour
@@ -513,6 +513,19 @@
                             <td>When you register or change your email address.</td>
                         </tr>
                         <tr>
+                            <th scope="row">Resident identity verification</th>
+                            <td>
+                                <strong>Your government-issued ID number, the ID number HMAC hash, and ID front/selfie photos stored encrypted in a private MinIO bucket.</strong>
+                                We never store the raw ID number or original filenames; photos are purged after approval, rejection, revocation, cancellation, expiry, or account deletion, and a decision record remains.
+                            </td>
+                            <td>When you submit a resident identity verification.</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Admin account two-factor secret</th>
+                            <td><strong>Administrator two-factor secrets are stored encrypted; two-factor recovery codes are stored hashed.</strong></td>
+                            <td>After an administrator signs up for two-factor authentication.</td>
+                        </tr>
+                        <tr>
                             <th scope="row">Complaint content</th>
                             <td>
                                 <strong>The text you write, the category you choose, up to five photographs
@@ -639,6 +652,7 @@
                 <li><strong>Assigned department staff</strong> see the complaints routed to their department, including your contact details, so they can reach you.</li>
                 <li><strong>System administrators</strong> can see account records and act on cases, and their actions are logged.</li>
                 <li><strong>Any visitor</strong> sees only what you have chosen to publish, in the form described above.</li>
+                <li><strong>Anyone with your ticket number</strong> can see progress only, without an account: the current status, the handling office, the dates on the progress trail, a hold notice when the work is paused, and updates the office has marked public. That page does not show the report’s description, photographs, exact location, or your identity. Treat the ticket number like a password.</li>
             </ul>
             <p>
                 Access is logged. The audit trail records who did what, to which record, when, and from

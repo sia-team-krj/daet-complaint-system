@@ -509,6 +509,26 @@ class ComplaintVisibilityConsentTest extends TestCase
         $this->assertStringContainsString('community guidelines', (string) $entry->description);
     }
 
+    public function test_the_filing_form_titles_the_visibility_choices_private_and_public(): void
+    {
+        $user = User::factory()->create(['role' => 'citizen']);
+
+        $this->actingAs($user)
+            ->get(route('complaints.create'))
+            ->assertOk()
+            ->assertSee('<span class="visibility-option__title">Private</span>', false)
+            ->assertSee('<span class="visibility-option__title">Public</span>', false)
+            ->assertDontSee('Just me')
+            ->assertDontSee('Publish on the transparency page');
+
+        $this->withSession(['locale' => 'fil'])
+            ->actingAs($user)
+            ->get(route('complaints.create'))
+            ->assertOk()
+            ->assertSee('<span class="visibility-option__title">Pribado</span>', false)
+            ->assertSee('<span class="visibility-option__title">Publiko</span>', false);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────
 
     /**

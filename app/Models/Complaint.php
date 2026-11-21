@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ComplaintMarking;
 use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
@@ -9,10 +10,12 @@ use App\Enums\HoldReason;
 use App\Enums\PublicationStatus;
 use App\Enums\VerificationMethod;
 use App\Services\ComplaintPrivacyService;
+use App\Services\DepartmentRouter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Complaint extends Model
@@ -55,6 +58,9 @@ class Complaint extends Model
         'spam_score',
         'spam_reasons',
         'similarity_score',
+        // The complaint this one follows as a sub-ticket (a follow-up). Null on
+        // the originating complaint; set on every sub-ticket.
+        'parent_id',
         'duplicate_of_id',
         'suggested_priority',
         'confirmed_priority',
@@ -64,6 +70,17 @@ class Complaint extends Model
         'reviewed_at',
         'verified_at',
         'review_notes',
+        // Office marking of the report — misleading or spam. The marking is
+        // the office's rejection of the report; see ComplaintMarkingService.
+        'marking',
+        'mark_description',
+        'mark_comment',
+        'marked_by',
+        'marked_at',
+        'marking_confirmed_at',
+        'marking_confirmed_by',
+        'marking_dismissed_at',
+        'marking_dismissed_by',
         'named_party',
         'named_party_position',
         'publication_status',
@@ -99,6 +116,7 @@ class Complaint extends Model
             'spam_status' => 'string',
             'spam_score' => 'integer',
             'spam_reasons' => 'array',
+            'spam_confirmed_at' => 'datetime',
             'similarity_score' => 'float',
             'suggestion_reasons' => 'array',
             'reviewed_at' => 'datetime',
@@ -106,6 +124,10 @@ class Complaint extends Model
             'suggested_priority' => 'string',
             'confirmed_priority' => 'string',
             'review_status' => 'string',
+            'marking' => ComplaintMarking::class,
+            'marked_at' => 'datetime',
+            'marking_confirmed_at' => 'datetime',
+            'marking_dismissed_at' => 'datetime',
             'verification_method' => VerificationMethod::class,
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
@@ -142,6 +164,52 @@ class Complaint extends Model
     public const TICKET_RANDOM_LENGTH = 5;
 
     public const TICKET_MAX_ATTEMPTS = 10;
+
+    /**
+     * Find a complaint by ticket number, whatever way the holder typed it.
+     *
+     * The ticket is the only secret on the public tracking page, so the lookup
+     * should not fail because somebody left out a hyphen or used a lower-case
+     * letter. Punctuation and case are normalised on both sides; the stored
+     * value is compared with PostgreSQL's REGEXP_REPLACE.
+     *
+     * Soft-deleted rows are excluded by the default scope, and a complaint the
+     * administrator confirmed as spam is treated as if it does not exist.
+     */
+    public static function findByTicketId(?string $input): ?self
+    {
+        $normalized = self::normalizeTicketId($input);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        return static::query()
+            ->whereRaw(
+                "UPPER(REGEXP_REPLACE(ticket_id, '[^A-Za-z0-9]', '', 'g')) = ?",
+                [$normalized]
+            )
+            ->whereNull('spam_confirmed_at')
+            ->with('department')
+            ->first();
+    }
+
+    /**
+     * Uppercase letters and digits only, capped at a sane length.
+     *
+     * Shared with the controller so the input limit and the stored-side
+     * comparison cannot drift apart.
+     */
+    public static function normalizeTicketId(?string $input): string
+    {
+        if ($input === null) {
+            return '';
+        }
+
+        $normalized = preg_replace('/[^A-Za-z0-9]/', '', trim($input)) ?? '';
+
+        return substr(strtoupper($normalized), 0, 30);
+    }
 
     protected static function booted(): void
     {
@@ -246,6 +314,29 @@ class Complaint extends Model
         return $this->informationRequests()->outstanding()->latest('id')->first();
     }
 
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(ComplaintFeedback::class);
+    }
+
+    public function canReceiveFeedback(): bool
+    {
+        return in_array($this->statusEnum, [
+            ComplaintStatus::Resolved,
+            ComplaintStatus::Closed,
+        ], true);
+    }
+
+    public function spamConfirmedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'spam_confirmed_by');
+    }
+
+    public function isSpamConfirmed(): bool
+    {
+        return $this->spam_confirmed_at !== null;
+    }
+
     public function verificationMethodEnum(): ?VerificationMethod
     {
         return $this->verification_method instanceof VerificationMethod
@@ -268,6 +359,41 @@ class Complaint extends Model
     public function duplicates(): HasMany
     {
         return $this->hasMany(self::class, 'duplicate_of_id');
+    }
+
+    /**
+     * The sub-ticket this complaint follows — a follow-up filed against a
+     * resolved or closed complaint. Null on the originating complaint.
+     */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /**
+     * The follow-ups filed against this complaint, newest-first.
+     */
+    public function followUps(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')->latest('id');
+    }
+
+    /**
+     * The open follow-up for this complaint, if one is waiting.
+     *
+     * A finished complaint may accept one follow-up at a time; once that
+     * follow-up resolves or closes the parent can accept another later.
+     */
+    public function openFollowUp(): ?Complaint
+    {
+        return $this->followUps()
+            ->whereIn('status', [
+                ComplaintStatus::Submitted->value,
+                ComplaintStatus::UnderReview->value,
+                ComplaintStatus::InProgress->value,
+            ])
+            ->latest('id')
+            ->first();
     }
 
     /**
@@ -344,6 +470,71 @@ class Complaint extends Model
         return $this->review_status === ComplaintReviewStatus::Verified->value;
     }
 
+    // ── Office marking — misleading or spam ────────────────────────────
+
+    /**
+     * The marking the office applied — misleading or spam, or null when the
+     * report was never marked.
+     */
+    public function markingEnum(): ?ComplaintMarking
+    {
+        $marking = $this->marking;
+
+        // The attribute is cast to the enum for normal reads. This fallback
+        // also covers raw values (seeder rows, legacy data) without ever
+        // casting an enum object to a string.
+        if ($marking instanceof ComplaintMarking) {
+            return $marking;
+        }
+
+        if ($marking === null || $marking === '') {
+            return null;
+        }
+
+        return ComplaintMarking::tryFrom((string) $marking);
+    }
+
+    public function isMarked(): bool
+    {
+        return $this->markingEnum() !== null;
+    }
+
+    public function isMarkingPendingReview(): bool
+    {
+        return $this->isMarked()
+            && $this->marking_confirmed_at === null
+            && $this->marking_dismissed_at === null;
+    }
+
+    public function isMarkingConfirmed(): bool
+    {
+        return $this->marking_confirmed_at !== null;
+    }
+
+    public function isMarkingDismissed(): bool
+    {
+        return $this->marking_dismissed_at !== null;
+    }
+
+    /**
+     * The staff member who marked the report. Used on the ticket page and
+     * in management notifications.
+     */
+    public function markedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'marked_by');
+    }
+
+    public function markingConfirmedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'marking_confirmed_by');
+    }
+
+    public function markingDismissedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'marking_dismissed_by');
+    }
+
     /**
      * Resolve intake mode/policy for a category (extensible, config-driven).
      *
@@ -354,7 +545,11 @@ class Complaint extends Model
         $config = config('complaint_intake_policy', []);
         $modes = $config['modes'] ?? [];
         $defaultMode = $config['default'] ?? 'physical_required';
-        $mode = ($config['categories'] ?? [])[$category] ?? $defaultMode;
+        // The category's own setting is authoritative. The config map stays
+        // as the fallback for a category that predates the taxonomy or an
+        // intake mode that was removed from the table.
+        $mode = DepartmentRouter::intakeModeFor($category)
+            ?? ($config['categories'] ?? [])[$category] ?? $defaultMode;
         $policy = $modes[$mode] ?? $modes[$defaultMode] ?? [
             'photos_required' => true,
             'photos_allowed' => true,
@@ -696,7 +891,12 @@ class Complaint extends Model
     {
         return $query->where(function ($query) {
             $query->whereIn('spam_status', ['review', 'spam'])
-                ->orWhereNotNull('duplicate_of_id');
+                ->orWhereNotNull('duplicate_of_id')
+                ->orWhere(function ($marking) {
+                    $marking->whereNotNull('marking')
+                        ->whereNull('marking_confirmed_at')
+                        ->whereNull('marking_dismissed_at');
+                });
         });
     }
 

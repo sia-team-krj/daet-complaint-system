@@ -15,6 +15,9 @@ return [
 
     'primary_cta' => 'Maghain ng reklamo',
     'secondary_cta' => 'Subaybayan ang reklamo ko',
+    'track_placeholder' => 'Ticket number',
+    'track_form_label' => 'Subaybayan ang reklamo gamit ang ticket number',
+    'track_submit' => 'Subaybayan',
     'go_to_dashboard' => 'Pumunta sa aking dashboard',
     'reassurance' => 'Libre. Hindi ipinapakita sa publiko ang iyong pangalan.',
 
@@ -49,16 +52,6 @@ return [
     'tracked_body' => 'Bawat reklamo ay may tracking number at nakikitang status.',
     'public_title' => 'Hayag',
     'public_body' => 'Inilalathala para sa lahat ang bilang at resulta ng mga reklamo.',
-
-    'faq_title' => 'Mga madalas itanong',
-    'faq_1_q' => 'Kailangan ko ba ng account?',
-    'faq_1_a' => 'Oo. Libre ang account at dito mo masusubaybayan ang reklamo mo.',
-    'faq_2_q' => 'Magiging pampubliko ba ang pangalan ko?',
-    'faq_2_a' => 'Hindi. Kategorya, barangay, status at petsa lang ang makikita sa publiko.',
-    'faq_3_q' => 'Gaano katagal ito?',
-    'faq_3_a' => 'Depende ito sa isyu at sa tanggapan. Makikita mo ang bawat update sa tracking page mo.',
-    'faq_5_q' => 'Puwede bang gumamit ng Filipino?',
-    'faq_5_a' => 'Oo. Puwede kang lumipat sa pagitan ng English at Filipino sa itaas ng pahina.',
 
     'final_title' => 'Handa ka na bang mag-ulat?',
     'final_sub' => 'Libre ito at ilang minuto lang.',

@@ -426,8 +426,32 @@
 
         const staffLink = target.closest('#staff-sidebar a');
         const adminLink = target.closest('#admin-sidebar a');
-        if ((staffLink || adminLink) && window.matchMedia('(max-width: 980px)').matches) {
-            closeSidebar(staffLink ? document.getElementById('staff-sidebar') : document.getElementById('admin-sidebar'));
+        if (staffLink) {
+            const staffBadges = staffLink.querySelectorAll('.staff-sidebar-badge');
+            staffBadges.forEach((badge) => {
+                badge.setAttribute('hidden', '');
+                badge.style.display = 'none';
+                badge.textContent = '';
+                badge.remove();
+            });
+
+            if (staffBadges.length === 0 && /[?&]review=pending(?:&|$)/.test(staffLink.getAttribute('href') || '')) {
+                document.querySelectorAll('#staff-sidebar a[href*="review=pending"] .staff-sidebar-badge').forEach((badge) => {
+                    badge.setAttribute('hidden', '');
+                    badge.style.display = 'none';
+                    badge.remove();
+                });
+            }
+
+            const sidebar = document.getElementById('staff-sidebar');
+            if (sidebar && (sidebar.classList.contains('is-open') || window.matchMedia('(max-width: 1023px)').matches)) {
+                closeSidebar(sidebar);
+            }
+        } else if (adminLink) {
+            const sidebar = document.getElementById('admin-sidebar');
+            if (sidebar && (sidebar.classList.contains('is-open') || window.matchMedia('(max-width: 980px)').matches)) {
+                closeSidebar(sidebar);
+            }
         }
     };
 

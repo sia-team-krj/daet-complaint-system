@@ -2,8 +2,10 @@
 @import "./tokens.css";
 @import "./components/toast.css";
 @import "./pages/complaint-create.css";
+@import "./pages/complaint-categories.css";
 @import "./pages/complaint-success.css";
 @import "./pages/complaint-show.css";
+@import "./pages/complaint-track.css";
 @import "./pages/error.css";
 @import "./pages/staff-dashboard.css";
 @import "./pages/activity-feed.css";
@@ -3688,9 +3690,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     flex: 0 0 auto;
 }
 
-/* Navbar identity indicator (targeted, §5.31): shows staff/admin account context
+/* Navbar identity indicator (targeted, §5.31): shows staff account context
    in the fixed top bar (desktop + mobile) without opening menus. Staff use
-   existing department tokens/badges; admin uses navy/gold role tokens. */
+   existing department tokens/badges; global admins carry no navbar identity
+   chip (Administrator badge removed). */
 .nav-identity {
     display: inline-flex;
     align-items: center;
@@ -3713,11 +3716,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     line-height: 1.2;
     white-space: nowrap;
     flex: 0 0 auto;
-}
-.nav-identity__badge--admin {
-    background: color-mix(in srgb, var(--gold-500) 18%, transparent);
-    color: var(--gold-300);
-    border: 1px solid color-mix(in srgb, var(--gold-500) 32%, transparent);
 }
 .nav-identity__badge--staff {
     background: color-mix(in srgb, var(--gold-500) 10%, transparent);
@@ -3789,28 +3787,6 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 @media (max-width: 768px) {
     .nav-mobile-right .nav-identity .nav-identity__label { display: none; }
 }
-/* ≤640px body.is-auth hides .nav-mobile-right; identity renders as a direct
-   navbar child (like bell/drawer toggle) so account context stays visible. */
-.nav-identity-bar {
-    display: none;
-    align-items: center;
-    min-width: 0;
-    flex: 0 1 auto;
-}
-@media (max-width: 640px) {
-    body.is-auth .nav-identity-bar {
-        display: inline-flex;
-        margin-left: 4px;
-        margin-right: 4px;
-        max-width: 42vw;
-    }
-    body.is-auth .nav-identity-bar .nav-identity__label { display: none; }
-    body.is-auth .nav-identity-bar .nav-identity__badge { font-size: 9px; padding: 2px 5px; }
-    body.is-auth .nav-identity-bar .dept-badge { font-size: 10px; padding: 2px 5px; }
-}
-/* Admin compact (769-768 window not auth-shared): keep identity visible when
-   account popover is the control; handled by nav-mobile-right rules above. */
-
 .admin-department-code[data-dept],
 .dept-chip[data-dept] {
     display: inline-flex;
@@ -5279,17 +5255,20 @@ body:has(.staff-create-page) .admin-content {
 /* Native <details> so keyboard and assistive tech get the disclosure semantics
    for free and the page needs no JavaScript to open an editor. */
 .admin-department-editor > summary,
+.admin-faq-editor > summary,
 .admin-archive > summary {
     list-style: none;
     cursor: pointer;
 }
 
 .admin-department-editor > summary::-webkit-details-marker,
+.admin-faq-editor > summary::-webkit-details-marker,
 .admin-archive > summary::-webkit-details-marker {
     display: none;
 }
 
 .admin-department-editor[open] > summary,
+.admin-faq-editor[open] > summary,
 .admin-archive[open] > summary {
     /* The control that opened stays lit, so the row never looks like two
        unrelated controls after the panel expands. */
@@ -5300,25 +5279,55 @@ body:has(.staff-create-page) .admin-content {
 /* The editor sits in the flex action row so its trigger reads as one of this
    office's commands, but the form has to break out and span the row when open —
    otherwise three fields are laid out in a 200px column. */
-.admin-department-editor[open] {
+.admin-department-editor[open],
+.admin-faq-editor[open] {
     flex: 1 0 100%;
 }
 
 /* Open, the trigger spans the row and becomes the form's heading rather than a
    button stranded on a line of its own. */
-.admin-department-editor[open] > summary {
+.admin-department-editor[open] > summary,
+.admin-faq-editor[open] > summary {
     justify-content: flex-start;
     width: 100%;
     margin-top: 6px;
     border-radius: 5px 5px 0 0;
 }
 
-.admin-department-editor > form {
+.admin-department-editor > form,
+.admin-faq-editor > form {
     padding: 16px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(201, 168, 76, 0.13);
     border-top: 0;
     border-radius: 0 0 6px 6px;
+}
+
+/* ── FAQ manager (admin) ──────────────────────────────────────────────── */
+.admin-faq-list {
+    display: grid;
+    gap: 16px;
+}
+
+.admin-faq.is-highlighted {
+    box-shadow: var(--ring);
+}
+
+/* The edit disclosure spans the row when open, so the action row has to be
+   allowed to wrap; the generic .admin-form-actions does not wrap. */
+.admin-faq .admin-form-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+/* Answers are plain text with paragraph line breaks; pre-wrap keeps the
+   admin's line breaks visible without rendering HTML. */
+.admin-faq-answer {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    line-height: 1.65;
+    white-space: pre-wrap;
 }
 
 .admin-archive__confirm {
@@ -10040,6 +10049,8 @@ body.role-staff .staff-sidebar-nav a:hover { background: var(--dept-hover) !impo
 body.role-staff .staff-sidebar-nav a.is-active { background: var(--dept-active-bg) !important; color: var(--navy-700) !important; border-left-color: transparent !important; font-weight: 700 !important; }
 body.role-staff .staff-sidebar-nav a.is-active svg { color: var(--navy-700) !important; }
 body.role-staff .staff-sidebar-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--dept-primary); color: var(--surface); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+body.role-staff .staff-sidebar-badge--amber { background: var(--status-progress-bg, rgba(217, 119, 6, 0.15)); color: var(--status-progress-text, var(--gold-700)); }
+body.role-staff .staff-sidebar-link-label { flex: 1 1 auto; min-width: 0; }
 body.role-staff .staff-sidebar-language .lang-switch { background: var(--dept-hover) !important; border-color: var(--dept-card-border) !important; }
 @media (max-width: 1023px) {
   body.role-staff .staff-sidebar { width: min(320px, 88vw) !important; padding: 12px !important; }

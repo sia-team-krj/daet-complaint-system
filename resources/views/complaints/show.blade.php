@@ -1,1340 +1,985 @@
 @extends($mainLayout)
+
 @section('title', __('complaint_show.page.title', ['ticket' => $complaint->ticket_id]))
 @section('body-class', 'page-complaint-show')
+
 @section('content')
-
-
-<style>
-  *, *::before, *::after { box-sizing: border-box; }
-
-  .show-root {
-    font-family: var(--font-sans);
-    background: var(--bg);
-    min-height: calc(100svh - var(--navbar-height));
-  }
-
-  /* ── Breadcrumb ── */
-  .breadcrumb-wrap {
-    background: var(--navy-900);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-    padding: 16px 40px;
-  }
-  .breadcrumb {
-    max-width: 1280px; margin: 0 auto;
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: rgba(255,255,255,0.62);
-  }
-  .breadcrumb a {
-    color: var(--gold-300); text-decoration: none; transition: opacity 0.2s;
-  }
-  .breadcrumb a:hover { opacity: 0.8; }
-  .breadcrumb-sep { opacity: 0.4; }
-  .breadcrumb-current { color: rgba(255,255,255,0.85); }
-
-  /* ── Page Header ── */
-  .show-header {
-    background:
-      repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 14px),
-      linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 62%, var(--navy-600) 100%);
-    position: relative;
-    overflow: hidden;
-    padding: 32px 40px 40px;
-  }
-  .show-header::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image: repeating-linear-gradient(
-      -45deg, transparent, transparent 40px,
-      rgba(201,168,76,0.025) 40px, rgba(201,168,76,0.025) 41px
-    );
-    pointer-events: none;
-  }
-  .show-header-inner {
-    position: relative; z-index: 2;
-    max-width: 1280px; margin: 0 auto;
-  }
-  .show-ticket {
-    font-family: var(--font-sans);
-    font-size: 14px; font-weight: 600;
-    color: var(--gold-300); letter-spacing: 0.1em;
-    text-transform: uppercase; margin-bottom: 8px;
-  }
-  .show-title-wrap {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 20px; flex-wrap: wrap;
-  }
-  .show-title {
-    font-family: var(--font-sans);
-    font-size: clamp(24px, 3vw, 36px); font-weight: 700;
-    color: var(--surface); line-height: 1.15;
-    flex: 1;
-  }
-  .show-status-large {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; padding: 8px 16px; border-radius: 6px;
-    white-space: nowrap; flex-shrink: 0;
-  }
-  .show-status-large::before {
-    content: ''; width: 8px; height: 8px; border-radius: 50%;
-    background: currentColor; opacity: 0.7;
-  }
-
-  .badge-submitted  { background: var(--status-submitted-bg); color: var(--status-submitted-text); border: 1px solid var(--status-submitted-dot); }
-  .badge-review     { background: var(--status-progress-bg); color: var(--status-progress-text); border: 1px solid var(--status-progress-dot); }
-  .badge-progress   { background: var(--cat-noise-bg); color: var(--cat-noise-fg); border: 1px solid var(--cat-noise-fg); }
-  .badge-resolved   { background: var(--status-resolved-bg); color: var(--status-resolved-text); border: 1px solid var(--status-resolved-dot); }
-  .badge-rejected   { background: var(--status-rejected-bg); color: var(--status-rejected-text); border: 1px solid var(--status-rejected-dot); }
-  .badge-closed     { background: var(--status-closed-bg); color: var(--status-closed-text); border: 1px solid var(--status-closed-dot); }
-
-  /* ── Main Content ── */
-  .show-body {
-    max-width: 1280px; margin: 0 auto;
-    padding: 32px 40px 64px;
-  }
-  .show-layout {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 28px;
-  }
-
-  /* ── Cards ── */
-  /* Light surface: this page reads as cream/white, unlike the navy operator
-     workspaces, so this block follows the page's own card language. */
-  .info-request {
-    max-width: 1280px;
-    margin: 0 auto 24px;
-    padding: 24px;
-    background: var(--status-progress-bg);
-    border: 1.5px solid rgba(180,83,9,0.4);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-card);
-  }
-  .info-request__head { display:flex; align-items:center; gap:12px; }
-  .info-request__icon {
-    flex: 0 0 auto; width: 44px; height: 44px;
-    border-radius: var(--radius-sm);
-    background: var(--navy-900); color: var(--surface);
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .info-request__icon svg { width: 22px; height: 22px; }
-  .info-request__head-copy { min-width: 0; }
-  .info-request__kicker {
-    margin: 0 0 2px;
-    font-size: 10px; font-weight: 800;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--status-progress-text);
-  }
-  .info-request__lede {
-    margin: 6px 0 14px;
-    font-size: 13.5px; line-height: 1.55;
-    color: var(--navy-900);
-  }
-  .info-request__title {
-    margin: 0;
-    font-family: var(--font-sans);
-    font-size: 20px; font-weight: 700;
-    color: var(--navy-900);
-  }
-  .info-request__question {
-    margin: 0 0 18px;
-    padding: 16px 18px;
-    background: var(--surface);
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius-sm);
-  }
-  .info-request__asked-by {
-    margin: 0 0 6px;
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--status-progress-text);
-  }
-  .info-request__question p:last-child {
-    margin: 0;
-    font-size: 14px; line-height: 1.65;
-    color: var(--navy-900);
-  }
-  .info-request__thanks {
-    margin: 0;
-    font-size: 13.5px; line-height: 1.6;
-    color: var(--status-resolved-text);
-  }
-  .info-request__answer {
-    margin: 0 0 16px;
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--line-soft);
-    border-radius: 6px;
-  }
-  .info-request__answer-label {
-    margin: 0 0 6px;
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--muted);
-  }
-  .info-request__answer-text {
-    margin: 0;
-    font-size: 14px; line-height: 1.65;
-    color: var(--navy-900);
-    overflow-wrap: anywhere;
-  }
-  .info-request__answer-photos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-    gap: 10px;
-    margin-top: 12px;
-  }
-  .info-request__answer-photo {
-    display: block;
-    overflow: hidden;
-    border: 1px solid var(--line-soft);
-    border-radius: 6px;
-    background: var(--surface-soft);
-    aspect-ratio: 1;
-  }
-  .info-request__answer-photo img {
-    display: block;
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  .info-request__answer-photo:focus-visible {
-    outline: none;
-    box-shadow: var(--ring);
-  }
-  .info-request__form {
-    display: grid; gap: 16px;
-  }
-  .info-request__field { display: grid; gap: 7px; }
-  .info-request__label {
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--muted);
-  }
-  .info-request__label small {
-    font-size: 9px; font-weight: 400; letter-spacing: 0; text-transform: none;
-  }
-  .info-request__field textarea,
-  .info-request__field input[type="file"] {
-    width: 100%;
-    padding: 11px 13px;
-    font-family: inherit; font-size: 13.5px;
-    color: var(--navy-900);
-    background: var(--surface);
-    border: 1px solid rgba(201,168,76,0.45);
-    border-radius: 6px;
-  }
-  .info-request__field textarea { resize: vertical; min-height: 92px; }
-  .info-request__field textarea:focus,
-  .info-request__field input[type="file"]:focus {
-    outline: none;
-    border-color: var(--status-progress-dot);
-    box-shadow: 0 0 0 3px rgba(180,83,9,0.12);
-  }
-  .info-request__hint {
-    margin: 0;
-    font-size: 11.5px; line-height: 1.5;
-    color: var(--muted);
-  }
-  .info-request__error {
-    margin: 0;
-    font-size: 11.5px; line-height: 1.45;
-    color: var(--status-rejected-text);
-  }
-  .info-request__submit {
-    justify-self: start;
-    min-height: 42px;
-    padding: 12px 22px;
-    font-family: inherit; font-size: 12px; font-weight: 700;
-    letter-spacing: 0.05em; text-transform: uppercase;
-    color: var(--navy-900);
-    background: var(--gold-500); color: var(--navy-900);
-    border: 0; border-radius: 6px;
-    cursor: pointer;
-  }
-  .info-request__submit:hover { background: var(--gold-300); }
-  .info-request__submit:disabled { cursor: not-allowed; opacity: 0.55; }
-
-  .close-report {
-    margin-bottom: 16px; padding: 20px 22px;
-    border-radius: var(--radius-sm);
-    background: var(--status-resolved-bg);
-    border: 1.5px solid color-mix(in srgb, var(--status-resolved-dot) 45%, transparent);
-    box-shadow: var(--shadow-card);
-  }
-  .close-report__head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px; }
-  .close-report__icon {
-    width: 44px; height: 44px; border-radius: 10px; flex: 0 0 auto;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: var(--navy-900); color: var(--gold-300);
-  }
-  .close-report__icon svg { width: 22px; height: 22px; }
-  .close-report__kicker {
-    margin: 0 0 2px; font-size: 10px; font-weight: 800;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    color: var(--status-resolved-text);
-  }
-  .close-report__title { margin: 0; font-size: 20px; font-weight: 700; color: var(--navy-900); }
-  .close-report__lede { margin: 0 0 14px; font-size: 13.5px; line-height: 1.55; color: var(--navy-900); }
-  .close-report__form { margin: 0; }
-  .close-report__submit {
-    display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
-    padding: 0 18px; border: 0; border-radius: 8px; cursor: pointer;
-    font-family: inherit; font-size: 13px; font-weight: 700;
-    background: var(--gold-500); color: var(--navy-900);
-  }
-  .close-report__submit:hover { background: var(--gold-300); }
-  .close-report__submit:focus-visible { outline: none; box-shadow: var(--ring); }
-
-  .detail-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px; overflow: hidden;
-  }
-  .detail-card-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(201,168,76,0.15);
-    display: flex; align-items: center; gap: 10px;
-  }
-  .detail-card-title {
-    font-family: var(--font-sans);
-    font-size: 18px; font-weight: 700;
-    color: var(--navy-900);
-  }
-  .detail-card-body {
-    padding: 24px;
-  }
-
-  /* ── Detail Fields ── */
-  .detail-field { margin-bottom: 24px; }
-  .detail-field:last-child { margin-bottom: 0; }
-  .detail-label {
-    font-size: 11px; font-weight: 700;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 6px;
-  }
-  .detail-value {
-    font-size: 14px; color: var(--muted); line-height: 1.6;
-    overflow-wrap: anywhere;
-  }
-  .detail-value-large {
-    font-size: 16px; line-height: 1.7;
-  }
-  .detail-pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    background: var(--status-progress-bg); color: var(--gold-700);
-    padding: 5px 12px; border-radius: 20px;
-    border: 1px solid rgba(201,168,76,0.25);
-  }
-  .detail-dept {
-    font-size: 14px; font-weight: 600; color: var(--navy-900);
-  }
-  .details-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-  }
-  .show-layout > * { min-width: 0; }
-
-  /* ── Resident visibility control ──
-     The complaint page is a light surface. The shared visibility-panel styles
-     were written for the dark operator workspaces, so keep their structure but
-     re-paint this instance with the page's light card language. */
-  .show-root .visibility-panel {
-    margin: 0 0 24px;
-    padding: 20px 24px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-  }
-  .show-root .visibility-panel__title {
-    color: var(--navy-900);
-    font-family: var(--font-sans);
-    font-size: 18px;
-  }
-  .show-root .visibility-panel__lede {
-    margin-top: 7px;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .show-root .visibility-panel__actions {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 16px;
-  }
-  .show-root .visibility-panel__button {
-    width: 100%;
-    min-height: 44px;
-    padding: 12px 18px;
-    color: var(--navy-900);
-    font-size: 11.5px;
-    line-height: 1.35;
-  }
-  .show-root .visibility-panel__state {
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.55;
-  }
-  .show-root .visibility-moderation {
-    color: var(--muted);
-    background: var(--status-progress-bg);
-    border-color: rgba(201,168,76,0.32);
-    font-size: 12px;
-  }
-  .show-root .visibility-moderation svg { color: var(--status-progress-text); }
-  .show-root .visibility-moderation strong { color: var(--navy-900); font-size: 12.5px; }
-  .show-root .visibility-moderation p { color: var(--muted); }
-  .show-root .visibility-moderation em { color: var(--navy-900); }
-
-  /* ── Image Gallery ── */
-  .image-wrap {
-    border-radius: 6px; overflow: hidden;
-    border: 1px solid var(--line);
-    background: var(--line-soft);
-  }
-  .image-wrap img {
-    width: 100%; height: auto; display: block;
-    max-height: 400px; object-fit: contain;
-  }
-  .image-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-    padding: 16px;
-  }
-  .image-gallery .image-wrap {
-    min-width: 0;
-  }
-  .image-gallery .image-wrap img {
-    max-height: 320px;
-    object-fit: contain;
-    background: var(--line-soft);
-  }
-  .no-image {
-    padding: 40px; text-align: center;
-    color: var(--muted); font-size: 13px;
-  }
-
-  /* ── Map ── */
-  .map-container {
-    height: 280px; border-radius: 6px;
-    border: 1px solid var(--line);
-  }
-  .no-location {
-    padding: 60px 40px; text-align: center;
-    color: var(--muted); font-size: 13px;
-    background: var(--line-soft); border-radius: 6px;
-  }
-
-  /* ── Timeline (now full-width at top on all screens) ── */
-  .timeline-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px; overflow: hidden;
-  }
-
-  /* ── Section separation ── */
-  .updates-top {
-    margin-bottom: 28px;
-    border-bottom: 1px solid var(--line-soft);
-    padding-bottom: 24px;
-  }
-  .section-divider {
-    margin: 24px 0;
-    border: none;
-    border-top: 1px solid var(--line-soft);
-  }
-
-  /* ── Detail cards: light surface with hairline border ── */
-  .detail-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 8px; overflow: hidden;
-  }
-  .detail-card + .detail-card { margin-top: 16px; }
-
-  .detail-card-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(201,168,76,0.15);
-    display: flex; align-items: center; gap: 10px;
-  }
-  .detail-card-title {
-    font-family: var(--font-sans);
-    font-size: 18px; font-weight: 700;
-    color: var(--navy-900);
-  }
-  .detail-card-body {
-    padding: 24px;
-  }
-  .timeline-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(201,168,76,0.15);
-  }
-  .timeline-title {
-    font-family: var(--font-sans);
-    font-size: 18px; font-weight: 700; color: var(--navy-900);
-  }
-  .timeline-body {
-    padding: 24px;
-  }
-  .timeline {
-    position: relative;
-    padding-left: 24px;
-  }
-  .timeline::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px; background: linear-gradient(180deg, var(--gold-500), rgba(201,168,76,0.2));
-    border-radius: 3px;
-  }
-  .timeline-item {
-    position: relative; padding-bottom: 28px;
-  }
-  .timeline-item:last-child { padding-bottom: 0; }
-  .timeline-item::before {
-    content: '';
-    position: absolute; left: -24px; top: 4px;
-    width: 11px; height: 11px; margin-left: -4px;
-    background: var(--gold-500); border-radius: 50%;
-    border: 2px solid var(--surface);
-    box-shadow: 0 0 0 2px var(--gold-500);
-  }
-  .timeline-status {
-    font-size: 12px; font-weight: 700;
-    color: var(--navy-900); margin-bottom: 4px;
-  }
-  .timeline-note {
-    font-size: 13px; color: var(--muted);
-    line-height: 1.5; margin-bottom: 6px;
-    overflow-wrap: anywhere;
-  }
-  .timeline-meta {
-    display: flex; flex-wrap: wrap; align-items: center;
-    gap: 2px 8px;
-    font-size: 11.5px; color: var(--muted);
-    line-height: 1.5;
-  }
-  .timeline-actor {
-    font-weight: 600; color: var(--navy-900);
-  }
-  .timeline-time::before {
-    content: '•'; margin-right: 8px; color: var(--gold-300);
-  }
-  .timeline-evidence {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
-    margin: 10px 0 8px;
-  }
-  .timeline-evidence a {
-    display: block;
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    background: var(--line-soft);
-  }
-  .timeline-evidence img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-  }
-
-  /* ── Back Button ── */
-  .back-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 600; color: var(--muted);
-    text-decoration: none; margin-bottom: 20px;
-    transition: color 0.2s;
-  }
-  .back-btn:hover { color: var(--navy-900); }
-
-  /* Animations */
-  @keyframes fadeUp { from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);} }
-  .fu  { animation: fadeUp 0.6s cubic-bezier(.22,.68,0,1) both; }
-  .d1  { animation-delay: 0.04s; } .d2 { animation-delay: 0.14s; }
-  .d3  { animation-delay: 0.24s; } .d4 { animation-delay: 0.34s; }
-
-  /* Responsive */
-  @media (max-width: 1100px) {
-    .breadcrumb-wrap { padding: 16px 32px; }
-    .show-header { padding: 28px 32px 36px; }
-    .show-body { padding: 28px 32px 56px; }
-    .show-layout { grid-template-columns: 1fr; }
-    .timeline-card { position: static; }
-  }
-  @media (max-width: 768px) {
-    .breadcrumb-wrap { padding: 14px 20px; }
-    .show-header { padding: 24px 20px 32px; }
-    .show-body { padding: 24px 20px 48px; }
-    .show-title-wrap { flex-direction: column; }
-    .detail-card-header, .detail-card-body { padding: 16px 20px; }
-    .show-root .visibility-panel { padding: 16px 20px; }
-    .image-gallery { gap: 12px; padding: 12px; }
-    .timeline { padding-left: 20px; }
-    .timeline::before { left: 0; }
-    .timeline-item::before { left: -20px; margin-left: -3.5px; width: 9px; height: 9px; }
-    .timeline-meta { flex-direction: column; align-items: flex-start; gap: 1px; }
-    .timeline-time::before { display: none; }
-  }
-  @media (max-width: 560px) {
-    .details-grid { grid-template-columns: 1fr; gap: 16px; }
-  }
-</style>
-
-<div class="show-root">
-
-  {{-- ── Breadcrumb ── --}}
-  <div class="breadcrumb-wrap">
-    <nav class="breadcrumb fu d1">
-      <a href="{{ route('complaints.index') }}" wire:navigate>My Complaints</a>
-      <span class="breadcrumb-sep">/</span>
-      <span class="breadcrumb-current">{{ $complaint->ticket_id }}</span>
-    </nav>
-  </div>
-
-  {{-- ── Page Header ── --}}
-  <div class="show-header">
-    <div class="show-header-inner">
-      <a href="{{ route('complaints.index') }}" wire:navigate class="pcs-back pcs-mobile-only">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-        <span>{{ __('complaint_show.page.back') }}</span>
-      </a>
-      <div class="pcs-ref pcs-mobile-only">
-        <span class="pcs-ref__label">{{ __('complaint_show.page.reference_label') }}</span>
-        <span class="pcs-ref__row">
-          <code class="pcs-ref__id" data-pcs-ticket>{{ $complaint->ticket_id }}</code>
-          <button type="button" class="pcs-copy" data-pcs-copy aria-label="{{ __('complaint_show.page.copy') }}" title="{{ __('complaint_show.page.copy') }}">
-            <svg data-pcs-copy-icon width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <svg data-pcs-copied-icon width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><polyline points="20 6 9 17 4 12"/></svg>
-          </button>
-        </span>
-        <span class="sr-only pcs-copy-status" role="status" aria-live="polite"></span>
-      </div>
-      <div class="show-ticket fu d2">Complaint Ticket</div>
-      <div class="show-title-wrap">
-        <h1 class="show-title fu d3">{{ $complaint->title }}</h1>
-        @php
-          $statusEnum = $complaint->status instanceof \App\Enums\ComplaintStatus
-            ? $complaint->status
-            : \App\Enums\ComplaintStatus::from($complaint->status);
-        @endphp
-        <span class="show-status-large {{ $statusEnum->badgeColor() }} fu d4">
-          {{ $statusEnum->label() }}
-        </span>
-        @if($complaint->isOnHold())
-          <span class="hold-chip">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
-        @endif
-        <span class="pcs-visibility pcs-mobile-only pcs-visibility--{{ $complaint->is_public ? 'public' : 'private' }}">
-          {{ $complaint->is_public ? __('my_complaints.visibility_public') : __('my_complaints.visibility_private') }}
-        </span>
-      </div>
-      <p class="pcs-meta pcs-mobile-only">
-        @if($complaint->department)
-          {{ __('complaint_show.page.filed_with_office', ['date' => $complaint->created_at?->locale(app()->getLocale())->translatedFormat('M j, Y'), 'office' => $complaint->department->name]) }}
-        @else
-          {{ __('complaint_show.page.filed_only', ['date' => $complaint->created_at?->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}
-        @endif
-      </p>
-    </div>
-  </div>
-
-  {{-- ── Main Content ── --}}
-  <div class="show-body">
-
-    <a href="{{ route('complaints.index') }}" class="back-btn fu d2" wire:navigate>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-      Back to all complaints
-    </a>
-
     @php
-      $openRequest = $complaint->informationRequests()->whereIn('status', ['open', 'answered'])->latest('id')->first();
-      $pcsPublicLogs = $complaint->logs->where('is_internal', false)->sortByDesc('created_at')->values();
-      $pcsOffice = $complaint->department?->name ?? 'LGU';
-      $needsInfo = (string) $complaint->review_status === 'needs_information';
-      $reviewerNote = trim((string) $complaint->review_notes);
-      $needsInfoQuestion = $openRequest?->question
-          ?? ($reviewerNote !== '' ? $reviewerNote : __('complaint_show.action.fallback_question'));
-      $showNeedsInfo = $openRequest !== null || $needsInfo;
+        $statusEnum = $complaint->statusEnum;
+        $statusKey = str($complaint->status)->slug('_');
+        $isOwner = $complaint->visibilityIsOwnedBy(auth()->user());
+        $verificationMethod = $complaint->verificationMethodEnum();
 
-      $pcsPolicy = $complaint->intakePolicy();
-      $pcsShowPhotos = (($pcsPolicy['photos_required'] ?? false) || ($pcsPolicy['photos_allowed'] ?? false)) && $complaint->evidence_image_count > 0;
-      $pcsShowLocation = $complaint->intakeLocationApplicable() || $complaint->latitude !== null || $complaint->longitude !== null || filled($complaint->barangay) || filled($complaint->address_text);
+        $publicLogs = $complaint->logs
+            ->where('is_internal', false)
+            ->sortByDesc('created_at')
+            ->values();
+        $visibleLogs = $publicLogs->take(5)->values();
+        $earlierLogs = $publicLogs->slice(5)->values();
+
+        $openRequest = $complaint->informationRequests
+            ->filter(fn ($request) => in_array($request->status, [
+                \App\Enums\InformationRequestStatus::Open,
+                \App\Enums\InformationRequestStatus::Answered,
+            ], true))
+            ->sortByDesc('id')
+            ->first();
+        $needsInfo = (string) $complaint->review_status === 'needs_information';
+        $reviewerNote = trim((string) $complaint->review_notes);
+        $needsInfoQuestion = $openRequest?->question
+            ?? ($reviewerNote !== '' ? $reviewerNote : __('complaint_show.action.fallback_question'));
+        $showNeedsInfo = $isOwner && ($openRequest !== null || $needsInfo);
+
+        // Sub-ticketing: the owner of a finished complaint may file one follow-up
+        // at a time, so the panel hides while a follow-up is still waiting.
+        $openFollowUp = $complaint->openFollowUp();
+        $hasOpenFollowUp = $openFollowUp !== null;
+        $showFollowUp = $isOwner
+            && ! $hasOpenFollowUp
+            && in_array($complaint->status, [
+                \App\Enums\ComplaintStatus::Resolved->value,
+                \App\Enums\ComplaintStatus::Closed->value,
+            ], true);
+
+        $office = $complaint->department?->name ?? __('complaint_show.details.unassigned');
+        $policy = $complaint->intakePolicy();
+        $photosAllowed = ($policy['photos_required'] ?? false) || ($policy['photos_allowed'] ?? false);
+        $photoCount = (int) $complaint->evidence_image_count;
+        $showPhotos = $photosAllowed && $photoCount > 0;
+        $showLocation = $complaint->intakeLocationApplicable()
+            || $complaint->latitude !== null
+            || $complaint->longitude !== null
+            || filled($complaint->barangay)
+            || filled($complaint->address_text);
+
+        $categoryLabels = \App\Services\DepartmentRouter::categoryLabels();
+        $categoryLabel = $categoryLabels[$complaint->category]
+            ?? \Illuminate\Support\Str::headline($complaint->category);
+
+        $progressSteps = \App\Support\ComplaintProgress::steps($complaint, $publicLogs);
+        $whatMeans = \App\Support\ComplaintProgress::whatMeans($complaint);
+
+        $contactText = \App\Models\SystemSetting::getValue('contact_text');
     @endphp
 
-    @if($showNeedsInfo)
-      <section class="info-request fu d2" aria-labelledby="info-request-heading">
-        <div class="info-request__head">
-          <span class="info-request__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          </span>
-          <div class="info-request__head-copy">
-            <p class="info-request__kicker">{{ __('complaint_show.action.kicker') }}</p>
-            <h2 id="info-request-heading" class="info-request__title">
-              {{ $openRequest?->isAnswered() ? __('complaint_show.action.title_answered') : __('complaint_show.action.title_open') }}
-            </h2>
-          </div>
-        </div>
-
-        <p class="info-request__lede">{{ __('complaint_show.action.lede') }}</p>
-
-        <blockquote class="info-request__question">
-          <p class="info-request__asked-by">
-            @if($openRequest?->requester?->full_name)
-              {{ __('complaint_show.action.asked_by', ['name' => $openRequest->requester->full_name, 'time' => $openRequest->created_at->locale(app()->getLocale())->translatedFormat('M j, Y g:i A')]) }}
-            @elseif($openRequest)
-              {{ __('complaint_show.action.asked_by_department', ['time' => $openRequest->created_at->locale(app()->getLocale())->translatedFormat('M j, Y g:i A')]) }}
-            @else
-              {{ __('complaint_show.action.from_office') }}
-            @endif
-          </p>
-          <p>{{ $needsInfoQuestion }}</p>
-        </blockquote>
-
-        @if($openRequest?->isAnswered())
-          <div class="info-request__answer">
-            <p class="info-request__answer-label">{{ __('complaint_show.action.reply_label') }}</p>
-            <p class="info-request__answer-text">{{ $openRequest->response_text }}</p>
-            @php $replyPhotos = (array) ($openRequest->response_image_paths ?? []); @endphp
-            @if($replyPhotos !== [])
-              <div class="info-request__answer-photos">
-                @foreach($replyPhotos as $replyPhotoIndex => $replyPhotoPath)
-                  <a href="{{ route('complaints.information.evidence', [$complaint, $openRequest, $replyPhotoIndex]) }}" target="_blank" rel="noopener" class="info-request__answer-photo">
-                    <img src="{{ route('complaints.information.evidence', [$complaint, $openRequest, $replyPhotoIndex]) }}" alt="{{ __('complaint_show.action.reply_photo_alt', ['index' => $replyPhotoIndex + 1]) }}" loading="lazy">
-                  </a>
-                @endforeach
-              </div>
-            @endif
-          </div>
-        @else
-          <form data-loading-submit method="POST" action="{{ route('complaints.information.store', $complaint) }}" enctype="multipart/form-data" class="info-request__form" data-disable-on-submit>
-            @csrf
-            <div class="info-request__field">
-              <label for="response" class="info-request__label">{{ __('complaint_show.action.reply_label') }}</label>
-              <textarea name="response" id="response" rows="4" required minlength="10" maxlength="2000" placeholder="{{ __('complaint_show.action.reply_placeholder') }}">{{ old('response') }}</textarea>
-              @error('response')<p class="info-request__error">{{ $message }}</p>@enderror
-            </div>
-
-            <div class="info-request__field">
-              <label for="images" class="info-request__label">{{ __('complaint_show.action.photos_label') }} <small>{{ __('complaint_show.action.photos_optional') }}</small></label>
-              <input type="file" name="images[]" id="images" accept="image/jpeg,image/png,image/webp" multiple>
-              <p class="info-request__hint">{{ __('complaint_show.action.photos_hint') }}</p>
-              @error('images')<p class="info-request__error">{{ $message }}</p>@enderror
-              @error('images.*')<p class="info-request__error">{{ $message }}</p>@enderror
-            </div>
-
-            <button type="submit" class="info-request__submit">{{ __('complaint_show.action.submit') }}</button>
-          </form>
-        @endif
-      </section>
-    @endif
-
-    @if($complaint->visibilityIsOwnedBy(auth()->user()) && $statusEnum === \App\Enums\ComplaintStatus::Resolved)
-      <section class="close-report" aria-labelledby="close-report-heading">
-        <div class="close-report__head">
-          <span class="close-report__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </span>
-          <div>
-            <p class="close-report__kicker">{{ __('complaint_show.close.kicker') }}</p>
-            <h2 class="close-report__title" id="close-report-heading">{{ __('complaint_show.close.title') }}</h2>
-          </div>
-        </div>
-        <p class="close-report__lede">{{ __('complaint_show.close.lede') }}</p>
-        <form data-loading-submit method="POST" action="{{ route('complaints.close', $complaint) }}" class="close-report__form">
-          @csrf
-          <button type="submit" class="close-report__submit">{{ __('complaint_show.close.submit') }}</button>
-        </form>
-      </section>
-    @endif
-
-    {{-- ── Updates / Timeline — moved to top on all screens ── --}}
-    <section class="updates-top" aria-labelledby="updates-top-heading">
-      <div class="timeline-card" id="pcs-updates">
-        <h2 class="pcs-section-title pcs-mobile-only" id="updates-top-heading"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span>{{ __('complaint_show.updates.title') }}</h2>
-
-        {{-- The work is paused. The resident is told why, rather than being
-             left to read a silence as neglect. --}}
-        @if($complaint->isOnHold())
-          <div class="hold-notice" role="status">
-            <span class="hold-notice__chip">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
-            <p class="hold-notice__body">
-              {{ $complaint->holdNote() ?? __('complaint_show.hold.no_note') }}
-              @if($complaint->hold_expected_resume_at)
-                <span class="hold-notice__meta">{{ __('complaint_show.hold.expected_on', ['date' => $complaint->hold_expected_resume_at->toFormattedDateString()]) }}</span>
-              @endif
-            </p>
-          </div>
-        @endif
-        <div class="timeline-header">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
-          <div class="timeline-title">{{ __('complaint_show.updates.staff_responses') }}</div>
-        </div>
-        <div class="timeline-body">
-          @php
-            $publicLogs = $complaint->logs->where('is_internal', false)->sortByDesc('created_at');
-          @endphp
-          @if($publicLogs->isEmpty())
-            <div style="text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px;">
-              Your complaint has been received and is being reviewed.
-            </div>
-          @else
-            <div class="timeline">
-              @foreach($publicLogs as $log)
-                <div class="timeline-item">
-                  <div class="timeline-status">
-                    @if($log->previous_status && $log->new_status)
-                      Status changed: {{ $log->previous_status }} → {{ $log->new_status }}
-                    @elseif($log->new_status)
-                      Status: {{ $log->new_status }}
-                    @endif
-                  </div>
-                  @if($log->comment)
-                    <div class="timeline-note">{{ $log->comment }}</div>
-                  @endif
-
-                  @if($log->documentation_images)
-                    <div class="timeline-evidence" aria-label="Documentation photos">
-                      @foreach($log->documentation_images as $documentationIndex => $documentationPath)
-                        <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener">
-                          <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="Documentation photo {{ $documentationIndex + 1 }}" loading="lazy">
-                        </a>
-                      @endforeach
-                    </div>
-                  @endif
-
-                  <div class="timeline-meta">
-                    <span class="timeline-actor">Responded by {{ $complaint->department->name ?? 'LGU' }} Staff</span>
-                    <span class="timeline-time">{{ $log->created_at->diffForHumans() }}</span>
-                  </div>
-                </div>
-              @endforeach
-            </div>
-          @endif
-        </div>
-      </div>
-    </section>
-
-    {{-- Latest-update inset removed: the progress timeline already shows the
-         newest staff response, and a duplicate here read as a separate state. --}}
-
-    {{-- Mobile: Progress tracker (5 steps, vertical). Dates reuse complaint
-         created_at + status logs; missing dates render "—", never invented. --}}
-    <section class="pcs-progress pcs-mobile-only" aria-labelledby="pcs-progress-heading">
-      <h2 class="pcs-section-title" id="pcs-progress-heading"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>{{ __('complaint_show.progress.title') }}</h2>
-      @php
-        $pcsStatuses = [\App\Enums\ComplaintStatus::Submitted, \App\Enums\ComplaintStatus::UnderReview, \App\Enums\ComplaintStatus::InProgress, \App\Enums\ComplaintStatus::Resolved, \App\Enums\ComplaintStatus::Closed];
-        $pcsStatusKey = \Illuminate\Support\Str::slug($statusEnum->value, '_');
-        $pcsIsRejected = $statusEnum === \App\Enums\ComplaintStatus::Rejected;
-        $pcsIsClosed = $statusEnum === \App\Enums\ComplaintStatus::Closed;
-        $pcsCurrentIndex = null;
-        if ($pcsIsClosed) {
-          $pcsCurrentIndex = 5;
-        } elseif ($pcsIsRejected) {
-          $pcsRejectedLog = $pcsPublicLogs->reject(fn ($l) => $l->new_status === \App\Enums\ComplaintStatus::Rejected->value)->last();
-          $pcsReached = $pcsRejectedLog?->new_status;
-          $pcsCurrentIndex = $pcsReached ? (int) array_search($pcsReached, $pcsStatuses, true) : 0;
-        } else {
-          $idx = (int) array_search($statusEnum, $pcsStatuses, true);
-          $pcsCurrentIndex = $idx !== false ? $idx : null;
-        }
-        $pcsLastDate = null;
-        $pcsSteps = [];
-        foreach ($pcsStatuses as $idx => $st) {
-          $log = $pcsPublicLogs->first(fn ($e) => $e->new_status === $st->value);
-          if ($pcsIsRejected) {
-            $state = $idx < $pcsCurrentIndex ? 'complete' : ($idx === $pcsCurrentIndex ? 'rejected' : 'upcoming');
-          } elseif ($pcsIsClosed) {
-            $state = 'complete';
-          } else {
-            $state = $idx < $pcsCurrentIndex ? 'complete' : ($idx === $pcsCurrentIndex ? 'current' : 'upcoming');
-          }
-          $raw = $st === \App\Enums\ComplaintStatus::Submitted ? $complaint->created_at : $log?->created_at;
-          $formatted = null;
-          if ($raw !== null && ($pcsLastDate === null || $raw->greaterThanOrEqualTo($pcsLastDate))) {
-            $formatted = $raw;
-            $pcsLastDate = $raw;
-          }
-          $pcsSteps[] = ['status' => $st, 'label' => $st->label(), 'date' => $formatted, 'state' => $state];
-        }
-        $pcsWhat = match ($pcsStatusKey) {
-          'submitted' => __('transparency.show.what_submitted'),
-          'under_review' => __('transparency.show.what_under_review'),
-          'in_progress' => __('transparency.show.what_in_progress', ['office' => $pcsOffice]),
-          'resolved' => __('transparency.show.what_resolved'),
-          'closed' => __('transparency.show.what_closed'),
-          'rejected' => __('transparency.show.what_rejected'),
-          default => '',
-        };
-        $pcsResolvedDate = null;
-        $pcsClosedDate = null;
-        foreach ($pcsSteps as $s) {
-          if ($s['status'] === \App\Enums\ComplaintStatus::Resolved && $s['date']) $pcsResolvedDate = $s['date'];
-          if ($s['status'] === \App\Enums\ComplaintStatus::Closed && $s['date']) $pcsClosedDate = $s['date'];
-        }
-      @endphp
-      <ol class="pcs-tracker">
-        @foreach($pcsSteps as $idx => $step)
-          <li class="pcs-step pcs-step--{{ $step['state'] }}" @if($step['state'] === 'current') aria-current="step" @endif>
-            <span class="pcs-step__marker" aria-hidden="true">
-              @if($step['state'] === 'complete')
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 10"/></svg>
-              @elseif($step['state'] === 'rejected')
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
-              @elseif($step['state'] === 'current')
-              @else
-                <span>{{ $idx + 1 }}</span>
-              @endif
-            </span>
-            <div class="pcs-step__body">
-              <div class="pcs-step__row">
-                <span class="pcs-step__label">{{ $step['label'] }}</span>
-                @if($step['state'] === 'upcoming')
-                  <span class="pcs-step__date">{{ __('complaint_show.progress.pending') }}</span>
-                @elseif($step['date'])
-                  <span class="pcs-step__date">{{ $step['date']->locale(app()->getLocale())->translatedFormat('M j, Y') }}</span>
-                @else
-                  <span class="pcs-step__date">{{ __('complaint_show.progress.date_unavailable') }}</span>
-                @endif
-              </div>
-              @if($step['state'] === 'complete')
-                <span class="pcs-step__state"><span class="sr-only">{{ __('complaint_show.progress.completed') }}: </span></span>
-              @elseif($step['state'] === 'current')
-                <span class="pcs-step__state">{{ __('complaint_show.progress.current') }}</span>
-                @if($pcsWhat !== '' && !$pcsIsRejected && !$pcsIsClosed)
-                  <div class="pcs-next">
-                    <h3 class="pcs-next__title">{{ __('complaint_show.progress.next_title') }}</h3>
-                    <p class="pcs-next__body">{{ $pcsWhat }}</p>
-                  </div>
-                @endif
-              @elseif($step['state'] === 'upcoming')
-                <span class="pcs-step__state"><span class="sr-only">{{ __('complaint_show.progress.upcoming') }}</span></span>
-              @elseif($step['state'] === 'rejected')
-                <span class="pcs-step__state">{{ __('transparency.show.rejected_stage') }}</span>
-                @if($pcsWhat !== '')
-                  <div class="pcs-next">
-                    <h3 class="pcs-next__title">{{ __('complaint_show.progress.next_title') }}</h3>
-                    <p class="pcs-next__body">{{ $pcsWhat }}</p>
-                  </div>
-                @endif
-              @endif
-            </div>
-          </li>
-        @endforeach
-      </ol>
-      @if($pcsIsClosed)
-        <p class="pcs-resolved-line">
-          @if($pcsClosedDate)
-            {{ __('complaint_show.progress.closed_on', ['date' => $pcsClosedDate->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}
-          @elseif($pcsResolvedDate)
-            {{ __('complaint_show.progress.resolved_on', ['date' => $pcsResolvedDate->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}
-          @else
-            {{ __('complaint_show.progress.closed_on', ['date' => __('complaint_show.progress.date_unavailable')]) }}
-          @endif
-        </p>
-      @elseif($statusEnum === \App\Enums\ComplaintStatus::Resolved)
-        <p class="pcs-resolved-line">
-          @if($pcsResolvedDate)
-            {{ __('complaint_show.progress.resolved_on', ['date' => $pcsResolvedDate->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}
-          @else
-            {{ __('complaint_show.progress.resolved_on', ['date' => __('complaint_show.progress.date_unavailable')]) }}
-          @endif
-        </p>
-      @endif
-    </section>
-
-{{--
-    The resident's own control over publication, and an honest note when staff
-    have moderated what the public sees.
-
-    Two promises are kept here. First, the resident can change this at any time
-    and no one else can. Second, nothing staff do to the public presentation
-    rewrites what the resident filed: the copy below is their own, unedited,
-    with a plain statement of what was withheld instead of a silent alteration.
---}}
-<div class="visibility-panel">
-  <div class="visibility-panel__head">
-    <h3 class="visibility-panel__title">{{ __('complaint_show.visibility.title_legacy') }}</h3>
-    <p class="visibility-panel__lede">{{ __('complaint_show.visibility.lede') }}</p>
-  </div>
-  <h2 class="pcs-section-title pcs-mobile-only"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>{{ __('complaint_show.visibility.title') }}</h2>
-
-  @if ($complaint->isPrivacyGated())
-    {{-- A report that names somebody: the publication decision is the
-         office's and the Mayor's office's, so the resident is told where it
-         stands instead of being given a switch they cannot pull. --}}
-    <p class="visibility-panel__state">
-      <strong>{{ $complaint->publicationStatus()?->label() ?? __('complaint_show.visibility.gated_state') }}</strong>
-      {{ __('complaint_show.visibility.gated_body') }}
-    </p>
-  @else
-  <form data-loading-submit method="POST" action="{{ route('complaints.visibility.update', $complaint) }}" class="visibility-panel__actions">
-    @csrf
-    @method('PUT')
-    <input type="hidden" name="visibility" value="{{ $complaint->is_public ? 'private' : 'public' }}">
-    <button type="submit" class="visibility-panel__button">
-      {{ $complaint->is_public ? __('complaint_show.visibility.privatise') : __('complaint_show.visibility.publish') }}
-    </button>
-    <span class="visibility-panel__state">
-      {{ $complaint->is_public
-          ? __('complaint_show.visibility.public_state')
-          : __('complaint_show.visibility.private_state') }}
-    </span>
-  </form>
-  @endif  <details class="pcs-how pcs-mobile-only">
-    <summary>{{ __('complaint_show.visibility.how_it_works') }}</summary>
-    <p class="pcs-how__body">{{ __('complaint_show.visibility.lede') }}</p>
-  </details>
-
-  @if ($complaint->isHiddenFromPublic() || $complaint->isRedacted())
-    <div class="visibility-moderation" role="status">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
-      <div>
-        <strong>This report is not currently shown as you filed it.</strong>
-        <p>
-          What you see above is your original submission, unchanged.
-          @if ($complaint->moderation_reason)
-            Staff recorded the reason: <em>{{ $complaint->moderation_reason }}</em>.
-          @else
-            A staff member has withheld part of it from the public page.
-          @endif
-          Your choice of public or private is unaffected, and you can still change it using the button above.
-        </p>
-      </div>
-    </div>
-  @endif
-</div>
-
-    <div class="show-layout">
-
-      {{-- ── Left Column: Details ── --}}
-      <div class="fu d3">
-
-        {{-- Description --}}
-        <div class="detail-card pcs-card--description" style="margin-bottom: 24px;">
-          <div class="detail-card-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span class="detail-card-title">{{ __('complaint_show.report.description_label') }}</span>
-          </div>
-          <div class="detail-card-body">
-            <h2 class="pcs-section-title pcs-mobile-only"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>{{ __('complaint_show.report.title') }}</h2>
-            <p id="pcs-description" class="detail-value detail-value-large pcs-desc-wrap">{{ $complaint->description }}</p>
-            <button type="button" class="pcs-show-more pcs-mobile-only" aria-expanded="false" aria-controls="pcs-description" data-pcs-desc-toggle>{{ __('complaint_show.report.show_more') }}</button>
-          </div>
-        </div>
-
-        {{-- Details Grid --}}
-        <div class="detail-card pcs-card--details" style="margin-bottom: 24px;">
-          <div class="detail-card-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            <span class="detail-card-title">{{ __('complaint_show.details.legacy_details') }}</span>
-          </div>
-          <div class="detail-card-body">
-            <h2 class="pcs-section-title pcs-mobile-only"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>{{ __('complaint_show.details.title') }}</h2>
-            <div class="details-grid">
-              <div class="detail-field">
-                <div class="detail-label">{{ __('complaint_show.details.category') }}</div>
-                <span class="detail-pill">{{ \Illuminate\Support\Str::headline($complaint->category) }}</span>
-              </div>
-              <div class="detail-field">
-                <div class="detail-label">{{ __('complaint_show.details.review_status') }}</div>
-                <span class="detail-value">{{ $complaint->reviewStatusEnum->label() }}</span>
-              </div>
-              <div class="detail-field detail-field--visibility">
-                <div class="detail-label">{{ __('complaint_show.visibility.title_legacy') }}</div>
-                <span class="detail-value">
-                  @if ($complaint->isPrivacyGated())
-                    {{ $complaint->publicationStatus()?->label() ?? __('complaint_show.visibility.gated_state') }}
-                  @else
-                    {{ $complaint->is_public ? __('complaint_show.details.published') : __('my_complaints.visibility_private') }}
-                  @endif
-                </span>
-              </div>
-              <div class="detail-field">
-                <div class="detail-label">{{ __('complaint_show.details.suggested_priority') }}</div>
-                <span class="detail-value">{{ $complaint->suggestedPriorityEnum->label() }}</span>
-              </div>
-              <div class="detail-field">
-                <div class="detail-label">{{ __('complaint_show.details.confirmed_priority') }}</div>
-                <span class="detail-value">{{ $complaint->confirmedPriorityEnum?->label() ?? __('complaint_show.details.awaiting') }}</span>
-              </div>
-              <div class="detail-field">
-                <div class="detail-label">{{ __('complaint_show.details.department') }}</div>
-                <div class="detail-dept">@if($complaint->department)<span class="dept-indicator" data-dept="{{ $complaint->department->code }}"><span class="dept-dot" data-dept="{{ $complaint->department->code }}" aria-hidden="true"></span><span class="dept-indicator__name">{{ $complaint->department->name }}</span></span>@else {{ __('complaint_show.details.unassigned') }} @endif</div>
-                @if($complaint->department)
-                  <div class="pcs-detail-sub" style="font-size: 12px; color: var(--muted); margin-top: 2px;">
-                    {{ __('complaint_show.details.code_label') }}: {{ $complaint->department->code }}
-                  </div>
-                @endif
-              </div>
-              <div class="detail-field">
-                <div class="detail-label">{{ __('complaint_show.details.date_filed') }}</div>
-                <div class="detail-value">{{ $complaint->created_at->locale(app()->getLocale())->translatedFormat('F j, Y') }}</div>
-                <div class="pcs-detail-sub" style="font-size: 12px; color: var(--muted); margin-top: 2px;">
-                  {{ $complaint->created_at->diffForHumans() }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {{-- ── Right Column: Photos & Location (desktop, only if applicable) ── --}}
-      @if($pcsShowPhotos || $pcsShowLocation)
-      <div class="fu d4">
-        {{-- Photos (only when category requires them or images exist) --}}
-        @if($pcsShowPhotos)
-        <div class="detail-card pcs-card--photos" style="margin-bottom: 24px;">
-          <div class="detail-card-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            <span class="detail-card-title">{{ __('complaint_show.report.photos_label') }} @if($complaint->evidence_image_count > 1)<small>({{ $complaint->evidence_image_count }})</small>@endif</span>
-          </div>
-          <div class="detail-card-body" style="padding: 0;">
-            <p class="pcs-counter pcs-mobile-only" data-pcs-counter aria-live="polite">{{ __('complaint_show.report.counter', ['current' => 1, 'total' => count($complaint->evidence_images)]) }}</p>
-            <div class="image-gallery" data-count="{{ count($complaint->evidence_images) }}" data-pcs-gallery>
-              @foreach($complaint->evidence_images as $imageIndex => $imagePath)
-                @php
-                  $imageUrl = route('complaints.evidence', [$complaint, $imageIndex]);
-                @endphp
-                <a class="image-wrap" href="{{ $imageUrl }}" target="_blank" rel="noopener" data-pcs-photo data-pcs-index="{{ $imageIndex }}" aria-label="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}">
-                  <img src="{{ $imageUrl }}" alt="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                  <span style="display: none; padding: 24px; text-align: center; color: var(--muted); font-size: 12px;">Image unavailable</span>
+    <div class="pt">
+        <div class="pt-back-row">
+            <div class="pt-container">
+                <a href="{{ route('complaints.index') }}" class="pt-back">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    {{ __('complaint_show.page.back') }}
                 </a>
-              @endforeach
             </div>
-          </div>
         </div>
-        @endif
 
-        {{-- Location (only when category requires it or data exists) --}}
-        @if($pcsShowLocation)
-        <div class="detail-card pcs-card--location">
-          <div class="detail-card-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-500)" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span class="detail-card-title">{{ __('complaint_show.location.title') }}</span>
-          </div>
-          <div class="detail-card-body">
-            @if($complaint->barangay || $complaint->address_text)
-              <p class="pcs-loc-text pcs-mobile-only">
-                @if($complaint->barangay)
-                  <span class="pcs-loc-text--barangay">{{ $complaint->barangay }}</span>
-                @endif
-                @if($complaint->barangay && $complaint->address_text)<br>@endif
-                @if($complaint->address_text){{ $complaint->address_text }}@endif
-              </p>
-            @endif
-            @if($complaint->latitude !== null && $complaint->longitude !== null)
-              <div id="complaint-map" class="map-container"></div>
-              @if($complaint->address_text)
-                <div class="pcs-address-desktop" style="margin-top: 12px; font-size: 13px; color: var(--muted);">
-                  <strong>{{ __('complaint_show.location.address_label') }}:</strong> {{ $complaint->address_text }}
+        <header class="pt-banner">
+            <div class="pt-container">
+                <div class="pt-banner__ticket-row">
+                    <span class="pt-ticket-pill">{{ $complaint->ticket_id }}</span>
+                    <button type="button" class="pt-copy-btn" data-ticket="{{ $complaint->ticket_id }}" aria-label="{{ __('complaint_show.page.copy') }}" title="{{ __('complaint_show.page.copy') }}">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                    <span class="sr-only" id="copy-live" aria-live="polite"></span>
                 </div>
-              @endif
-              <p class="pcs-coords" style="margin-top: 4px; font-size: 12px; color: var(--muted);">
-                {{ number_format($complaint->latitude, 6) }}, {{ number_format($complaint->longitude, 6) }}
-              </p>
-              <a class="pcs-maps-link pcs-mobile-only" href="https://www.openstreetmap.org/?mlat={{ $complaint->latitude }}&amp;mlon={{ $complaint->longitude }}#map=17/{{ $complaint->latitude }}/{{ $complaint->longitude }}" target="_blank" rel="noopener">{{ __('complaint_show.location.open_in_maps') }}</a>
-            @else
-              <div class="no-location">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <div>{{ __('complaint_show.location.no_location') }}</div>
-              </div>
-            @endif
-          </div>
-        </div>
+                @if($complaint->parent)
+                    <p class="pt-banner__followup">
+                        {{ __('complaint_show.follow_up.parent_label') }}
+                        <a href="{{ route('complaints.show', $complaint->parent) }}">{{ $complaint->parent->ticket_id }}</a>
+                    </p>
+                @endif
+
+                <h1 class="pt-banner__title">{{ $complaint->title }}</h1>
+
+                <div class="pt-banner__status-row">
+                    <span class="pt-pill pt-pill--{{ str($complaint->status)->slug() }}"><span class="pt-pill__dot" aria-hidden="true"></span>{{ $statusEnum->label() }}</span>
+                    @if($complaint->isOnHold())
+                        <span class="pt-chip-neutral">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
+                    @endif
+                    @if($verificationMethod)
+                        <span class="pt-chip-neutral">{{ __('complaint_show.page.verified_by', ['method' => $verificationMethod->label()]) }}</span>
+                    @endif
+                    <span class="pt-chip-neutral">{{ __('complaint_show.details.date_filed') }}: {{ $complaint->created_at->locale(app()->getLocale())->translatedFormat('M j, Y') }}</span>
+                </div>
+            </div>
+        </header>
+
+        @if(session('status') || session('error'))
+            <div class="pt-container">
+                @if(session('status'))
+                    <x-toast :message="session('status')" variant="success" />
+                @endif
+                @if(session('error'))
+                    <x-toast :message="session('error')" variant="error" />
+                @endif
+            </div>
         @endif
-      </div>
-      @endif
 
+        <div class="pt-container pt-stack rd-stack">
+            @if($showNeedsInfo)
+                <section class="info-request rd-order-action" aria-labelledby="info-request-heading">
+                    <div class="info-request__head">
+                        <span class="info-request__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </span>
+                        <div class="info-request__head-copy">
+                            <p class="info-request__kicker">
+                                {{ $openRequest?->isAnswered() ? __('complaint_show.action.kicker_answered') : __('complaint_show.action.kicker') }}
+                            </p>
+                            <h2 id="info-request-heading" class="info-request__title">
+                                {{ $openRequest?->isAnswered() ? __('complaint_show.action.title_answered') : __('complaint_show.action.title_open') }}
+                            </h2>
+                        </div>
+                    </div>
+
+                    <p class="info-request__lede">
+                        {{ $openRequest?->isAnswered() ? __('complaint_show.action.thanks') : __('complaint_show.action.lede') }}
+                    </p>
+
+                    <blockquote class="info-request__question">
+                        <p class="info-request__asked-by">
+                            @if($openRequest?->requester?->full_name)
+                                {{ __('complaint_show.action.asked_by', ['name' => $openRequest->requester->full_name, 'time' => $openRequest->created_at->locale(app()->getLocale())->translatedFormat('M j, Y g:i A')]) }}
+                            @elseif($openRequest)
+                                {{ __('complaint_show.action.asked_by_department', ['time' => $openRequest->created_at->locale(app()->getLocale())->translatedFormat('M j, Y g:i A')]) }}
+                            @else
+                                {{ __('complaint_show.action.from_office') }}
+                            @endif
+                        </p>
+                        <p>{{ $needsInfoQuestion }}</p>
+                    </blockquote>
+
+                    @if($openRequest?->isAnswered())
+                        <div class="info-request__answer">
+                            <p class="info-request__answer-label">{{ __('complaint_show.action.reply_label') }}</p>
+                            <p class="info-request__answer-text">{{ $openRequest->response_text }}</p>
+                            @php $replyPhotos = (array) ($openRequest->response_image_paths ?? []); @endphp
+                            @if($replyPhotos !== [])
+                                <div class="info-request__answer-photos">
+                                    @foreach($replyPhotos as $replyPhotoIndex => $replyPhotoPath)
+                                        <a href="{{ route('complaints.information.evidence', [$complaint, $openRequest, $replyPhotoIndex]) }}" target="_blank" rel="noopener" class="info-request__answer-photo">
+                                            <img src="{{ route('complaints.information.evidence', [$complaint, $openRequest, $replyPhotoIndex]) }}" alt="{{ __('complaint_show.action.reply_photo_alt', ['index' => $replyPhotoIndex + 1]) }}" loading="lazy">
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <form data-loading-submit method="POST" action="{{ route('complaints.information.store', $complaint) }}" enctype="multipart/form-data" class="info-request__form" data-disable-on-submit>
+                            @csrf
+                            <div class="info-request__field">
+                                <label for="response" class="info-request__label">{{ __('complaint_show.action.reply_label') }}</label>
+                                <textarea name="response" id="response" rows="4" required minlength="10" maxlength="2000" placeholder="{{ __('complaint_show.action.reply_placeholder') }}">{{ old('response') }}</textarea>
+                                @error('response')<p class="info-request__error">{{ $message }}</p>@enderror
+                            </div>
+
+                            <div class="info-request__field info-request__photos-field"
+                                 data-photo-picker
+                                 data-max="5"
+                                 data-max-bytes="5242880"
+                                 data-msg-too-many="{{ __('complaint_show.action.photos_too_many', ['max' => 5]) }}"
+                                 data-msg-invalid="{{ __('complaint_show.action.photos_invalid') }}"
+                                 data-msg-remove="{{ __('complaint_show.action.photos_remove', ['name' => '__name__']) }}"
+                                 data-msg-preview="{{ __('complaint_show.action.photos_preview_alt', ['name' => '__name__']) }}"
+                                 data-msg-count="{{ __('complaint_show.action.photos_count', ['count' => '__count__', 'max' => 5]) }}">
+                                <label for="images" class="info-request__label">{{ __('complaint_show.action.photos_label') }} <small>{{ __('complaint_show.action.photos_optional') }}</small></label>
+
+                                <div class="info-request__photos">
+                                    <input type="file" name="images[]" id="images" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" multiple data-photo-input>
+                                    <input type="file" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" capture="environment" data-photo-camera>
+
+                                    <div class="info-request__photo-actions">
+                                        <button type="button" class="info-request__photo-add tr-button" data-photo-trigger>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>
+                                            {{ __('complaint_show.action.photos_choose') }}
+                                        </button>
+                                        <button type="button" class="info-request__photo-add tr-button" data-photo-camera-trigger>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                            {{ __('complaint_show.action.photos_take') }}
+                                        </button>
+                                        <span class="info-request__photo-count" data-photo-count aria-live="polite">{{ __('complaint_show.action.photos_count', ['count' => 0, 'max' => 5]) }}</span>
+                                    </div>
+
+                                    <div class="info-request__photo-grid" data-photo-previews aria-live="polite"></div>
+                                    <p class="info-request__error" data-photo-error hidden></p>
+                                </div>
+
+                                @error('images')<p class="info-request__error">{{ $message }}</p>@enderror
+                                @error('images.*')<p class="info-request__error">{{ $message }}</p>@enderror
+                            </div>
+
+                            <button type="submit" class="info-request__submit">{{ __('complaint_show.action.submit') }}</button>
+                        </form>
+                    @endif
+                </section>
+            @endif
+
+            <section class="pt-card rd-order-progress" aria-labelledby="pcs-progress-heading">
+                <h2 id="pcs-progress-heading">{{ __('complaint_show.progress.title') }}</h2>
+
+                @if($complaint->isOnHold())
+                    <div class="hold-notice" role="status">
+                        <span class="hold-notice__chip">{{ $complaint->holdReasonEnum()?->label() ?? __('complaint_show.hold.on_hold') }}</span>
+                        <p class="hold-notice__body">
+                            {{ $complaint->holdNote() ?? __('complaint_show.hold.no_note') }}
+                            @if($complaint->hold_expected_resume_at)
+                                <span class="hold-notice__meta">{{ __('complaint_show.hold.expected_on', ['date' => $complaint->hold_expected_resume_at->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}</span>
+                            @endif
+                        </p>
+                    </div>
+                @endif
+
+                @include('partials.complaint-steps', ['steps' => $progressSteps])
+
+                @if($whatMeans !== '')
+                    <div class="pt-whatmeans">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        <p>{{ $whatMeans }}</p>
+                    </div>
+                @endif
+            </section>
+
+            <div class="pt-grid">
+                <div class="pt-col pt-col--main">
+                    <section class="pt-card rd-order-report" aria-labelledby="pcs-report-heading">
+                        <h2 id="pcs-report-heading">{{ __('complaint_show.report.title') }}</h2>
+                        <p class="pt-copy">{{ $complaint->description }}</p>
+                    </section>
+
+                    @if($showPhotos)
+                        <section class="pt-card rd-order-evidence" aria-labelledby="pcs-evidence-heading">
+                            <h2 id="pcs-evidence-heading">
+                                {{ __('complaint_show.report.photos_label') }}
+                                <span class="pt-count">{{ trans_choice('complaint_show.report.photo_count', $photoCount) }}</span>
+                            </h2>
+                            <div class="pt-evidence" data-pcs-gallery>
+                                @foreach($complaint->evidence_images as $imageIndex => $imagePath)
+                                    @php $imageUrl = route('complaints.evidence', [$complaint, $imageIndex]); @endphp
+                                    <a href="{{ $imageUrl }}" target="_blank" rel="noopener" data-pcs-photo data-pcs-index="{{ $imageIndex }}" aria-label="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}">
+                                        <img src="{{ $imageUrl }}" alt="{{ __('complaint_show.report.photo_alt', ['index' => $imageIndex + 1]) }}" loading="lazy" width="420" height="420">
+                                    </a>
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
+                    @if($isOwner && ($complaint->canReceiveFeedback() || $complaint->feedback))
+                        @php $complaintFeedback = $complaint->feedback; @endphp
+                        <section class="pt-card rd-order-feedback" aria-labelledby="complaint-feedback-heading">
+                            <h2 id="complaint-feedback-heading">{{ __('complaint_show.feedback.title') }}</h2>
+
+                            @if(! $complaintFeedback)
+                                <p class="pt-copy">{{ __('complaint_show.feedback.lede') }}</p>
+                                <form data-loading-submit method="POST" action="{{ route('complaints.feedback.store', $complaint) }}" class="complaint-feedback-form">
+                                    @csrf
+                                    <x-star-rating
+                                        name="rating"
+                                        :value="old('rating')"
+                                        :label="__('complaint_show.feedback.rating_label')"
+                                    />
+                                    @error('rating')
+                                        <p class="cat-field__error" role="alert">{{ $message }}</p>
+                                    @enderror
+
+                                    <label class="complaint-feedback-field" for="complaint-feedback-comment">
+                                        <span class="complaint-feedback-field__label">
+                                            {{ __('complaint_show.feedback.comment_label') }}
+                                            <em>{{ __('complaint_show.feedback.optional') }}</em>
+                                        </span>
+                                        <textarea
+                                            id="complaint-feedback-comment"
+                                            name="comment"
+                                            class="feedback-textarea"
+                                            rows="4"
+                                            maxlength="2000"
+                                            placeholder="{{ __('complaint_show.feedback.comment_placeholder') }}"
+                                        >{{ old('comment') }}</textarea>
+                                    </label>
+                                    @error('comment')
+                                        <p class="cat-field__error" role="alert">{{ $message }}</p>
+                                    @enderror
+
+                                    <p class="feedback-card__note">{{ __('complaint_show.feedback.moderation_note') }}</p>
+
+                                    <div class="complaint-feedback-actions">
+                                        <button type="submit" class="tr-button tr-button--primary">{{ __('complaint_show.feedback.submit') }}</button>
+                                    </div>
+                                </form>
+                            @else
+                                <div class="complaint-feedback-result">
+                                    <x-star-rating
+                                        name="complaint-feedback-rating-display"
+                                        :value="$complaintFeedback->rating"
+                                        :locked="true"
+                                        :label="__('complaint_show.feedback.your_rating')"
+                                    />
+
+                                    @if($complaintFeedback->hasComment())
+                                        <div class="complaint-feedback-comment">
+                                            <p>{{ $complaintFeedback->comment }}</p>
+                                        </div>
+
+                                        @if($complaintFeedback->isPending())
+                                            <p class="feedback-card__note" role="status">{{ __('complaint_show.feedback.pending') }}</p>
+                                        @elseif($complaintFeedback->isWithheld())
+                                            <p class="feedback-card__note" role="status">{{ __('complaint_show.feedback.withheld') }}</p>
+                                        @else
+                                            <p class="feedback-card__note" role="status">{{ __('complaint_show.feedback.published') }}</p>
+                                        @endif
+                                    @else
+                                        <p class="feedback-card__note" role="status">{{ __('complaint_show.feedback.published_rating_only') }}</p>
+                                    @endif
+                                </div>
+                            @endif
+                        </section>
+                    @endif
+
+                    @if($isOwner && $statusEnum === \App\Enums\ComplaintStatus::Resolved)
+                        <section class="close-report rd-order-close" aria-labelledby="close-report-heading">
+                            <div class="close-report__head">
+                                <span class="close-report__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                </span>
+                                <div>
+                                    <p class="close-report__kicker">{{ __('complaint_show.close.kicker') }}</p>
+                                    <h2 class="close-report__title" id="close-report-heading">{{ __('complaint_show.close.title') }}</h2>
+                                </div>
+                            </div>
+                            <p class="close-report__lede">{{ __('complaint_show.close.lede') }}</p>
+                            <form data-loading-submit method="POST" action="{{ route('complaints.close', $complaint) }}" class="close-report__form">
+                                @csrf
+                                <button type="submit" class="close-report__submit">{{ __('complaint_show.close.submit') }}</button>
+                            </form>
+                        </section>
+                    @endif
+
+                    @if($isOwner && $hasOpenFollowUp)
+                        <section class="pt-card rd-order-followup" aria-labelledby="follow-up-open-heading">
+                            <h2 id="follow-up-open-heading">{{ __('complaint_show.follow_up.title') }}</h2>
+                            <p class="pt-copy">{{ __('complaint_show.follow_up.open_exists') }}</p>
+                            <div class="complaint-feedback-actions">
+                                <a href="{{ route('complaints.show', $openFollowUp) }}" class="tr-button tr-button--primary">{{ __('complaint_show.follow_up.view_follow_up', ['ticket' => $openFollowUp->ticket_id]) }}</a>
+                            </div>
+                        </section>
+                    @endif
+
+                    @if($showFollowUp)
+                        <section class="follow-up-panel rd-order-followup" aria-labelledby="follow-up-heading">
+                            <div class="follow-up-panel__head">
+                                <span class="follow-up-panel__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                                </span>
+                                <div>
+                                    <p class="follow-up-panel__kicker">{{ __('complaint_show.follow_up.kicker') }}</p>
+                                    <h2 class="follow-up-panel__title" id="follow-up-heading">{{ __('complaint_show.follow_up.title') }}</h2>
+                                </div>
+                            </div>
+                            <p class="follow-up-panel__lede">{{ __('complaint_show.follow_up.lede') }}</p>
+                            <form data-loading-submit method="POST" action="{{ route('complaints.follow_up.store', $complaint) }}" enctype="multipart/form-data" class="follow-up-panel__form">
+                                @csrf
+                                <label class="follow-up-panel__field" for="follow-up-title">
+                                    <span class="follow-up-panel__label">{{ __('complaint_show.follow_up.subject_label') }}</span>
+                                    <input type="text" id="follow-up-title" name="title" class="follow-up-panel__input" maxlength="255" placeholder="{{ __('complaint_show.follow_up.subject_placeholder') }}" value="{{ old('title') }}">
+                                </label>
+                                @error('title')
+                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
+                                @enderror
+
+                                <label class="follow-up-panel__field" for="follow-up-description">
+                                    <span class="follow-up-panel__label">{{ __('complaint_show.follow_up.description_label') }}</span>
+                                    <textarea id="follow-up-description" name="description" class="feedback-textarea" rows="4" minlength="20" maxlength="2000" placeholder="{{ __('complaint_show.follow_up.description_placeholder') }}">{{ old('description') }}</textarea>
+                                </label>
+                                @error('description')
+                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
+                                @enderror
+
+                                <div class="info-request__photos"
+                                     data-photo-picker
+                                     data-max="5"
+                                     data-max-bytes="5242880"
+                                     data-msg-too-many="{{ __('complaint_show.action.photos_too_many', ['max' => 5]) }}"
+                                     data-msg-invalid="{{ __('complaint_show.action.photos_invalid') }}"
+                                     data-msg-remove="{{ __('complaint_show.action.photos_remove', ['name' => '__name__']) }}"
+                                     data-msg-preview="{{ __('complaint_show.action.photos_preview_alt', ['name' => '__name__']) }}"
+                                     data-msg-count="{{ __('complaint_show.action.photos_count', ['count' => '__count__', 'max' => 5]) }}">
+                                    <div class="info-request__photos-field" data-photo-field>
+                                        <label for="follow-up-images" class="follow-up-panel__label">{{ __('complaint_show.action.photos_label') }} <small>{{ __('complaint_show.action.photos_optional') }}</small></label>
+                                        <p class="info-request__hint">{{ __('complaint_show.action.photos_hint') }}</p>
+                                        <input type="file" name="images[]" id="follow-up-images" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" multiple data-photo-input>
+                                        <input type="file" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" capture="environment" data-photo-camera>
+                                        <div class="info-request__photo-actions">
+                                            <button type="button" class="info-request__photo-add tr-button" data-photo-trigger>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                                {{ __('complaint_show.action.photos_choose') }}
+                                            </button>
+                                            <button type="button" class="info-request__photo-add tr-button" data-photo-camera-trigger>
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                                {{ __('complaint_show.action.photos_take') }}
+                                            </button>
+                                            <span class="info-request__photo-count" data-photo-count aria-live="polite">{{ __('complaint_show.action.photos_count', ['count' => 0, 'max' => 5]) }}</span>
+                                        </div>
+                                        <div class="info-request__photo-grid" data-photo-previews aria-live="polite"></div>
+                                        <p class="info-request__error" data-photo-error hidden></p>
+                                    </div>
+                                </div>
+                                @error('images')
+                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
+                                @enderror
+                                @error('images.*')
+                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
+                                @enderror
+
+                                <div class="follow-up-panel__actions">
+                                    <button type="submit" class="tr-button tr-button--primary">{{ __('complaint_show.follow_up.submit') }}</button>
+                                </div>
+                            </form>
+                        </section>
+                    @endif
+
+                    <section class="pt-card rd-order-updates" aria-labelledby="pcs-updates-heading">
+                        <h2 id="pcs-updates-heading">{{ __('complaint_show.updates.title') }}</h2>
+
+                        @if($publicLogs->isEmpty())
+                            <div class="pt-empty">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <strong>{{ __('complaint_show.updates.empty_title') }}</strong>
+                                <span>{{ __('complaint_show.updates.empty_body') }}</span>
+                            </div>
+                        @else
+                            <ul class="pt-updates">
+                                @foreach($visibleLogs as $log)
+                                    @php $updateStatus = \App\Enums\ComplaintStatus::tryFrom((string) $log->new_status); @endphp
+                                    <li class="pt-update{{ $loop->first ? ' pt-update--newest' : '' }}">
+                                        <span class="pt-update__marker" aria-hidden="true"></span>
+                                        <div>
+                                            <div class="pt-update__meta">
+                                                @if($log->new_status)
+                                                    <span class="pt-pill pt-pill--{{ str((string) $log->new_status)->slug() }}"><span class="pt-pill__dot" aria-hidden="true"></span>{{ $updateStatus?->label() ?? $log->new_status }}</span>
+                                                @endif
+                                                <time datetime="{{ $log->created_at?->toAtomString() }}">{{ $log->created_at?->locale(app()->getLocale())->translatedFormat('M j, Y g:i A') }}</time>
+                                            </div>
+                                            @if($log->comment)
+                                                <p class="pt-update__text">{{ $log->comment }}</p>
+                                            @endif
+                                            @if($log->documentation_images)
+                                                <div class="pt-evidence" aria-label="{{ __('complaint_show.updates.documentation') }}">
+                                                    @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                                                        <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener" aria-label="{{ __('complaint_show.updates.open_documentation', ['index' => $documentationIndex + 1]) }}">
+                                                            <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('complaint_show.updates.documentation_photo', ['index' => $documentationIndex + 1]) }}" loading="lazy" width="420" height="420">
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+
+                            @if($earlierLogs->isNotEmpty())
+                                <details class="pt-updates-more">
+                                    <summary>
+                                        {{ __('complaint_show.updates.earlier', ['count' => $earlierLogs->count()]) }}
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    </summary>
+                                    <ul class="pt-updates">
+                                        @foreach($earlierLogs as $log)
+                                            @php $updateStatus = \App\Enums\ComplaintStatus::tryFrom((string) $log->new_status); @endphp
+                                            <li class="pt-update">
+                                                <span class="pt-update__marker" aria-hidden="true"></span>
+                                                <div>
+                                                    <div class="pt-update__meta">
+                                                        @if($log->new_status)
+                                                            <span class="pt-pill pt-pill--{{ str((string) $log->new_status)->slug() }}"><span class="pt-pill__dot" aria-hidden="true"></span>{{ $updateStatus?->label() ?? $log->new_status }}</span>
+                                                        @endif
+                                                        <time datetime="{{ $log->created_at?->toAtomString() }}">{{ $log->created_at?->locale(app()->getLocale())->translatedFormat('M j, Y g:i A') }}</time>
+                                                    </div>
+                                                    @if($log->comment)
+                                                        <p class="pt-update__text">{{ $log->comment }}</p>
+                                                    @endif
+                                                    @if($log->documentation_images)
+                                                        <div class="pt-evidence" aria-label="{{ __('complaint_show.updates.documentation') }}">
+                                                            @foreach($log->documentation_images as $documentationIndex => $documentationPath)
+                                                                <a href="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" target="_blank" rel="noopener" aria-label="{{ __('complaint_show.updates.open_documentation', ['index' => $documentationIndex + 1]) }}">
+                                                                    <img src="{{ route('complaints.updates.evidence', [$complaint, $log, $documentationIndex]) }}" alt="{{ __('complaint_show.updates.documentation_photo', ['index' => $documentationIndex + 1]) }}" loading="lazy" width="420" height="420">
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </details>
+                            @endif
+                        @endif
+                    </section>
+
+                    @if($showLocation)
+                        <section class="pt-card rd-order-location" aria-labelledby="pcs-location-heading">
+                            <h2 id="pcs-location-heading">{{ __('complaint_show.location.title') }}</h2>
+
+                            @if($complaint->barangay || $complaint->address_text)
+                                <p class="pt-location-address">
+                                    @if($complaint->barangay)
+                                        <strong>{{ $complaint->barangay }}</strong>
+                                    @endif
+                                    @if($complaint->barangay && $complaint->address_text)<br>@endif
+                                    @if($complaint->address_text){{ $complaint->address_text }}@endif
+                                </p>
+                            @endif
+
+                            @if($complaint->latitude !== null && $complaint->longitude !== null)
+                                {{-- The wrapper's stacking context lives in
+                                     resources/css/pages/complaint-show.css:
+                                     .pt .map-container { isolation: isolate; z-index: 0; } --}}
+                                <div id="complaint-map" class="map-container"></div>
+                                <p class="pt-coords">{{ number_format($complaint->latitude, 6) }}, {{ number_format($complaint->longitude, 6) }}</p>
+                                <a class="pt-map-link" href="https://www.openstreetmap.org/?mlat={{ $complaint->latitude }}&amp;mlon={{ $complaint->longitude }}#map=17/{{ $complaint->latitude }}/{{ $complaint->longitude }}" target="_blank" rel="noopener">{{ __('complaint_show.location.open_in_maps') }}</a>
+                            @elseif(! $complaint->barangay && ! $complaint->address_text)
+                                <div class="pt-empty">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <strong>{{ __('complaint_show.location.no_location') }}</strong>
+                                </div>
+                            @endif
+                        </section>
+                    @endif
+                </div>
+
+                <aside class="pt-col pt-col--side">
+                    <section class="pt-card rd-order-details" aria-labelledby="pcs-details-heading">
+                        <h2 id="pcs-details-heading">{{ __('complaint_show.details.title') }}</h2>
+                        <dl class="pt-dl">
+                            @if($complaint->parent)
+                                <div class="pt-dl--full">
+                                    <dt>{{ __('complaint_show.follow_up.parent_label') }}</dt>
+                                    <dd><a href="{{ route('complaints.show', $complaint->parent) }}" class="pt-map-link">{{ $complaint->parent->ticket_id }}</a></dd>
+                                </div>
+                            @endif
+                            <div>
+                                <dt>{{ __('complaint_show.details.category') }}</dt>
+                                <dd>
+                                    @include('pages.transparency.partials.category-icon', ['category' => $complaint->category])
+                                    {{ $categoryLabel }}
+                                </dd>
+                            </div>
+                            <div class="pt-dl--full">
+                                <dt>{{ __('complaint_show.details.department') }}</dt>
+                                <dd>
+                                    @if($complaint->department)
+                                        <span class="dept-badge" data-dept="{{ $complaint->department->code }}">{{ $complaint->department->code }}</span>
+                                        {{ $complaint->department->name }}
+                                    @else
+                                        {{ __('complaint_show.details.unassigned') }}
+                                    @endif
+                                </dd>
+                            </div>
+                            <div class="pt-dl--full">
+                                <dt>{{ __('complaint_show.details.assigned_personnel') }}</dt>
+                                <dd>{{ $complaint->assignedStaff?->full_name ?? __('complaint_show.details.unassigned') }}</dd>
+                            </div>
+                            <div>
+                                <dt>{{ __('complaint_show.details.review_status') }}</dt>
+                                <dd>{{ $complaint->reviewStatusEnum->label() }}</dd>
+                            </div>
+                            <div>
+                                <dt>{{ __('complaint_show.visibility.title_legacy') }}</dt>
+                                <dd>
+                                    @if($complaint->isPrivacyGated())
+                                        {{ $complaint->publicationStatus()?->label() ?? __('complaint_show.visibility.gated_state') }}
+                                    @else
+                                        {{ $complaint->is_public ? __('complaint_show.details.published') : __('my_complaints.visibility_private') }}
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>{{ __('complaint_show.details.suggested_priority') }}</dt>
+                                <dd>{{ $complaint->suggestedPriorityEnum->label() }}</dd>
+                            </div>
+                            <div>
+                                <dt>{{ __('complaint_show.details.confirmed_priority') }}</dt>
+                                <dd>{{ $complaint->confirmedPriorityEnum?->label() ?? __('complaint_show.details.awaiting') }}</dd>
+                            </div>
+                            <div class="pt-dl--full">
+                                <dt>{{ __('complaint_show.details.date_filed') }}</dt>
+                                <dd>
+                                    {{ $complaint->created_at->locale(app()->getLocale())->translatedFormat('F j, Y') }}
+                                    <span class="pt-dl--sub">{{ $complaint->created_at->diffForHumans() }}</span>
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    @if($isOwner)
+                        <section class="visibility-panel rd-order-visibility" aria-labelledby="pcs-visibility-heading">
+                            <h2 class="visibility-panel__title" id="pcs-visibility-heading">{{ __('complaint_show.visibility.title') }}</h2>
+                            <p class="visibility-panel__lede">{{ __('complaint_show.visibility.lede') }}</p>
+
+                            @if($complaint->isPrivacyGated())
+                                <p class="visibility-panel__state">
+                                    <strong>{{ $complaint->publicationStatus()?->label() ?? __('complaint_show.visibility.gated_state') }}</strong>
+                                    {{ __('complaint_show.visibility.gated_body') }}
+                                </p>
+                            @else
+                                <form data-loading-submit method="POST" action="{{ route('complaints.visibility.update', $complaint) }}" class="visibility-panel__actions">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="visibility" value="{{ $complaint->is_public ? 'private' : 'public' }}">
+                                    <button type="submit" class="visibility-panel__button">
+                                        {{ $complaint->is_public ? __('complaint_show.visibility.privatise') : __('complaint_show.visibility.publish') }}
+                                    </button>
+                                    <span class="visibility-panel__state">
+                                        {{ $complaint->is_public ? __('complaint_show.visibility.public_state') : __('complaint_show.visibility.private_state') }}
+                                    </span>
+                                </form>
+                            @endif
+
+                            @if($complaint->isHiddenFromPublic() || $complaint->isRedacted() || $complaint->isModerationFlagged())
+                                <div class="visibility-moderation" role="status">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                                    <div>
+                                        @if($complaint->isHiddenFromPublic() || $complaint->isRedacted())
+                                            <strong>{{ __('complaint_show.visibility.moderation_title') }}</strong>
+                                            <p>
+                                                {{ __('complaint_show.visibility.moderation_body') }}
+                                                @if($complaint->moderation_reason)
+                                                    {{ __('complaint_show.visibility.moderation_reason', ['reason' => $complaint->moderation_reason]) }}
+                                                @else
+                                                    {{ __('complaint_show.visibility.moderation_generic') }}
+                                                @endif
+                                                {{ __('complaint_show.visibility.moderation_reassurance') }}
+                                            </p>
+                                        @else
+                                            <strong>{{ __('complaint_show.visibility.moderation_flag_title') }}</strong>
+                                            <p>{{ __('complaint_show.visibility.moderation_flag_body') }}</p>
+                                            {{ __('complaint_show.visibility.moderation_reassurance') }}
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        </section>
+                    @endif
+
+                    <section class="pt-card rd-order-help" aria-labelledby="pcs-help-heading">
+                        <h2 id="pcs-help-heading">{{ __('complaint_show.help.title') }}</h2>
+
+                        @if(filled($contactText))
+                            <p class="pt-help__body">{{ $contactText }}</p>
+                        @else
+                            <p class="pt-help__body">{{ __('complaint_show.help.intro') }}</p>
+                            <div class="pt-help__contacts" role="list">
+                                <div class="pt-help__contact" role="listitem">
+                                    <span class="pt-help__contact-label">{{ __('complaint_show.help.mobile_label') }}</span>
+                                    <span class="pt-help__contact-value">
+                                        <a class="pt-help__contact-link" href="tel:{{ __('complaint_show.help.mobile_href') }}">{{ __('complaint_show.help.mobile_value') }}</a>
+                                        <span class="pt-help__sample">({{ __('complaint_show.help.sample_tag') }})</span>
+                                    </span>
+                                </div>
+                                <div class="pt-help__contact" role="listitem">
+                                    <span class="pt-help__contact-label">{{ __('complaint_show.help.email_label') }}</span>
+                                    <span class="pt-help__contact-value">
+                                        <a class="pt-help__contact-link" href="mailto:{{ __('complaint_show.help.email_value') }}">{{ __('complaint_show.help.email_value') }}</a>
+                                        <span class="pt-help__sample">({{ __('complaint_show.help.sample_tag') }})</span>
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
+
+                        <a class="pt-help__link" href="{{ route('transparency') }}">{{ __('complaint_show.help.view_transparency') }}</a>
+                    </section>
+                </aside>
+            </div>
+
+            <p class="pt-privacy rd-order-privacy" role="note">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                <span>{{ __('complaint_show.privacy.public_note') }}</span>
+            </p>
+        </div>
+
+        <dialog id="pcs-viewer" class="pcs-viewer" aria-label="{{ __('complaint_show.report.viewer_label') }}">
+            <div class="pcs-viewer__bar">
+                <button type="button" class="pcs-viewer__close" data-pcs-viewer-close aria-label="{{ __('complaint_show.report.viewer_close') }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <figure class="pcs-viewer__figure">
+                <img class="pcs-viewer__img" alt="" data-pcs-viewer-img>
+            </figure>
+        </dialog>
     </div>
-
-    {{-- Mobile: Help inset (contact text reused from the footer setting) --}}
-    <section class="pcs-help pcs-mobile-only" aria-labelledby="pcs-help-heading">
-      <div class="pcs-inset pcs-inset--help">
-        <h2 class="pcs-section-title" id="pcs-help-heading" style="font-size: 16px;"><span class="pcs-title-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>{{ __('complaint_show.help.title') }}</h2>
-        <p class="pcs-help__body">{{ \App\Models\SystemSetting::getValue('contact_text', 'For concerns, contact the Municipality of Daet through the Transparency Register or visit the municipal hall.') }}</p>
-        <a class="pcs-help__link" href="{{ route('transparency') }}" wire:navigate>{{ __('footer.transparency_register') }}</a>
-      </div>
-    </section>
-
-  </div>
-
-  {{-- Mobile: photo viewer (dialog). Desktop keeps target=_blank links. --}}
-  <dialog id="pcs-viewer" class="pcs-viewer pcs-mobile-only" aria-label="{{ __('complaint_show.report.viewer_label') }}">
-    <div class="pcs-viewer__bar">
-      <button type="button" class="pcs-viewer__close" data-pcs-viewer-close aria-label="{{ __('complaint_show.report.viewer_close') }}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-      </button>
-    </div>
-    <figure class="pcs-viewer__figure">
-      <img class="pcs-viewer__img" alt="" data-pcs-viewer-img>
-    </figure>
-  </dialog>
-
-</div>
+@endsection
 
 @push('scripts')
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
+        // Copy ticket: clipboard.writeText only, with a polite status.
+        (function () {
+            const btn = document.querySelector('.pt-copy-btn');
+            const live = document.getElementById('copy-live');
+            if (!btn) return;
 
-    /*
-     * Keep the map honest about its own size.
-     *
-     * Leaflet measures the container once, when the map is built, and caches
-     * that measurement. It is never wrong on a desktop, because a desktop
-     * viewport has settled by the time the map is built. A phone has not: the
-     * URL bar collapses, scrollbars come and go, a late webfont reflows the card
-     * around the map, the keyboard opens. Any of those after the measurement
-     * leaves the tiles laid out for a size the container no longer is, which
-     * shows as a blank band or as map content clipped to a strip.
-     *
-     * invalidateSize() re-reads the container. Called on the next frame and once
-     * more after a short delay to catch late layout, then on every resize and
-     * rotation. `animate: false` because a re-measure is not a user gesture and
-     * should not zoom the map at them.
-     */
-    const keepMapSized = (target) => {
-      if (!target) return;
+            const original = btn.getAttribute('aria-label');
+            const copied = @json(__('complaint_show.page.copied'));
+            let resetTimer;
 
-      const refresh = () => target.invalidateSize({ animate: false });
+            btn.addEventListener('click', async () => {
+                const text = btn.dataset.ticket || '';
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch (error) {
+                    // Clipboard can be unavailable in an insecure context.
+                }
+                btn.setAttribute('aria-label', copied);
+                btn.setAttribute('title', copied);
+                if (live) live.textContent = copied;
+                window.clearTimeout(resetTimer);
+                resetTimer = window.setTimeout(() => {
+                    btn.setAttribute('aria-label', original);
+                    btn.setAttribute('title', original);
+                    if (live) live.textContent = '';
+                }, 2000);
+            });
+        })();
 
-      window.requestAnimationFrame(refresh);
-      window.setTimeout(refresh, 300);
-      window.addEventListener('resize', refresh);
-      window.addEventListener('orientationchange', () => {
-        window.setTimeout(refresh, 150);
-      });
-    };
+        // Photos open in a full-screen viewer on phones; desktop keeps target=_blank.
+        (function () {
+            const gallery = document.querySelector('[data-pcs-gallery]');
+            const viewer = document.getElementById('pcs-viewer');
+            const viewerImg = viewer ? viewer.querySelector('[data-pcs-viewer-img]') : null;
+            const viewerClose = viewer ? viewer.querySelector('[data-pcs-viewer-close]') : null;
+            if (!gallery || !viewer || !viewerImg) return;
 
-    // ── Mobile (≤768px) civic-tech interactions ──
-    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+            let lastTrigger = null;
 
-    // Copy ticket (clipboard.writeText only + polite status)
-    (function () {
-      const btn = document.querySelector('[data-pcs-copy]');
-      const idEl = document.querySelector('[data-pcs-ticket]');
-      const status = document.querySelector('.pcs-copy-status');
-      if (!btn || !idEl) return;
-      const copyIcon = btn.querySelector('[data-pcs-copy-icon]');
-      const copiedIcon = btn.querySelector('[data-pcs-copied-icon]');
-      const copyLabel = @json(__('complaint_show.page.copy'));
-      const copiedLabel = @json(__('complaint_show.page.copied'));
-      btn.addEventListener('click', async () => {
-        const text = idEl.textContent.trim();
-        try { await navigator.clipboard.writeText(text); } catch (e) {}
-        btn.setAttribute('aria-label', copiedLabel);
-        btn.setAttribute('title', copiedLabel);
-        if (copyIcon) copyIcon.hidden = true;
-        if (copiedIcon) copiedIcon.hidden = false;
-        if (status) status.textContent = copiedLabel;
-        window.setTimeout(() => {
-          btn.setAttribute('aria-label', copyLabel);
-          btn.setAttribute('title', copyLabel);
-          if (copyIcon) copyIcon.hidden = false;
-          if (copiedIcon) copiedIcon.hidden = true;
-          if (status) status.textContent = '';
-        }, 2000);
-      });
-    })();
+            gallery.addEventListener('click', (event) => {
+                const link = event.target.closest('[data-pcs-photo]');
+                if (!link || !window.matchMedia('(max-width: 767px)').matches) return;
+                event.preventDefault();
+                lastTrigger = link;
+                viewerImg.src = link.getAttribute('href');
+                const image = link.querySelector('img');
+                viewerImg.alt = image ? (image.getAttribute('alt') || '') : '';
+                if (!viewer.open) viewer.showModal();
+                if (viewerClose) viewerClose.focus();
+            });
 
-    // Description show more/less
-    (function () {
-      const btn = document.querySelector('[data-pcs-desc-toggle]');
-      const desc = document.getElementById('pcs-description');
-      if (!btn || !desc) return;
-      const more = btn.textContent;
-      btn.addEventListener('click', () => {
-        const expanded = desc.classList.toggle('is-expanded');
-        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        btn.textContent = expanded ? @json(__('complaint_show.report.show_less')) : @json(__('complaint_show.report.show_more'));
-      });
-    })();
+            const closeViewer = () => {
+                if (viewer.open) viewer.close();
+                if (lastTrigger) lastTrigger.focus();
+            };
 
-    // Gallery counter + viewer (mobile only; desktop keeps target=_blank)
-    (function () {
-      const gallery = document.querySelector('[data-pcs-gallery]');
-      const counter = document.querySelector('[data-pcs-counter]');
-      const viewer = document.getElementById('pcs-viewer');
-      const viewerImg = viewer ? viewer.querySelector('[data-pcs-viewer-img]') : null;
-      const viewerClose = viewer ? viewer.querySelector('[data-pcs-viewer-close]') : null;
-      if (gallery && counter) {
-        const items = Array.from(gallery.querySelectorAll('[data-pcs-photo]'));
-        const total = items.length;
-        const update = () => {
-          if (!total) return;
-          const rect = gallery.getBoundingClientRect();
-          let idx = 0;
-          items.forEach((it, i) => {
-            const r = it.getBoundingClientRect();
-            if (Math.abs(r.left - rect.left) < 24) idx = i;
-          });
-          counter.textContent = @json(__('complaint_show.report.counter', ['current' => 1, 'total' => 1])).replace(':current', String(idx + 1)).replace(':total', String(total));
+            if (viewerClose) viewerClose.addEventListener('click', closeViewer);
+            viewer.addEventListener('click', (event) => {
+                if (event.target === viewer) closeViewer();
+            });
+            viewer.addEventListener('close', () => viewerImg.removeAttribute('src'));
+        })();
+
+        /*
+         * Keep the map honest about its own size.
+         *
+         * Leaflet measures the container once, when the map is built, and caches
+         * that measurement. The viewport on a phone has not settled by then:
+         * the URL bar collapses, scrollbars come and go, a late webfont reflows
+         * the card. invalidateSize() re-reads the container on the next frame,
+         * after a short delay, and on every resize/rotation.
+         */
+        const keepMapSized = (target) => {
+            if (!target) return;
+            const refresh = () => target.invalidateSize({ animate: false });
+            window.requestAnimationFrame(refresh);
+            window.setTimeout(refresh, 300);
+            window.addEventListener('resize', refresh);
+            window.addEventListener('orientationchange', () => window.setTimeout(refresh, 150));
         };
-        gallery.addEventListener('scroll', () => { window.requestAnimationFrame(update); }, { passive: true });
-        update();
-      }
-      if (viewer && viewerImg) {
-        let lastTrigger = null;
-        gallery && gallery.addEventListener('click', (e) => {
-          const link = e.target.closest('[data-pcs-photo]');
-          if (!link || !isMobile()) return;
-          e.preventDefault();
-          lastTrigger = link;
-          viewerImg.src = link.getAttribute('href');
-          viewerImg.alt = link.querySelector('img') ? link.querySelector('img').getAttribute('alt') || '' : '';
-          if (!viewer.open) viewer.showModal();
-          if (viewerClose) viewerClose.focus();
-        });
-        const closeViewer = () => { if (viewer.open) viewer.close(); if (lastTrigger) lastTrigger.focus(); };
-        if (viewerClose) viewerClose.addEventListener('click', closeViewer);
-        viewer.addEventListener('click', (e) => { if (e.target === viewer) closeViewer(); });
-        viewer.addEventListener('close', () => { viewerImg.removeAttribute('src'); });
-      }
-    })();
 
-    const mapEl = document.getElementById('complaint-map');
-    if (!mapEl) return;
+        (function () {
+            const mapEl = document.getElementById('complaint-map');
+            if (!mapEl) return;
 
-    // Leaflet is bundled rather than fetched from a CDN, but a bundled module is
-    // deferred and this inline script is not, so the map is built from a callback
-    // the bundle calls instead of by reaching for window.L and finding it
-    // undefined on a page that is otherwise fine.
-    window.whenLeafletReady(() => {
+            // Leaflet is bundled and deferred, so wait for the bundle's handshake
+            // instead of reaching for window.L before it exists.
+            window.whenLeafletReady(() => {
+                @if($complaint->latitude !== null && $complaint->longitude !== null)
+                    const lat = {{ $complaint->latitude }};
+                    const lng = {{ $complaint->longitude }};
+                    const map = L.map('complaint-map').setView([lat, lng], 15);
 
-    @if($complaint->latitude !== null && $complaint->longitude !== null)
-      const lat = {{ $complaint->latitude }};
-      const lng = {{ $complaint->longitude }};
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
 
-      const map = L.map('complaint-map').setView([lat, lng], 15);
+                    L.marker([lat, lng]).addTo(map);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
+                    keepMapSized(map);
+                    if ('IntersectionObserver' in window) {
+                        new IntersectionObserver((entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    try { map.invalidateSize({ animate: false }); } catch (error) {}
+                                }
+                            });
+                        }, { root: null, threshold: 0.1 }).observe(mapEl);
+                    }
+                @endif
+            }, {
+                // The coordinates are printed underneath the map regardless, so the
+                // work can still be done. Saying so is what stops a blank box being
+                // read as "my location was not saved".
+                onUnavailable: () => {
+                    if (mapEl) mapEl.innerHTML = @json('<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">' . __('complaint_show.location.map_unavailable') . '</div>');
+                },
+            });
+        })();
 
-      L.marker([lat, lng]).addTo(map);
+        // Photo pickers: previews and removable selected photos. There can be
+        // more than one on the page (info request + follow-up).
+        (function () {
+            document.querySelectorAll('[data-photo-picker]').forEach((picker) => {
+                const input = picker.querySelector('[data-photo-input]');
+                const trigger = picker.querySelector('[data-photo-trigger]');
+                const previews = picker.querySelector('[data-photo-previews]');
+                const count = picker.querySelector('[data-photo-count]');
+                const errorBox = picker.querySelector('[data-photo-error]');
+                if (!input || !previews) return;
 
-      keepMapSized(map);
-      if ('IntersectionObserver' in window) {
-        new IntersectionObserver((entries) => {
-          entries.forEach((en) => { if (en.isIntersecting) try { map.invalidateSize({ animate: false }); } catch (e) {} });
-        }, { root: null, threshold: 0.1 }).observe(mapEl);
-      }
-    @endif
-    }, {
-        // The coordinates are printed underneath the map regardless, so the
-        // work can still be done. Saying so is what stops a blank box being
-        // read as "my location was not saved".
-        onUnavailable: () => {
-          if (mapEl) mapEl.innerHTML = @json('<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">' . __('complaint_show.location.map_unavailable') . '</div>');
-        },
+                const max = Number(picker.dataset.max || 5);
+                const maxBytes = Number(picker.dataset.maxBytes || 5242880);
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                const allowedName = /\.(jpe?g|png|webp)$/i;
+                const tpl = {
+                    count: picker.dataset.msgCount || '__count__ / __max__ photos',
+                    remove: picker.dataset.msgRemove || 'Remove __name__',
+                    preview: picker.dataset.msgPreview || 'Selected photo: __name__',
+                    tooMany: picker.dataset.msgTooMany || 'You can attach up to __max__ photos.',
+                    invalid: picker.dataset.msgInvalid || 'Use JPG, PNG, or WEBP photos no larger than 5 MB each.',
+                };
+
+                let selected = [];
+                let previewUrls = [];
+
+                const fill = (template, values) => {
+                    let out = String(template || '');
+                    Object.entries(values || {}).forEach(([key, value]) => {
+                        out = out.split(`:${key}`).join(String(value)).split(`__${key}__`).join(String(value));
+                    });
+                    return out;
+                };
+
+                const showError = (message) => {
+                    if (!errorBox) return;
+                    errorBox.textContent = message || '';
+                    errorBox.hidden = !message;
+                };
+
+                const isAllowed = (file) => file.size > 0 && file.size <= maxBytes
+                    && (allowedTypes.includes(file.type) || allowedName.test(file.name));
+
+                const syncInput = () => {
+                    if (typeof DataTransfer === 'undefined') return false;
+                    try {
+                        const transfer = new DataTransfer();
+                        selected.forEach(({ file }) => transfer.items.add(file));
+                        input.files = transfer.files;
+                        return true;
+                    } catch (error) {
+                        return false;
+                    }
+                };
+
+                const render = () => {
+                    previewUrls.forEach((url) => URL.revokeObjectURL(url));
+                    previewUrls = [];
+                    previews.replaceChildren();
+
+                    selected.forEach(({ id, file }) => {
+                        const item = document.createElement('div');
+                        item.className = 'info-request__photo-item';
+
+                        const image = document.createElement('img');
+                        const url = URL.createObjectURL(file);
+                        previewUrls.push(url);
+                        image.src = url;
+                        image.alt = fill(tpl.preview, { name: file.name });
+                        item.appendChild(image);
+
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'info-request__photo-remove';
+                        remove.setAttribute('aria-label', fill(tpl.remove, { name: file.name }));
+                        remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
+                        remove.addEventListener('click', () => {
+                            selected = selected.filter((photo) => photo.id !== id);
+                            syncInput();
+                            showError('');
+                            render();
+                        });
+                        item.appendChild(remove);
+
+                        previews.appendChild(item);
+                    });
+
+                    if (count) {
+                        count.textContent = fill(tpl.count, { count: selected.length, max });
+                    }
+                };
+
+                const addFiles = (files) => {
+                    const incoming = Array.from(files || []);
+                    if (!incoming.length) return;
+
+                    if (incoming.some((file) => !isAllowed(file))) {
+                        showError(tpl.invalid);
+                        return;
+                    }
+
+                    const seen = new Set(selected.map(({ file }) => `${file.name}-${file.size}-${file.lastModified}`));
+                    const unique = incoming.filter((file) => {
+                        const key = `${file.name}-${file.size}-${file.lastModified}`;
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+
+                    const slots = max - selected.length;
+                    if (unique.length > slots) {
+                        showError(fill(tpl.tooMany, { max }));
+                    } else {
+                        showError('');
+                    }
+
+                    unique.slice(0, Math.max(slots, 0)).forEach((file, index) => {
+                        selected.push({ id: `${Date.now()}-${index}-${file.name}-${file.size}`, file });
+                    });
+
+                    syncInput();
+                    render();
+                };
+
+                const cameraInput = picker.querySelector('[data-photo-camera]');
+                const cameraTrigger = picker.querySelector('[data-photo-camera-trigger]');
+
+                picker.classList.add('is-enhanced');
+                picker.querySelector('[data-photo-field]')?.classList.add('is-enhanced');
+
+                if (trigger) {
+                    trigger.addEventListener('click', () => input.click());
+                }
+                if (cameraTrigger && cameraInput) {
+                    cameraTrigger.addEventListener('click', () => cameraInput.click());
+                }
+
+                input.addEventListener('change', () => {
+                    addFiles(input.files);
+                });
+                if (cameraInput) {
+                    cameraInput.addEventListener('change', () => {
+                        addFiles(cameraInput.files);
+                        cameraInput.value = '';
+                    });
+                }
+
+                render();
+            });
+        })();
     });
-  });
 </script>
 @endpush
-
-@endsection

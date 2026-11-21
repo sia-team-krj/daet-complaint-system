@@ -31,7 +31,27 @@
     </nav>
 
     <div class="site-footer__meta">
-      <p class="site-footer__contact">{{ \App\Models\SystemSetting::getValue('contact_text', 'For concerns, contact the Municipality of Daet through the Transparency Register or visit the municipal hall.') }}</p>
+      @php($footerContact = \App\Models\SystemSetting::getValue('contact_text'))
+      @if(filled($footerContact))
+        <p class="site-footer__contact">{{ $footerContact }}</p>
+      @else
+        <div class="site-footer__contacts" role="list" aria-label="{{ __('complaint_show.help.title') }}">
+          <div class="site-footer__contact-item" role="listitem">
+            <span class="site-footer__contact-label">{{ __('complaint_show.help.mobile_label') }}</span>
+            <span class="site-footer__contact-value">
+              <a class="site-footer__contact-link" href="tel:{{ __('complaint_show.help.mobile_href') }}">{{ __('complaint_show.help.mobile_value') }}</a>
+              <span class="site-footer__contact-sample">({{ __('complaint_show.help.sample_tag') }})</span>
+            </span>
+          </div>
+          <div class="site-footer__contact-item" role="listitem">
+            <span class="site-footer__contact-label">{{ __('complaint_show.help.email_label') }}</span>
+            <span class="site-footer__contact-value">
+              <a class="site-footer__contact-link" href="mailto:{{ __('complaint_show.help.email_value') }}">{{ __('complaint_show.help.email_value') }}</a>
+              <span class="site-footer__contact-sample">({{ __('complaint_show.help.sample_tag') }})</span>
+            </span>
+          </div>
+        </div>
+      @endif
     </div>
 
     <div class="site-footer__bottom">
@@ -152,6 +172,62 @@
       font-size: 12px;
       line-height: 1.6;
       color: var(--navy-100);
+  }
+
+  .site-footer__contacts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 24px;
+      margin: 0;
+  }
+
+  .site-footer__contact-item {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+  }
+
+  .site-footer__contact-label {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.68);
+  }
+
+  .site-footer__contact-value {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--navy-100);
+  }
+
+  .site-footer__contact-link {
+      color: var(--surface);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+  }
+
+  .site-footer__contact-link:hover,
+  .site-footer__contact-link:focus-visible {
+      color: var(--gold-300);
+  }
+
+  .site-footer__contact-link:focus-visible {
+      outline: 2px solid var(--gold-300);
+      outline-offset: 2px;
+      border-radius: 2px;
+  }
+
+  .site-footer__contact-sample {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.68);
   }
 
   .site-footer__bottom {

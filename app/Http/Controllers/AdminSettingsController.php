@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ComplaintCategory;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -15,8 +14,6 @@ class AdminSettingsController extends Controller
     public function index(): View
     {
         $settings = SystemSetting::pluck('value', 'key')->all();
-        $categories = ComplaintCategory::orderBy('sort_order')->orderBy('label_en')->get();
-        $departments = \App\Models\Department::orderBy('name')->get();
 
         $defaults = [
             'default_locale' => 'en',
@@ -37,7 +34,7 @@ class AdminSettingsController extends Controller
             $settings[$key] ??= $value;
         }
 
-        return view('admin.settings.index', compact('settings', 'categories', 'departments'));
+        return view('admin.settings.index', compact('settings'));
     }
 
     public function update(Request $request, ActivityLogger $activityLogger): RedirectResponse
@@ -89,55 +86,6 @@ class AdminSettingsController extends Controller
                 'created_by' => auth()->id(),
             ],
         );
-
-        return redirect()->route('admin.settings.index')->with('status', __('admin_settings.saved'));
-    }
-
-    public function storeCategory(Request $request, ActivityLogger $activityLogger): RedirectResponse
-    {
-        $validated = $request->validate([
-            'key' => ['required', 'string', 'max:50', 'unique:complaint_categories,key', 'regex:/^[a-z0-9_]+$/'],
-            'label_en' => ['required', 'string', 'max:100'],
-            'label_fil' => ['nullable', 'string', 'max:100'],
-        ]);
-
-        $category = ComplaintCategory::create([
-            'key' => $validated['key'],
-            'label_en' => $validated['label_en'],
-            'label_fil' => $validated['label_fil'] ?? null,
-            'is_active' => true,
-            'sort_order' => (ComplaintCategory::max('sort_order') ?? 0) + 1,
-        ]);
-
-        $activityLogger->log('system.category_created', "Complaint category {$category->key} created.", $category, metadata: ['key' => $category->key]);
-
-        return redirect()->route('admin.settings.index')->with('status', __('admin_settings.saved'));
-    }
-
-    public function updateCategory(Request $request, ComplaintCategory $category, ActivityLogger $activityLogger): RedirectResponse
-    {
-        $validated = $request->validate([
-            'label_en' => ['required', 'string', 'max:100'],
-            'label_fil' => ['nullable', 'string', 'max:100'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $category->update([
-            'label_en' => $validated['label_en'],
-            'label_fil' => $validated['label_fil'] ?? null,
-            'is_active' => (bool) ($validated['is_active'] ?? false),
-        ]);
-
-        $activityLogger->log('system.category_updated', "Complaint category {$category->key} updated.", $category, metadata: ['key' => $category->key, 'is_active' => $category->is_active]);
-
-        return redirect()->route('admin.settings.index')->with('status', __('admin_settings.saved'));
-    }
-
-    public function toggleCategory(ComplaintCategory $category, ActivityLogger $activityLogger): RedirectResponse
-    {
-        $category->update(['is_active' => ! $category->is_active]);
-
-        $activityLogger->log('system.category_updated', "Complaint category {$category->key} ".($category->is_active ? 'activated' : 'deactivated').'.', $category, metadata: ['key' => $category->key, 'is_active' => $category->is_active]);
 
         return redirect()->route('admin.settings.index')->with('status', __('admin_settings.saved'));
     }

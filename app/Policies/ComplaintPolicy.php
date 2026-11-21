@@ -113,4 +113,20 @@ class ComplaintPolicy
     {
         return in_array($user->role, ['admin', 'staff', 'department_admin', 'citizen'], true);
     }
+
+    /**
+     * The resident who filed a finished complaint may follow up with a
+     * sub-ticket of their own.
+     *
+     * Sub-ticketing v1 is citizen-self-service: only the owning citizen files a
+     * follow-up. Staff filing follow-ups is deliberately deferred past v1.
+     */
+    public function followUp(User $user, Complaint $complaint): bool
+    {
+        if ($user->isDepartmentStaff() || $user->role === 'admin') {
+            return false;
+        }
+
+        return $complaint->user_id === $user->id;
+    }
 }

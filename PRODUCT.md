@@ -39,6 +39,7 @@ Unlike traditional opaque governmental complaint dropboxes or generic ticketing 
 - **Department Routing**: Category-to-department routing matching reported issues to the designated municipal office.
 - **Lifecycle Auto-Close**: Complaints automatically close after 7 days of inactivity following completion.
 - **Secure Staff Onboarding**: Single-use invitation codes with 10-minute expiry for onboarding staff to specific departments.
+- **Resident Identity Verification (Phase 2, started)**: Residents upload a government ID and a selfie; global admins review with secure storage and duplicate detection; resident complaint filing is gated when enabled.
 
 ## Brand Commitments
 

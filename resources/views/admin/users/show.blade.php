@@ -76,6 +76,41 @@
                             <dd>#{{ str_pad((string) $user->id, 5, '0', STR_PAD_LEFT) }}</dd>
                         </div>
                         <div>
+                            <dt>Email verification</dt>
+                            <dd>
+                                @if($user->hasVerifiedEmail())
+                                    Verified{{ $user->email_verified_at ? ' · ' . $user->email_verified_at->format('M j, Y g:i A') : '' }}
+                                @else
+                                    Not verified
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt>Identity status</dt>
+                            <dd>{{ ucfirst($user->identity_status) }}</dd>
+                        </div>
+                        @if($user->isCitizen() && $user->identity_status === 'verified')
+                            <div>
+                                <form data-loading-submit method="POST" action="{{ route('admin.users.identity.revoke', $user) }}" onsubmit="return confirm('Revoke this account’s verified identity? This reverses identity status to unverified and requires a reason. This action is not covered by resident cancellation.')">
+                                    @csrf
+                                    <div class="admin-access-state">
+                                        <span class="admin-access-state-icon is-inactive" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><path d="m9 12 2 2 4-4"></path></svg></span>
+                                        <div>
+                                            <strong>Identity is currently verified</strong>
+                                            <span>To stop the account from filing new complaints, ask the account to complete re-verification. Admin revocation requires a reason and is audit-logged.</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="admin-button admin-button--danger admin-user-toggle-button">Revoke identity verification</button>
+                                </form>
+                            </div>
+                        @endif
+                        @if($user->isAdmin())
+                            <div>
+                                <dt>Two-factor authentication</dt>
+                                <dd>{{ $user->hasTwoFactorEnabled() ? 'Enabled' : 'Not set up' }}</dd>
+                            </div>
+                        @endif
+                        <div>
                             <dt>Joined</dt>
                             <dd>{{ $user->created_at?->format('F j, Y') ?: 'Not available' }}</dd>
                         </div>
@@ -214,6 +249,23 @@
                             </button>
                         </form>
                     @endif
+
+                    <div class="admin-access-state">
+                        <span class="admin-access-state-icon {{ $user->hasVerifiedEmail() ? 'is-active' : 'is-inactive' }}" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                        </span>
+                        <div>
+                            <strong>{{ $user->hasVerifiedEmail() ? 'Email is verified' : 'Email not verified' }}</strong>
+                            <span>{{ $user->hasVerifiedEmail() ? 'This account can access email-verified features.' : 'Mark as verified to allow access without the email verification step.' }}</span>
+                        </div>
+                    </div>
+
+                    @unless($user->hasVerifiedEmail())
+                        <form data-loading-submit method="POST" action="{{ route('admin.users.verify-email', $user) }}" onsubmit="return confirm('Mark this email address as verified without requiring the verification step?')">
+                            @csrf
+                            <button type="submit" class="admin-button admin-button--secondary admin-user-toggle-button">Mark email as verified</button>
+                        </form>
+                    @endunless
                 </div>
             </section>
 

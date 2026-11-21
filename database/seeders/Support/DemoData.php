@@ -53,6 +53,15 @@ class DemoData
         $barangay = $data['barangay'] ?? null;
         $filedAt = $data['filed_at'];
 
+        $defaultAddress = 'Daet, Camarines Norte';
+        if ($barangay !== null && trim((string) $barangay) !== '') {
+            $barangayLabel = trim((string) $barangay);
+            if (! str_starts_with(mb_strtolower($barangayLabel), 'barangay ')) {
+                $barangayLabel = 'Barangay '.$barangayLabel;
+            }
+            $defaultAddress = $barangayLabel.', Daet, Camarines Norte';
+        }
+
         $complaint = Complaint::create([
             'user_id' => $data['user']->id,
             'department_id' => $department->id,
@@ -60,7 +69,7 @@ class DemoData
             'title' => $data['title'],
             'description' => $data['description'],
             'barangay' => $barangay,
-            'address_text' => $barangay !== null ? $barangay.', Daet, Camarines Norte' : 'Daet, Camarines Norte',
+            'address_text' => $data['address_text'] ?? $defaultAddress,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
             'intake_mode' => config('complaint_intake_policy.categories.'.$data['category'], 'physical_required'),

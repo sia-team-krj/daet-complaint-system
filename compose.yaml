@@ -54,8 +54,8 @@ services:
         image: "minio/minio:latest"
         network_mode: "host"
         environment:
-            MINIO_ROOT_USER: "${MINIO_ROOT_USER:-admin}"
-            MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:-password}"
+            MINIO_ROOT_USER: "${MINIO_ROOT_USER:-daet_identity_minio}"
+            MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD to a strong random value before starting MinIO. The default admin/password is retired and unsafe in any environment.}"
         volumes:
             - minio-data:/data
         command: 'minio server /data --address "127.0.0.1:9000" --console-address "127.0.0.1:8900"'

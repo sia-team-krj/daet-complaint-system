@@ -23,9 +23,9 @@ return [
         'gated_title' => 'Binabanggit ng ulat na ito ang isang tao.',
         'gated_body' => 'Dahil binabanggit nito ang isang tao o negosyo, ito ay ipinapasa nang pribado. Kapag naayos ng tanggapan at naberipikado ang impormasyon bilang totoo, awtomatiko itong napupunta sa tanggapan ng Alkalde, na nagre-redact ng pampublikong kopya at nagpapasya kung ilalathala ito. Ise-info ka man kaya.',
         'gated_ack' => 'Nauunawaan ko na binabanggit ng ulat na ito ang isang tao o negosyo, at ito ay ipapasa nang pribado. Kapag naayos ng tanggapan at naberipikado ang impormasyon bilang totoo, awtomatiko itong napupunta sa tanggapan ng Alkalde, na nagre-redact ng pampublikong kopya at nagpapasya kung ilalathala ito. Sila na ang magsasabi sa akin, kahit ano ang maging desisyon.',
-        'public_title' => 'Ilathala sa transparency page',
+        'public_title' => 'Publiko',
         'public_note' => 'Makikita ito ng sinuman sa lalong madaling mapatunayan ng tanggapan ang iyong reklamo — gamit ang iyong display alias, hindi ang iyong tunay na pangalan. Maaari mo itong ibalik sa pribado anumang oras.',
-        'private_title' => 'Ako lang',
+        'private_title' => 'Pribado',
         'private_note' => 'Ikaw lang at ang staff na humahawak sa iyong reklamo ang makakakita nito. Hindi ito lalabas sa pampublikong pahina.',
         'footnote' => 'Ang mga reklamo ay lumalabas sa pampublikong pahina pagkatapos mapatunayan ng tanggapan, at awtomatikong napipigilan kung mukhang spam o hindi kaugnay sa serbisyo ng munisipyo. Maaari ring mag-alis ang staff ng sensitibong detalye sa pampublikong pahina, ngunit hindi nila mababago ang napili mo — at laging makikita mo ang iyong sariling reklamo kung paano mo ito ipinasa.',
     ],
@@ -194,5 +194,15 @@ return [
             'label' => 'Ibang mga Alalahanin',
             'helper' => 'Anumang hindi akma sa itaas',
         ],
+    ],
+
+    'errors' => [
+        'no_office' => 'Walang opisina na maaaring tumanggap sa kategoryang ito sa ngayon. Pumili ng ibang kategorya o subukan ulit mamaya.',
+    ],
+
+    'empty' => [
+        'title' => 'Wala pang available na kategorya',
+        'body' => 'Inaayos pa ng munisipyo ang mga kategorya ng reklamo. Balikan po ulit mamaya o makipag-ugnayan sa Mayor\'s Office para sa agarang alalahanin.',
+        'cta' => 'Bumalik sa aking mga reklamo',
     ],
 ];

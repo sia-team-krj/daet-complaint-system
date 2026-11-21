@@ -48,6 +48,41 @@
 
         @include('staff.partials.flash')
 
+        @php
+            $perfPeriod = $performancePeriod ?? \App\Support\AnalyticsPeriod::preset('7d');
+            $perfPresets = [
+                'today' => __('staff.performance.today'),
+                '7d' => __('staff.performance.last_7_days'),
+                '30d' => __('staff.performance.last_30_days'),
+            ];
+        @endphp
+        <section class="tr-card" aria-labelledby="staff-performance-title" style="margin: 16px 0 24px; padding: 18px 20px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:16px;">
+                <div>
+                    <h2 class="tr-h2" id="staff-performance-title" style="margin:0 0 4px; font-size:20px;">{{ __('staff.performance.title') }}</h2>
+                    <p class="tr-privacy" style="margin:0; max-width:70ch;">{{ __('staff.performance.description') }}</p>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;" aria-label="{{ __('staff.performance.period') }}">
+                    @foreach($perfPresets as $value => $label)
+                        <a href="{{ route('staff.activity.index', ['period' => $value]) }}"
+                           class="status-chip {{ $perfPeriod->preset === $value ? 'is-active' : '' }}"
+                           @if($perfPeriod->preset === $value) aria-current="true" @endif>
+                            {{ $label }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:16px;">
+                <a href="{{ route('staff.activity.export', $perfPeriod->query()) }}" class="staff-button staff-button--secondary" download>
+                    {{ __('staff.performance.export_csv') }}
+                </a>
+                <a href="{{ route('staff.activity.print', $perfPeriod->query()) }}" class="staff-button staff-button--primary" target="_blank" rel="noopener">
+                    {{ __('staff.performance.export_pdf') }}
+                </a>
+                <span style="font-size:13px; color:var(--text-secondary, var(--muted));">{{ __('staff.performance.print_pdf_hint') }}</span>
+            </div>
+        </section>
+
         <div class="tr-register-head" style="margin-top: 16px;">
             <h2 class="tr-h2" id="activity-list-title">My handled complaints</h2>
             <p class="tr-results">Only activity linked to your staff account is shown.</p>
@@ -59,7 +94,7 @@
                     $myLastLog = $complaint->logs->first();
                     $statusKey = str($complaint->status ?? 'submitted')->slug('_')->toString();
                     $reviewKey = str($complaint->review_status ?? 'pending')->slug('_')->toString();
-                    $categoryLabel = $complaint->category ? str($complaint->category)->replace('_', ' ')->title()->toString() : __('staff.dashboard.category_fallback');
+                    $categoryLabel = \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? __('staff.dashboard.category_fallback');
                     $activityText = $myLastLog?->comment ? Str::limit($myLastLog->comment, 100) : 'No response recorded yet.';
                     $activityTime = $myLastLog?->created_at?->diffForHumans() ?? 'No activity date';
                 @endphp

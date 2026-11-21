@@ -21,7 +21,7 @@ final class AnalyticsPeriod
 {
     public const DEFAULT = 'month';
 
-    public const PRESETS = ['month', '7d', '30d', '90d', 'ytd', 'custom'];
+    public const PRESETS = ['today', 'month', '7d', '30d', '90d', 'ytd', 'custom'];
 
     public function __construct(
         public readonly string $preset,
@@ -67,6 +67,7 @@ final class AnalyticsPeriod
         $today ??= self::today();
 
         [$start, $end] = match ($preset) {
+            'today' => [$today, $today],
             '7d' => [$today->subDays(6), $today],
             '30d' => [$today->subDays(29), $today],
             '90d' => [$today->subDays(89), $today],

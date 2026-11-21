@@ -32,6 +32,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('admin.categories.index') }}" class="{{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.categories.*')) aria-current="page" @endif>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg>
+                            <span>{{ __('nav.complaint_categories') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.identity.index') }}" class="{{ request()->routeIs('admin.identity.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.identity.*')) aria-current="page" @endif>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v4l-4 7-4-3-4 3-4-7V6Z"></path><path d="M8 10h8v4H8z"></path></svg>
+                            <span>{{ __('identity.admin.queue_title') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('admin.audit.index') }}" class="{{ request()->routeIs('admin.audit.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.audit.*')) aria-current="page" @endif>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg>
                             <span>{{ __('nav.audit_trail') }}</span>
@@ -41,6 +53,12 @@
                         <a href="{{ route('admin.feedback.index') }}" class="{{ request()->routeIs('admin.feedback.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.feedback.*')) aria-current="page" @endif>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             <span>{{ __('nav.resident_feedback') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.faqs.index') }}" class="{{ request()->routeIs('admin.faqs.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.faqs.*')) aria-current="page" @endif>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-2.9 2.5-2.9 4"></path><path d="M12 17h.01"></path></svg>
+                            <span>{{ __('nav.faqs') }}</span>
                         </a>
                     </li>
                 </ul>

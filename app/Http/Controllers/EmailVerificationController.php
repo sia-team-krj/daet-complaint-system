@@ -25,8 +25,14 @@ class EmailVerificationController extends Controller
         $purpose = $this->resolvePurpose($request, $user);
         $pending = $this->verificationService->pendingFor($user, $purpose);
 
-        if ($user->hasVerifiedEmail() && ! $pending) {
-            return redirect()->route($this->destinationRoute($user, $purpose));
+        if ($user->hasVerifiedEmail() && (! $pending || $pending->isExpired())) {
+            $route = $user->homeRouteName();
+
+            return redirect()->route(
+                // Only the citizen home moved in this change; operators keep the
+                // historical /dashboard hop (which routes them to their workspace).
+                $user->isCitizen() ? $route : 'dashboard'
+            );
         }
 
         return view('auth.verify-email', [
@@ -143,14 +149,18 @@ class EmailVerificationController extends Controller
         $purpose = $validated['purpose'];
         $pending = $this->verificationService->pendingFor($user, $purpose);
 
-        if ($purpose === EmailVerificationService::PURPOSE_EMAIL_CHANGE && ! $pending) {
+        if ($purpose === EmailVerificationService::PURPOSE_EMAIL_CHANGE && (! $pending || $pending->isExpired())) {
             return redirect()
                 ->route('email.verify', ['purpose' => $purpose])
                 ->with('error', __('auth.start_email_change_before_resend'));
         }
 
-        if ($user->hasVerifiedEmail() && ! $pending) {
-            return redirect()->route($this->destinationRoute($user, $purpose));
+        if ($user->hasVerifiedEmail() && (! $pending || $pending->isExpired())) {
+            $route = $user->homeRouteName();
+
+            return redirect()->route(
+                $user->isCitizen() ? $route : 'dashboard'
+            );
         }
 
         $remaining = $this->resendAvailableIn($user, $purpose);

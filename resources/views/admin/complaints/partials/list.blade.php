@@ -55,7 +55,7 @@
                                     @include('pages.transparency.partials.category-icon', ['category' => $complaint->category])
                                     <span class="admin-queue__text">
                                         <span class="admin-queue__title">{{ \Illuminate\Support\Str::limit($complaint->title, 90) }}</span>
-                                        <span class="admin-queue__meta"><span class="ticket-id">{{ $complaint->ticket_id }}</span><span aria-hidden="true"> · </span>{{ str($complaint->category)->replace('_', ' ')->title() }}<span aria-hidden="true"> · </span>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</span>
+                                        <span class="admin-queue__meta"><span class="ticket-id">{{ $complaint->ticket_id }}</span><span aria-hidden="true"> · </span>{{ \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? str($complaint->category)->replace('_', ' ')->title() }}<span aria-hidden="true"> · </span>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</span>
                                     </span>
                                 </span>
                                 <span class="admin-queue-cell admin-queue-cell--dept admin-phone-cell" data-label="Department">

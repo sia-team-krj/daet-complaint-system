@@ -6,7 +6,7 @@
     Terms and Conditions for the Daet Listens complaint portal.
 
     Written against the behaviour this codebase actually implements. The clauses
-    below correspond to real mechanisms: complaints carry a `DLT-` ticket
+    below correspond to real mechanisms: complaints carry a `COMP-` ticket
     reference and are tracked by that reference alone; the resident chooses
     public or private visibility and may change it; staff moderation requires a
     written reason and is recorded in the audit trail; spam and near-duplicate
@@ -571,13 +571,17 @@
         <section class="legal-section" id="tracking">
             <h2 data-num="06">Tracking and ticket numbers</h2>
             <p>
-                Every complaint is issued a unique reference beginning with <span class="legal-field">DLT-</span>.
+                Every complaint is issued a unique reference beginning with <span class="legal-field">COMP-</span>.
                 Keep it: it is what lets you track a report without an account, and it is what the
-                Municipality will ask for if you follow up by phone or in person.
+                Municipality will ask for if you follow up by phone or in person. You can type it
+                with or without hyphens, and capitals do not matter.
             </p>
             <p>
-                Only you and the staff handling the complaint can see it. Treat the ticket number like
-                a password - anyone with it can look up the status of the report.
+                Anyone with the ticket number can see <strong>progress only</strong>: the current
+                status, the dates on the progress trail, the office handling it, and updates the office
+                has marked public. The full report - its description, photographs, exact location, and
+                your identity - is visible only to you and the staff handling it. Treat the ticket
+                number like a password.
             </p>
         </section>
 

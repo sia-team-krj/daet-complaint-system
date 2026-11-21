@@ -110,6 +110,8 @@
                             <th scope="col">Role</th>
                             <th scope="col">Department</th>
                             <th scope="col">Access</th>
+                            <th scope="col">Security</th>
+                            <th scope="col">Identity</th>
                             <th scope="col">Activity</th>
                             <th scope="col">Joined</th>
                             <th scope="col">Manage</th>
@@ -158,6 +160,20 @@
                                 <td data-label="Access">
                                     <span class="admin-status {{ $directoryUser->is_active ? 'admin-status--active' : 'admin-status--revoked' }}">
                                         {{ $directoryUser->is_active ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td data-label="Security">
+                                    @if($directoryUser->isAdmin())
+                                        <span class="admin-status {{ $directoryUser->hasTwoFactorEnabled() ? 'admin-status--verified' : 'admin-status--pending' }}">
+                                            {{ $directoryUser->hasTwoFactorEnabled() ? '2FA on' : '2FA off' }}
+                                        </span>
+                                    @else
+                                        <span class="admin-muted-cell">Not required</span>
+                                    @endif
+                                </td>
+                                <td data-label="Identity">
+                                    <span class="admin-status {{ $directoryUser->identity_status === 'verified' ? 'admin-status--verified' : 'admin-status--pending' }}">
+                                        {{ $directoryUser->identity_status === 'verified' ? 'Verified' : ucfirst($directoryUser->identity_status) }}
                                     </span>
                                 </td>
                                 <td data-label="Activity">

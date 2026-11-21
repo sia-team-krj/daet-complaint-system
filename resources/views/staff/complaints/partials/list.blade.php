@@ -52,7 +52,7 @@
                                     <div class="staff-row__meta">
                                         <span class="ticket-id" style="font-family: var(--font-mono, monospace); font-weight: 700; color: var(--navy-800);">{{ $complaint->ticket_id }}</span>
                                         <span aria-hidden="true"> · </span>
-                                        <span>{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
+                                        <span>{{ \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? str($complaint->category)->replace('_', ' ')->title() }}</span>
                                     </div>
                                 </div>
                             </div>

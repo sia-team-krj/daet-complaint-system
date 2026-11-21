@@ -22,13 +22,24 @@
         $avgNum = number_format((float) $avgDaysRaw, 1);
         $avgUnit = __('staff.dashboard.days_unit');
     }
+    $isVerifier = $isVerifier ?? true;
     $verifyCount = (int) ($stats['new'] ?? 0);
-    $statCards = [
-        ['key' => 'pending', 'label' => __('staff.stats.pending_review'), 'value' => $stats['new'] ?? 0, 'icon' => 'clock', 'href' => route('staff.complaints.index', ['review' => 'pending']), 'tone' => 'amber'],
-        ['key' => 'progress', 'label' => __('staff.stats.in_progress'), 'value' => $stats['inProgress'] ?? 0, 'icon' => 'progress', 'href' => route('staff.complaints.index', ['status' => 'in_progress']), 'tone' => 'navy'],
-        ['key' => 'resolved', 'label' => __('staff.stats.resolved_this_month'), 'value' => $stats['resolvedThisMonth'] ?? 0, 'icon' => 'check', 'href' => route('staff.complaints.index', ['status' => 'resolved']), 'tone' => 'green'],
-        ['key' => 'avg', 'label' => __('staff.stats.avg_days_open'), 'value' => $avgNum, 'unit' => $avgUnit, 'icon' => 'calendar', 'href' => null, 'tone' => 'sky'],
-    ];
+    // A verifier's strip describes the office. An ordinary staff member's
+    // strip describes the work currently assigned to them, so the first card
+    // is "Assigned to me" rather than the verifier's "Pending verification".
+    $statCards = $isVerifier
+        ? [
+            ['key' => 'pending', 'label' => __('staff.stats.pending_review'), 'value' => $stats['new'] ?? 0, 'icon' => 'clock', 'href' => route('staff.complaints.index', ['review' => 'pending']), 'tone' => 'amber'],
+            ['key' => 'progress', 'label' => __('staff.stats.in_progress'), 'value' => $stats['inProgress'] ?? 0, 'icon' => 'progress', 'href' => route('staff.complaints.index', ['status' => 'in_progress']), 'tone' => 'navy'],
+            ['key' => 'resolved', 'label' => __('staff.stats.resolved_this_month'), 'value' => $stats['resolvedThisMonth'] ?? 0, 'icon' => 'check', 'href' => route('staff.complaints.index', ['status' => 'resolved']), 'tone' => 'green'],
+            ['key' => 'avg', 'label' => __('staff.stats.avg_days_open'), 'value' => $avgNum, 'unit' => $avgUnit, 'icon' => 'calendar', 'href' => null, 'tone' => 'sky'],
+        ]
+        : [
+            ['key' => 'assigned', 'label' => __('staff.stats.assigned_to_me'), 'value' => $stats['assignedToMe'] ?? 0, 'icon' => 'user', 'href' => route('staff.complaints.index', ['assigned_staff_id' => $user->id, 'scope' => 'all']), 'tone' => 'amber'],
+            ['key' => 'progress', 'label' => __('staff.stats.in_progress'), 'value' => $stats['inProgress'] ?? 0, 'icon' => 'progress', 'href' => route('staff.complaints.index', ['assigned_staff_id' => $user->id, 'status' => 'in_progress']), 'tone' => 'navy'],
+            ['key' => 'resolved', 'label' => __('staff.stats.resolved_this_month'), 'value' => $stats['resolvedThisMonth'] ?? 0, 'icon' => 'check', 'href' => route('staff.complaints.index', ['assigned_staff_id' => $user->id, 'status' => 'resolved', 'scope' => 'finished']), 'tone' => 'green'],
+            ['key' => 'avg', 'label' => __('staff.stats.avg_days_open'), 'value' => $avgNum, 'unit' => $avgUnit, 'icon' => 'calendar', 'href' => null, 'tone' => 'sky'],
+        ];
     $activeFilter = $priorityFilter ?? request('priority_filter', '');
 @endphp
 
@@ -57,7 +68,7 @@
                     </div>
                 </section>
 
-                <section class="dept-stats" aria-label="{{ __('staff.dashboard.overview') }}">
+                <section class="dept-stats" aria-label="{{ $isVerifier ? __('staff.dashboard.overview') : __('staff.dashboard.my_work_overview') }}">
                     @foreach($statCards as $stat)
                         @php $tag = $stat['href'] ? 'a' : 'div'; @endphp
                         <{{ $tag }} @if($stat['href']) href="{{ $stat['href'] }}" @endif class="dept-stat {{ $stat['href'] ? 'dept-stat--link' : '' }}" @if($stat['href']) aria-label="{{ $stat['label'] }}: {{ $stat['value'] }}{{ !empty($stat['unit']) ? ' '.$stat['unit'] : '' }}" @endif>
@@ -68,6 +79,8 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="m16.24 16.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="m16.24 7.76 2.83-2.83"/></svg>
                                 @elseif($stat['icon'] === 'check')
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                @elseif($stat['icon'] === 'user')
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 @else
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 @endif
@@ -115,7 +128,7 @@
                                 $priorityEnum = $complaint->confirmedPriorityEnum ?? $complaint->suggestedPriorityEnum;
                                 $priorityKey = $priorityEnum?->value ?? 'routine';
                                 $priorityStrip = match ($priorityKey) { 'critical', 'urgent' => 'critical', 'elevated' => 'elevated', default => 'routine' };
-                                $categoryLabel = $complaint->category ? str($complaint->category)->replace('_', ' ')->title()->toString() : __('staff.dashboard.category_fallback');
+                                $categoryLabel = \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? __('staff.dashboard.category_fallback');
                                 $suggested = $complaint->suggestedPriorityEnum?->label() ?? __('staff.dashboard.confirmed_pending');
                                 $confirmed = $complaint->confirmedPriorityEnum?->label() ?? __('staff.dashboard.confirmed_pending');
                                 $suggestedKey = $complaint->suggestedPriorityEnum?->value;

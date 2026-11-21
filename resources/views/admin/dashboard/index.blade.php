@@ -9,7 +9,7 @@
 @php
     $statCards = [
         ['key' => 'total', 'label' => 'Total complaints', 'value' => $stats['total'] ?? 0, 'icon' => 'calendar', 'href' => route('admin.complaints.index'), 'tone' => 'sky'],
-        ['key' => 'unassigned', 'label' => 'Unassigned', 'value' => $stats['unassigned'] ?? 0, 'icon' => 'clock', 'href' => route('admin.complaints.index', ['department' => 'unassigned']), 'tone' => 'amber'],
+        ['key' => 'flagged', 'label' => 'Flagged', 'value' => $stats['flagged'] ?? 0, 'icon' => 'alert', 'href' => route('admin.complaints.index', ['flagged' => 1]), 'tone' => 'amber'],
         ['key' => 'progress', 'label' => 'In progress', 'value' => $stats['inProgress'] ?? 0, 'icon' => 'progress', 'href' => route('admin.complaints.index', ['status' => \App\Enums\ComplaintStatus::InProgress->value]), 'tone' => 'navy'],
         ['key' => 'resolved', 'label' => 'Resolved today', 'value' => $stats['resolvedToday'] ?? 0, 'icon' => 'check', 'href' => route('admin.complaints.index', ['status' => \App\Enums\ComplaintStatus::Resolved->value]), 'tone' => 'green'],
         ['key' => 'on_hold', 'label' => 'On hold', 'value' => $stats['onHold'] ?? 0, 'icon' => 'pause', 'href' => route('admin.complaints.index', ['on_hold' => 1]), 'tone' => 'violet'],
@@ -57,6 +57,8 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                 @elseif($stat['icon'] === 'pause')
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+                                @elseif($stat['icon'] === 'alert')
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                 @else
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                                 @endif
@@ -125,7 +127,7 @@
                                         <span class="dept-complaint__complaint">
                                             @include('pages.transparency.partials.category-icon', ['category' => $complaint->category])
                                             <span class="dept-complaint__text">
-                                                <span class="dept-complaint__title">{{ str($complaint->category)->replace('_', ' ')->title() }}</span>
+                                                <span class="dept-complaint__title">{{ \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? str($complaint->category)->replace('_', ' ')->title() }}</span>
                                                 <span class="dept-complaint__meta"><span class="ticket-id dept-ticket">{{ $complaint->ticket_id }}</span><span aria-hidden="true"> · </span>{{ $complaint->user?->full_name ?? 'Unknown resident' }}</span>
                                             </span>
                                         </span>

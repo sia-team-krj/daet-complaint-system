@@ -148,9 +148,18 @@ return [
             'category' => 'Kategorya',
             'department' => 'Departamento',
             'broad_area' => 'Malawak na lugar sa Daet',
+            'assigned_personnel' => 'Itinalagang kawani',
             'reported' => 'Nai-file',
             'public_alias' => 'Pampublikong alias',
             'last_updated' => 'Huling na-update',
+        ],
+        'assigned_personnel_private' => 'Kawani ng tanggapan (hindi ipinapakita ang detalye)',
+        'assigned_personnel_unassigned' => 'Hindi pa natatalaga',
+        'feedback' => [
+            'rating_label' => 'Rating',
+            'title' => 'Feedback ng resident',
+            'lede' => 'Paano ni-rate ng resident ang paghawak sa reklamong ito.',
+            'comment_label' => 'Komento',
         ],
         'privacy' => [
             'label' => 'Impormasyon sa Pribasya',

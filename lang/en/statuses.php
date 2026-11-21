@@ -10,6 +10,13 @@ return [
         'closed' => 'Closed',
     ],
 
+    // The office's two reasons for marking a report misleading or spam.
+    // Language-neutral: translated only on display.
+    'complaint_marking' => [
+        'misleading' => 'Misleading',
+        'spam' => 'Spam',
+    ],
+
     'review_status' => [
         'pending' => 'Pending verification',
         'verified' => 'Verified',

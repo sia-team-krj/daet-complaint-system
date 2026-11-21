@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ComplaintStatus;
 use App\Models\Complaint;
 use App\Models\Department;
+use App\Models\Faq;
 use App\Services\BarangayLocator;
 use App\Services\TransparencyFeed;
 use Illuminate\Support\Carbon;
@@ -52,6 +53,9 @@ class HomeController extends Controller
             'statusBreakdown' => $this->statusBreakdown($allReports),
             'recentReports' => $this->recentPublicReports($reports),
             'feed' => $payload,
+            // The landing page asks the database what residents should read;
+            // the admin decides the order and whether a question is published.
+            'faqs' => Faq::query()->active()->ordered()->get(),
         ]);
     }
 

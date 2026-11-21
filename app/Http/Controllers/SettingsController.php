@@ -122,6 +122,16 @@ class SettingsController extends Controller
 
         $activityLogger->log('profile.password_changed', "{$user->full_name} changed their account password.", $user);
 
+        if ($user->isAdmin()) {
+            $request->session()->forget([
+                '2fa.passed_at',
+                '2fa.setup_authorized',
+                '2fa.pending',
+                '2fa.pending_until',
+                '2fa.failed',
+            ]);
+        }
+
         return redirect()->route('settings', ['tab' => 'security'])
             ->with('status', __('settings.security.password_updated'))
             ->with('status_for', 'security');

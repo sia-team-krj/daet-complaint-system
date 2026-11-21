@@ -24,13 +24,13 @@ class DemoFeedbackSeeder extends Seeder
         $om = Department::where('code', 'OM')->first();
         $menro = Department::where('code', 'MENRO')->first();
 
-        $pedro = User::where('email', 'pedro@gmail.com')->first();
-        $nena = User::where('email', 'nena@gmail.com')->first();
-        $maria = User::where('email', 'maria.santos@gmail.com')->first();
-        $rodel = User::where('email', 'rodel.villanueva@gmail.com')->first();
-        $carmen = User::where('email', 'carmen.delarosa@gmail.com')->first();
-        $liza = User::where('email', 'liza.ocampo@gmail.com')->first();
-        $gabriel = User::where('email', 'gabriel.reyes@gmail.com')->first();
+        $pedro = User::where('email', 'aling@gmail.com')->first();
+        $nena = User::where('email', 'bela@gmail.com')->first();
+        $maria = User::where('email', 'dana@gmail.com')->first();
+        $rodel = User::where('email', 'eduardo@gmail.com')->first();
+        $carmen = User::where('email', 'eduardo@gmail.com')->first();
+        $liza = User::where('email', 'aling@gmail.com')->first();
+        $gabriel = User::where('email', 'bela@gmail.com')->first();
 
         $published = [
             // Ratings of the offices that handled the showcase tickets.

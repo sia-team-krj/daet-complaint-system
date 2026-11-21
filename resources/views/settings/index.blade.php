@@ -190,6 +190,52 @@
                             </div>
                         </form>
 
+                        @if($user->isAdmin())
+                            <fieldset class="settings-group">
+                                <legend class="settings-group__legend">{{ __('settings.two_factor.title') }}</legend>
+
+                                <div class="settings-field">
+                                    <span class="settings-field__label">{{ __('settings.two_factor.title') }}</span>
+                                    <p class="settings-field__hint">
+                                        @if($user->hasTwoFactorEnabled())
+                                            {{ __('settings.two_factor.enabled_status') }}
+                                            @if($user->two_factor_confirmed_at)
+                                                — {{ __('settings.two_factor.enabled_on', ['date' => $user->two_factor_confirmed_at->locale(app()->getLocale())->translatedFormat('M j, Y')]) }}
+                                            @endif
+                                        @else
+                                            {{ __('settings.two_factor.disabled_status') }}
+                                        @endif
+                                    </p>
+                                    <div>
+                                        <a href="{{ route('settings.two-factor.show') }}" class="tr-button tr-button--secondary">
+                                            {{ $user->hasTwoFactorEnabled() ? __('settings.two_factor.open_two_factor_settings') : __('settings.two_factor.setup_cta') }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            @if($user->hasTwoFactorEnabled())
+                                <fieldset class="settings-group">
+                                    <legend class="settings-group__legend">{{ __('settings.two_factor.disable') }}</legend>
+                                    <p class="settings-group__help">{{ __('settings.two_factor.disable_help') }}</p>
+
+                                    <form data-loading-submit method="POST" action="{{ route('settings.two-factor.disable') }}" onsubmit="return confirm('{{ __('settings.two_factor.disable') }}?')">
+                                        @csrf
+                                        <div class="settings-field">
+                                            <label class="settings-field__label" for="two-factor-disable-password">{{ __('settings.security.current_password') }} <span class="required-mark" aria-hidden="true">*</span></label>
+                                            <input id="two-factor-disable-password" type="password" name="current_password" class="settings-input" required autocomplete="current-password" @error('current_password') aria-invalid="true" @enderror>
+                                            @error('current_password')<p class="settings-field__error" role="alert">{{ $message }}</p>@enderror
+                                        </div>
+                                        <div class="settings-save-row">
+                                            <div class="settings-save-row__actions">
+                                                <button type="submit" class="tr-button tr-button--danger">{{ __('settings.two_factor.disable') }}</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </fieldset>
+                            @endif
+                        @endif
+
                         <fieldset class="settings-group">
                             <legend class="settings-group__legend">{{ __('settings.security.sessions') }}</legend>
                             <p class="settings-group__help">{{ __('settings.security.sessions_help') }}</p>

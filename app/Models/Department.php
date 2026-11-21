@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ComplaintTaxonomy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,15 @@ class Department extends Model
         return [
             "is_active" => "boolean",
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // The taxonomy caches office names and active state with the
+        // categories. A renamed or archived office must reach the wizard
+        // immediately, not after the cache forgets.
+        static::saved(fn () => ComplaintTaxonomy::flush());
+        static::deleted(fn () => ComplaintTaxonomy::flush());
     }
 
     // ─────────────────────────────────────────────
@@ -61,6 +71,14 @@ class Department extends Model
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    /**
+     * The complaint categories this office receives.
+     */
+    public function complaintCategories(): HasMany
+    {
+        return $this->hasMany(ComplaintCategory::class);
     }
 
     // ─────────────────────────────────────────────

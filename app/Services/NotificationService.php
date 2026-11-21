@@ -6,8 +6,11 @@ use App\Enums\ComplaintReviewStatus;
 use App\Enums\InformationRequestStatus;
 use App\Models\Complaint;
 use App\Models\ComplaintInformationRequest;
+use App\Models\Department;
+use App\Models\IdentityVerification;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\ComplaintPrivacyService;
 use Illuminate\Support\Collection;
 
 /**
@@ -131,6 +134,82 @@ class NotificationService
             "{$complaint->ticket_id} is waiting to be verified",
             $actor,
             ['review_status' => $complaint->review_status],
+        );
+    }
+
+    /**
+     * The moderation detector flagged the report and the office is reviewing
+     * it. The resident is told plainly — the flag is about the report, never an
+     * accusation against them — so they are not left waiting without knowing.
+     * The actor is deliberately left unset at intake: the filer is the owner,
+     * and an owner must not be told about their own filing.
+     */
+    public function moderationFlagged(Complaint $complaint, ?User $actor = null): ?Notification
+    {
+        $owner = $complaint->user;
+
+        if ($owner === null) {
+            return null;
+        }
+
+        return $this->notifyUser(
+            $owner,
+            Notification::COMPLAINT_MODERATION_FLAGGED,
+            __('notifications.moderation_flagged.title', ['ticket' => $complaint->ticket_id]),
+            $actor,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'spam_status' => $complaint->spam_status,
+                'spam_score' => $complaint->spam_score,
+                'reasons' => $complaint->spam_reasons ?? [],
+                'duplicate_of_id' => $complaint->duplicate_of_id,
+                'similarity_score' => $complaint->similarity_score,
+            ],
+            $complaint,
+        );
+    }
+
+    public function identitySubmitted(IdentityVerification $verification): ?Notification
+    {
+        return $this->notifyUser(
+            $verification->user,
+            Notification::IDENTITY_SUBMITTED,
+            __('identity.notifications.submitted.title', ['id_type' => $verification->id_type]),
+            context: ['verification_id' => $verification->id],
+            subject: $verification,
+        );
+    }
+
+    public function identityApproved(IdentityVerification $verification): ?Notification
+    {
+        return $this->notifyUser(
+            $verification->user,
+            Notification::IDENTITY_APPROVED,
+            __('identity.notifications.approved.title'),
+            context: ['verification_id' => $verification->id],
+            subject: $verification,
+        );
+    }
+
+    public function identityRejected(IdentityVerification $verification): ?Notification
+    {
+        return $this->notifyUser(
+            $verification->user,
+            Notification::IDENTITY_REJECTED,
+            __('identity.notifications.rejected.title'),
+            context: ['verification_id' => $verification->id],
+            subject: $verification,
+        );
+    }
+
+    public function identityRevoked(IdentityVerification $verification): ?Notification
+    {
+        return $this->notifyUser(
+            $verification->user,
+            Notification::IDENTITY_REVOKED,
+            __('identity.notifications.revoked.title'),
+            context: ['verification_id' => $verification->id],
+            subject: $verification,
         );
     }
 
@@ -279,6 +358,75 @@ class NotificationService
             ],
             $complaint,
         );
+    }
+
+    /**
+     * Office staff marked the report misleading or spam — the office's
+     * rejection of it. The people told are the Office of the Mayor's office
+     * staff and the super admin: this is a management decision, not routine
+     * progress.
+     */
+    public function complaintMarkedMisleadingOrSpam(Complaint $complaint, ?User $actor = null): int
+    {
+        $recipients = $this->officeOfTheMayorStaffFor($complaint)
+            ->merge($this->superAdmins());
+
+        return $this->notifyMany(
+            $recipients,
+            Notification::COMPLAINT_MARKED_MISLEADING_OR_SPAM,
+            __('notifications.marked_misleading_or_spam.title', ['ticket' => $complaint->ticket_id]),
+            $complaint,
+            [
+                'ticket_id' => $complaint->ticket_id,
+                'marking' => $complaint->markingEnum()?->value,
+                'marked_by' => $complaint->markedBy?->full_name,
+            ],
+        );
+    }
+
+    /**
+     * The staff of the Office of the Mayor (the configured approval office
+     * code, default `OM`). Office-scope staff only — field officers of the
+     * complaint's own office already know about a report they rejected, so
+     * the management route is the point of this notification.
+     *
+     * @return Collection<int, User>
+     */
+    private function officeOfTheMayorStaffFor(Complaint $complaint): Collection
+    {
+        $code = trim((string) ComplaintPrivacyService::approvalOfficeCode());
+
+        if ($code === '') {
+            return collect();
+        }
+
+        $office = Department::query()
+            ->whereRaw('LOWER(TRIM(code)) = ?', strtolower($code))
+            ->first();
+
+        if ($office === null) {
+            return collect();
+        }
+
+        return User::query()
+            ->where('department_id', $office->id)
+            ->whereIn('role', ['staff', 'department_admin'])
+            ->where('is_active', true)
+            ->get();
+    }
+
+    /**
+     * Global administrators — the safety net when the Office of the Mayor
+     * has no staff on file.
+     *
+     * @return Collection<int, User>
+     */
+    private function superAdmins(): Collection
+    {
+        return User::query()
+            ->where('role', 'admin')
+            ->where('is_active', true)
+            ->get();
     }
 
     /**

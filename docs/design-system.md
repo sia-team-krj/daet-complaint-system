@@ -758,15 +758,15 @@ renders. Tokens: `--status-resolved-*`, `--navy-900`, `--gold-300/500`,
 Why: resolution and closure are different decisions — the office finishes the
 work, the resident confirms it is done for them.
 
-### 5.31 Navbar identity indicator (staff / Department Administrator / admin) — `.nav-identity`
+### 5.31 Navbar identity indicator (staff / Department Administrator) — `.nav-identity`
 Purpose: make the current account context unmistakable in the fixed top bar
-without opening any menu. Staff, Department Administrators, and global
-administrators see who they are operating as on desktop and mobile; citizens
-see no extra chrome.
+without opening any menu. Staff, Department Administrators see who they are
+operating as on desktop and mobile; citizens see no extra chrome. Global
+administrators no longer carry a navbar identity chip (the Administrator badge
+was removed); they identify through the admin workspace and the account menu.
 Anatomy: `.nav-identity` (inline, on the navy navbar) contains a role badge and,
-for office roles, the canonical department context. The global administrator
-renders `.nav-identity__badge--admin` (`--gold-300` on a gold-500 tint, 6px
-radius, 10px/700 uppercase). A Department Administrator renders
+for office roles, the canonical department context. A Department Administrator
+renders
 `.nav-identity__badge--department-admin` (the same gold family, a stronger
 border) together with `.dept-badge[data-dept="CODE"]` (§3.2/§5.11) so the office
 and the role are both visible. Ordinary staff render the department context (the
@@ -775,20 +775,19 @@ neutral `.nav-identity__badge--staff` plus the "Department pending" label when
 no department is assigned. The label text comes from `roles.*` / `nav.*` lang
 keys (`en` + `fil`) — never a raw role string.
 Placements (targeted): desktop `nav-actions` (before the account dropdown),
-compact/tablet `nav-mobile-right` where visible, and a direct `.nav-identity-bar`
-child of `.navbar-flex` for the `body.is-auth` ≤640px shared-drawer mode (so
-identity remains visible when `nav-mobile-right` is hidden). The same
-department/role treatment appears in the shared mobile drawer header and legacy
-mobile menu header; dropdown headers repeat it as `.dropdown-identity`.
+compact/tablet `nav-mobile-right` where visible, the shared mobile drawer
+header, the legacy mobile menu header, and dropdown headers repeating it as
+`.dropdown-identity`.
 States: static (no interactive state). Labels collapse at tight widths
 (`.nav-identity--compact` / breakpoint rules) so the badge/code remains legible.
 Tokens: existing `--dept-*`/`--dept-*-tint` + `[data-dept]`, `--gold-300`,
 `--gold-500` (tints via `color-mix`), `--color-white`, `--radius-sm`-scale
 shape (6px badge), `--font-sans`. **No new colours.** JS contracts untouched
 (no existing `id`/`data-*`/`aria-controls` changed).
-Why: a person handling complaints for a department, or administering the whole
-system, must never have to guess which account they are in — the navbar states
-it once, always, in the same place the account lives.
+Why: a person handling complaints for a department must never have to guess
+which account they are in — the navbar states it once, always, in the same
+place the account lives. Global administrators manage through the admin
+workspace and their account menu instead of a navbar chip.
 
 ### 5.32 Busy / loading action state — `.is-loading` / `aria-busy="true"`
 Purpose: give immediate, honest feedback when an action with real pending work
@@ -1962,6 +1961,339 @@ Why: an office needs day-to-day management without giving anyone the keys to the
 whole municipality. One scoped surface, built from existing tokens and the
 staff workspace grammar, keeps the boundary visible in the UI and in the code.
 
+### 5.51 Resident complaint detail — the public record, plus the resident's controls
+
+Purpose: a resident should read the same record as the public transparency page —
+same banner, same stepper, same sections, same evidence grid — and still have the
+controls that belong only to them (answer an information request, choose
+visibility, close a resolved report). The page is not a second design language
+for the same ticket.
+
+Anatomy (one markup, mobile-first):
+- **Header:** `.pt-back-row` → `.pt-banner`. The banner carries the ticket pill
+  and copy button, the `h1` title, the status pill, and optional hold /
+  verification/latest-action/date chips. It is the public detail banner, unchanged
+  in identity.
+- **Reading order on phones:** info request (when the office is waiting) →
+  progress → report → evidence → updates → location → details → visibility →
+  close → help → privacy. The wrappers dissolve (`display: contents`) so every
+  section is one ordering slot; the order is carried by `.rd-order-*`.
+- **Desktop:** `.pt-stack` is the public `1fr / 340px` grid. The info request,
+  progress and privacy note span both columns; report/evidence/updates/location
+  sit in the main column; details/visibility/close/help sit in the side column.
+  The side column is not sticky on this page because it carries several blocks,
+  not one.
+- **Record sections:** `.pt-card` sections share one low-chrome treatment (light
+  border, no heavy shadow, compact padding, clear headings) so the record reads
+  as organized sections rather than repeated boxes. Resident-only highlights
+  keep meaning through tint/border: `.info-request` (amber, waiting-on-you),
+  `.close-report` (resolved), `.visibility-panel` (light-surface shared control),
+  and the help/privacy notes.
+- **Stepper:** the public `5`-step recipe (`Submitted → Under Review → In
+  Progress → Resolved → Closed`) compact horizontally at ≥768px and as a compact
+  vertical list below it. Rejected tickets stop at the last reached status;
+  closed tickets mark every step complete. A hold is an amber notice inside the
+  progress section, not a sixth step.
+- **Details:** `.pt-dl` is a compact metadata grid (two columns on phones, one
+  in the desktop side rail); the resident keeps review status, suggested and
+  confirmed priority, visibility, department and date filed. The category icon
+  and `.dept-badge[data-dept]` are the shared components.
+- **Location:** exact address, coordinates and the Leaflet map stay visible to
+  the owner and the office. The final privacy note says the public page shows
+  barangay level only — it does not repeat the public page's "exact location
+  withheld" sentence, which would be false here.
+- **No JavaScript:** every control is an ordinary form (`POST`/`PUT`); the
+  stepper, sections and photo links are server-rendered. Copy-to-clipboard, the
+  mobile photo dialog and the map are enhancements only.
+
+States: info request open / answered; hold on / off; rejected; resolved (close
+action visible); privacy-gated (no toggle, explanation shown); hidden/redacted
+(moderation notice); no updates (empty card); no photos (the evidence card is
+omitted, as on the public page); no location data (empty location card when the
+intake policy expects one, otherwise omitted).
+
+Tokens: existing `--navy-*`, `--gold-*`, `--surface`, `--text`, `--muted`,
+`--line*`, `--status-*`, `--hold-*`, `--cat-*`, `--ring`, `--radius-*`,
+`--shadow-card`, `--map-loading-bg`. **No new colours, fonts or tokens.**
+
+Why: residents and the public are looking at the same municipal record. Giving
+the resident a different, older layout made the same facts look like different
+facts. Reusing the public layout keeps the meaning consistent; the resident-only
+cards add agency without changing the record.
+
+### 5.52 Complaint taxonomy manager — `.cat-*` (super admin + Department Administrator)
+
+Purpose: problem types and categories are municipal data, not code. A super
+admin edits the whole taxonomy at `/admin/categories`; a Department Administrator
+edits only their office's categories at `/staff/office/categories`. The same
+manager component serves both, so a scoped user sees the same anatomy with the
+office fixed and the problem-type controls removed.
+
+Anatomy (one markup, two scopes):
+- **Header:** the admin dark shell keeps its page header; the staff page uses the
+  shared light office surface. The manager itself is a light work area on both,
+  because it is the document being edited.
+- **`.cat-flow`:** three numbered steps (problem type → category → resident
+  wizard) with arrows. It explains why a saved row appears immediately; it is
+  not a second filter bar.
+- **`.cat-manager__toolbar`:** status chips (`Active`, `Archived`, `All`) with
+  counts, then the create disclosures.
+- **`.cat-create` / `.cat-create--primary`:** native `<details>` disclosures for
+  “Add problem type” (super admin only) and “Add category”. Closed by default,
+  keyboard operable with JavaScript off. Primary variant tints the summary with
+  `--navy-50` and carries the gold plus.
+- **`.cat-group`:** one card per problem type: tinted `.tile__icon`, label,
+  helper, child count, status pill, archive/restore and an inline edit
+  disclosure. Archived groups get `--surface-soft` and a notice that all children
+  are hidden from residents.
+- **`.cat-row`:** one category per row: configured icon and tint, label, helper,
+  office chip, intake chip, stable key chip, status pill and actions. The whole
+  row is not a link; edit/archive are explicit buttons.
+- **`.cat-form`:** names + helpers (en/fil), receiving office (admin only),
+  icon choice grid, colour choice grid, intake-mode choice cards, sort order,
+  and a live preview of the resident tile. The preview script only mirrors the
+  fields; the server remains the authority.
+- **Shared category icon:** `.cat-icon.cat-icon--{color}` + the existing
+  `complaints.partials.tile-icon` shape. The shape and tint come from the row, so
+  archived categories and newly created categories render correctly on public,
+  staff and admin surfaces. `public-ui` supplies the 36px public sizing; the
+  manager supplies the 28px compact size.
+
+Variants / states:
+- `is_active` → green status pill; archived → neutral pill and muted row.
+- Category under an archived problem type → `Hidden by parent` pill, not
+  separately archived; restoring the parent brings it back.
+- Group with no categories → “No categories yet” inside the card.
+- No groups at all → `.cat-empty` with one create action (admin) or a scoped
+  explanatory line (staff).
+- Flash messages: `.cat-flash--success` / `.cat-flash--error` reuse the status
+  and error token pairs.
+- Invalid field → `.cat-input[aria-invalid="true"]` + `.cat-field__error`;
+  errors stay next to the field.
+
+Responsive: the toolbar wraps; create summaries stay 64px tall; icon/colour
+choice grids collapse from 4/3/2 columns; form grids become one column at 900px;
+group/row actions move to their own full-width line at 720px and buttons grow to
+44px. The manager never scrolls sideways at 360px. `prefers-reduced-motion`
+removes disclosure/choice transitions.
+
+Tokens: existing `--navy-*`, `--gold-*`, `--surface*`, `--line*`, `--text`,
+`--muted`, `--faint`, `--status-*`, `--error-*`, `--cat-*`, `--radius-*`,
+`--shadow-card`, `--ring`, `--font-sans`, `--font-mono`. **No new colours, fonts,
+shadows, radii or tokens.**
+
+Why: the old settings form was a cramped list of label inputs that could not say
+which office receives a category or what the resident must supply. A dedicated
+manager makes the two-level model visible, gives both scopes the same grammar,
+and keeps history intact through archive/restore instead of delete.
+
+### 5.53 Public ticket tracking — `/track` (guest-safe, progress only)
+
+Purpose: anyone holding a ticket number can check a complaint's progress without an
+account. The page never shows the report's description, photos, exact location, or the
+resident's identity — only progress.
+
+Anatomy (two states, one route):
+- **Lookup:** a full-height dark stage (`.track-page--lookup`, navy gradient) with one
+  centered `h1` and one white `.pt-card.track-lookup`. The form is ticket-only: label,
+  mono ticket input, a short format hint, and a full-width primary submit (`.track-submit`,
+  48px). A compact lock note states the page is progress-only; no account is required.
+  Not-found is a generic inline `.track-alert` (no submitted ticket echoed).
+- **Result:** the public-detail family, read-only. `.pt-back-row` → `.pt-banner` with the
+  ticket pill, `h1` "Complaint progress", status pill and neutral chips (office, filed,
+  last updated). A single-column `.track-result-stack` of `.pt-card`s: **Progress** (hold
+  notice, neutral "waiting on resident" notice when an information request is open, the
+  shared `.pt-steps` trail, "what this means", and a rejected note when applicable),
+  **Public updates** (`.pt-updates`, status/date/public comment only — no photos, no
+  actors, no internal notes), and **Progress only** (privacy reminder + "Track another"
+  and, for guests, "Sign in").
+- **Redirect:** if the signed-in viewer can open the full record (verified, not
+  `must_change_password`, and owner/staff/admin with access) the route redirects to the
+  full ticket; everyone else sees the limited result.
+
+Shared stepper: `resources/views/partials/complaint-steps.blade.php` renders the
+`App\Support\ComplaintProgress::steps()` trail (Submitted → Under Review → In Progress
+→ Resolved → Closed; rejected stops at the last reached status). Used by the
+transparency detail, the resident ticket, and this page.
+
+Behaviour / safety: the ticket is normalised (case and punctuation stripped) so
+`COMP-2026-A7K9P`, `COMP2026A7K9P`, and lower-case variants resolve the same record.
+`throttle:20,1`, `Cache-Control: no-store, private`, `Referrer-Policy: no-referrer`,
+`X-Robots-Tag: noindex, nofollow`, and a `noindex` meta. Confirmed-spam and
+soft-deleted complaints are not found.
+
+Tokens/classes: reuses `.pt-*` (banner, card, pill, steps, updates, whatmeans,
+hold-notice, empty), status/hold/error tokens, and page-scoped `.track-*` for the
+lookup stage and compact action/note treatments in `resources/css/pages/complaint-track.css`.
+**No new colours, fonts, shadows, radii or tokens.**
+
+Why: a resident must be able to check progress from a receipt without creating an
+account, while the ticket — the only secret — must never expose the report itself.
+
+### 5.54 Landing-page FAQ manager — `/admin/faqs`
+
+Purpose: the questions residents read before they file are municipal copy, not
+translation keys. A super admin owns them here so a question, answer or order can
+change without a deploy.
+
+Anatomy:
+- **Page header:** the standard `.admin-page-header` title + one-line description on
+  the admin dark shell. No banner and no extra metric tiles.
+- **Status filter:** the existing `.admin-department-filters` / `.admin-filter-chip`
+  pattern — Published, Archived, All, each with a running count. The filter is a GET
+  (`?status=active|archived|all`) and survives refresh.
+- **Create panel:** one `.admin-panel` holding a `.admin-form-grid` (question and
+  answer in English + Filipino, optional sort order) and one primary action. English
+  is required; Filipino is optional. The hint says the fallback out loud.
+- **Question list:** one `.admin-panel.admin-faq` per row. The heading shows the
+  localized question, its position, and a green/neutral `.admin-status` chip; the body
+  shows the answer in `.admin-faq-answer` (`white-space: pre-wrap`, so typed line
+  breaks survive without HTML).
+- **Row actions:** move up/down (published rows only), edit, archive (published) or
+  restore (archived), and a separate permanent delete. Edit is a native `<details>`
+  disclosure reusing the `.admin-department-editor` grammar (`.admin-faq-editor`);
+  archive/delete use the existing `.admin-archive` confirmation grammar. Every action
+  is a real form, so the page works without JavaScript.
+- **Empty states:** one line inside `.admin-empty-state`, different for published,
+  archived and all. The create panel stays above, so there is always a next action.
+
+Behaviour:
+- Archive hides the row from the landing page and keeps its text; restore publishes it
+  again at the end of the list. Permanent delete is confirmed, audited, and has no
+  undo.
+- Moving a question renumbers the whole published scope, so duplicate or gapped sort
+  values cannot make “move up” look like a no-op.
+- The landing page renders only `is_active` rows, ordered by `sort_order` then `id`.
+  It renders nothing when no question is published, and falls back to English when a
+  Filipino field is blank.
+
+Responsive: the header and form grid collapse to one column at 700px; row actions
+become full-width 44px buttons; the answer wraps and never scrolls sideways. No new
+tokens, colours, fonts, shadows or radii — only `--ring` for the post-save highlight
+and the existing admin panel/field/disclosure/status tokens.
+
+Why: the old FAQ was four language-file entries, so changing a question needed a
+developer. The manager gives the same copy a normal archive/restore lifecycle and a
+public order the municipality controls.
+
+### 5.55 Admin two-factor authentication — enrollment + challenge
+
+Purpose: an administrator must prove a second factor before opening the workspace.
+The screens reuse the settings card and auth form grammar; they add no new component
+family and no new token.
+
+Anatomy:
+- **Settings → Security card:** one `.settings-group` below the password form, admin
+  only. It states Enabled / Not set up, the enrollment date and remaining recovery
+  codes, and one `.tr-button.tr-button--secondary` link to the dedicated setup page. Settings → Security is kept minimal: the 2FA status shows Enabled + date (or “Not set up”), the required-notice and recovery-count are omitted, and the authenticator page always has a visible “Back to settings” link. When 2FA is enabled, the authenticator page is simplified: only status and actions. The Settings → Security CTA says “Open two-factor settings” when enabled.
+- **Setup page:** `/settings/security/two-factor` is a normal settings page
+  (`.settings-page` → `.tr-container.settings-container` → `.settings-card`), not a
+  modal. The first visit shows only a current-password gate (`.settings-field` + one
+  primary action). The QR code appears only after the password is re-entered, inside a
+  `role="img"` wrapper with the scan instruction; the manual key is a read-only
+  `.settings-input`. The six-digit code field uses `autocomplete="one-time-code"` and
+  one primary action.
+- **Recovery codes:** a read-only `<textarea class="settings-input" rows="9">`, shown
+  once after enrollment or regeneration. The copy says the codes are single-use and
+  will not be shown again.
+- **Confirmed state:** status line, remaining-code count, and forms — regenerate
+  recovery codes and replace the authenticator. Each asks for a current authenticator
+  code and uses a secondary action.
+- **Disable form:** in Settings Security when 2FA is enabled. It asks for the current
+  password, requires a native confirmation, clears the secret/recovery codes, and logs
+  `auth.2fa.disabled`. It is the self-service way to turn 2FA off; CLI reset remains for
+  server-side recovery.
+- **Challenge page:** the same settings shell with one code field (a six-digit TOTP or
+  a recovery code), one primary Verify action, and a secondary Sign out form.
+- **Settings → Security CTA:** clicking “Set up two-factor authentication” navigates to
+  the dedicated setup page; there is no modal on Settings or on the authenticator page.
+
+Behaviour:
+- When the user asks to “remove clutter,” treat it as removing duplicated words and
+  non-needed UI content, not redesigning; ask one short question only if the intent is
+  ambiguous (e.g., which page or control).
+- The Disable form requires the current password and clears the passed marker, so an
+  enabled account cannot silently keep admin access while 2FA is off.
+- Every admin route is behind `admin.2fa`, and so is admin access to the staff
+  workspace; setup and challenge routes sit outside that group. An unenrolled admin
+  is sent to setup, an enrolled admin without a passed challenge is sent to the
+  challenge, and a passed challenge lives in the session.
+- Changing the password clears the passed marker. Five failed challenges end the
+  session. Recovery codes are hashed; a used code is removed. CLI
+  `admin:reset-2fa {email}` is the last resort.
+- Enforcement is on in production and off in local/testing via
+  `ADMIN_2FA_REQUIRED`; setup remains reachable when enforcement is off.
+
+Responsive: reuses the settings card, field, save-row and button breakpoints; the QR
+stays within the card, the recovery textarea wraps, and no new CSS is introduced.
+
+Why: ID review is a high-risk admin capability. TOTP plus one-time recovery codes
+keeps the second factor off email and SMS, while the CLI reset gives the municipality
+a recovery path that requires server access.
+
+### 5.56 Resident identity verification (`/identity/verify`, admin review)
+
+Purpose: residents must prove a government ID and selfie before filing new complaints. Existing reports remain available regardless of the gate.
+
+Anatomy:
+- **Resident page:** `.settings-page` → `.tr-container.settings-container` → `.tr-card.settings-card`. Title, status line, and concise forms: ID type select, ID number input, ID front + selfie file inputs, consent checkboxes, submit/cancel buttons. No new CSS; settings field/card/button classes only. Plus the §5.58 resident capture/status components (photo zones, consent rows, status pill, steps). No new tokens.
+- **Admin queue (`/admin/identity`):** admin shell (`admin-page`, `admin-panel`, `admin-table`), search + status filter, resident name/email column, ID type column, status column, paginated rows.
+- **Admin review (`/admin/identity/{verification}`):** admin panel with resident identity, ID number hash, status, possible duplicate warning, two decrypt-stream images (front/selfie) with `<img>` + captions, and real-form Approve/Reject buttons. Document URLs are streamed with no-store headers.
+- **Status controls:** identity statuses (`unverified`, `pending`, `approved`, `rejected`, `revoked`, `expired`, `cancelled`) use existing admin/status and settings status classes; no new tokens.
+
+Behaviour:
+- `IDENTITY_VERIFICATION_REQUIRED=true` gates `/complaints/create` and `/complaints/store` with the `identity.verified` middleware. Verified citizens may file; unverified, pending, rejected, and cancelled citizens are redirected to `/identity/verify`.
+- Resident submissions validate MIME/size, create one pending row, store encrypted ID/selfie paths in MinIO (`identity/{userId}/{uuid}.enc`), log `identity.submitted`, and notify the resident. Re-submitting while pending deletes old files and cancels the old row.
+- Global admins only: queue filter, approve (files purged after commit), reject with required reason, revoke with required reason. The global admin account page (`/admin/users/{user}`) also shows a **Revoke identity verification** action for verified residents.
+- Global admin navigation: the admin sidebar (Operations) and mobile admin drawer now include **Identity verification** linking to `/admin/identity`. Admin routes are not accessible to staff/department admins/other citizens.
+- Retention: files are purged on approval, rejection, revocation, cancellation, expiry, and account deletion; `files_purged_at` records proof. `identity:purge` sweeps orphan files after 24 hours.
+- `identity:purge` is scheduled hourly; it expires pending submissions after 30 days and sweeps orphan files after 24 hours.
+- Security: HMAC duplicate hash (`IDENTITY_HASH_KEY`), encrypted storage, hashed 2FA secrets already in Phase 1, no raw ID numbers in UI/audit logs.
+
+Why: ID collection is high-risk; a dedicated verification gate lets existing complaints continue while new filing waits on human review. Reuses existing settings and admin design systems to avoid a second visual language.
+
+### 5.57 Office marking panel — `.staff-detail-card--marking`
+
+Purpose: let a Department Field Officer (the `staff` role) or the Inspector
+(the Department Administrator) reject a report as **misleading** or **spam**
+from the ticket page. It is a distinct power from the review decision: the
+office is declaring the report itself to be false or abusive, so the marking
+carries a reason, a comment, an immutable timeline entry and a management
+notification.
+
+Anatomy: one `moderation-panel moderation-panel--light` card in the staff
+ticket's main column, using the same grammar as the hold panel (§5.40) —
+header (`h3` + lede), then either the form or the read-only record. The form
+has a marking select (`.tr-select`, two localized options), a description
+textarea and a comment textarea (`.moderation-field`, `date-field__error` for
+field errors), and one full-width submit (`.moderation-panel__submit--block`).
+The record restates the mark, the actor, the date and both pieces of prose.
+
+Variants / states:
+- **Open + unmarked:** the form. For a Field Officer both textareas are
+  required (HTML `required` and server-side); the Inspector may leave them
+  blank. No mark is offered on a finished report.
+- **Marked:** the read-only record — it stays on the ticket after the report
+  has moved to `Rejected`, so the label and the reason remain visible.
+- **Not open, never marked:** the panel is not rendered at all.
+
+Behaviour: submitting moves the report to `Rejected` (a terminal status),
+writes `marking` / `mark_description` / `mark_comment` / `marked_by` /
+`marked_at`, appends a `ComplaintLog` entry with the reason, and notifies the
+Office of the Mayor's office staff and the super admin for management review.
+The field is language-neutral (`statuses.complaint_marking.*`), translated on
+display; a second submission is refused by the service. The form is an
+ordinary POST and works with JavaScript off. Tokens: only the existing
+moderation-panel / select / field tokens. **No new colours or CSS.**
+
+Why: a field officer needed a way to say "this report is not a real municipal
+matter" that was more than a bare rejection — the office's reason and the
+officer's assessment must survive on the ticket, and management must see it.
+The same card grammar as the other ticket actions keeps that power in one
+visual language.
+
+---
+
 ## 6. The z-index contract — **LOCKED**
 | Layer | z-index |
 |---|---|
@@ -2027,6 +2359,118 @@ backdrop/Esc/scroll-lock/closed-state-interception assertions, at 393px and
 the regression test this bug never had.
 
 Note: `#navbar` also got `z-[900]` as a markup-level belt to the CSS suspenders.
+
+### 5.58 Resident identity verification — capture, consent, status
+
+Purpose: the resident-facing photo proof for `/identity/verify` (the KYC step that
+gates new complaints) plus the status the resident lives in while they wait.
+
+Anatomy:
+- **Status indicator** (`.identity-status`) — the resident's real position in the
+  verification lifecycle, under the page title/lede: `.status-pill` + note. States:
+  unverified (`.status-pill--unverified`, neutral tokens), pending
+  (`.status-pill.pending`), rejected (`.status-pill.rejected`, the note carries the
+  admin's reason), verified (`.status-pill.verified`). No new tokens; the pill
+  families already exist.
+- **Step indicator** (`.identity-steps`) — the compact three-step progress of the
+  resident's own flow: **ID information → Upload photos → Confirmation**. States:
+  done / current / todo, with `aria-current="step"` on the current step. Derived
+  from the resident's real status (verified/pending → all done; rejected → info
+  done, photos current; unverified → info current), never invented.
+- **Capture zones** (`.identity-photo`) — one zone per required photo, keyed by the
+  owned file input's name (`data-identity-photo="id_front" | "selfie"`). Each zone:
+  - head — 44px `--navy-50` icon circle with a 22px `--navy-700` line icon, title
+    (`photo_id_front_title` / `photo_selfie_title`), instruction hint
+    (`photo_*_hint`).
+  - actions — "Take photo" (`data-identity-camera-start`) + "Upload file"
+    (`<label for>` wrapping the visually-hidden file input, so upload works with
+    JavaScript off).
+  - preview (`data-identity-preview` / `data-identity-preview-image`) — after
+    capture or upload, with retake / replace / remove actions.
+  - camera (`data-identity-camera` / `data-identity-camera-video` /
+    `data-identity-camera-capture` / `data-identity-camera-cancel`) — live
+    `getUserMedia` preview (front-facing for the ID, user-facing for the selfie),
+    capture draws to canvas and writes the blob into the zone's file input via
+    DataTransfer; tracks stop on capture/cancel.
+  - state (`data-identity-state`) — "Photo ready" / camera errors (permission
+    denied / unavailable).
+- **Consent rows** (`.identity-consent`) — checkbox + statement, checkbox left,
+  ≥44px tap row, `--radius-sm` box, `--gold-500` accent, required mark in `--danger`.
+  Statements ride `identity.verify.{consent_purpose,terms,consent_access,consent_retention}`.
+- **Submission** — the primary button carries `data-identity-submit` and stays
+  disabled until the ID number is filled, both photos are held and all required
+  consents are checked; the server stays authoritative and re-validates. The ID
+  type dropdown carries the token-based `.settings-select` (44px, token borders,
+  focus ring, invalid state) so it reads as one control family with the inputs.
+
+Behaviour:
+- Captured photos and uploaded photos share one file input each, so the existing
+  `IdentityVerificationController` validation (`id_front`, `selfie` file rules) and
+  storage workflow are untouched.
+- Without JavaScript the upload control still opens the picker and the server
+  validates; what is lost is only the preview, the retake/replace/remove actions and
+  the live camera.
+
+Tokens: `--surface`, `--surface-soft`, `--line`, `--line-soft`, `--text`,
+`--text-secondary`, `--text-muted`, `--faint`, `--navy-50`, `--navy-700`, `--navy-900`,
+`--gold-500`, `--gold-700`, `--ring`, `--radius-sm`, `--radius`, `--danger`.
+**No new colours.**
+
+Markup / JS contract: `[data-identity-photo]`, `[data-identity-input]`,
+`[data-identity-camera-start]`, `[data-identity-camera]`, `[data-identity-camera-video]`,
+`[data-identity-camera-capture]`, `[data-identity-camera-cancel]`,
+`[data-identity-preview]`, `[data-identity-preview-image]`, `[data-identity-retake]`,
+`[data-identity-replace]`, `[data-identity-remove]`, `[data-identity-state]`,
+`[data-identity-submit]`. Controller: `resources/js/identity-photo.js`; styles:
+`resources/css/pages/settings.css`.
+
+Why: the ID proof is the resident's most sensitive upload and the moment the page
+lost to friction (single file input, no camera, no consent list, no status). The
+redesign keeps the portal's settings grammar and tokens and only adds the capture,
+consent and status vocabulary the flow actually needs.
+
+### 5.59 Follow-up panel — `.follow-up-panel` (resident, sub-ticketing v1)
+
+Purpose: when a finished complaint (Resolved or Closed) is not resolved for the
+resident, or the same issue persists, the owner files a **follow-up** — a child
+sub-ticket of the original report. The follow-up is its own complaint (own ticket
+number, own status, own SLA, seeded from the parent) while the parent stays closed.
+
+Anatomy:
+- **Panel** (`.follow-up-panel`, `rd-order-followup`) — same head grammar as the
+  close-confirmation panel (§5.30): 44px navy icon circle with a gold line icon,
+  kicker, `h2` title, lede.
+- **Form** — subject input (`.follow-up-panel__input`, 44px min-height), description
+  textarea (reuses `.feedback-textarea`), optional photo evidence (reuses the
+  `data-photo-picker` / `info-request__photos` pattern, up to 5 images), and primary
+  submit (`.tr-button.tr-button--primary`). Labels use the uppercase muted label
+  pattern (`.follow-up-panel__label`).
+- **Open-follow-up notice** — when the parent already has an open follow-up, the
+  form is replaced by a `pt-card` notice with a link to the open follow-up ticket
+  (`.tr-button.tr-button--primary`).
+- **Parent link** — a follow-up complaint shows "Follow-up of <ticket>" in the
+  details card, linking back to the parent.
+
+Variants / states:
+- **Available:** finished complaint, no open follow-up, owner viewing → form shown.
+- **Open follow-up exists:** owner viewing → notice + link to the open follow-up;
+  form hidden (one open follow-up at a time).
+- **Not finished / not owner / staff:** panel not rendered.
+
+Behaviour:
+- Citizen self-service only (v1); staff/admin filing deferred. The route is
+  `POST /complaints/{complaint}/follow-up` (`complaints.follow_up.store`), authorized
+  by `ComplaintPolicy@followUp` + `ComplaintFollowUpService::canFile`.
+- A follow-up creates a new `Complaint` row with `parent_id`, status `Submitted`,
+  `review_status` pending, own `COMP-YYYY-XXXXX` ticket, seeded location/category/
+  visibility from the parent, fresh SLA. The parent status is unchanged.
+- Works without JavaScript as an ordinary POST form; validation errors render inline.
+
+Tokens: `--surface`, `--line-soft`, `--gold-500`, `--gold-300`, `--navy-900`,
+`--muted`, `--radius`, `--radius-sm`, `--status-progress-dot`. **No new tokens.**
+
+Why: residents need a clear, low-friction way to continue an unresolved issue after
+closure without reopening terminal statuses or creating an orphan duplicate.
 
 ---
 
@@ -2115,10 +2559,11 @@ These are the things that broke before.
 | My Complaints (resident) | A/B | yes — h1 + ONE line subtitle + **one** CTA ("File a complaint", suppressed when the navbar shows it at this viewport) | none (2026-11-09: strip removed) | yes, URL-persisted `?status=&q=&sort=`; chips carry counts; dept select folded in only when meaningful | same `.report-row` + the resident extras (needs-response pill, visibility pill, Updated x ago) | empty = circle + "No complaints yet" + ONE "File a complaint" |
 | Staff Complaint Queue / Admin All complaints (work lists) | A | yes — plain title + ONE line of scope ("Your office's queue"/"Filter the municipal queue"); no CTA | 4 existing metrics (do not invent) | yes — extended with review + priority (admin: + department, flagged, dates) — the same bar visual language, not a fork | same row component + staff columns (Review, Priority, Age); row click opens detail | empty per q-status = "queue clear"; no-results = same clear-filters box |
 | Public complaint detail (`/transparency/complaints/{id}`) | C | no banner — back link only | no | no | stepper + timeline + evidence grid + alias/privacy card | "Exact location withheld" is the privacy state — keep it |
-| Resident complaint detail (`/complaints/{id}`) | C | no banner — back link + breadcrumb dots, no cream/serif | no | no | stepper + actions for the resident (respond to info requests, toggle visibility) | same as above |
+| Resident complaint detail (`/complaints/{id}`) | C | yes — the public detail banner: back link row, navy banner, ticket pill + copy, 24px title, status pill (+ hold/verification chips when present) | no | no | the public detail layout: info request first when the office is waiting on the resident, then progress → report → evidence → updates → location in the main column; details → visibility → close → help in the side column; mobile order is info request → progress → report → photos → updates → map → details → visibility → close → help → privacy | exact location stays for the owner; the privacy note says the public page shows only barangay level |
 | Submission success receipt (`/complaints/{id}/success`) | receipt (§5.26) | no banner — light page, centered 640px | no | no | hero card (check, h1, mono ticket strip, fact rows, live 5-segment bar) + what-next card | auto-redirect strip with clock + "Stay on this page" cancel; actions: view report + my complaints |
 | File complaint / create (wizard) | form | no banner | no | wizard steps, one action per step | review-card before submit | "Ready to submit" row shows barangay, never coordinates (LOCKED) |
 | Settings | form panel | no banner — h1 + tab nav | no | no | panel cards | Plug: profile/security/notifications/preferences/privacy tabs |
+| Complaint taxonomy manager (`/admin/categories`, `/staff/office/categories`) | A (admin dark shell) / B (staff light office) | no banner — page header + one scope line | no | status chips (Active / Archived / All) with counts | `.cat-flow` explanation + `.cat-create` disclosures + `.cat-group` cards with `.cat-row` categories; details-based edit forms | empty = `.cat-empty` with the create action (admin) or scoped explanation (staff); no children = “No categories yet” |
 | Error page (401/403/404/419/429/500/503 + generic 4xx/5xx) | D | no banner — standalone brand header | no | no | one 640px error card: 64px icon, code kicker, h1, message, ONE gold primary + one secondary | the card is the whole page; no list and no data chrome |
 | Admin dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles from real metrics | no | dark tables + dept chips | treat separately: admin shell |
 | Staff dashboard | A (dark variant) | no banner — workspace chrome | 4 KPI tiles | no | dark tables | treat separately |
@@ -2169,6 +2614,26 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+- 2026-11-22 · Resident complaint detail (`/complaints/{complaint}`) · **sub-ticketing v1 follow-up panel.** A finished (Resolved/Closed) complaint now lets the owning resident file one follow-up at a time: a new child complaint (`parent_id`) with its own `COMP-*` ticket, `Submitted` status, fresh SLA, seeded location/category/visibility, while the parent stays closed. Citizen self-service only; staff/admin deferred. UI: `.follow-up-panel` form (subject, description, optional photos) or an open-follow-up notice linking to the waiting child; follow-up children show "Follow-up of" parent link in details. Files: `database/migrations/2026_11_22_000001_add_parent_id_to_complaints_table.php`, `app/Models/Complaint.php`, `app/Services/ComplaintFollowUpService.php`, `app/Policies/ComplaintPolicy.php`, `app/Http/Controllers/ComplaintController.php`, `routes/web.php`, `resources/views/complaints/show.blade.php`, `resources/css/pages/complaint-show.css`, `lang/{en,fil}/complaint_show.php`, `tests/Feature/ComplaintFollowUpTest.php`, `docs/sub-ticketing-plan.md`, `docs/design-system.md` (§5.59). New tokens: none. Verification: `php artisan test --filter=ComplaintFollowUpTest` — **9 passed (39 assertions)**; `php -l` on touched PHP; `php artisan view:clear`; `php scripts/design-system-guard.php` — **0 NEW**. Screenshots NOT captured (waived by owner, 2026-11-09).
+- 2026-11-21 · Admin two-factor authentication (`/settings/security/two-factor`, `/two-factor/challenge`, Settings → Security) · **administrator TOTP enrollment and challenge, built on the settings card grammar with no new CSS or tokens.** Settings → Security now carries an admin-only status group (Enabled / Not set up, enrollment date, remaining recovery codes, one secondary link). The Settings → Security CTA navigates to the dedicated setup page; the setup page is a normal settings page using `settings.two-factor-card`. It asks the questions in place: a current-password gate before the QR is revealed, a `role="img"` QR wrapper plus a read-only manual-key `.settings-input`, a six-digit code field, and a one-time recovery-code `<textarea>`. The confirmed state has separate regenerate-codes and replace-authenticator forms, each requiring a current code; the Disable form requires the current password, clears the session marker, and logs `auth.2fa.disabled`. The challenge page is the same shell with one code field (TOTP or recovery code), one primary Verify action and a secondary Sign out form. Every admin route is gated by `admin.2fa` (admin access to the staff workspace included); setup/challenge sit outside it. Password changes clear the passed marker; five failures end the session; CLI `admin:reset-2fa {email}` is the recovery path. Files: `database/migrations/2026_11_21_000000_add_two_factor_columns_to_users_table.php`, `config/admin.php`, `app/Models/User.php`, `app/Services/TwoFactorAuthentication.php`, `app/Http/Middleware/EnsureAdminTwoFactor.php`, `app/Http/Controllers/{TwoFactorSetupController,TwoFactorChallengeController,AuthController,SettingsController,ProfileController,PasswordChangeController}.php`, `app/Console/Commands/ResetAdminTwoFactor.php`, `bootstrap/app.php`, `routes/web.php`, `resources/views/{settings/two-factor,auth/two-factor-challenge,settings/index,admin/users/index,admin/users/show}.blade.php`, `lang/{en,fil}/settings.php`, `tests/Feature/TwoFactorAuthenticationTest.php`. New tokens: none. Verification: `php artisan migrate --path=…`; `php artisan test --filter=TwoFactorAuthenticationTest` — **20 passed (108 assertions)**; `php artisan test --filter="SettingsTest|SettingsPageTest|AuthSessionSchemeTest|PasswordResetTest|AdminUserManagementTest|EmailVerificationTest|StaffWorkspaceTest|StaffQueueScopeTest"` — **78 passed (403 assertions)**; `php artisan view:cache`; `php scripts/design-system-guard.php` — **0 NEW**. Full suite: **737 passed**, with the same 11 unrelated pre-existing failures in AdminQueue, ComplaintDetection, ExactLocationVisibility, PasswordRequirements, ProfileQuery and ResidentInformationResponse. Screenshots not captured (owner waiver).
+- 2026-11-20 · Complaint filing step 4 (`/complaints/create`) · **the visibility choices read Private and Public.** The two option titles were “Just me” and “Publish on the transparency page”; the owner asked for the plain names residents already understand. English now reads **Private** / **Public**, Filipino reads **Pribado** / **Publiko**. The explanatory notes, the private-by-default choice and the acknowledgement gate for reports that name somebody are unchanged. The review summary and its live label read the same translated titles, so the retired wording cannot reappear there. Files: `resources/views/complaints/create.blade.php`, `lang/{en,fil}/complaint_create.php`, `tests/Feature/ComplaintVisibilityConsentTest.php`. New tokens: none. Verification: `php artisan test --filter="ComplaintVisibilityConsentTest|InlineScriptRuntimeTest"` — **30 passed (132 assertions)**; `php artisan view:clear`; `php scripts/design-system-guard.php` — **0 NEW**. Screenshots not captured (owner waiver).
+- 2026-11-20 · Landing page + admin FAQ manager (`/` and `/admin/faqs`) · **the four hard-coded questions are now database rows the super admin owns.** The landing page renders published FAQs in admin order (with Filipino falling back to English and plain-text line breaks preserved) and hides the block when none are published. `/admin/faqs` adds the full lifecycle — create, edit, reorder with a sort field and move up/down, archive/restore, and a separate confirmed permanent delete — on the admin dark shell using the existing panel, form, filter-chip, status-pill, `.admin-archive` and disclosure grammar. Every mutation is audit-logged; only the super admin route group can reach it. The retired `landing.faq_*` keys are removed from `en` + `fil`. Files: `database/migrations/2026_11_20_000000_create_faqs_table.php`, `app/Models/Faq.php`, `app/Http/Controllers/AdminFaqController.php`, `app/Http/Controllers/HomeController.php`, `routes/web.php`, `resources/views/admin/faqs/index.blade.php`, `resources/views/admin/partials/sidebar.blade.php`, `resources/views/layouts/partials/mobile-drawer.blade.php`, `resources/views/pages/home/guest.blade.php`, `resources/css/app.css`, `lang/{en,fil}/{admin_faqs,nav,landing}.php`, `tests/Feature/FaqManagementTest.php`. New tokens: none. Verification: `php artisan test --filter=FaqManagementTest` — **14 passed (94 assertions)**; `php artisan view:clear`; `php scripts/design-system-guard.php` — **0 NEW**. Screenshots not captured (owner waiver).
+- 2026-11-19 · Guest navbar + guest mobile drawer · **Process and Features are gone from public navigation.** Both landing-page section anchors were top-level nav items in the guest bar and again in the guest drawer; the bar and drawer now carry only page destinations (Home · Transparency), matching the authenticated mobile drawer. The landing sections `#process` / `#features` remain on the page and are still reachable by scrolling; the now-unused `nav.process` / `nav.features` keys were removed from `en` + `fil`. Files: `resources/views/layouts/guest-navbar.blade.php`, `resources/views/layouts/partials/guest-drawer.blade.php`, `lang/{en,fil}/nav.php`. New tokens: none. Verification: `php artisan view:clear`, `php artisan test --filter="LocalizationTest|LegalPagesTest|DesignSystemGuardTest|TransparencyPageTest"` — 29 passed (233 assertions), `php scripts/design-system-guard.php` — **0 NEW**. Screenshots not captured (owner waiver).
+- 2026-11-18 · Resident complaint moderation (`/complaints/{id}`) · **the complainant is notified when the intake moderation detector flags their report.** New `complaint.moderation_flagged` notification type on intake flagging (title via `notifications.moderation_flagged.title`, context = spam_status/score/reasons/duplicate/similarity); resident destination already routes to their own complaint. The resident complaint detail now shows the moderation notice for detector flags (`isModerationFlagged`) with new `en`+`fil` copy, beside the staff-moderation branch. Files: `app/Models/Notification.php`, `app/Services/NotificationService.php`, `app/Http/Controllers/ComplaintController.php`, `resources/views/complaints/show.blade.php`, `lang/{en,fil}/notifications.php`, `lang/{en,fil}/complaint_show.php`, `tests/Feature/NotificationDeliveryTest.php`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+- 2026-11-18 · Admin user management (`/admin/users/{user}`) · **added super-admin action to mark an account’s email as verified** without the email verification flow. Shows email verification status in account details and an Access control action/form (`POST /admin/users/{user}/verify-email`) that sets verification, consumes outstanding verification codes, records an audit/activity log entry, and confirms the action. Verified users with no active pending verification are redirected away from `/email/verify` to their dashboard/home. Uses existing admin UI patterns/tokens. Files: `resources/views/admin/users/show.blade.php`, `app/Http/Controllers/{AdminUserController.php,EmailVerificationController.php}`, `routes/web.php`. New tokens: none. Verification: `php -l app/Http/Controllers/AdminUserController.php`, `php -l app/Http/Controllers/EmailVerificationController.php`, `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Complaint timeline/details (`/complaints/{id}`, `/transparency/complaints/{id}`) · **personnel assignment updates and assigned-personnel details added with privacy-aware display**. Assignment/unassignment events are recorded as complaint log updates and shown in the resident timeline with detailed personnel info, while the public transparency timeline shows a generic privacy-safe message. Report/ticket details now include **Assigned personnel**: resident view shows the staff name (or unassigned), public transparency shows a privacy-safe label instead of identity. Added `complaint_logs.public_comment` and bilingual public strings. Files: `database/migrations/2026_11_18_010000_add_public_comment_to_complaint_logs_table.php`, `app/Models/ComplaintLog.php`, `app/Http/Controllers/{DepartmentAdminController.php,AdminController.php,ComplaintController.php,TransparencyController.php}`, `resources/views/{complaints/show.blade.php,pages/transparency/show.blade.php}`, `lang/{en,fil}/{timeline.php,complaint_show.php,transparency.php}`. New tokens: none. Verification: `php artisan migrate --force`, `php -l` on updated PHP files, `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Complaint taxonomy (`/admin/categories`, `/staff/office/categories`) · **case-insensitive duplicate prevention** for problem type/category names. Problem types must be globally unique by name (case-insensitive); categories must be unique within the same office by name (case-insensitive), including edits. Shows “already created” / “already created for this office” validation messages (`en`+`fil`). Files: `app/Http/Controllers/{AdminCategoryController.php,DepartmentAdminController.php}`, `lang/{en,fil}/admin_categories.php`. New tokens: none. Verification: `php -l` on updated controllers, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Admin moderation (`/admin/complaints/{id}`) · **added “Confirm as spam” for flagged reports** as a quarantined alternative to releasing false positives. Confirming spam (reason required, audited) keeps a minimal audit record, hides the report from normal/public flows, and purges uploaded evidence files (complaint photos, update/documentation evidence, and info-request photos) to reduce storage abuse. Confirmed reports cannot be released as not-spam. Files: `database/migrations/2026_11_18_020000_add_spam_confirmation_to_complaints_table.php`, `app/Models/Complaint.php`, `app/Http/Controllers/AdminController.php`, `routes/web.php`, `resources/views/admin/complaints/show.blade.php`. New tokens: none. Verification: `php artisan migrate --force`, `php -l` on updated files, `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Admin complaint detail (`/admin/complaints/{id}`) · **shows exact location on a Leaflet map** (with coordinates displayed below) instead of coordinates-only text, matching other map-enabled views. Includes Leaflet-ready fallback, invalidation, and unavailable-message handling. Files: `resources/views/admin/complaints/show.blade.php`. New tokens: none. Verification: `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Complaint filing map (`/complaints/create`) · **hardened Leaflet map sizing/invalidation** to fix gray/misrendered tiles on desktop and after step reveal. Added delayed/rAF invalidation, `ResizeObserver`/`IntersectionObserver` and `load`-time refresh, and skips invalidation while the container is not visible. Files: `resources/views/complaints/create.blade.php`. New tokens: none. Verification: `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Info request photo replies (`/complaints/{id}`) · **improved “Add photos” in the department info-request reply form** with a progressively enhanced picker: choose-photos action, selected count, thumbnail previews, and per-photo remove (X) controls (max 5, JPG/PNG/WEBP up to 5 MB), while keeping the native file input/form submission usable without JS. Removed the redundant photo hint text. Token-based styling in `resources/css/pages/complaint-show.css`; `en`+`fil` picker strings added. Files: `resources/views/complaints/show.blade.php`, `resources/css/pages/complaint-show.css`, `lang/{en,fil}/complaint_show.php`. New tokens: none. Verification: `npm run build`, `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Site footer contacts (`layouts.partials.site-footer`) · **added sample demo contact details to the footer** using the same structured layout as the complaint “Need help?” card. When admin `contact_text` is unset, the footer shows PH mobile and email contacts as clickable `tel:`/`mailto:` links (labeled sample); if `contact_text` is configured, the admin text remains shown. Token-consistent footer styles added in the footer partial. Files: `resources/views/layouts/partials/site-footer.blade.php`. New tokens: none. Verification: `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Complaint detail actions (`/complaints/{id}`) · **moved Close report and Feedback above Updates** to prioritize key resident actions. On the resident complaint page, the Feedback and Close report cards (when applicable) were moved from the right/side column to the main column directly above the Updates section (Feedback, then Close), with the mobile `rd-order-*` sequence updated so they also appear above Updates on small screens. The in-card Submit feedback action is styled as a primary filled button (gold, token-based), and the **Need help?** card now shows sample demo contacts (PH mobile + email, clickable `tel:`/`mailto:`, labeled sample) when admin contact text is unset, plus a relabeled “View public complaint updates” link (`en`+`fil`). Single instances only (no duplicated markup); Details/Visibility/Help remain in the side column. Files: `resources/views/complaints/show.blade.php`, `resources/css/pages/complaint-show.css`, `lang/{en,fil}/complaint_show.php`. New tokens: none. Verification: `npm run build`, `php artisan view:clear`, `php scripts/design-system-guard.php` **0 NEW** (grandfathered unchanged). Screenshots not captured (owner waiver).
+- 2026-11-18 · Per-complaint service feedback (`/complaints/{id}`, `/transparency/complaints/{id}`, `/admin/feedback`) · **residents can rate how a specific resolved/closed complaint was handled.** Complaint owners see a resident-only feedback card once a complaint is Resolved or Closed: 1–5 star rating plus optional comment (one submission). Rating-only feedback is published immediately; comments are saved pending and reviewed in `/admin/feedback` before appearing publicly. Published per-complaint feedback is shown on the public transparency detail page as a rating/comment card with no resident identity. Reuses `pt-card`, `x-star-rating`, feedback form controls and admin queue patterns; token-based layout rules added in `resources/css/pages/complaint-show.css`. Files: `app/Models/{Complaint,ComplaintFeedback}.php`, `app/Http/Controllers/{ComplaintController,TransparencyController,AdminFeedbackController}.php`, `database/migrations/2026_11_17_170855_create_complaint_feedbacks_table.php`, `resources/views/{complaints/show,pages/transparency/show,admin/feedback/index}.blade.php`, `routes/web.php`, `lang/{en,fil}/{complaint_show,transparency,admin_settings}.php`. New tokens: none. Verification: migrate/build/view clear, `php scripts/design-system-guard.php` **0 NEW**, `php artisan test --filter=FeedbackTest` **20 passed (69 assertions)**. Screenshots not captured (owner waiver).
+- 2026-11-18 · Complaint taxonomy manager (`/admin/categories`, `/staff/office/categories`) · **problem types and categories are now admin-managed municipal data.** New `.cat-*` manager in a light work area on both the admin dark shell and the staff office surface: three-step explanation, status chips with counts, native-`<details>` create forms (problem type for super admin; category for both scopes), problem-type cards with child rows, inline edit forms, live resident-tile preview, archive/restore instead of delete, and configured icon/colour/intake/office chips. Department Administrators see only their own office, cannot create problem types, and cannot move a category out of their office. The resident wizard now renders database groups/categories, shows a polished `.fc-empty` state when nothing is offered, and the shared `.cat-icon` draws the configured shape/tint on public, staff and admin pages (legacy keys included). Files: `app/{Http/Controllers/{AdminCategoryController,DepartmentAdminController,ComplaintController,AdminSettingsController},Models/{ComplaintCategory,ComplaintCategoryGroup},Services/{ComplaintTaxonomy,ComplaintCategoryManager,DepartmentRouter},Support/ComplaintTaxonomyOptions}.php`, `database/{migrations/2026_11_18_000000_create_complaint_taxonomy.php,seeders/{ComplaintCategorySeeder,DepartmentSeeder,Support/ComplaintTaxonomyDefaults}}.php`, `resources/views/{admin/categories/*,staff/office/categories,complaints/create,complaints/show,admin/complaints/*,staff/*,pages/transparency/partials/category-icon,partials/public-ui}.blade.php`, `resources/css/pages/complaint-categories.css`, `resources/views/admin/{settings/index,departments/*,partials/sidebar}.blade.php`, `resources/views/{layouts/partials/mobile-drawer,staff/partials/sidebar,staff/office/index}.blade.php`, `routes/web.php`, `lang/{en,fil}/{admin_categories,nav,complaint_create,admin_settings,staff}.php`, `docs/{design-system.md,system-knowledge-base.md}`, `tests/Feature/{ComplaintCategoryManagementTest,DepartmentAdministrationTest,ComplaintDepartmentRoutingTest}.php`, `tests/TestCase.php`. New tokens: none (reuses `--cat-*`, status, error, surface, radius and shadow families). Verification: `php artisan migrate --force` on the dev database; `php artisan view:cache`; `php scripts/design-system-guard.php` **0 NEW**; `php artisan test --filter='Complaint(CategoryManagement|DepartmentRouting)Test'` **29 passed (133 assertions)**; taxonomy suite **11 passed (75 assertions)**; `DepartmentAdministrationTest` **24 passed (113 assertions)**. Screenshots not captured (owner waiver). Full-suite failures are the pre-existing `AdminQueueTest` ×6, `ComplaintDetectionTest` demo seeder, `ProfileQueryTest` and `ResidentInformationResponseTest`; they reproduce outside this change.
+- 2026-11-17 · Resident complaint detail (`/complaints/{id}`) · **the resident ticket now uses the public transparency detail layout, mobile-first.** The `.pt-*` styles moved out of the public view into `resources/css/pages/complaint-show.css` (one source for both pages; the stack no longer wipes the container gutter). The resident page keeps every resident control but presents them as cards in the public order: info request → progress → report → photos → updates → map → details → visibility → close → help → privacy on phones, with the public `1fr / 320px` grid at ≥1024px. The banner, stepper, evidence grid, details list and privacy note are the public components; the info request, close report, visibility panel and help card are the resident additions. New `en`/`fil` keys cover the privacy note, hold fallback, empty updates, photo counts, the answered-request kicker and moderation notice. §5.51 documents the anatomy and states. Files: `resources/views/complaints/show.blade.php`, `resources/views/pages/transparency/show.blade.php`, `resources/css/pages/complaint-show.css`, `lang/{en,fil}/complaint_show.php`, `tests/Feature/{ComplaintMapRenderingTest,ExactLocationVisibilityTest}.php`, `tests/Support/design-system-allowlist.txt`. New tokens: none. See `docs/design-changelog.md` for verification evidence.
+- 2026-11-17 · Public + resident complaint detail (`/transparency/complaints/{id}`, `/complaints/{id}`) · **editorial, lower-chrome refinement of the shared detail layout.** The same `.pt-*`/`.rd-*` system is kept (identity, routes, data, resident controls intact) but restyled for clearer hierarchy and less card repetition: lighter section treatment (no heavy shadows, compact padding/gaps, clearer headings), a compact 5-step tracker and timeline, a compact responsive metadata grid, and banner context chips for last updated/filed date. Mobile order and the desktop two-column record are preserved (`1fr / 340px`, side column non-sticky). Files: `resources/views/{complaints/show,pages/transparency/show}.blade.php`, `resources/css/pages/complaint-show.css`. New tokens: none. Verification: `npm run build` (`app-9Fr5PVnJ.css`), guard **0 NEW**, targeted suite **139 passed (707 assertions)** across `TransparencyPageTest`, `ComplaintMapRenderingTest`, `ExactLocationVisibilityTest`, `ComplaintVisibilityConsentTest`, `PrivacyGatedComplaintTest`, `ResidentOnlyClosureTest`, `MyComplaintsInfoRequestTest`, `NotificationDeliveryTest`; screenshots waived (owner precedent).
+- 2026-11-17 · Staff dashboard (`/staff/dashboard`) · **a non-verifier's stat strip now counts only the work assigned to that person.** For an ordinary staff account the `dept-stats` strip drops the verifier-only “Pending verification” card and shows **“Assigned to me”** (all cases currently assigned to the user), “In progress”, “Resolved this month” (by `resolved_at`) and “Avg. time open”, all scoped to `assigned_staff_id = the user` — not the department. The section’s aria-label reads “My work overview”; the verifier’s strip is unchanged. “Assigned to me” links to `staff.complaints.index?assigned_staff_id=…&scope=all`; the queue recognises `scope=all` (open + finished statuses) and shows an “All” chip only when `assigned_staff_id` is present, so the card number and the list it opens always agree. Priority complaints and recent activity on the dashboard are scoped to the same assigned work for a non-verifier. Files: `app/Http/Controllers/StaffController.php`, `resources/views/staff/dashboard/index.blade.php`, `resources/views/staff/complaints/index.blade.php`, `lang/{en,fil}/staff.php`, `tests/Feature/StaffAssignedWorkScopeTest.php`. New tokens: none. Verification: live Chromium/Playwright inspection of `/staff/dashboard` and `/staff/complaints?assigned_staff_id=…&scope=all` (Ana Garcia, non-verifier: cards 6 / 1 / 0 / 31.8d, queue “My work — 6 complaints” with the All chip); `StaffAssignedWorkScopeTest` **9 passed**, plus `StaffWorkspaceTest`, `StaffQueueScopeTest`, `StaffActionPanelsTest`, `StaffComplaintLayoutTest`, `LocalizationTest` — **40 passed (191 assertions)**; `npm run build` (`app-9Fr5PVnJ.css` unchanged), guard **0 NEW**; screenshots not captured (owner waiver).
 - 2026-11-16 · Staff workspace (queue, dashboard, ticket) · **an ordinary staff member sees only the work assigned to them.** A verifier (Department Administrator, or staff with `can_verify`) keeps the office's whole queue; an ordinary staff member now sees only the complaints assigned to them — now, or assigned to them at some point (the assignment trail is the audit log). The scope is one query scope (`Complaint::visibleToStaff`) and one access check (`Complaint::isVisibleToStaff`) behind the queue, the dashboard counters, the priority list, the recent-activity feed, the ticket, the live-ticket poll and the status-update write; a complaint outside the scope is 403. Their nav item and queue heading read “My work” (`nav.my_work`) and an empty list says what is missing and who assigns it. §5.50 documents the rule. Files: `app/Models/Complaint.php`, `app/Http/Controllers/StaffController.php`, `resources/views/staff/partials/sidebar.blade.php`, `resources/views/layouts/partials/mobile-drawer.blade.php`, `resources/views/staff/complaints/partials/list.blade.php`, `lang/{en,fil}/{nav,staff}.php`, `tests/Feature/StaffAssignedWorkScopeTest.php` (new). New tokens: none.
 
 - 2026-11-16 · Staff ticket banner, staff queue · **the banner chips are readable on navy, and the deadline chip is styled at all.** `ComplaintSlaState::badgeClass()` returned `sla-overdue` while the stylesheet (and §5.38) key off `sla-chip--overdue`, so the chip rendered with no family and inherited the page text colour — invisible on the navy banner and unstyled in the queue. The enum now returns the documented names. On the navy banner the ticket id takes the gold accent and the priority pill (`.status-pill--neutral|info|warning|danger`) takes its family hue as a tint with `--surface` text (§5.1). Files: `app/Enums/ComplaintSlaState.php`, `resources/views/staff/complaints/show.blade.php`. New tokens: none.
@@ -2983,3 +3448,6 @@ Every UI task appends here: **(date · page · what changed).**
 
 - 2026-11-13 · Staff complaint detail `/staff/complaints/{id}` · **redesigned to the publication-requests protocol.** The page used a bespoke inline-styled banner, hand-rolled card headers, and a custom back link that diverged from `/staff/publication-requests/{id}`. Rebuilt to follow the publication-requests design protocol: `tr-banner` header with `tr-h1`/`tr-privacy`, `ticket-id` + `dept-badge` in `report-row__head`, `report-row__meta` for category/department, `tr-h2` for all card section titles, publication-requests-style back link (`← Back to Staff Dashboard`), `tr-card` cards throughout, tokens only (no hard-coded hex). The collapsible review/verification form (minimize button with SVG chevron, `localStorage` persistence, `[hidden]` visibility per §7) is retained. New `staff.back` lang key (en+fil). Files: `resources/views/staff/complaints/show.blade.php`, `lang/{en,fil}/staff.php`. New tokens: none.
 - 2026-11-13 · Staff publication decision `/staff/publication-requests/{id}` · **spacing and type fixed to design system.** The redacted-copy section used off-scale spacing (`margin-bottom: 20px`, `margin-top: 18px`) and a non-scale `h3` at `font-size: 17px`. All spacing now uses the design system scale (4·8·12·16·24·32·48): `margin-bottom: 24px` on the card, `margin-top: 16px`/`24px` on headings, `margin-top: 8px`/`margin-bottom: 12px` on paragraphs. The non-scale `h3` was replaced with `tr-h2` (20px/700). Redundant inline `color`/`margin` declarations removed. No new colours, tokens, or components. Files: `resources/views/staff/publication-requests/show.blade.php`.
+
+- 2026-11-22 · Staff complaint detail `/staff/complaints/{complaint}` · **office staff can mark a report misleading or spam.** A new card on the ticket lets a Department Field Officer (`staff`) or the Inspector (`department_admin`) reject a report as `Misleading` or `Spam`. The Field Officer must give both a description and a comment; the Inspector may mark without them. The mark moves the report to `Rejected`, is written to the immutable timeline with the reason, and stays on the ticket as a read-only record. The Office of the Mayor's office staff and the super admin are notified for management review. Files: `database/migrations/2026_11_22_000000_add_misleading_spam_marking_to_complaints_table.php`, `app/Enums/ComplaintMarking.php`, `app/Services/ComplaintMarkingService.php`, `app/Models/{Complaint,Notification}.php`, `app/Services/NotificationService.php`, `app/Http/Controllers/StaffController.php`, `routes/web.php`, `resources/views/staff/complaints/partials/marking-panel.blade.php`, `resources/views/staff/complaints/show.blade.php`, `lang/{en,fil}/{staff,statuses,notifications}.php`, `tests/Feature/ComplaintMarkingTest.php`, `docs/design-system.md` §5.57. New tokens: none — reuses the moderation-panel / staff-field grammar. Screenshots NOT captured — waived by owner (2026-11-09). Verification: `php artisan test --filter=ComplaintMarkingTest` 12 passed (61 assertions); related workspace/hold/review/notification/localization/guard suites 85 passed (378 assertions); `php artisan view:cache` compiled; `php scripts/design-system-guard.php` 0 NEW violations (242 grandfathered unchanged).
+- 2026-11-19 · Public ticket tracking (`/track`) · **guest-safe progress lookup.** `/track` is now public (`throttle:20,1`) so a holder can check progress without signing in; the landing “Track my complaint” CTA points to it. Lookup accepts the ticket with or without hyphens/case; the result shows progress only (status, shared 5-step trail, office, filed/last-updated dates, hold/waiting notices, and public timeline updates) and never the report’s description, photos, exact location, or the resident’s identity. Authorized signed-in owners/staff/admin are redirected to the full ticket (verified, not forced to change password). Pages send `noindex, nofollow` + `no-store, private` + `Referrer-Policy: no-referrer`; confirmed-spam/soft-deleted records are not found. The stepper is extracted to `partials/complaint-steps` + `App\Support\ComplaintProgress` (also fixes the rejected-step “last reached” bug) and shared by transparency, the resident ticket, and tracking. Page-scoped `.track-*` styles in `resources/css/pages/complaint-track.css` reuse the `.pt-*` family; no new tokens. Files: `routes/web.php`, `app/Http/Controllers/ComplaintController.php`, `app/Models/Complaint.php`, `app/Support/ComplaintProgress.php`, `app/Http/Controllers/TransparencyController.php`, `resources/views/complaints/track.blade.php`, `resources/views/partials/complaint-steps.blade.php`, `resources/views/complaints/partials/track-updates.blade.php`, `resources/views/complaints/show.blade.php`, `resources/views/pages/transparency/show.blade.php`, `resources/views/pages/home/guest.blade.php`, `resources/css/pages/complaint-track.css`, `resources/css/app.css`, `lang/{en,fil}/complaint_track.php`, legal copy/tests, `docs/design-system.md` §5.53. Verification: `GuestComplaintTrackingTest` 19 passed; `LegalPagesTest`/`TransparencyPageTest`/`ComplaintLiveTicketTest` exercised during implementation. Screenshots NOT captured (waived by owner, 2026-11-09); Playwright captures taken locally during build.

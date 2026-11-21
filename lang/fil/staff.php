@@ -18,6 +18,7 @@ return [
     'pagination_label' => 'Paging ng pila ng reklamo',
     'stats' => [
         'pending_review' => 'Naghihintay ng beripikasyon',
+        'assigned_to_me' => 'Naiassign sa akin',
         'in_progress' => 'Isinasagawa',
         'resolved_this_month' => 'Nalutas ngayong buwan',
         'avg_days_open' => 'Pamantayang oras bukas',
@@ -25,6 +26,7 @@ return [
     'dashboard' => [
         'title' => 'Panel ng Departamento - Daet Listens',
         'overview' => 'Pangkalahatang-tanaw ng departamento',
+        'my_work_overview' => 'Pangkalahatang-tanaw ng aking trabaho',
         'welcome' => 'Maligayang pagbabalik, :name.',
         'open_queue' => 'Buksan ang pila ng reklamo',
         'identity_label' => 'Account ng Departamento',
@@ -232,6 +234,7 @@ return [
     'queue_scope' => [
         'scope_open' => 'Buhay na trabaho',
         'scope_finished' => 'Tapos na',
+        'scope_all' => 'Lahat',
         'all_statuses' => 'Lahat ng estado',
         'empty_finished_title' => 'Wala pang tapos',
         'empty_finished_body' => 'Lalabas dito ang mga tinanggihan, tapos na at nakatolong na reklamo. Wala pang tapos sa saklaw na ito.',
@@ -337,6 +340,29 @@ return [
         'put_on_hold' => 'Ipanatili ang trabaho',
     ],
 
+    // Maaaring markahan ng staff ang reklamo bilang nakakalito o spam —
+    // tanggihan ito ng tanggapan. Ang field officer ay palaging naglalagay
+    // ng deskripsyon at komento.
+    'marking' => [
+        'title' => 'Markahin ang reklamong ito bilang nakakalito o spam',
+        'lede' => 'Isulat kung ano ang nakakalito o spam sa reklamo at bakit ito tinatanggihan. Tatanggihan ang reklamo at i-flag ito para sa pagsusuri ng administrador bago kumpirmahin ang pagmamarka.',
+        'marked_label' => 'Namarka bilang nakakalito o spam',
+        'marked_by' => 'Namarka ni :name',
+        'kind_label' => 'Bakit ito tinatanggihan',
+        'kind_choose' => 'Pumili — nakakalito o spam',
+        'description_label' => 'Deskripsyon',
+        'description_hint' => 'Ilarawan kung ano ang nakakalito o spam. Binabasa ito ng pamamahala ng tanggapan.',
+        'comment_label' => 'Komento',
+        'comment_hint' => 'Ang iyong pangkalahatang pagsusuri sa reklamo — naisasama sa deskripsyon.',
+        'description_required' => 'Kailangan ang deskripsyon kapag nagmamarka ng reklamo.',
+        'comment_required' => 'Kailangan ang komento kapag nagmamarka ng reklamo.',
+        'submit' => 'Markahin bilang nakakalito o spam',
+        'saved' => 'Namarka ang reklamo bilang nakakalito o spam. Na-flag ito para sa pagsusuri ng administrador.',
+        'pending_review' => 'Naghihintay ng pagsusuri ng administrador',
+        'confirmed' => 'Kinumpirma ng administrasyon',
+        'dismissed' => 'Ibinasura ng administrasyon',
+    ],
+
     // Available ang pagtatalaga sa mga verifier ng tanggapan (DA at staff
     // verifier) para maitalaga agad ang trabaho matapos ang beripikasyon.
     'assignment' => [
@@ -357,5 +383,55 @@ return [
         'unassigned_hint' => 'Alisin ang kasalukuyang nakatalagang staff sa reklamong ito.',
         'no_overdue' => 'Walang lampas-takda',
         'no_matches' => 'Walang nahanap na katugmang staff.',
+    ],
+
+    'performance' => [
+        'title' => 'Ulat ng performance',
+        'description' => 'I-export ang aktibidad at mga aksyon para sa napiling panahon. Hindi kasama ang mga pag-login at pag-logout.',
+        'period' => 'Panahon',
+        'today' => 'Ngayon',
+        'last_7_days' => 'Huling 7 araw',
+        'last_30_days' => 'Huling 30 araw (1 buwan)',
+        'export_csv' => 'I-export ang CSV',
+        'export_pdf' => 'I-export ang PDF',
+        'print_pdf_hint' => 'Magbubukas ng napi-print na ulat. Gamitin ang print dialog ng browser para i-save bilang PDF.',
+        'staff_report' => 'Ulat ng performance ng staff',
+        'generated_on' => 'Nilikha noong :date',
+        'no_activity' => 'Walang naitalang aktibidad para sa panahong ito.',
+        'summary' => 'Buod',
+        'activity_log' => 'Tala ng aktibidad',
+        'metrics' => [
+            'actions' => 'Mga naitalang aksyon',
+            'complaints_touched' => 'Mga reklamong hinawakan',
+            'resolved' => 'Mga nalutas na reklamo',
+            'moved_to_in_progress' => 'Inilipat sa isinasagawa',
+            'status_changes' => 'Mga pagbabago ng katayuan',
+            'responses' => 'Mga tugon/tala',
+        ],
+        'export' => [
+            'report_title' => 'Ulat ng performance ng staff',
+            'staff' => 'Miyembro ng staff',
+            'email' => 'Email',
+            'department' => 'Tanggapan',
+            'period' => 'Panahon',
+            'generated_at' => 'Nilikha noong',
+            'date_time' => 'Petsa at oras',
+            'ticket' => 'Ticket ID',
+            'complaint_title' => 'Pamagat ng reklamo',
+            'category' => 'Kategorya',
+            'from_status' => 'Mula sa katayuan',
+            'to_status' => 'Patungo sa katayuan',
+            'action_note' => 'Aksyon / tala',
+            'visibility' => 'Pagkakakita',
+            'internal' => 'Panloob',
+            'visible' => 'Nakikita sa daloy ng residente/publiko',
+        ],
+    ],
+    'trust' => [
+        'title' => 'Trust score ng residente',
+        'good' => 'Mabuting katayuan',
+        'fair' => 'Katamtamang katayuan',
+        'at_risk' => 'Nanganganib',
+        'summary' => ':good malinis na nalutas/isinara · :bad kumpirmadong mapanlinlang/spam',
     ],
 ];

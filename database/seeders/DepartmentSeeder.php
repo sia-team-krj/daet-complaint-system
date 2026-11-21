@@ -49,5 +49,10 @@ class DepartmentSeeder extends Seeder
                 array_merge($dept, ["is_active" => true]),
             );
         }
+
+        // Categories route to these offices, and the filing wizard needs both
+        // halves to exist together. Keeping them in this seeder means a test
+        // or a fresh install that has offices also has a working taxonomy.
+        $this->call(ComplaintCategorySeeder::class);
     }
 }

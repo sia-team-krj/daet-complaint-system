@@ -41,6 +41,16 @@
         @endphp
 
         <main class="fc-container fc-stack">
+            @if(empty($categoryGroups))
+                <section class="fc-card fc-empty" aria-labelledby="empty-category-heading">
+                    <span class="cat-empty__icon" aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg>
+                    </span>
+                    <h1 id="empty-category-heading">{{ __('complaint_create.empty.title') }}</h1>
+                    <p>{{ __('complaint_create.empty.body') }}</p>
+                    <a href="{{ route('complaints.index') }}" class="fc-submit">{{ __('complaint_create.empty.cta') }}</a>
+                </section>
+            @else
             <div class="fc-progress wizard-progress-header" id="wizard-progress-header">
                 <div class="fc-progress__meta">
                     <span class="fc-progress__step" id="wizard-step-counter">{{ str_replace(['{n}', '{total}'], ['1', '8'], __('complaint_create.progress.step')) }}</span>
@@ -427,7 +437,7 @@
                                     <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.title_label') }}</span><strong id="review-title">Not provided</strong><button type="button" class="fc-summary__edit" data-edit-step="describe">{{ __('complaint_create.wizard.edit') }}</button></div>
                                     <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.description_label') }}</span><strong id="review-description" class="fc-review-desc">Not provided</strong><button type="button" class="fc-summary__edit" data-edit-step="describe">{{ __('complaint_create.wizard.edit') }}</button></div>
                                     <div class="fc-summary__row fc-summary__row--wizard fc-summary__row--photos"><span>{{ __('complaint_create.wizard.photos_label') }}</span><div class="fc-review-photos"><strong id="review-photos-count">0 / 5</strong><div class="fc-review-thumbs" id="review-photos-thumbs"></div></div><button type="button" class="fc-summary__edit" data-edit-step="photos">{{ __('complaint_create.wizard.edit') }}</button></div>
-                                    <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.visibility_label') }}</span><strong id="review-visibility">Just me</strong><button type="button" class="fc-summary__edit" data-edit-step="visibility">{{ __('complaint_create.wizard.edit') }}</button></div>
+                                    <div class="fc-summary__row fc-summary__row--wizard"><span>{{ __('complaint_create.wizard.visibility_label') }}</span><strong id="review-visibility">{{ __('complaint_create.visibility.private_title') }}</strong><button type="button" class="fc-summary__edit" data-edit-step="visibility">{{ __('complaint_create.wizard.edit') }}</button></div>
                                 </div>
 
                                 <div class="fc-next-steps fc-next-steps--wizard">
@@ -496,6 +506,7 @@
                     </div>
                 </aside>
             </div>
+            @endif
         </main>
 
         <span id="wizard-live" class="fc-sr-only" aria-live="polite"></span>
@@ -558,8 +569,8 @@
         'photosRequiredHelp' => __('complaint_create.wizard.photos_required_help'),
         'photosOptionalHelp' => __('complaint_create.wizard.photos_optional_help'),
         'optionalMark' => ' ('.__('complaint_create.labels.optional').')',
-        'justMe' => 'Just me',
-        'publishPage' => 'Publish on the transparency page',
+        'justMe' => __('complaint_create.visibility.private_title'),
+        'publishPage' => __('complaint_create.visibility.public_title'),
     ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script id="daet-boundary-data" type="application/json">{!! json_encode([
         'geojson' => $daetBoundary,
@@ -1135,7 +1146,7 @@
                     const visEl = document.getElementById('review-visibility');
                     if (visEl) {
                         const visVal = document.querySelector('input[name="visibility"]:checked')?.value || 'private';
-                        visEl.textContent = visVal === 'public' ? (i18n.publishPage || 'Publish on the transparency page') : (i18n.justMe || 'Just me');
+                        visEl.textContent = visVal === 'public' ? i18n.publishPage : i18n.justMe;
                     }
                 };
 
@@ -1500,11 +1511,34 @@
                     }
                     const keepMapSized = (target) => {
                         if (!target) return;
-                        const refresh = () => target.invalidateSize({ animate: false });
+                        const refresh = () => {
+                            if (window.invalidateComplaintMap) {
+                                window.invalidateComplaintMap();
+                            } else {
+                                target.invalidateSize({ animate: false });
+                            }
+                        };
                         window.requestAnimationFrame(refresh);
-                        window.setTimeout(refresh, 300);
+                        window.setTimeout(refresh, 150);
+                        window.setTimeout(refresh, 400);
+                        window.setTimeout(refresh, 1000);
                         window.addEventListener('resize', refresh);
                         window.addEventListener('orientationchange', () => window.setTimeout(refresh, 150));
+                        if (window.ResizeObserver && mapElement) {
+                            const observer = new ResizeObserver(() => {
+                                window.requestAnimationFrame(refresh);
+                            });
+                            observer.observe(mapElement);
+                        }
+                        if (window.IntersectionObserver && mapElement) {
+                            const visibilityObserver = new IntersectionObserver((entries) => {
+                                if (entries.some((entry) => entry.isIntersecting)) {
+                                    window.requestAnimationFrame(refresh);
+                                    window.setTimeout(refresh, 150);
+                                }
+                            }, { threshold: 0.01 });
+                            visibilityObserver.observe(mapElement);
+                        }
                     };
                     const boundaryLatLngBounds = daetBoundaryBounds
                         ? window.L.latLngBounds(daetBoundaryBounds)
@@ -1523,8 +1557,14 @@
                         maxZoom: 18,
                     }).addTo(map);
                     window.invalidateComplaintMap = () => {
-                        if (map) map.invalidateSize({ animate: false });
+                        if (!map || !mapElement) return;
+                        if (mapElement.offsetParent === null && mapElement.getClientRects().length === 0) return;
+                        map.invalidateSize({ animate: false });
                     };
+                    window.addEventListener('load', () => {
+                        window.requestAnimationFrame(() => window.invalidateComplaintMap?.());
+                        window.setTimeout(() => window.invalidateComplaintMap?.(), 200);
+                    }, { once: true });
 
                     const locateButton = document.getElementById('locate-me');
                     const locateStatus = document.getElementById('locate-status');
@@ -1898,6 +1938,8 @@
 
                     if (currentKey === 'pin' && window.invalidateComplaintMap) {
                         window.invalidateComplaintMap();
+                        window.requestAnimationFrame(() => window.invalidateComplaintMap?.());
+                        window.setTimeout(() => window.invalidateComplaintMap?.(), 150);
                     }
                     if (announce) {
                         const message = t(i18n.liveStep, { n, total, name: stepName(currentKey) });

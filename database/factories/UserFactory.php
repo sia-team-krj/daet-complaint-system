@@ -34,6 +34,8 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role' => 'citizen',
             'is_active' => true,
+            'identity_status' => 'verified',
+            'identity_verified_at' => now(),
         ];
     }
 
@@ -44,6 +46,17 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Create a citizen whose identity verification has been approved.
+     */
+    public function verifiedCitizen(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'identity_status' => 'verified',
+            'identity_verified_at' => now(),
         ]);
     }
 }

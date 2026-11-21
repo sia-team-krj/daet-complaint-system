@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ComplaintMarking;
 use App\Enums\ComplaintPriority;
 use App\Enums\ComplaintReviewStatus;
 use App\Enums\ComplaintStatus;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Http\Controllers\Concerns\SoftNavigation;
 use App\Services\ActivityLogger;
 use App\Services\ComplaintHoldService;
+use App\Services\ComplaintMarkingService;
 use App\Services\ComplaintModerationService;
 use App\Services\ComplaintPrivacyService;
 use App\Services\ComplaintPublicationService;
@@ -23,6 +25,8 @@ use App\Services\ComplaintUpdateDelivery;
 use App\Services\ComplaintVerificationService;
 use App\Services\ComplaintWorkService;
 use App\Services\NotificationService;
+use App\Services\StaffPerformanceService;
+use App\Support\AnalyticsPeriod;
 use App\Support\QueueFingerprint;
 use App\Support\TicketFingerprint;
 use Illuminate\Http\JsonResponse;
@@ -60,6 +64,22 @@ class StaffController extends Controller
      * @var list<string>
      */
     public const FINISHED_STATUSES = [
+        ComplaintStatus::Resolved->value,
+        ComplaintStatus::Rejected->value,
+        ComplaintStatus::Closed->value,
+    ];
+
+    /**
+     * Every status. Used by the personal "Assigned to me" view, where the
+     * person wants the whole set of cases the office handed them — open and
+     * finished — rather than only the live work queue.
+     *
+     * @var list<string>
+     */
+    public const ALL_STATUSES = [
+        ComplaintStatus::Submitted->value,
+        ComplaintStatus::UnderReview->value,
+        ComplaintStatus::InProgress->value,
         ComplaintStatus::Resolved->value,
         ComplaintStatus::Rejected->value,
         ComplaintStatus::Closed->value,
@@ -109,20 +129,29 @@ class StaffController extends Controller
         $user = Auth::user();
         $department = $user->department;
         $departmentId = $user->department_id;
+        $isVerifier = $user->canVerifyComplaints();
         // A verifier carries the office's whole queue; an ordinary staff
         // member carries only the work the office handed them.
-        $baseQuery = Complaint::visibleToStaff($user)->where('department_id', $departmentId);
+        $baseQuery = $isVerifier
+            ? Complaint::visibleToStaff($user)->where('department_id', $departmentId)
+            : Complaint::query()->where('assigned_staff_id', $user->id)->where('department_id', $departmentId);
 
-        $stats = [
-            'new' => (clone $baseQuery)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
-            'inProgress' => (clone $baseQuery)->where('status', ComplaintStatus::InProgress->value)->count(),
-            'resolvedThisMonth' => (clone $baseQuery)
-                ->where('status', ComplaintStatus::Resolved->value)
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->count(),
-            'avgDays' => $this->calculateAvgResolutionDays($user),
-        ];
+        // The top stat strip tells the truth for each kind of account. A
+        // verifier's cards describe the office; an ordinary staff member's
+        // cards describe the work currently assigned to them — not the
+        // department, and not their history of cases that were passed on.
+        $stats = $isVerifier
+            ? [
+                'new' => (clone $baseQuery)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
+                'inProgress' => (clone $baseQuery)->where('status', ComplaintStatus::InProgress->value)->count(),
+                'resolvedThisMonth' => (clone $baseQuery)
+                    ->where('status', ComplaintStatus::Resolved->value)
+                    ->whereMonth('resolved_at', now()->month)
+                    ->whereYear('resolved_at', now()->year)
+                    ->count(),
+                'avgDays' => $this->calculateAvgResolutionDays($user),
+            ]
+            : $this->calculateAssignedStats($user, $departmentId);
 
         $prioritySearch = $request->string('q')->toString();
 
@@ -162,9 +191,9 @@ class StaffController extends Controller
             'complaint',
             'actor:id,display_alias,first_name,last_name,role',
         ])
-            ->whereHas('complaint', fn ($query) => $query
-                ->visibleToStaff($user)
-                ->where('department_id', $departmentId))
+            ->whereHas('complaint', fn ($query) => $isVerifier
+                ? $query->visibleToStaff($user)->where('department_id', $departmentId)
+                : $query->where('assigned_staff_id', $user->id)->where('department_id', $departmentId))
             ->latest('created_at')
             ->limit(12)
             ->get();
@@ -174,6 +203,7 @@ class StaffController extends Controller
         return view('staff.dashboard.index', compact(
             'department',
             'stats',
+            'isVerifier',
             'priorityComplaints',
             'priorityCounts',
             'recentActivity',
@@ -221,7 +251,40 @@ class StaffController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('staff.activity.index', compact('department', 'stats', 'complaints', 'user'));
+        $performancePeriod = $this->staffPerformancePeriod($request);
+
+        return view('staff.activity.index', compact('department', 'stats', 'complaints', 'user', 'performancePeriod'));
+    }
+
+    public function activityExport(Request $request, StaffPerformanceService $performance)
+    {
+        $period = $this->staffPerformancePeriod($request);
+
+        return $performance->exportCsv(Auth::user(), $period);
+    }
+
+    public function activityPrint(Request $request, StaffPerformanceService $performance): View
+    {
+        $period = $this->staffPerformancePeriod($request);
+        $report = $performance->report(Auth::user(), $period);
+
+        return view('staff.activity.performance-print', array_merge($report, [
+            'generatedAt' => now(),
+            'backUrl' => route('staff.activity.index', $period->query()),
+        ]));
+    }
+
+    private function staffPerformancePeriod(Request $request): AnalyticsPeriod
+    {
+        $preset = (string) $request->query('period', '7d');
+
+        if (! in_array($preset, ['today', '7d', '30d'], true)) {
+            $preset = '7d';
+        }
+
+        $request->merge(['period' => $preset]);
+
+        return AnalyticsPeriod::fromRequest($request);
     }
 
     /**
@@ -405,8 +468,38 @@ class StaffController extends Controller
         return $entry;
     }
     /**
-     * Calculate average resolution days for department
+     * The top stat strip for an ordinary staff member: the work assigned to
+     * them, and only theirs.
+     *
+     * A verifier's cards describe the office. A non-verifier's cards describe
+     * the cases the office actually handed them — not the department's
+     * totals and not the history of cases that were later assigned to
+     * somebody else. "Assigned to me" is the whole set of those cases; the
+     * card links to the same assigned-to-me view (open and finished), so the
+     * number and the list can never disagree.
+     *
+     * @return array{assignedToMe: int, inProgress: int, resolvedThisMonth: int, avgDays: float|null}
      */
+    private function calculateAssignedStats(User $user, ?int $departmentId): array
+    {
+        $assignedQuery = Complaint::query()
+            ->where('assigned_staff_id', $user->id)
+            ->where('department_id', $departmentId);
+
+        return [
+            'assignedToMe' => (clone $assignedQuery)->count(),
+            'inProgress' => (clone $assignedQuery)
+                ->where('status', ComplaintStatus::InProgress->value)
+                ->count(),
+            'resolvedThisMonth' => (clone $assignedQuery)
+                ->where('status', ComplaintStatus::Resolved->value)
+                ->whereMonth('resolved_at', now()->month)
+                ->whereYear('resolved_at', now()->year)
+                ->count(),
+            'avgDays' => $this->calculateAvgResolutionDaysForQuery($assignedQuery),
+        ];
+    }
+
     /**
      * How long the office takes, on average, to finish a report.
      *
@@ -422,12 +515,22 @@ class StaffController extends Controller
             $query->where('department_id', $user->department_id);
         }
 
-        $avgDays = $query
+        return $this->calculateAvgResolutionDaysForQuery($query);
+    }
+
+    /**
+     * Average days from filing to the last update, over resolved complaints
+     * in the given query. Shared by the department and assigned-to-me cards
+     * so the two can never measure the same thing differently.
+     */
+    private function calculateAvgResolutionDaysForQuery($query): ?float
+    {
+        $avgDays = (clone $query)
             ->selectRaw('AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 86400) as avg_days')
             ->first()
             ->avg_days;
 
-        return $avgDays ? round($avgDays, 1) : null;
+        return $avgDays ? round((float) $avgDays, 1) : null;
     }
 
     public function complaintsIndex(Request $request, ComplaintSlaService $sla): View
@@ -449,9 +552,11 @@ class StaffController extends Controller
 
         // The status filter offers the statuses that are actually in the
         // current scope, so it can never narrow a queue to nothing.
-        $statusOptions = $scope === 'finished'
-            ? self::FINISHED_STATUSES
-            : self::OPEN_STATUSES;
+        $statusOptions = match ($scope) {
+            'finished' => self::FINISHED_STATUSES,
+            'all' => self::ALL_STATUSES,
+            default => self::OPEN_STATUSES,
+        };
 
         // Where each complaint stands against its deadline, so the row can say
         // how long the office has left rather than only where it is.
@@ -486,7 +591,11 @@ class StaffController extends Controller
      */
     private function queueScope(Request $request): string
     {
-        return $request->get('scope') === 'finished' ? 'finished' : 'open';
+        return match ($request->get('scope')) {
+            'finished' => 'finished',
+            'all' => 'all',
+            default => 'open',
+        };
     }
 
     /**
@@ -523,9 +632,11 @@ class StaffController extends Controller
         $search = $request->get('search');
         $overdue = $request->get('overdue') === '1';
         $scope = $this->queueScope($request);
-        $scopeStatuses = $scope === 'finished'
-            ? self::FINISHED_STATUSES
-            : self::OPEN_STATUSES;
+        $scopeStatuses = match ($scope) {
+            'finished' => self::FINISHED_STATUSES,
+            'all' => self::ALL_STATUSES,
+            default => self::OPEN_STATUSES,
+        };
         $validStatuses = $scopeStatuses;
 
         $validReviewStatuses = array_map(
@@ -673,7 +784,16 @@ class StaffController extends Controller
         $queueFingerprint = QueueFingerprint::for($complaints);
         $slaSummaries = $this->slaSummariesFor($complaints);
 
-        $base = Complaint::where('department_id', $user->department_id);
+        $scope = $this->queueScope($request);
+        $scopeStatuses = match ($scope) {
+            'finished' => self::FINISHED_STATUSES,
+            'all' => self::ALL_STATUSES,
+            default => self::OPEN_STATUSES,
+        };
+
+        $base = Complaint::visibleToStaff($user)
+            ->where('department_id', $user->department_id)
+            ->whereIn('status', $scopeStatuses);
         $counts = [
             'pending' => (clone $base)->where('review_status', ComplaintReviewStatus::Pending->value)->count(),
             'needs_information' => (clone $base)->where('review_status', ComplaintReviewStatus::NeedsInformation->value)->count(),
@@ -1196,6 +1316,45 @@ class StaffController extends Controller
         return redirect()
             ->route('staff.complaints.show', $complaint)
             ->with('status', 'Moderation saved. The resident still sees their complaint exactly as they filed it.');
+    }
+
+    /**
+     * Office staff mark a report as misleading or spam — the office's own
+     * rejection of the report, with the reason and comment on record and
+     * office management notified for review.
+     */
+    public function markMisleadingOrSpam(
+        Request $request,
+        Complaint $complaint,
+        ComplaintMarkingService $marking,
+    ): RedirectResponse {
+        $user = Auth::user();
+
+        if ($user->isDepartmentStaff() && (int) $complaint->department_id !== (int) $user->department_id) {
+            return back()->with('error', 'You cannot mark complaints outside your department.');
+        }
+
+        $validated = $request->validate([
+            'marking' => ['required', Rule::enum(ComplaintMarking::class)],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'comment' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        try {
+            $marking->mark(
+                $complaint,
+                $user,
+                ComplaintMarking::from($validated['marking']),
+                $validated['description'] ?? null,
+                $validated['comment'] ?? null,
+            );
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('staff.complaints.show', $complaint)
+            ->with('status', __('staff.marking.saved'));
     }
 
     /**

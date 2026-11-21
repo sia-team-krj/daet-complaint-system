@@ -18,6 +18,7 @@ return [
     'pagination_label' => 'Complaint queue pagination',
     'stats' => [
         'pending_review' => 'Pending verification',
+        'assigned_to_me' => 'Assigned to me',
         'in_progress' => 'In progress',
         'resolved_this_month' => 'Resolved this month',
         'avg_days_open' => 'Avg. time open',
@@ -25,6 +26,7 @@ return [
     'dashboard' => [
         'title' => 'Department Dashboard - Daet Listens',
         'overview' => 'Department overview',
+        'my_work_overview' => 'My work overview',
         'welcome' => 'Welcome back, :name.',
         'open_queue' => 'Open complaint queue',
         'identity_label' => 'Department Account',
@@ -232,6 +234,7 @@ return [
     'queue_scope' => [
         'scope_open' => 'Open work',
         'scope_finished' => 'Finished',
+        'scope_all' => 'All',
         'all_statuses' => 'All statuses',
         'empty_finished_title' => 'Nothing finished yet',
         'empty_finished_body' => 'Rejected, resolved and closed complaints appear here. Nothing has been finished in this scope.',
@@ -335,6 +338,28 @@ return [
         'put_on_hold' => 'Put the work on hold',
     ],
 
+    // Staff mark a report as misleading or spam — the office's rejection of
+    // the report. The field officer always writes a description and comment.
+    'marking' => [
+        'title' => 'Mark this report as misleading or spam',
+        'lede' => 'Say what is misleading or spam about the report and why it is rejected. The report is rejected and flagged for administrator review before the marking is confirmed.',
+        'marked_label' => 'Marked as misleading or spam',
+        'marked_by' => 'Marked by :name',
+        'kind_label' => 'Why it is being rejected',
+        'kind_choose' => 'Choose — misleading or spam',
+        'description_label' => 'Description',
+        'description_hint' => 'Describe what is misleading or spam. Office management reads this.',
+        'comment_label' => 'Comment',
+        'comment_hint' => 'Your overall assessment of the report — recorded with the description.',
+        'description_required' => 'A description is required when you mark a report.',
+        'comment_required' => 'A comment is required when you mark a report.',
+        'submit' => 'Mark as misleading or spam',
+        'saved' => 'Report marked as misleading or spam. It has been flagged for administrator review.',
+        'pending_review' => 'Pending administrator review',
+        'confirmed' => 'Confirmed by administration',
+        'dismissed' => 'Dismissed by administration',
+    ],
+
     // Assignment is available to office verifiers (DA and staff verifiers)
     // for their own office so work can be assigned right after verification.
     'assignment' => [
@@ -355,5 +380,55 @@ return [
         'unassigned_hint' => 'Remove the current assignee from this complaint.',
         'no_overdue' => 'No overdue',
         'no_matches' => 'No matching staff found.',
+    ],
+
+    'performance' => [
+        'title' => 'Performance report',
+        'description' => 'Export activity and actions for a selected period. Login and logout events are not included.',
+        'period' => 'Period',
+        'today' => 'Today',
+        'last_7_days' => 'Last 7 days',
+        'last_30_days' => 'Last 30 days (1 month)',
+        'export_csv' => 'Export CSV',
+        'export_pdf' => 'Export PDF',
+        'print_pdf_hint' => 'Opens a printable report. Use your browser’s print dialog to save as PDF.',
+        'staff_report' => 'Staff performance report',
+        'generated_on' => 'Generated on :date',
+        'no_activity' => 'No activity recorded for this period.',
+        'summary' => 'Summary',
+        'activity_log' => 'Activity log',
+        'metrics' => [
+            'actions' => 'Actions recorded',
+            'complaints_touched' => 'Complaints handled',
+            'resolved' => 'Complaints resolved',
+            'moved_to_in_progress' => 'Moved to in progress',
+            'status_changes' => 'Status changes',
+            'responses' => 'Responses/notes',
+        ],
+        'export' => [
+            'report_title' => 'Staff performance report',
+            'staff' => 'Staff member',
+            'email' => 'Email',
+            'department' => 'Department',
+            'period' => 'Period',
+            'generated_at' => 'Generated at',
+            'date_time' => 'Date & time',
+            'ticket' => 'Ticket ID',
+            'complaint_title' => 'Complaint title',
+            'category' => 'Category',
+            'from_status' => 'From status',
+            'to_status' => 'To status',
+            'action_note' => 'Action / note',
+            'visibility' => 'Visibility',
+            'internal' => 'Internal',
+            'visible' => 'Visible to resident/public flow',
+        ],
+    ],
+    'trust' => [
+        'title' => 'Resident trust score',
+        'good' => 'Good standing',
+        'fair' => 'Fair standing',
+        'at_risk' => 'At risk',
+        'summary' => ':good clean resolved/closed · :bad confirmed misleading/spam',
     ],
 ];

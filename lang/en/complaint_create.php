@@ -23,9 +23,9 @@ return [
         'gated_title' => 'This report names someone.',
         'gated_body' => 'Because it names a person or a business, it is filed private. When the office resolves it and verifies the information is true, it goes automatically to the Mayor\'s office, which redacts the public copy and decides whether to publish it. You will be told either way.',
         'gated_ack' => 'I understand this report names somebody and will be filed private. When the office resolves it and verifies the information is true, it goes automatically to the Mayor\'s office, which redacts the public copy and decides whether to publish it. I will be told either way.',
-        'public_title' => 'Publish on the transparency page',
+        'public_title' => 'Public',
         'public_note' => 'Anyone can read it there once the office verifies your report — under your display alias, never your real name. You can make it private again at any time.',
-        'private_title' => 'Just me',
+        'private_title' => 'Private',
         'private_note' => 'Only you and the staff handling your report can see it. It will not appear on the public page.',
         'footnote' => 'Reports appear on the public page only after the office verifies them, and are held back automatically if they read as spam or unrelated to municipal services. Staff may also remove sensitive details from the public page, but they cannot change this choice — and you will always see your own report exactly as you filed it.',
     ],
@@ -194,5 +194,15 @@ return [
             'label' => 'Other Concerns',
             'helper' => 'Anything that does not fit above',
         ],
+    ],
+
+    'errors' => [
+        'no_office' => 'No office is available to receive this category right now. Please choose another category or try again later.',
+    ],
+
+    'empty' => [
+        'title' => 'No categories are available yet',
+        'body' => 'The municipality is still setting up the complaint categories. Please check back soon or contact the Mayor\'s Office for urgent concerns.',
+        'cta' => 'Back to my complaints',
     ],
 ];

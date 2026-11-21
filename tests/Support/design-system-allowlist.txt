@@ -103,13 +103,6 @@ hex|resources/views/complaints/show.blade.php|#fdf6e7|1
 hex|resources/views/complaints/show.blade.php|#fef8ed|1
 hex|resources/views/complaints/show.blade.php|#ffffff|1
 hex|resources/views/complaints/show.blade.php|#fff|1
-hex|resources/views/complaints/track.blade.php|#142d4f|1
-hex|resources/views/complaints/track.blade.php|#1b3a61|1
-hex|resources/views/complaints/track.blade.php|#4b5563|1
-hex|resources/views/complaints/track.blade.php|#991b1b|2
-hex|resources/views/complaints/track.blade.php|#c9a84c|1
-hex|resources/views/complaints/track.blade.php|#f5f0e8|1
-hex|resources/views/complaints/track.blade.php|#ffffff|1
 hex|resources/views/components/report-card.blade.php|#0b1f3a|1
 hex|resources/views/components/report-card.blade.php|#15803d|2
 hex|resources/views/components/report-card.blade.php|#172b49|1
@@ -297,7 +290,6 @@ hex|resources/views/staff/complaints/show.blade.php|#fcd34d|2
 hex|resources/views/staff/complaints/show.blade.php|#ffffff|1
 hex|resources/views/staff/complaints/show.blade.php|#fff|1
 map-isolation|resources/views/complaints/create.blade.php|missing
-map-isolation|resources/views/complaints/show.blade.php|missing
 map-isolation|resources/views/pages/transparency/partials/register-script.blade.php|missing
 map-isolation|resources/views/staff/complaints/show.blade.php|missing
 serif|resources/views/auth/change-password.blade.php|declared
@@ -307,7 +299,6 @@ serif|resources/views/auth/register.blade.php|declared
 serif|resources/views/auth/reset-password.blade.php|declared
 serif|resources/views/complaints/create.blade.php|declared
 serif|resources/views/complaints/show.blade.php|declared
-serif|resources/views/complaints/track.blade.php|declared
 serif|resources/views/mail/complaint-update.blade.php|declared
 serif|resources/views/mail/password-reset.blade.php|declared
 serif|resources/views/mail/staff-invitation.blade.php|declared

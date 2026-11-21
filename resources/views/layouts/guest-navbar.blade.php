@@ -13,9 +13,10 @@
 
       <ul class="nav-links {{ Request::is('transparency') ? 'active-ui' : '' }}">
         <li><a href="{{ url('/') }}" wire:navigate class="nav-link">{{ __('nav.home') }}</a></li>
-        <li><a href="/#process" class="nav-link">{{ __('nav.process') }}</a></li>
-        <li><a href="/#features" class="nav-link">{{ __('nav.features') }}</a></li>
         <li><a href="{{ url('/transparency') }}" wire:navigate class="nav-link">{{ __('nav.transparency') }}</a></li>
+        {{-- Process and Features are section links inside the landing page, not
+             wayfinding. The guest drawer does not carry them either: the bar
+             keeps only destinations that open a page. --}}
         {{-- No Terms or Privacy here on purpose. They live in the site footer.
              The bar is the wayfinding surface; two more items crowded the links
              residents use and pushed the account controls into the compact menu

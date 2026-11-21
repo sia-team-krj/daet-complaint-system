@@ -17,6 +17,9 @@ return [
 
     'primary_cta' => 'File a complaint',
     'secondary_cta' => 'Track my complaint',
+    'track_placeholder' => 'Ticket number',
+    'track_form_label' => 'Track a complaint by ticket number',
+    'track_submit' => 'Track',
     'go_to_dashboard' => 'Go to my dashboard',
     'reassurance' => 'Free to use. Your name is never shown publicly.',
 
@@ -51,16 +54,6 @@ return [
     'tracked_body' => 'Every complaint gets a tracking number and a visible status.',
     'public_title' => 'Public',
     'public_body' => 'Complaint counts and results are published for everyone to see.',
-
-    'faq_title' => 'Frequently asked questions',
-    'faq_1_q' => 'Do I need an account?',
-    'faq_1_a' => 'Yes, a free account lets you track your complaint and get updates.',
-    'faq_2_q' => 'Will my name be public?',
-    'faq_2_a' => 'No. Public pages show only the category, barangay, status and date.',
-    'faq_3_q' => 'How long will it take?',
-    'faq_3_a' => 'It depends on the issue and the office. You can see every update on your tracking page.',
-    'faq_5_q' => 'Can I use Filipino?',
-    'faq_5_a' => 'Yes. Switch between English and Filipino at the top of the page.',
 
     'final_title' => 'Ready to report a problem?',
     'final_sub' => 'It is free and takes a few minutes.',
