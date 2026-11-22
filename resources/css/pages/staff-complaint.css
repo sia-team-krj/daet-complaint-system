@@ -1285,7 +1285,7 @@ body.role-staff .staff-conversation__textarea:focus {
     outline: none;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 20%, transparent);
 }
-body.role-staff .staff-conversation__form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+body.role-staff .staff-conversation__form-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 body.role-staff .staff-conversation__file-btn {
     position: relative;
     display: inline-flex;
@@ -1322,6 +1322,7 @@ body.role-staff .staff-conversation__submit--icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid var(--navy-900);
 }
 
 @media (max-width: 768px) {
