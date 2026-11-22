@@ -1319,6 +1319,7 @@ body.role-staff .staff-conversation__submit--icon {
     width: 44px;
     min-height: 44px;
     padding: 0;
+    border-color: var(--line-soft);
 }
 
 @media (max-width: 768px) {
