@@ -1,3 +1,10 @@
+## 2026-11-22: Staff ticket detail — marking panel and conversation UI refinement
+
+- **Files:** `resources/views/staff/complaints/partials/marking-panel.blade.php`, `resources/views/staff/complaints/show.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.
+- **What changed:** Redesigned the misleading/spam marking panel with a clear report-integrity header, structured form fields, review-note/actions row, and cleaner marked-record display. Redesigned the complaint conversation thread with clearer message cards (office/resident distinction), empty state, attachment treatment, and a cleaner reply form. Existing form names/routes/permissions/validation preserved.
+- **Verification:** `npm run build` passed. Playwright (1440×900, dept admin, `/staff/complaints/6`): marking panel and conversation present, no horizontal overflow; full-page screenshot `/tmp/opencode/ticket-marking-convo.png` (repo-waived, evidence recorded here).
+- **Tokens/components:** Existing tokens only; no new colors/fonts/shadows/radii.
+
 ## 2026-11-22: Staff ticket detail — clean workspace redesign (first pass)
 
 - **Files:** `resources/views/staff/complaints/show.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.
