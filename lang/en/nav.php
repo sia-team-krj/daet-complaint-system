@@ -22,6 +22,7 @@ return [
     'main_navigation' => 'Main navigation',
     'account' => 'Account',
     'profile' => 'Profile',
+    'notifications' => 'Notifications',
     'overview' => 'Overview',
     'analytics' => 'Analytics',
     'all_complaints' => 'All complaints',

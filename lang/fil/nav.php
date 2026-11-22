@@ -22,6 +22,7 @@ return [
     'main_navigation' => 'Pangunahing nabigasyon',
     'account' => 'Account',
     'profile' => 'Profile',
+    'notifications' => 'Mga Abiso',
     'overview' => 'Pangkalahatang-tanaw',
     'analytics' => 'Analytics',
     'all_complaints' => 'Lahat ng reklamo',

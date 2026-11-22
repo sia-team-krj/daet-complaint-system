@@ -16,6 +16,27 @@ return [
     'back' => 'Back to Staff Dashboard',
     'review' => 'Review',
     'pagination_label' => 'Complaint queue pagination',
+    // The on-field officer's own home (/staff) — a mobile-first task landing.
+    'field' => [
+        'page_title' => 'My tasks - Staff - Daet Listens',
+        'my_tasks' => 'My Assigned Tasks',
+        'active_count' => ':count active',
+        'open_task' => 'Open task',
+        'view_all' => 'View all :count tasks',
+        'actions_title' => 'Task actions',
+        'action_update_status' => 'Update Status',
+        'action_take_photo' => 'Take Photo',
+        'action_add_findings' => 'Add Findings',
+        'action_submit_report' => 'Submit Report',
+        'actions_unavailable' => 'No task is ready for an update yet. Open a task to see what the office is waiting on.',
+        'footer_caption' => 'Daet Listens · Field staff workspace',
+    ],
+    // The staff shell's mobile tab bar (field staff experience).
+    'mobile' => [
+        'nav' => 'Staff navigation',
+        'my_tasks' => 'My Tasks',
+        'activity' => 'Activity',
+    ],
     'stats' => [
         'pending_review' => 'Pending verification',
         'assigned_to_me' => 'Assigned to me',

@@ -32,6 +32,9 @@
     'initialStatus' => null,
     'label' => null,
     'hint' => null,
+    // A stable in-page target so another page can deep-link straight to the
+    // camera picker. Opt-in: only one capture zone renders per ticket page.
+    'anchorId' => null,
 ])
 
 @php
@@ -54,6 +57,7 @@
 
 <div
     class="proof-capture"
+    @if($anchorId) id="{{ $anchorId }}" @endif
     data-proof-capture
     data-max="{{ $max }}"
     data-require-statuses="{{ implode(',', array_keys($statusLabels)) }}"

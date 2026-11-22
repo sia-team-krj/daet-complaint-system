@@ -12,6 +12,7 @@
 @import "./pages/feedback.css";
 @import "./pages/settings.css";
 @import "./pages/staff-complaint.css";
+@import "./pages/staff-field-home.css";
 @import "./pages/publication-review.css";
 @import "./pages/admin-workspace.css";
 @import "./pages/admin-dashboard.css";
@@ -10544,8 +10545,18 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
     border-top: 1px solid var(--line-soft);
     box-shadow: 0 -4px 20px rgba(11,26,51,.06);
     padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+}
+.staff-bottom-nav__grid {
+    display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
+}
+/* The field home's footer caption, centred beneath the four tab items. */
+.staff-bottom-nav__caption {
+    margin: 6px 0 0;
+    text-align: center;
+    color: var(--faint);
+    font: 500 10px/1.4 var(--font-sans);
 }
 .staff-bottom-nav__item {
     display: inline-flex;
@@ -10565,8 +10576,11 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
 .staff-bottom-nav__item.is-active { color: var(--navy-900); background: var(--navy-50); }
 .staff-bottom-nav__item:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
 @media (max-width: 1023px) {
-    body.role-staff .staff-bottom-nav { display: grid; }
+    body.role-staff .staff-bottom-nav { display: block; }
     body.role-staff .staff-content { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+    /* A bar carrying the footer caption is taller than the plain tab bar, so
+       the page has to clear it by the caption's height as well. */
+    body.role-staff:has(.staff-bottom-nav__caption) .staff-content { padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
     body.role-staff .field-action-bar { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 901; }
 }
 @media (min-width: 1024px) {

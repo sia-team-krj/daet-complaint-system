@@ -333,14 +333,34 @@ class User extends Authenticatable
      * Where this user's home is. Single source for logo + post-login/
      * post-register/verification + denial redirects.
      * Citizen -> My Complaints (complaints.index); /dashboard now 302s there.
+     *
+     * The on-field officer's phone opens on the field task dashboard while the
+     * same account on a desktop keeps the office dashboard: the device only
+     * picks which landing loads, never what this account may do.
      */
     public function homeRouteName(): string
     {
+        if ($this->role === 'staff' && $this->prefersFieldHome()) {
+            return 'staff.field.home';
+        }
+
         return match ($this->role) {
             'admin' => 'admin.dashboard',
             'staff', 'department_admin' => 'staff.dashboard',
             default => 'complaints.index',
         };
+    }
+
+    /**
+     * Same device test the complaint list uses to size its pages, so the
+     * landing and the page count agree about what a phone is.
+     */
+    private function prefersFieldHome(): bool
+    {
+        return (bool) preg_match(
+            '/(mobile|android|iphone|ipad|iemobile)/i',
+            (string) request()->userAgent()
+        );
     }
 
     // ─────────────────────────────────────────────

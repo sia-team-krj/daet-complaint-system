@@ -1,0 +1,252 @@
+/* ─────────────────────────────────────────────────────────────
+   Field staff home (/staff) — docs/design-system.md §5.62.
+
+   One centred rounded card holding the live task list and the 2x2
+   task-action grid, above the shell's fixed tab bar. Tokens only:
+   no new colours, fonts, radii or shadows.
+   ───────────────────────────────────────────────────────────── */
+
+.field-home {
+    display: flex;
+    justify-content: center;
+}
+
+.field-home__card {
+    width: 100%;
+    max-width: 640px;
+    padding: 18px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+/* ── Header row: title left, live-count badge right ─────────── */
+.field-home__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.field-home__title {
+    margin: 0;
+    font: 700 20px/1.25 var(--font-sans);
+    letter-spacing: var(--tracking-display);
+    color: var(--navy-900);
+}
+
+.field-home__badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--navy-50);
+    color: var(--navy-700);
+    font: 700 12px/1 var(--font-sans);
+    white-space: nowrap;
+}
+
+/* ── Dividers ───────────────────────────────────────────────── */
+.field-home__rule {
+    border: 0;
+    border-top: 1px solid var(--line-soft);
+    margin: 16px 0;
+}
+
+.field-task .field-home__rule {
+    margin: 12px 0;
+}
+
+/* ── Task cards ─────────────────────────────────────────────── */
+.field-home__tasks {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.field-task {
+    padding: 14px;
+    background: var(--surface-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+}
+
+.field-task__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.field-task__title {
+    margin: 0;
+    font: 700 15px/1.35 var(--font-sans);
+    color: var(--text);
+}
+
+.field-task__head .status-pill {
+    flex: 0 0 auto;
+    max-width: 45%;
+}
+
+.field-task__id {
+    margin: 6px 0 0;
+    font: 700 12px/1.3 var(--font-mono);
+    color: var(--navy-800);
+}
+
+.field-task__loc {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 0;
+    font: 500 12px/1.4 var(--font-sans);
+    color: var(--muted);
+}
+
+.field-task__loc svg {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+}
+
+.field-task__desc {
+    margin: 0;
+    font: 400 13.5px/1.55 var(--font-sans);
+    color: var(--muted);
+}
+
+/* Full-width, 44px+, the one thing to do with a card. */
+.field-task__open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 14px;
+    border-radius: var(--radius-sm);
+    background: var(--navy-700);
+    color: var(--surface);
+    font: 700 13px/1 var(--font-sans);
+    text-decoration: none;
+}
+
+.field-task__open svg {
+    width: 16px;
+    height: 16px;
+}
+
+.field-task__open:hover { background: var(--navy-800); }
+.field-task__open:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ── "View all" escape hatch past the card limit ────────────── */
+.field-home__more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 14px;
+    color: var(--navy-700);
+    font: 700 13px/1.3 var(--font-sans);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.field-home__more:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--radius-sm); }
+
+/* ── Task actions: 2x2 grid ─────────────────────────────────── */
+.field-home__section-title {
+    margin: 0;
+    font: 700 15px/1.3 var(--font-sans);
+    color: var(--navy-900);
+}
+
+/* Which ticket the four actions open. Without this line the grid would
+   look like it acts on every card above it. */
+.field-home__actions-target {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0 0;
+    font: 500 12px/1.4 var(--font-sans);
+    color: var(--muted);
+}
+
+.field-home__actions-ticket {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--navy-800);
+}
+
+.field-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.field-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+    min-height: 76px;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    color: var(--navy-900);
+    font: 700 13px/1.3 var(--font-sans);
+    text-decoration: none;
+}
+
+.field-action:hover {
+    background: var(--navy-50);
+    border-color: var(--line);
+}
+
+.field-action:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+.field-action__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--navy-50);
+    color: var(--navy-700);
+}
+
+.field-action__icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.field-home__actions-note {
+    margin: 8px 0 0;
+    font: 400 13px/1.55 var(--font-sans);
+    color: var(--muted);
+}
+
+/* Tighter rhythm on the smallest phones; the card keeps the shell's gutter. */
+@media (max-width: 599px) {
+    .field-home__card {
+        padding: 16px 14px;
+    }
+
+    .field-action {
+        min-height: 72px;
+        padding: 10px;
+    }
+}

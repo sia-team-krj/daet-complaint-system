@@ -108,3 +108,38 @@
     })();
 </script>
 @endpush
+
+@push('scripts')
+<script>
+    // The field home deep-links into one control of this ticket — #status,
+    // #note, #proof-capture or #complaint-update-form. Scrolling to the
+    // section is the browser's job; putting the caret in the field the link
+    // named is ours, so "Add Findings" lands ready to type rather than
+    // merely in view. Anything that is not a form control just scrolls.
+    (() => {
+        const focusHashTarget = () => {
+            const hash = window.location.hash;
+            if (!hash || hash.length < 2) return;
+
+            let target;
+            try {
+                target = document.querySelector(hash);
+            } catch (e) {
+                return;
+            }
+            if (!target) return;
+            if (!/^(input|textarea|select|button)$/i.test(target.tagName)) return;
+            if (target.disabled || target.readOnly) return;
+
+            // The fragment navigation already scrolled; don't scroll twice.
+            target.focus({ preventScroll: true });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', focusHashTarget);
+        } else {
+            focusHashTarget();
+        }
+    })();
+</script>
+@endpush

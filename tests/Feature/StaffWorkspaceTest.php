@@ -36,7 +36,10 @@ class StaffWorkspaceTest extends TestCase
             ->assertSee('My activity')
             ->assertSee('Staff navigation');
 
-        $this->assertSame(1, substr_count($response->getContent(), 'My activity'));
+        // Counted as visible text: the collapsed sidebar rail also carries a
+        // data-tooltip with the same wording, so a raw substring count reads
+        // the one nav item twice.
+        $this->assertSame(1, substr_count($response->getContent(), '>My activity<'));
         $this->assertStringNotContainsString(route('dashboard'), $response->getContent());
     }
 

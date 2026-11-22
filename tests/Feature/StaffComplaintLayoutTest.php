@@ -68,9 +68,12 @@ class StaffComplaintLayoutTest extends TestCase
 
     private function elementWithClass(DOMDocument $dom, string $class): ?DOMElement
     {
-        foreach ($dom->getElementsByTagName('div') as $div) {
-            if ($this->hasClass($div, $class)) {
-                return $div;
+        // Every element, not just div: a secondary card may legitimately be a
+        // <details> (the collapsible .ticket-collapse cards are) and it still
+        // carries a responsive order slot the stylesheet has to reach.
+        foreach ($dom->getElementsByTagName('*') as $element) {
+            if ($this->hasClass($element, $class)) {
+                return $element;
             }
         }
 

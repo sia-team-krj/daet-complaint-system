@@ -86,6 +86,15 @@ class StaffController extends Controller
     ];
 
     /**
+     * How many task cards the field home lists before it points at the full
+     * queue. Long enough to cover a normal shift, short enough that the page
+     * stays a landing page instead of becoming a second queue.
+     *
+     * @var int
+     */
+    public const FIELD_HOME_TASK_LIMIT = 8;
+
+    /**
      * How many actions the department activity page shows at a time.
      */
     public const ACTIVITY_PAGE_SIZE = 30;
@@ -210,6 +219,57 @@ class StaffController extends Controller
             'user',
             'prioritySearch'
         ));
+    }
+
+    /**
+     * The on-field officer's home — the mobile task dashboard at /staff.
+     *
+     * A landing page, not a workflow. It reads the same assigned work the
+     * queue already scopes to this person and deep-links into the same
+     * ticket, so it grants nothing and changes nothing.
+     */
+    public function fieldHome(): View|RedirectResponse
+    {
+        $user = Auth::user();
+
+        // Only the on-field role lands here. Office managers and
+        // administrators keep the workspace they already had.
+        if ($user->role !== 'staff') {
+            return redirect()->route($user->homeRouteName());
+        }
+
+        // Exactly the dashboard's non-verifier scope: work currently handed
+        // to this person, still live. Nothing outside it may appear here.
+        $activeQuery = Complaint::query()
+            ->where('assigned_staff_id', $user->id)
+            ->where('department_id', $user->department_id)
+            ->whereIn('status', self::OPEN_STATUSES);
+
+        $activeCount = (clone $activeQuery)->count();
+
+        // The same priority-then-oldest order the queue opens on, so the top
+        // card here is the top card there.
+        $tasks = (clone $activeQuery)
+            ->with(['user:id,display_alias,barangay'])
+            ->orderByRaw("CASE COALESCE(confirmed_priority, suggested_priority) WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 WHEN 'elevated' THEN 2 ELSE 3 END")
+            ->oldest('created_at')
+            ->limit(self::FIELD_HOME_TASK_LIMIT)
+            ->get();
+
+        // The quick actions open one complaint: the first this officer can
+        // actually move right now. The ticket renders its update form only
+        // for a verified report with a legal transition left, so an action
+        // aimed anywhere else would land on nothing — a dead control.
+        $actionTask = $tasks->first(fn (Complaint $task): bool => $task->isVerified()
+            && $task->statusEnum->allowedManualTransitions() !== []);
+
+        return view('staff.field.home', [
+            'user' => $user,
+            'tasks' => $tasks,
+            'activeCount' => $activeCount,
+            'actionTask' => $actionTask,
+            'hasMore' => $activeCount > $tasks->count(),
+        ]);
     }
 
     /**

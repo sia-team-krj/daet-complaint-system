@@ -20,7 +20,10 @@ class DashboardController extends Controller
         }
 
         if ($user->isStaff()) {
-            return redirect()->route('staff.dashboard');
+            // One home for staff and Department Administrators — the same the
+            // logo and `/` resolve — so an on-field officer's phone lands on
+            // the field task dashboard and a desktop keeps the office one.
+            return redirect()->route($user->homeRouteName());
         }
 
         // Citizens land on My Complaints. 302 (not 301) so the merge is

@@ -266,6 +266,12 @@ Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin'
     ->prefix('staff')
     ->group(function () {
         Route::get('/dashboard', [StaffController::class, 'dashboard'])->name('staff.dashboard');
+        // The on-field officer's own home — the mobile task dashboard. It can
+        // live at the bare /staff path because the office's staff-account
+        // manager sits behind the admin prefix at /admin/staff, so nothing
+        // collides. It is a landing page only: it reads the work already
+        // scoped to this account and links into the same ticket.
+        Route::get('/', [StaffController::class, 'fieldHome'])->name('staff.field.home');
         // The analytics is parked: the code stays, the routes refuse. Taking
         // the middleware off brings the feature back.
         Route::middleware('analytics.paused')->group(function () {

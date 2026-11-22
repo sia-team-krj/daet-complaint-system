@@ -469,6 +469,7 @@
                                 name="documentation_images"
                                 camera-name="documentation_camera_photos"
                                 status-select="status"
+                                anchor-id="proof-capture"
                                 :initial-status="$initialStatus"
                                 :require-statuses="$documentationRequiredStatuses"
                             />

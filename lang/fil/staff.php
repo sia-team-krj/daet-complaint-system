@@ -16,6 +16,27 @@ return [
     'back' => 'Bumalik sa Staff Dashboard',
     'review' => 'Suriin',
     'pagination_label' => 'Paging ng pila ng reklamo',
+    // Ang sariling home ng field officer (/staff) — mobile-first na landing ng mga gawain.
+    'field' => [
+        'page_title' => 'Mga Gawain Ko - Staff - Daet Listens',
+        'my_tasks' => 'Mga Aking Takdang Gawain',
+        'active_count' => ':count aktibo',
+        'open_task' => 'Buksan ang gawain',
+        'view_all' => 'Tingnan ang lahat ng :count gawain',
+        'actions_title' => 'Mga aksyon sa gawain',
+        'action_update_status' => 'Baguhin ang Katayuan',
+        'action_take_photo' => 'Kumuha ng Larawan',
+        'action_add_findings' => 'Magdagdag ng mga Natuklasan',
+        'action_submit_report' => 'Isumite ang Ulat',
+        'actions_unavailable' => 'Walang gawain na handa para sa update ngayon. Buksan ang isang gawain para makita kung ano ang hinihintay ng iyong tanggapan.',
+        'footer_caption' => 'Daet Listens · Workspace ng field staff',
+    ],
+    // Ang tab bar ng staff shell sa mobile (karanasan ng field staff).
+    'mobile' => [
+        'nav' => 'Navigasyon ng staff',
+        'my_tasks' => 'Mga Gawain Ko',
+        'activity' => 'Aktibidad',
+    ],
     'stats' => [
         'pending_review' => 'Naghihintay ng beripikasyon',
         'assigned_to_me' => 'Naiassign sa akin',
