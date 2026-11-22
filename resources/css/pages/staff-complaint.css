@@ -1002,3 +1002,137 @@
     }
 }
 
+/* ----------------------------------------------------------------
+ * Staff ticket detail redesign — clean workspace treatment.
+ * Scoped to .staff-ticket-page; uses existing tokens only.
+ * ---------------------------------------------------------------- */
+
+body.role-staff .staff-ticket-page {
+    --ticket-gap: 20px;
+    background: var(--bg);
+    min-height: calc(100svh - var(--navbar-height));
+    padding-bottom: 48px;
+}
+
+body.role-staff .staff-ticket-shell {
+    width: min(100%, 1440px);
+    margin: 0 auto;
+    padding: 16px 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ticket-gap);
+}
+
+body.role-staff .staff-ticket-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    color: var(--navy-700);
+    font: 600 13px/1.4 var(--font-sans);
+    text-decoration: none;
+}
+body.role-staff .staff-ticket-back svg { width: 16px; height: 16px; flex-shrink: 0; }
+body.role-staff .staff-ticket-back:hover { color: var(--navy-900); text-decoration: underline; }
+body.role-staff .staff-ticket-back:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+body.role-staff .staff-ticket-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+    background: linear-gradient(135deg, var(--navy-50) 0%, var(--surface) 55%, var(--surface) 100%);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+body.role-staff .staff-ticket-hero__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+body.role-staff .staff-ticket-hero__badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+body.role-staff .staff-ticket-hero__title { margin: 0; font: 700 clamp(24px, 3vw, 32px)/1.2 var(--font-display); color: var(--navy-900); letter-spacing: -0.02em; max-width: 900px; }
+body.role-staff .staff-ticket-hero__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 500 13px/1.5 var(--font-sans); color: var(--muted); }
+body.role-staff .staff-ticket-hero__meta-label { font-weight: 600; color: var(--text); }
+body.role-staff .staff-ticket-hero__sep { color: var(--faint); }
+body.role-staff .staff-ticket-hero__age { color: var(--navy-700); font-weight: 700; }
+
+body.role-staff .staff-ticket-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line-soft);
+    font: 500 13px/1.5 var(--font-sans);
+}
+body.role-staff .staff-ticket-alert > svg,
+body.role-staff .staff-ticket-alert__icon { flex-shrink: 0; margin-top: 1px; }
+body.role-staff .staff-ticket-alert__icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 999px; }
+body.role-staff .staff-ticket-alert__body { min-width: 0; display: grid; gap: 6px; }
+body.role-staff .staff-ticket-alert__title { margin: 0; font: 700 14px/1.3 var(--font-sans); color: var(--navy-900); }
+body.role-staff .staff-ticket-alert__body p { margin: 0; }
+body.role-staff .staff-ticket-alert__list { margin: 2px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.45; color: var(--navy-900); }
+body.role-staff .staff-ticket-alert__link { font-size: 12px; font-weight: 600; color: var(--navy-900); text-decoration: underline; }
+body.role-staff .staff-ticket-alert--success { background: var(--status-resolved-bg); border-color: color-mix(in srgb, var(--status-resolved-dot) 30%, var(--line-soft)); color: var(--status-resolved-text); }
+body.role-staff .staff-ticket-alert--error { background: var(--error-bg); border-color: color-mix(in srgb, var(--danger) 25%, var(--line-soft)); color: var(--error-text); }
+body.role-staff .staff-ticket-alert--warning { background: var(--status-progress-bg); border-color: color-mix(in srgb, var(--status-progress-dot) 35%, var(--line-soft)); color: var(--status-progress-text); }
+body.role-staff .staff-ticket-alert--warning .staff-ticket-alert__icon { background: color-mix(in srgb, var(--status-progress-dot) 18%, transparent); color: var(--status-progress-text); }
+
+/* Card/grid overrides for cleaner workspace look */
+body.role-staff .staff-ticket-page .staff-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 20px;
+    align-items: start;
+}
+body.role-staff .staff-ticket-page .staff-detail-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+body.role-staff .staff-ticket-page .tr-card,
+body.role-staff .staff-ticket-page .workspace-card,
+body.role-staff .staff-ticket-page .staff-detail-card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+body.role-staff .staff-ticket-page .tr-card { padding: 20px; }
+body.role-staff .staff-ticket-page .workspace-card__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line-soft);
+}
+body.role-staff .staff-ticket-page .workspace-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--navy-50);
+    color: var(--navy-700);
+    flex-shrink: 0;
+}
+body.role-staff .staff-ticket-page .workspace-card__header .tr-h2,
+body.role-staff .staff-ticket-page .tr-h2 {
+    margin: 0;
+    font: 700 16px/1.3 var(--font-sans);
+    color: var(--navy-900);
+    letter-spacing: -0.01em;
+}
+body.role-staff .staff-ticket-page .workspace-card__header--between { justify-content: space-between; }
+body.role-staff .staff-ticket-page .workspace-card__header--between > div:first-child { display: flex; align-items: center; gap: 10px; }
+
+body.role-staff .staff-ticket-page .ticket-id { font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace); font-size: 12px; font-weight: 700; color: var(--navy-700); background: var(--surface); border: 1px solid var(--line-soft); padding: 4px 10px; border-radius: 999px; }
+body.role-staff .staff-ticket-page .dept-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; background: var(--navy-50); color: var(--navy-700); border: 1px solid var(--line-soft); }
+body.role-staff .staff-ticket-page .status-pill { font-size: 12px; padding: 4px 10px; }
+body.role-staff .staff-ticket-page .sla-chip { font-size: 12px; }
+
+@media (max-width: 1100px) {
+    body.role-staff .staff-ticket-page .staff-detail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+    body.role-staff .staff-ticket-shell { padding: 16px 16px 0; }
+    body.role-staff .staff-ticket-hero { padding: 20px; }
+    body.role-staff .staff-ticket-page .tr-card { padding: 16px; }
+}
+

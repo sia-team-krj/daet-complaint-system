@@ -4,8 +4,7 @@
 @include('pages.transparency.partials.component-styles')
 
 @section('staff-content')
-<div class="transparency-page staff-complaint-detail" style="background: var(--bg); min-height: calc(100svh - var(--navbar-height)); padding-bottom: 60px;">
-    
+<div class="staff-ticket-page">
     @php
         $statusEnum = $complaint->statusEnum;
         $statusKey = \Illuminate\Support\Str::slug((string) $complaint->status, '_');
@@ -21,14 +20,18 @@
                 : $ageHours.' hour'.($ageHours === 1 ? '' : 's'));
     @endphp
 
-    {{-- ════════════ BANNER (publication-requests protocol) ════════════ --}}
-    <header class="tr-banner">
-        <div class="tr-container" style="max-width: none; padding: 0 16px;">
-            <div class="banner-top-row" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+    <div class="staff-ticket-shell">
+        <a href="{{ route('staff.dashboard') }}" class="staff-ticket-back">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            <span>{{ __('staff.back') }}</span>
+        </a>
+
+        <header class="staff-ticket-hero">
+            <div class="staff-ticket-hero__top">
+                <div class="staff-ticket-hero__badges">
                     <span class="ticket-id">{{ $complaint->ticket_id }}</span>
                     <span class="dept-badge" data-dept="{{ $complaint->department?->code ?? '' }}">{{ $complaint->department?->code ?? __('nav.departments') }}</span>
-                    <span class="status-pill {{ $statusKey }}" data-ticket-status-pill style="font-size: 11px; padding: 3px 10px;">
+                    <span class="status-pill {{ $statusKey }}" data-ticket-status-pill>
                         <span class="status-pill__dot" aria-hidden="true"></span>
                         <span data-ticket-status-label>{{ $statusEnum->label() }}</span>
                     </span>
@@ -42,95 +45,71 @@
                                 default => 'neutral'
                             };
                         @endphp
-                        <span class="status-pill status-pill--{{ $priorityTone }}" style="font-size: 11px; padding: 3px 10px;">
-                            {{ $complaint->confirmedPriorityEnum->label() }}
-                        </span>
+                        <span class="status-pill status-pill--{{ $priorityTone }}">{{ $complaint->confirmedPriorityEnum->label() }}</span>
                     @endif
-
-                    {{-- How long the office has left on this one. --}}
                     @if($slaSummary['state'] !== \App\Enums\ComplaintSlaState::NotApplicable)
                         <span class="sla-chip {{ $slaSummary['state']->badgeClass() }}">
-                            <span>{{ $slaSummary['action'] === 'complete_work'
-                                ? __('staff.sla.action_finish')
-                                : __('staff.sla.action_start') }}</span>
+                            <span>{{ $slaSummary['action'] === 'complete_work' ? __('staff.sla.action_finish') : __('staff.sla.action_start') }}</span>
                             <span aria-hidden="true">·</span>
-                            <span>{{ $slaSummary['days'] < 0
-                                ? trans_choice('staff.sla.days_overdue', abs($slaSummary['days']))
-                                : trans_choice('staff.sla.days_left', $slaSummary['days']) }}</span>
+                            <span>{{ $slaSummary['days'] < 0 ? trans_choice('staff.sla.days_overdue', abs($slaSummary['days'])) : trans_choice('staff.sla.days_left', $slaSummary['days']) }}</span>
                         </span>
                     @endif
                 </div>
             </div>
+            <h1 class="staff-ticket-hero__title">{{ $complaint->title }}</h1>
+            <div class="staff-ticket-hero__meta">
+                <span><span class="staff-ticket-hero__meta-label">Filed</span> {{ $complaint->created_at->format('M j, Y') }}</span>
+                <span class="staff-ticket-hero__sep" aria-hidden="true">·</span>
+                <span><span class="staff-ticket-hero__meta-label">Work</span> {{ $workMode->label() }}</span>
+                <span class="staff-ticket-hero__sep" aria-hidden="true">·</span>
+                <span><span class="staff-ticket-hero__meta-label">Age</span> <strong class="staff-ticket-hero__age">{{ $ageLabel }} open</strong></span>
+            </div>
+        </header>
 
-            <h1 class="tr-h1">{{ $complaint->title }}</h1>
-
-            <p class="tr-privacy">
-                <span style="font-weight: 600;">Filed:</span> {{ $complaint->created_at->format('M j, Y') }}
-                · <span style="font-weight: 600;">Work:</span> {{ $workMode->label() }}
-                · <span style="font-weight: 600;">Age:</span> <strong style="color: var(--gold-300);">{{ $ageLabel }} open</strong>
-            </p>
-        </div>
-    </header>
-
-    {{-- ════════════ MAIN CONTAINER ════════════ --}}
-    <div class="tr-container" style="max-width: none; padding: 0 16px; margin-top: 20px;">
-        
-        {{-- Flash Messages --}}
         @if(session('status'))
-            <div class="tr-card" style="background: rgba(63,203,111,0.12); border-color: rgba(63,203,111,0.3); color: var(--success); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-weight: 600; font-size: 13px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            <div class="staff-ticket-alert staff-ticket-alert--success" role="status">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
                 <span>{{ session('status') }}</span>
             </div>
         @endif
         @if(session('error'))
-            <div class="tr-card" style="background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.3); color: var(--danger); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-weight: 600; font-size: 13px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="staff-ticket-alert staff-ticket-alert--error" role="alert">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span>{{ session('error') }}</span>
             </div>
         @endif
 
         @if($complaint->isModerationFlagged() || $complaint->hidden_from_public)
-            <section class="tr-card" aria-labelledby="complaint-flag-notice-title" style="margin-bottom: 20px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--status-progress-dot) 35%, var(--line-soft)); background: var(--status-progress-bg); color: var(--status-progress-text);">
-                <div style="display:flex; align-items:flex-start; gap:12px;">
-                    <span aria-hidden="true" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:999px; background: rgba(245,158,11,0.18); color: var(--status-progress-text); flex-shrink:0;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                    </span>
-                    <div style="min-width:0; display:grid; gap:6px;">
-                        <h2 id="complaint-flag-notice-title" style="margin:0; font-size:14px; font-weight:700; color: var(--navy-900);">{{ __('staff.flag_notice.title') }}</h2>
-                        <p style="margin:0; font-size:13px; line-height:1.5;">
-                            @if($complaint->isModerationFlagged())
-                                <strong>{{ $complaint->moderationLabel() }}</strong>
-                                @if(! is_null($complaint->spam_score))
-                                    · {{ __('staff.flag_notice.score', ['score' => $complaint->spam_score]) }}
-                                @endif
-                                @if($complaint->duplicate_of_id && $complaint->duplicateOf)
-                                    · {{ __('staff.flag_notice.similar', ['percent' => (int) round(($complaint->similarity_score ?? 0) * 100)]) }}
-                                @endif
-                            @endif
-                            @if($complaint->hidden_from_public)
-                                @if($complaint->isModerationFlagged())<br>@endif
-                                <strong>{{ __('staff.flag_notice.hidden_public') }}</strong>
-                            @endif
-                        </p>
-                        @if($complaint->isModerationFlagged() && is_array($complaint->spam_reasons) && count($complaint->spam_reasons))
-                            <ul style="margin:2px 0 0; padding-left:18px; font-size:12px; line-height:1.45; color: var(--navy-900);">
-                                @foreach($complaint->spam_reasons as $reason)
-                                    <li>{{ $reason }}</li>
-                                @endforeach
-                            </ul>
+            <section class="staff-ticket-alert staff-ticket-alert--warning" aria-labelledby="complaint-flag-notice-title">
+                <span class="staff-ticket-alert__icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+                <div class="staff-ticket-alert__body">
+                    <h2 id="complaint-flag-notice-title" class="staff-ticket-alert__title">{{ __('staff.flag_notice.title') }}</h2>
+                    <p>
+                        @if($complaint->isModerationFlagged())
+                            <strong>{{ $complaint->moderationLabel() }}</strong>
+                            @if(! is_null($complaint->spam_score)) · {{ __('staff.flag_notice.score', ['score' => $complaint->spam_score]) }} @endif
+                            @if($complaint->duplicate_of_id && $complaint->duplicateOf) · {{ __('staff.flag_notice.similar', ['percent' => (int) round(($complaint->similarity_score ?? 0) * 100)]) }} @endif
                         @endif
-                        @if($complaint->duplicate_of_id && $complaint->duplicateOf)
-                            <a href="{{ route('staff.complaints.show', $complaint->duplicateOf) }}" style="font-size:12px; font-weight:600; color: var(--navy-900); text-decoration: underline;">{{ __('staff.flag_notice.compare', ['ticket' => $complaint->duplicateOf->ticket_id]) }}</a>
+                        @if($complaint->hidden_from_public)
+                            @if($complaint->isModerationFlagged())<br>@endif
+                            <strong>{{ __('staff.flag_notice.hidden_public') }}</strong>
                         @endif
-                    </div>
+                    </p>
+                    @if($complaint->isModerationFlagged() && is_array($complaint->spam_reasons) && count($complaint->spam_reasons))
+                        <ul class="staff-ticket-alert__list">
+                            @foreach($complaint->spam_reasons as $reason)
+                                <li>{{ $reason }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if($complaint->duplicate_of_id && $complaint->duplicateOf)
+                        <a href="{{ route('staff.complaints.show', $complaint->duplicateOf) }}" class="staff-ticket-alert__link">{{ __('staff.flag_notice.compare', ['ticket' => $complaint->duplicateOf->ticket_id]) }}</a>
+                    @endif
                 </div>
             </section>
         @endif
-
-        {{-- Back Link (publication-requests protocol) --}}
-        <a href="{{ route('staff.dashboard') }}" style="display: inline-flex; align-items: center; gap: 6px; margin: 18px 0 14px; color: var(--navy-700); font-size: 13px; font-weight: 600; text-decoration: none;">
-            <span aria-hidden="true">←</span> {{ __('staff.back') }}
-        </a>
 
         {{-- ════════════ LIVE TICKET ════════════
              Another hand may move this case while it is open. The panel
@@ -1222,6 +1201,8 @@
     }
     .review-panel-toggle[aria-expanded="false"] .review-toggle__icon { transform: rotate(180deg); }
 </style>
+    </div>
+</div>
 @endsection
 
 @push('scripts')

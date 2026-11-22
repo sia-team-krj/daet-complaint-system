@@ -1,3 +1,10 @@
+## 2026-11-22: Staff ticket detail — clean workspace redesign (first pass)
+
+- **Files:** `resources/views/staff/complaints/show.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.
+- **What changed:** Replaced the dark transparency-style ticket banner with a clean workspace hero card (navy-to-surface gradient, token border/shadow/radius), matching the staff dashboard header treatment. Added token-based alert styles for status/error/moderation notices. Restyled the ticket detail grid and cards (`tr-card`/`workspace-card`) with clean surface, soft border, card shadow, consistent card headers, and responsive spacing. Closed the new `staff-ticket-page`/`staff-ticket-shell` wrappers. All forms, routes, permissions, data attributes, and complaint workflow logic preserved.
+- **Verification:** `npm run build` passed. Playwright (1440×900, dept admin, `/staff/complaints/6`): shell 1064px, hero 1016px, grid 1016px, no horizontal overflow. Baseline/after screenshots captured at `/tmp/opencode/ticket-baseline.png` and `/tmp/opencode/ticket-after.png` (waived from repo by owner 2026-11-09; verification evidence recorded here).
+- **Tokens/components:** Existing tokens only (`--navy-*`, `--surface`, `--line-soft`, `--shadow-card`, `--radius-lg/md`, `--status-*`, `--error-*`, `--font-sans/display`). No new colors/fonts/shadows/radii.
+
 ## 2026-11-22: Staff dashboard redesign — consistent across dept admin, staff, verifier
 
 - Page / component: staff dashboard (`/staff/dashboard`) for Department Admin, Staff, and Verifier roles.
