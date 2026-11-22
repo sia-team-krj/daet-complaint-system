@@ -689,7 +689,11 @@ body.page-staff-dashboard .dept-page-header {
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
-    padding: 0;
+    padding: 24px;
+    background: linear-gradient(135deg, var(--navy-50) 0%, var(--surface) 55%, var(--surface) 100%);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
 }
 body.page-staff-dashboard .dept-page-header__eyebrow {
     margin: 0 0 6px;
@@ -717,7 +721,8 @@ body.page-staff-dashboard .dept-role-chip {
     align-items: center;
     padding: 4px 10px;
     border-radius: 999px;
-    background: var(--navy-50);
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
     color: var(--navy-700);
     font: 600 12px/1 var(--font-sans);
 }

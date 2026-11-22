@@ -3,7 +3,7 @@
 - Page / component: staff dashboard (`/staff/dashboard`) for Department Admin, Staff, and Verifier roles.
 - Why: the dashboard needed the same clean, premium workspace language as the new sidebar/super-admin shell, while keeping role-specific data and permissions intact.
 - What changed:
-  - Replaced the transparency-style hero with a clean workspace header (department eyebrow, welcome title, role chip, overview label).
+  - Replaced the transparency-style hero with a clean workspace header card (department eyebrow, welcome title, role chip, overview label) using a subtle navy-to-surface gradient background.
   - Kept role-aware KPI cards (verifier/dept admin: pending review, in progress, resolved this month, avg days open; staff: assigned to me, in progress, resolved this month, avg days open).
   - Rebuilt priority complaints into a clean panel with search, compact rows, status/priority badges, and empty state.
   - Kept recent activity as a secondary panel with an internal max-height/scroll so it does not stretch the page.
