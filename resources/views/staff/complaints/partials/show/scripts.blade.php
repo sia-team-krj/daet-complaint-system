@@ -163,6 +163,23 @@
                 return;
             }
 
+            // "Add Findings" → Pause the work card; "Submit Report" → the
+            // marking card ("Mark as misleading or spam").
+            if (target instanceof HTMLDetailsElement) {
+                const kind = link?.dataset?.ticketFocus;
+                if (kind === 'hold') {
+                    target.open = true;
+                    const note = target.querySelector('#hold-note');
+                    if (note && !note.disabled && !note.readOnly) note.focus();
+                } else if (kind === 'marking') {
+                    target.open = true;
+                    const sel = target.querySelector('#marking-kind')
+                        ?? target.querySelector('button[type="submit"]');
+                    if (sel && !sel.disabled) sel.focus();
+                }
+                return;
+            }
+
             // "Add Findings" → the official response note; "Submit Report"
             // → the response form's submit button.
             if (target instanceof HTMLFormElement && target.id === 'complaint-update-form') {

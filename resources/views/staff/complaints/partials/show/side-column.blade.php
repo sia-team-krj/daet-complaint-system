@@ -386,7 +386,7 @@
                      a hold already in place can be taken off, it can never
                      be taken again. --}}
                 @if($complaint->isVerified())
-                    <details class="ticket-collapse staff-detail-card staff-detail-card--hold" {{ $complaint->isOnHold() ? 'open' : '' }}>
+                    <details id="ticket-hold" class="ticket-collapse staff-detail-card staff-detail-card--hold" {{ $complaint->isOnHold() ? 'open' : '' }}>
                         <summary><span>{{ __('staff.hold.title', ['default' => 'Hold / pause work']) }}</span></summary>
                         <div class="ticket-collapse__body">
                             <x-hold-panel

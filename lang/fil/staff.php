@@ -42,6 +42,7 @@ return [
             'update_status' => 'Baguhin ang Katayuan',
             'take_photo' => 'Kumuha ng Larawan',
             'add_findings' => 'Magdagdag ng mga Natuklasan',
+            'pause_work' => 'Ilagay sa hold',
             'submit_report' => 'Isumite ang Ulat',
             'awaiting_verification' => 'Naghihintay ng beripikasyon — nasa verifier pa ang ulat na ito, kaya hindi pa bukas ang form ng update.',
             'no_transitions' => 'Wala ng status na mababago — naabot ng ulat na ito ang huling hakbang at hindi na ito magpalit-palit.',

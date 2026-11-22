@@ -42,6 +42,7 @@ return [
             'update_status' => 'Update Status',
             'take_photo' => 'Take Photo',
             'add_findings' => 'Add Findings',
+            'pause_work' => 'Pause the work',
             'submit_report' => 'Submit Report',
             'awaiting_verification' => 'Waiting on verification — this report is still with a verifier, so the update form is not open yet.',
             'no_transitions' => 'No status change is left — this report is at its last step and can no longer be moved.',

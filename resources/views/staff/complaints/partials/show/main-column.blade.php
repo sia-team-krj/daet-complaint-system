@@ -299,7 +299,7 @@
                     $canMark = $user->isDepartmentStaff() && $complaint->statusEnum->isOpen() && ! $complaint->isMarked();
                 @endphp
                 @if($canMark || $complaint->isMarked())
-                    <details class="ticket-collapse staff-detail-card staff-detail-card--marking" {{ $complaint->isMarked() ? 'open' : '' }}>
+                    <details id="ticket-marking" class="ticket-collapse staff-detail-card staff-detail-card--marking" {{ $complaint->isMarked() ? 'open' : '' }}>
                         <summary><span>{{ __('staff.marking.title', ['default' => 'Mark report as misleading or spam']) }}</span></summary>
                         <div class="ticket-collapse__body">
                             @include('staff.complaints.partials.marking-panel', [
