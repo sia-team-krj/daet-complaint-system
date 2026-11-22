@@ -1,3 +1,10 @@
+## 2026-11-22: Staff assigned complaints list — mobile-friendly field queue
+
+- **Files:** `resources/views/staff/complaints/index.blade.php`, `resources/views/staff/complaints/partials/list.blade.php`, `docs/design-changelog.md`.
+- **What changed:** Added barangay/location and a clear “Open” action affordance to staff queue rows; refined responsive layout for compact mobile scanning while preserving live queue data attributes, filters, pagination, and routes.
+- **Verification:** `npm run build` passed. Playwright desktop 1440×900 and mobile 390×844 on `/staff/complaints`: HTTP 200, 3 items / 3 open actions / 3 locations visible, no horizontal overflow. Screenshots: `/tmp/opencode/phase3-desktop.png`, `/tmp/opencode/phase3-mobile.png` (repo-waived, evidence recorded here).
+- **Tokens/components:** Existing tokens only.
+
 ## 2026-11-22: Staff ticket detail — Phase 2B/2C verifier desktop + field mobile workspaces
 
 - **Files:** `resources/views/staff/complaints/partials/show/{main-column,side-column,tail,scripts}.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.

@@ -53,6 +53,10 @@
                                         <span class="ticket-id" style="font-family: var(--font-mono, monospace); font-weight: 700; color: var(--navy-800);">{{ $complaint->ticket_id }}</span>
                                         <span aria-hidden="true"> · </span>
                                         <span>{{ \App\Services\DepartmentRouter::categoryLabel($complaint->category) ?? str($complaint->category)->replace('_', ' ')->title() }}</span>
+                                        @if(filled($complaint->barangay ?? null))
+                                            <span aria-hidden="true"> · </span>
+                                            <span class="staff-row__location">{{ $complaint->barangay }}</span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -113,9 +117,13 @@
                                 @endif
                             </div>
 
-                            {{-- Bottom / Right Section: Age & Filing Duration --}}
+                            {{-- Bottom / Right Section: Age & Action --}}
                             <div class="staff-row__age">
                                 <span class="staff-age">{{ $ageLabel }} open</span>
+                                <span class="staff-row__open" aria-hidden="true">
+                                    <span>{{ __('staff.open', ['default' => 'Open']) }}</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                </span>
                             </div>
 
                         </a>

@@ -244,8 +244,10 @@
 
     .staff-row__age {
         display: flex;
-        justify-content: flex-end;
-        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 8px;
     }
 
     .staff-age {
@@ -263,6 +265,16 @@
         white-space: nowrap;
         text-align: center;
     }
+
+    .staff-row__open {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font: 600 12px/1 var(--font-sans);
+        color: var(--navy-700);
+    }
+    .staff-row__open svg { width: 14px; height: 14px; }
+    .staff-row__location { color: var(--muted); }
 
     /* Responsive Pagination Styles */
     .staff-pagination-container {
@@ -429,7 +441,10 @@
         .staff-row__age {
             grid-column: 1;
             grid-row: auto;
-            justify-content: flex-start;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
         }
         .staff-row__badges {
             grid-column: 1;
