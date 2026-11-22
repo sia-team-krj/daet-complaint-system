@@ -181,6 +181,7 @@ return [
         'lede' => 'Gamitin ang thread na ito para magpadala ng karagdagang impormasyon, patunay, o paglilinaw para sa parehong ulat. Mananatili ang orihinal na ticket number.',
         'body_label' => 'Mensahe',
         'body_placeholder' => 'Ilarawan ang update, paglilinaw, o karagdagang impormasyon...',
+        'attach_images' => 'Magdagdag ng mga larawan',
         'submit' => 'Ipadala ang mensahe',
         'message_posted' => 'Naidagdag ang iyong follow-up message sa ulat na ito.',
         'thread_title' => 'Usapan',

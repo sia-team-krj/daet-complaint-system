@@ -181,6 +181,7 @@ return [
         'lede' => 'Use this thread to send additional information, proof, or clarification for this same report. Your original ticket number stays the same.',
         'body_label' => 'Message',
         'body_placeholder' => 'Describe the update, clarification, or additional information...',
+        'attach_images' => 'Attach images',
         'submit' => 'Send message',
         'message_posted' => 'Your follow-up message was added to this report.',
         'thread_title' => 'Conversation',

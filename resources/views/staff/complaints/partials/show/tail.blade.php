@@ -1,39 +1,5 @@
         </div>
 
-        @if(($workspaceMode ?? '') === 'field')
-            @php
-                $fieldStatuses = collect($availableStatuses ?? [])->map(fn($s) => $s->value)->all();
-                $canFieldUpdate = $complaint->isVerified() && $fieldStatuses !== [];
-                $fieldPrimaryLabel = __('complaint_show.update_status', ['default' => 'Update progress']);
-                $fieldPrimaryIcon = 'progress';
-                if (in_array(\App\Enums\ComplaintStatus::InProgress->value, $fieldStatuses, true) && ($workMode?->requiresDocumentation() ?? false)) {
-                    $fieldPrimaryLabel = __('staff.proof.camera', ['default' => 'Take photo']) . ' / ' . __('complaint_show.update_status', ['default' => 'Update progress']);
-                    $fieldPrimaryIcon = 'camera';
-                }
-                if (in_array(\App\Enums\ComplaintStatus::Resolved->value, $fieldStatuses, true)) {
-                    $fieldPrimaryLabel = __('complaint_show.resolution', ['default' => 'Submit resolution update']);
-                    $fieldPrimaryIcon = 'resolve';
-                }
-            @endphp
-            <div class="field-action-bar" aria-label="{{ __('staff.field.quick_actions', ['default' => 'Quick actions']) }}">
-                @if($canFieldUpdate)
-                    <a href="#complaint-update-form" class="field-action-bar__btn">
-                        @if($fieldPrimaryIcon === 'camera')
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        @elseif($fieldPrimaryIcon === 'resolve')
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-                        @else
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        @endif
-                        <span>{{ $fieldPrimaryLabel }}</span>
-                    </a>
-                @endif
-                <a href="#complaint-location" class="field-action-bar__btn field-action-bar__btn--secondary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>{{ __('staff.location.title', ['default' => 'Location']) }}</span>
-                </a>
-            </div>
-        @endif
 
     </div>
 </div>

@@ -1459,57 +1459,6 @@ body.role-staff .ticket-collapse[open] > summary::after { transform: rotate(-135
 body.role-staff .ticket-collapse__body { padding: 0 20px 20px; }
 body.role-staff .ticket-collapse__hint { font: 500 12px/1.4 var(--font-sans); color: var(--muted); margin: 0; }
 
-/* Field sticky action bar */
-body.role-staff .field-action-bar {
-    position: sticky;
-    bottom: 0;
-    z-index: 30;
-    display: none;
-    gap: 10px;
-    padding: 12px 16px;
-    background: color-mix(in srgb, var(--surface) 94%, transparent);
-    backdrop-filter: blur(8px);
-    border-top: 1px solid var(--line-soft);
-    box-shadow: 0 -4px 20px rgba(11,26,51,.08);
-}
-body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .field-action-bar { display: flex; }
-body.role-staff .field-action-bar__btn {
-    flex: 1;
-    min-height: 48px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--navy-900);
-    background: var(--navy-900);
-    color: var(--surface);
-    font: 700 14px/1 var(--font-sans);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    cursor: pointer;
-}
-body.role-staff .field-action-bar__btn:hover { background: var(--navy-800); }
-body.role-staff .field-action-bar__btn--secondary {
-    background: var(--surface);
-    color: var(--navy-900);
-    border-color: var(--line);
-}
-body.role-staff .field-action-bar__btn--secondary:hover { background: var(--navy-50); }
-body.role-staff .field-action-bar__btn svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-@media (min-width: 1024px) {
-    body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .field-action-bar {
-        position: static;
-        border: 1px solid var(--line-soft);
-        border-radius: var(--radius-md);
-        box-shadow: none;
-        backdrop-filter: none;
-        margin-top: 8px;
-    }
-}
-@media (max-width: 768px) {
-    body.role-staff .field-action-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
-}
 
 /* Evidence gallery - convenient review */
 body.role-staff .staff-detail-card--evidence .tr-evidence-grid,
@@ -1558,3 +1507,9 @@ body.role-staff .ticket-section-kicker {
     text-transform: uppercase;
 }
 body.role-staff .ticket-section-kicker--field { background: var(--status-progress-bg); color: var(--status-progress-text); }
+
+/* On phones the staff bottom nav carries the page's way out, so the site
+   footer is redundant on the opened ticket. */
+@media (max-width: 1023px) {
+    body.role-staff.staff-field-ticket .site-footer { display: none; }
+}

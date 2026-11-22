@@ -40,6 +40,7 @@ return [
     // Ang ordinary staff ay nagtatrabaho sa mga kaso na ibinigay ng kanilang
     // tanggapan, kaya ang listahan nila ay ang sarili nilang gawain.
     'my_work' => 'Aking gawain',
+    'my_task' => 'Aking Gawain',
     'my_activity' => 'Aking aktibidad',
     'department_activity' => 'Aktibidad ng tanggapan',
     'verification' => 'Beripikasyon',

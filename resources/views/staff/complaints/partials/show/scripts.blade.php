@@ -111,13 +111,31 @@
 
 @push('scripts')
 <script>
-    // The field home deep-links into one control of this ticket — #status,
-    // #note, #proof-capture or #complaint-update-form. Scrolling to the
-    // section is the browser's job; putting the caret in the field the link
-    // named is ours, so "Add Findings" lands ready to type rather than
-    // merely in view. Anything that is not a form control just scrolls.
+    // The ticket's quick actions are same-page anchors. Scrolling to the
+    // target is the browser's job; putting the caret in the control the
+    // action names is ours: "Add Findings" should land ready to type and
+    // "Take Photo" should actually open the camera. Everything is a plain
+    // fragment link first — with JavaScript off the anchors still work.
     (() => {
-        const focusHashTarget = () => {
+        // Focus the first usable form control inside a form.
+        const focusIn = (form) => {
+            const first = form.querySelector('input:not([type=hidden]), select, textarea, button');
+            if (!first) return;
+            if (first.disabled) return;
+            first.focus();
+            openSelectPicker(first);
+        };
+
+        // Browsers only open <select> popups for user-activated gestures; a
+        // click through the action bar is one, a `hashchange` from an anchor
+        // is not. Older browsers and pointer-less contexts ignore it.
+        const openSelectPicker = (el) => {
+            if (!(el instanceof HTMLSelectElement)) return;
+            if (typeof el.showPicker !== 'function') return;
+            try { el.showPicker(); } catch (e) { /* no-op where unsupported */ }
+        };
+
+        const handleHashTarget = () => {
             const hash = window.location.hash;
             if (!hash || hash.length < 2) return;
 
@@ -128,18 +146,51 @@
                 return;
             }
             if (!target) return;
-            if (!/^(input|textarea|select|button)$/i.test(target.tagName)) return;
-            if (target.disabled || target.readOnly) return;
 
-            // The fragment navigation already scrolled; don't scroll twice.
-            target.focus({ preventScroll: true });
+            // "Take Photo": the deep link names the capture zone, not a
+            // control — open the camera picker rather than scroll to it.
+            if (target.id === 'proof-capture') {
+                const camera = target.querySelector('button.proof-capture__action--camera');
+                if (camera) camera.click();
+                return;
+            }
+
+            // "Submit Report": open the resolution form on its first control.
+            if (target instanceof HTMLFormElement && target.id === 'complaint-update-form') {
+                focusIn(target);
+                return;
+            }
+
+            if (/^(input|textarea|select|button)$/i.test(target.tagName)) {
+                if (target.disabled || target.readOnly) return;
+                target.focus();
+                openSelectPicker(target);
+            }
+        };
+
+        const attachActionClicks = () => {
+            document.querySelectorAll('.ticket-action').forEach((link) => {
+                if (link.dataset.actionBound === 'true') return;
+                link.dataset.actionBound = 'true';
+                // Clicking already moved location.hash, so let the hashchange
+                // handler run on the next tick — it also covers a tap on the
+                // same action twice, when the hash does not change.
+                link.addEventListener('click', () => { setTimeout(handleHashTarget, 0); });
+            });
+        };
+
+        const init = () => {
+            window.addEventListener('hashchange', handleHashTarget);
+            attachActionClicks();
+            handleHashTarget();
         };
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', focusHashTarget);
+            document.addEventListener('DOMContentLoaded', init);
         } else {
-            focusHashTarget();
+            init();
         }
+        window.addEventListener('hashchange', attachActionClicks);
     })();
 </script>
 @endpush

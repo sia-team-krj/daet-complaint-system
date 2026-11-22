@@ -53,6 +53,8 @@
         @if($role === 'admin')
             <p class="mobile-nav-drawer__group">{{ __('nav.operations') }}</p>
             <ul class="mobile-nav-drawer__list">
+                {{-- Work, not a dashboard link: the field experience is the
+                     field home (staff.field.home). --}}
                 <li><a href="{{ route('admin.dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('admin.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('admin.dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.overview') }}</span></a></li>
                 <li><a href="{{ route('admin.complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('admin.complaints.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.complaints.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg><span>{{ __('nav.all_complaints') }}</span></a></li>
                 <li><a href="{{ route('admin.departments.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('admin.departments.*') ? 'is-active' : '' }}" @if(request()->routeIs('admin.departments.*')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"></path><path d="M6 21V5l6-3 6 3v16"></path><path d="M9 9h1"></path><path d="M14 9h1"></path><path d="M9 13h1"></path><path d="M14 13h1"></path><path d="M9 17h1"></path><path d="M14 17h1"></path></svg><span>{{ __('nav.departments') }}</span></a></li>
@@ -70,8 +72,17 @@
         @elseif(auth()->user()->isDepartmentStaff())
             <p class="mobile-nav-drawer__group">{{ __('nav.workspace') }}</p>
             <ul class="mobile-nav-drawer__list">
-                <li><a href="{{ route('staff.dashboard') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.dashboard') ? 'is-active' : '' }}" @if(request()->routeIs('staff.dashboard')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg><span>{{ __('nav.dashboard') }}</span></a></li>
-                <li><a href="{{ route('staff.complaints.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.complaints.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ auth()->user()->canVerifyComplaints() ? __('nav.complaint_queue') : __('nav.my_work') }}</span></a></li>
+                @php
+                    // "My Task" for an ordinary staff member opens the field
+                    // home (/staff); the office keeps the complaint queue.
+                    $workHref = auth()->user()->canVerifyComplaints()
+                        ? route('staff.complaints.index')
+                        : route('staff.field.home');
+                    $workIsActive = auth()->user()->canVerifyComplaints()
+                        ? request()->routeIs('staff.complaints.index')
+                        : request()->routeIs('staff.field.home');
+                @endphp
+                <li><a href="{{ $workHref }}" class="mobile-nav-drawer__item {{ $workIsActive ? 'is-active' : '' }}" @if($workIsActive) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h5"></path></svg><span>{{ auth()->user()->canVerifyComplaints() ? __('nav.complaint_queue') : __('nav.my_task') }}</span></a></li>
                 <li><a href="{{ route('staff.activity.index') }}" class="mobile-nav-drawer__item {{ request()->routeIs('staff.activity.index') ? 'is-active' : '' }}" @if(request()->routeIs('staff.activity.index')) aria-current="page" @endif><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>{{ __('staff.bottom_nav.activity') }}</span></a></li>
             </ul>
             @if(auth()->user()->canVerifyComplaints())

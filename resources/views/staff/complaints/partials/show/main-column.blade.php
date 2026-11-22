@@ -2,7 +2,7 @@
             <div class="staff-detail-col staff-detail-col--main">
                 {{-- 1. Complaint Description Card --}}
                 <div class="tr-card workspace-card staff-detail-card staff-detail-card--description">
-                    <p class="ticket-section-kicker">{{ __('staff.ticket.original_report', ['default' => 'Original resident report']) }}</p>
+                    <p class="ticket-section-kicker">{{ __('staff.ticket.original_report') }}</p>
                     <div class="workspace-card__header">
                         <div class="workspace-card__icon">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -70,7 +70,7 @@
                             </div>
                             <textarea id="follow-up-body" name="body" rows="4" minlength="10" maxlength="2000" required class="tr-input staff-conversation__textarea" placeholder="{{ __('complaint_show.follow_up.body_placeholder') }}">{{ old('body') }}</textarea>
                             <div class="staff-conversation__form-footer">
-                                <label class="staff-conversation__file-btn" aria-label="{{ __('complaint_show.follow_up.attach_images', ['default' => 'Attach images']) }}">
+                                <label class="staff-conversation__file-btn" aria-label="{{ __('complaint_show.follow_up.attach_images') }}">
                                     <input type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple class="sr-only">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                                 </label>
@@ -429,7 +429,7 @@
 
                 @if($complaint->isVerified() && $availableStatuses !== [])
                     <div class="tr-card workspace-card staff-detail-card staff-detail-card--response" style="border-top: 3px solid var(--success);">
-                        <p class="ticket-section-kicker ticket-section-kicker--field">{{ __('staff.ticket.field_update', ['default' => 'Field investigation / progress update']) }}</p>
+                        <p class="ticket-section-kicker ticket-section-kicker--field">{{ __('staff.ticket.field_update') }}</p>
                         <div class="workspace-card__header">
                             <div class="workspace-card__icon" style="background: rgba(63,203,111,0.12); color: var(--success);">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

@@ -40,6 +40,7 @@ return [
     // An ordinary staff member works the cases the office handed them, so
     // their list is their own work — not the office queue.
     'my_work' => 'My work',
+    'my_task' => 'My Task',
     'my_activity' => 'My activity',
     'department_activity' => 'Office activity',
     'verification' => 'Verification',

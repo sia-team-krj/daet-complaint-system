@@ -256,18 +256,10 @@ class StaffController extends Controller
             ->limit(self::FIELD_HOME_TASK_LIMIT)
             ->get();
 
-        // The quick actions open one complaint: the first this officer can
-        // actually move right now. The ticket renders its update form only
-        // for a verified report with a legal transition left, so an action
-        // aimed anywhere else would land on nothing — a dead control.
-        $actionTask = $tasks->first(fn (Complaint $task): bool => $task->isVerified()
-            && $task->statusEnum->allowedManualTransitions() !== []);
-
         return view('staff.field.home', [
             'user' => $user,
             'tasks' => $tasks,
             'activeCount' => $activeCount,
-            'actionTask' => $actionTask,
             'hasMore' => $activeCount > $tasks->count(),
         ]);
     }

@@ -2298,17 +2298,22 @@ visual language.
 
 **Use:** staff complaint detail (`/staff/complaints/{complaint}`) role-based workspace. Same complaint record, routes, permissions, and workflows; only layout/information hierarchy changes.
 
-**Modes:** `data-ticket-workspace="verifier"` (desktop two-column, verification/assignment prominent, secondary metadata collapsed) and `data-ticket-workspace="field"` (mobile-first single column, location/progress/evidence prominent, sticky bottom action bar). Dual-capability users get an explicit switch; preference persisted by `daet_ticket_workspace` cookie/query param. No resize-based switching.
+**Modes:** `data-ticket-workspace="verifier"` (desktop two-column, verification/assignment prominent, secondary metadata collapsed) and `data-ticket-workspace="field"` (mobile-first single column, location/progress/evidence prominent). Dual-capability users get an explicit switch; preference persisted by `daet_ticket_workspace` cookie/query param. No resize-based switching.
 
-**Patterns:** `.ticket-collapse` for secondary/admin metadata (`<details>`), `.ticket-section-kicker` for “Original resident report” vs “Field investigation / progress update” labels, `.field-action-bar` for mobile quick actions (context-aware update/proof/resolve + location shortcut). All styling uses existing tokens; no new palette.
+**Patterns:**
+- `.ticket-collapse` for secondary/admin metadata (`<details>`).
+- `.ticket-section-kicker` for “Original resident report” vs “Field investigation / progress update” labels.
+- `.staff-bottom-nav` (field workspace) — a field ticket replaces the default tab items with the four **ticket quick actions** (§5.63); off the ticket the tab bar is the default.
+
+All styling uses existing tokens; no new palette.
 
 ---
 
-### 5.62 Field staff home — `.field-home` / `.field-task` / `.field-actions`
+### 5.62 Field staff home — `.field-home` / `.field-task`
 
-**Use:** the on-field officer's landing page at **`GET /staff`** (`staff.field.home`) — `role === 'staff'` only. Department Administrators and administrators are redirected to the workspace they already had, and a desktop keeps `/staff/dashboard`: `User::homeRouteName()` returns `staff.field.home` only for `role === 'staff'` **and** a phone user agent, so the device selects the default landing and never the authorization. The page itself is reachable at `/staff` at every width.
+**Use:** the on-field officer's landing page at **`GET /staff`** (`staff.field.home`) — `role === 'staff'` only. Department Administrators and administrators are redirected to the workspace they already had, and a desktop keeps `/staff/dashboard`: `User::homeRouteName()` returns `staff.field.home` only for `role === 'staff'` **and** a phone user agent (same device test the complaint list uses, `ComplaintController::complaintsPerPage`), so the device selects the default landing and never the authorization. The page itself is reachable at `/staff` at every width.
 
-**Why it exists:** §5.61 is where the work happens, not where it starts. This page answers *what is on me right now* in one screen and gets the officer into a ticket in one tap. It reads the dashboard's non-verifier scope verbatim — `assigned_staff_id = me` + `department_id` + `StaffController::OPEN_STATUSES`, priority-then-oldest, capped at `StaffController::FIELD_HOME_TASK_LIMIT` with a "View all" escape to `staff.complaints.index?assigned_staff_id=…&scope=all` — and deep-links into the same ticket every other staff screen uses. It grants nothing, writes nothing, changes no workflow, and never re-renders the resident's description.
+**Why it exists:** §5.61 is where the work happens, not where it starts. This page answers *what is on me right now* in one screen. It reads the dashboard's non-verifier scope verbatim — `assigned_staff_id = me` + `department_id` + `StaffController::OPEN_STATUSES`, priority-then-oldest, capped at `StaffController::FIELD_HOME_TASK_LIMIT` with a “View all” escape to `staff.complaints.index?assigned_staff_id=…&scope=all`. It grants nothing, writes nothing, changes no workflow, and never re-renders the resident's description.
 
 **Anatomy:**
 
@@ -2322,14 +2327,26 @@ visual language.
 | Divider | `.field-home__rule` | inside a `.field-task` it tightens to `12px 0` |
 | Description | `.field-task__desc` | truncated original resident report, `--muted` |
 | Primary action | `.field-task__open` | full width, `min-height: 44px`, `--navy-700` |
-| Section heading | `.field-home__section-title` | “Task actions” |
-| Target ticket | `.field-home__actions-target` | names the one ticket the four actions open |
-| 2×2 grid | `.field-actions` > `.field-action` | `repeat(2, minmax(0,1fr))`, `min-height: 76px`, 32px `--navy-50` icon chip |
-| Honest empty | `.field-home__actions-note` | shown **instead of** the grid when nothing is actionable |
 | List empty | `.empty-state` | reuses the register empty state + `staff.empty_my_work_*` |
-| Footer caption | `.staff-bottom-nav__caption` | inside the fixed tab bar, section-gated |
+| Footer caption | `.staff-bottom-nav__caption` | always rendered by the shell |
 
-**Task actions are entry points, not a second workflow.** The grid renders only when an assigned report is *actionable* — `$complaint->isVerified() && $complaint->statusEnum->allowedManualTransitions() !== []`, precisely the condition under which the ticket renders its update form — and is aimed at the first such report, named above the grid. Anywhere else the tap would land on nothing, so the grid is replaced by `.field-home__actions-note` rather than shipped as a dead control.
+**The four quick actions are not here** — they are the ticket's, in the nav (§5.63).
+
+**Do not:** duplicate the queue here, render actions here, give this landing to Department Administrators or administrators, or add a token.
+
+---
+
+### 5.63 Ticket quick actions — `.ticket-action` / `.ticket-action-note`
+
+**Use:** the four ways an officer acts on the opened ticket — **Update Status** (`#status`), **Take Photo** (`#proof-capture`), **Add Findings** (`#note`), **Submit Report** (`#complaint-update-form`).
+
+**Where:** in the staff bottom nav, in field workspace. A field ticket yields the `staff-bottom-nav` section the ticket view defines; the shell renders the four actions instead of the default tab items, and the only remaining nav item is the location shortcut. Off the ticket the tab bar is the default.
+
+**Why:** the ticket is where the work happens. A bar that *replaces* the tab bar keeps the four ways in always reachable without covering the page with a second form, and the busy chrome (bar + actions) is trimmed where the ticket itself has already said the same thing.
+
+**When the grid renders vs. when it notes:** the four actions render only when the ticket can be worked right now — `$complaint->isVerified() && $complaint->statusEnum->allowedManualTransitions() !== []` (the same condition under which the ticket renders its update form). Otherwise the nav replaces them with `.ticket-action-note`, choosing between `staff.ticket.actions.awaiting_verification` (not yet verified) and `staff.ticket.actions.no_transitions` (verified, no legal transition). Nothing dead ships.
+
+**Anchors** (all same-page, so JavaScript-off friendly) — the ticket's own controls, nothing duplicated:
 
 | Action | Anchor | Lands on |
 |---|---|---|
@@ -2338,13 +2355,18 @@ visual language.
 | Add Findings | `#note` | the public response note |
 | Submit Report | `#complaint-update-form` | the whole resolution/progress form |
 
-`staff/complaints/partials/show/scripts.blade.php` puts the caret in a **form-control** target (the fragment navigation has already scrolled, so `preventScroll: true`); a non-control target such as `#complaint-update-form` only scrolls. With JavaScript off every anchor still works as a plain fragment link.
+**Behaviour** — `staff/complaints/partials/show/scripts.blade.php`, an IIFE on `hashchange` **and** on the clicks of `.ticket-action` (repeated taps on the same action don't change `location.hash`, so the click re-runs the handler):
 
-**Tab bar:** the shell's `.staff-bottom-nav` now wraps its four items in `.staff-bottom-nav__grid` and optionally renders `.staff-bottom-nav__caption` when a page yields `staff-footer`. The caption makes the fixed bar taller, so `body.role-staff:has(.staff-bottom-nav__caption) .staff-content` clears it by `108px` instead of `84px`.
+- `#status` → `focus()` the select, then `showPicker()` where the browser allows it programmatically (a click on an action bar is a user activation; a `hashchange` is not — so the fallback is a plain focus).
+- `#note` → `focus()` the textarea.
+- `#proof-capture` → `click()` the camera trigger — the camera picker opens.
+- `#complaint-update-form` → `focus()` the form's first usable control.
+- Anything else (`#complaint-location`) → scroll only.
 
-**Do not:** duplicate the queue here, render an action for a report the ticket would refuse, give this landing to Department Administrators or administrators, or add a token — the page is tokens only (`--surface`, `--surface-soft`, `--line-soft`, `--navy-50/700/800/900`, `--radius-sm/radius/radius-lg/radius-pill`, `--shadow-card`, `--ring`, `--font-sans`, `--font-mono`).
+With JavaScript off every anchor still works as a plain fragment link: the page scrolls to the target.
 
----
+**Do not:** render actions on a report the ticket would refuse; put the grid back on the dashboard or as a second host page; or add a token.
+
 
 ## 6. The z-index contract — **LOCKED**
 | Layer | z-index |
@@ -2784,6 +2806,7 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+- 2026-11-22 · Field ticket (`/staff/complaints/{id}`, field workspace) · **the four quick actions are the staff bottom nav — the ticket replaces the tab bar with them.** New `show.blade.php` section `staff-bottom-nav`: in field mode the nav is yielded as four `.ticket-action` tiles (Update Status · Take Photo · Add Findings · Submit Report, icons `svg 24×24`) plus the **Complaint location** tab; the default tab items (My Tasks/Activity/Notifications/Profile) and the sticky `.field-action-bar` are gone. When the ticket cannot be worked the nav shows `.ticket-action-note` (“Waiting on verification…” / “No status change is left…”) instead of dead actions. `app.css`: `.staff-bottom-nav__grid` → `repeat(auto-fit, minmax(0, 1fr))`, `.staff-bottom-nav .ticket-action{,__icon,.ticket-action__icon svg,.ticket-action-note}` new; `staff-complaint.css`: dead bar/grid rules removed. `show/scripts.blade.php`: the hash-target handler now runs on `hashchange` + `.ticket-action` clicks and opens the select picker / camera trigger / focuses the note — so “Add Findings” lands ready to type and “Take Photo” opens the camera. Files: `resources/views/staff/complaints/{show,layouts/app}.blade.php`, `resources/css/app.css`, `resources/css/pages/staff-complaint.css`, `resources/views/staff/complaints/partials/show/scripts.blade.php`, `tests/Feature/StaffTicketActionsTest.php` (new), `docs/design-system.md` (§5.61, §5.62, §5.63, §12), `docs/design-changelog.md`. New tokens: none. Verification: `php artisan view:clear`; `php artisan test --filter="StaffTicketActionsTest|StaffComplaintLayoutTest|StaffWorkspaceTest|InlineScriptRuntimeTest|LocalizationTest|StaffQueueScopeTest|RoleDashboardTest|CitizenHomeRedirectTest"` — **48/48 passed (214 assertions)**; Playwright phone 390×844 (mobile UA) — field ticket: nav replaced by the 4 actions (labels/hrefs/24px icons/no overflow/no raw keys); `#note` deep link focuses the field, `#status` focuses the select; dashboard: default tab items (My Tasks · Activity · Notifications · Profile); note ticket: note + location, no actions; `npm run build` clean; guard: same 4 pre-existing owner-file NEW violations (`complaint-show.css`, `admin/complaints/show.blade.php`). Screenshots: `/tmp/opencode/ticket-actions-nav.png`, `/tmp/opencode/field-home-nav.png` (repo-waived, evidence recorded here).
 - 2026-11-22 · Field staff home (`/staff`, `role === 'staff'`) · **the on-field officer's own landing — a mobile task dashboard, not a section of the ticket.** New `GET /staff` → `StaffController::fieldHome()` renders a centred rounded card: header row (**My Assigned Tasks** + live-count badge), compact task cards (title left / `.status-pill` right, `--font-mono` ticket id, barangay with pin, divider, the unchanged original resident description, full-width 44px **Open task**), then **Task actions**. The four actions (Update Status · Take Photo · Add Findings · Submit Report) are entry points into the first *actionable* assigned ticket (`isVerified()` + a legal manual transition left), named above the grid, anchored at `#status`, `#proof-capture`, `#note`, `#complaint-update-form`; where nothing is actionable the grid is replaced by an honest note rather than dead controls, and the list overflows to `staff.complaints.index?assigned_staff_id=…&scope=all` past `FIELD_HOME_TASK_LIMIT`. A small ticket script focuses a form-control target so “Add Findings” lands ready to type (plain fragment links still work with JS off). **Landing rule:** `role === 'staff'` **and** a phone user agent only — `User::homeRouteName()` and `DashboardController` were taught the same device test the complaint list already uses, so a desktop field officer and every Department Administrator keep `/staff/dashboard`, the pinned redirect/logo tests still pass, and other roles hitting `/staff` are sent to their own home. **Bottom nav:** the field role's **My Tasks** tab now points at `/staff` (`staff.activity.*` and `staff.complaints.*` stay active for other tabs); the bar gained a `.staff-bottom-nav__grid` wrapper and a section-gated `.staff-bottom-nav__caption` footer line beneath the four icons, with `.staff-content` clearing it via `:has` at 108px; the Phase-4 placeholder labels were replaced with real `en`+`fil` keys (`staff.mobile.nav|my_tasks|activity`, `nav.notifications`). `x-proof-capture` gained an opt-in `anchor-id`. Files: `routes/web.php`, `app/Http/Controllers/{StaffController,DashboardController}.php`, `app/Models/User.php`, `resources/views/staff/field/home.blade.php` (new), `resources/css/pages/staff-field-home.css` (new), `resources/views/staff/layouts/app.blade.php`, `resources/views/components/proof-capture.blade.php`, `resources/views/staff/complaints/partials/show/{main-column,scripts}.blade.php`, `resources/css/app.css`, `lang/{en,fil}/{staff,nav}.php`, `tests/Feature/{StaffComplaintLayoutTest,StaffWorkspaceTest}.php`, `docs/design-system.md` (§5.62, §12), `docs/design-changelog.md`. New tokens: none. Verification: Playwright phone 390×844 with a mobile UA — **36/36 checks passed** (login lands on `/staff`; `GET /staff` 200; exactly one `<h1>` reading “My Assigned Tasks”; “3 active” badge; 3 cards / 3 full-width Open-task / 3 pinned locations; 4 actions with the reference labels all anchored at one ticket; 4 tab items labelled My Tasks · Activity · Notifications · Profile with the caption beneath; `scrollWidth 390 ≤ innerWidth 390`; card 358px; **no raw lang keys, no console errors**; `#note` deep link keeps its hash and focuses the findings field; the tab returns to `/staff`; desktop login still lands on `/staff/dashboard`, card capped at 640px, tab hidden, no overflow; a Department Administrator on a phone still lands on the office dashboard and is bounced off `/staff`); `npm run build` clean; `php artisan route:list --path=staff` → `GET staff · staff.field.home`; every new key resolves in `en` and `fil`; guard **0 NEW in touched files** (the same 4 pre-existing owner-file violations in `complaint-show.css` / `admin/complaints/show.blade.php`); full `php artisan test` — **769 passed**, the same 11 pre-existing failures as HEAD (one further case is a network flake that passes in isolation). Two pre-existing test bugs this change surfaced were corrected: `StaffComplaintLayoutTest::elementWithClass()` scanned only `<div>` and could not see the `<details>` timeline card introduced by §5.61, and `StaffWorkspaceTest` counted the premium sidebar rail's `data-tooltip` as a duplicate “My activity”. Screenshots: `/tmp/opencode/field-home-{viewport,actions,mobile,desktop}.png` (repo-waived, evidence recorded here).
 - 2026-11-22 · Staff dashboard (`/staff/dashboard`, dept admin/staff/verifier) · **redesigned to clean workspace language consistent across roles.** Replaced transparency-style hero with a workspace header (department eyebrow, welcome, role chip), kept role-aware KPIs, rebuilt priority complaints as a clean panel (search, compact rows, status/priority badges, empty state), and kept recent activity as a secondary panel with internal scroll/max-height to avoid page stretch. Added subtle status-tinted stat icons using existing tokens. Shell spacing matches super admin (`1440px`, 2-column `max-content minmax(0,1fr)`, 24px gutters). Routes, permissions, and role-specific data scope unchanged. Files: `resources/views/staff/dashboard/index.blade.php`, `resources/css/pages/staff-dashboard.css`, `resources/css/app.css`, `docs/staff-dashboard-redesign.md`, `docs/design-system.md`, `docs/design-changelog.md`. New tokens: none. Verification: `npm run build`; Playwright 1440×900 smoke for dept admin/staff/verifier — rendered, no overflow; activity panel capped (562px, feed scrolls internally), page height reduced from ~2199px to ~1208px.
 - 2026-11-22 · Staff dashboard/activity alignment (`/staff/dashboard`, `/staff/activity`, `/staff/department-activity`) · **fixed navbar-overlap and matched super-admin spacing.** These pages contain `.transparency-page`, so `body:has(.transparency-page)` was zeroing body padding-top and hiding content under the fixed navbar; excluded staff/admin bodies from that zero-padding rule. Matched super-admin spacing with `max-width: 1440px`, `16px 24px 0` shell padding, and a 2-column `max-content minmax(0,1fr)` grid (removed unused 320px third column). File: `resources/css/app.css`. New tokens: none. Verification: Playwright 1440×900 — `bodyPT 64px, shellTop 64, sidebarTop 80, contentTop 80`; shell `1440px`, grid `256px 1112px`, 24px right gutter, no overflow.

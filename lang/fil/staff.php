@@ -23,19 +23,29 @@ return [
         'active_count' => ':count aktibo',
         'open_task' => 'Buksan ang gawain',
         'view_all' => 'Tingnan ang lahat ng :count gawain',
-        'actions_title' => 'Mga aksyon sa gawain',
-        'action_update_status' => 'Baguhin ang Katayuan',
-        'action_take_photo' => 'Kumuha ng Larawan',
-        'action_add_findings' => 'Magdagdag ng mga Natuklasan',
-        'action_submit_report' => 'Isumite ang Ulat',
-        'actions_unavailable' => 'Walang gawain na handa para sa update ngayon. Buksan ang isang gawain para makita kung ano ang hinihintay ng iyong tanggapan.',
         'footer_caption' => 'Daet Listens · Workspace ng field staff',
     ],
-    // Ang tab bar ng staff shell sa mobile (karanasan ng field staff).
+    // The staff shell's mobile tab bar (field staff experience).
     'mobile' => [
         'nav' => 'Navigasyon ng staff',
         'my_tasks' => 'Mga Gawain Ko',
         'activity' => 'Aktibidad',
+    ],
+    // Ticket-level chrome shared by every staff surface (field workspace,
+    // marking panel, follow-up thread). The four quick actions on the
+    // opened ticket live under 'ticket.actions'.
+    'ticket' => [
+        'original_report' => 'Orihinal na ulat ng residente',
+        'field_update' => 'Inbestigasyon sa lugar / update sa pag-unlad',
+        'actions' => [
+            'title' => 'Mga aksyon sa gawain',
+            'update_status' => 'Baguhin ang Katayuan',
+            'take_photo' => 'Kumuha ng Larawan',
+            'add_findings' => 'Magdagdag ng mga Natuklasan',
+            'submit_report' => 'Isumite ang Ulat',
+            'awaiting_verification' => 'Naghihintay ng beripikasyon — nasa verifier pa ang ulat na ito, kaya hindi pa bukas ang form ng update.',
+            'no_transitions' => 'Wala ng status na mababago — naabot ng ulat na ito ang huling hakbang at hindi na ito magpalit-palit.',
+        ],
     ],
     'stats' => [
         'pending_review' => 'Naghihintay ng beripikasyon',
@@ -378,6 +388,8 @@ return [
         'description_required' => 'Kailangan ang deskripsyon kapag nagmamarka ng reklamo.',
         'comment_required' => 'Kailangan ang komento kapag nagmamarka ng reklamo.',
         'submit' => 'Markahin bilang nakakalito o spam',
+        'eyebrow' => 'Integridad ng ulat',
+        'review_note' => 'Maaring pagsusuriin ng administrator ang naka-flag na mga ulat bago kumpirmahin ang pagmamarka.',
         'saved' => 'Namarka ang reklamo bilang nakakalito o spam. Na-flag ito para sa pagsusuri ng administrador.',
         'pending_review' => 'Naghihintay ng pagsusuri ng administrador',
         'confirmed' => 'Kinumpirma ng administrasyon',

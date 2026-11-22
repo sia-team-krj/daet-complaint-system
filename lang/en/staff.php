@@ -23,12 +23,6 @@ return [
         'active_count' => ':count active',
         'open_task' => 'Open task',
         'view_all' => 'View all :count tasks',
-        'actions_title' => 'Task actions',
-        'action_update_status' => 'Update Status',
-        'action_take_photo' => 'Take Photo',
-        'action_add_findings' => 'Add Findings',
-        'action_submit_report' => 'Submit Report',
-        'actions_unavailable' => 'No task is ready for an update yet. Open a task to see what the office is waiting on.',
         'footer_caption' => 'Daet Listens · Field staff workspace',
     ],
     // The staff shell's mobile tab bar (field staff experience).
@@ -36,6 +30,22 @@ return [
         'nav' => 'Staff navigation',
         'my_tasks' => 'My Tasks',
         'activity' => 'Activity',
+    ],
+    // Ticket-level chrome shared by every staff surface (field workspace,
+    // marking panel, follow-up thread). The four quick actions on the
+    // opened ticket live under 'ticket.actions'.
+    'ticket' => [
+        'original_report' => 'Original resident report',
+        'field_update' => 'Field investigation / progress update',
+        'actions' => [
+            'title' => 'Task actions',
+            'update_status' => 'Update Status',
+            'take_photo' => 'Take Photo',
+            'add_findings' => 'Add Findings',
+            'submit_report' => 'Submit Report',
+            'awaiting_verification' => 'Waiting on verification — this report is still with a verifier, so the update form is not open yet.',
+            'no_transitions' => 'No status change is left — this report is at its last step and can no longer be moved.',
+        ],
     ],
     'stats' => [
         'pending_review' => 'Pending verification',
@@ -375,6 +385,8 @@ return [
         'description_required' => 'A description is required when you mark a report.',
         'comment_required' => 'A comment is required when you mark a report.',
         'submit' => 'Mark as misleading or spam',
+        'eyebrow' => 'Report integrity',
+        'review_note' => 'Flagged reports are reviewed by an administrator before the marking is confirmed.',
         'saved' => 'Report marked as misleading or spam. It has been flagged for administrator review.',
         'pending_review' => 'Pending administrator review',
         'confirmed' => 'Confirmed by administration',

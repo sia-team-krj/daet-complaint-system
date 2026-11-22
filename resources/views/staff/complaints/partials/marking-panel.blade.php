@@ -20,7 +20,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </span>
             <div class="marking-panel__head-copy">
-                <p class="marking-panel__eyebrow">{{ __('staff.marking.eyebrow', ['default' => 'Report integrity']) }}</p>
+                <p class="marking-panel__eyebrow">{{ __('staff.marking.eyebrow') }}</p>
                 <h3 class="moderation-panel__title marking-panel__title">{{ __('staff.marking.title') }}</h3>
                 <p class="moderation-panel__lede marking-panel__lede">{{ __('staff.marking.lede') }}</p>
             </div>
@@ -105,7 +105,7 @@
                 </div>
 
                 <div class="marking-panel__actions">
-                    <p class="marking-panel__actions-note">{{ __('staff.marking.review_note', ['default' => 'Flagged reports are reviewed by an administrator before the marking is confirmed.']) }}</p>
+                    <p class="marking-panel__actions-note">{{ __('staff.marking.review_note') }}</p>
                     <button type="submit" class="moderation-panel__submit marking-panel__submit">
                         {{ __('staff.marking.submit') }}
                     </button>

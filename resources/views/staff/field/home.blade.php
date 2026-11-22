@@ -80,57 +80,6 @@
             </a>
         @endif
 
-        <hr class="field-home__rule">
-
-        {{-- The four quick actions are entry points, not a second workflow:
-             each one opens the relevant control of one assigned ticket. They
-             are aimed at the first report this officer can actually move —
-             anywhere else the ticket renders no form and the tap would land
-             on nothing. --}}
-        <section class="field-home__actions" aria-labelledby="field-actions-title">
-            <h2 class="field-home__section-title" id="field-actions-title">{{ __('staff.field.actions_title') }}</h2>
-
-            @if($actionTask)
-                <p class="field-home__actions-target">
-                    <span class="field-home__actions-ticket">{{ $actionTask->ticket_id }}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{{ \Illuminate\Support\Str::limit($actionTask->title, 44) }}</span>
-                </p>
-
-                <div class="field-actions">
-                    <a class="field-action" href="{{ route('staff.complaints.show', $actionTask) }}#status">
-                        <span class="field-action__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-                        </span>
-                        <span class="field-action__label">{{ __('staff.field.action_update_status') }}</span>
-                    </a>
-
-                    <a class="field-action" href="{{ route('staff.complaints.show', $actionTask) }}#proof-capture">
-                        <span class="field-action__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        </span>
-                        <span class="field-action__label">{{ __('staff.field.action_take_photo') }}</span>
-                    </a>
-
-                    <a class="field-action" href="{{ route('staff.complaints.show', $actionTask) }}#note">
-                        <span class="field-action__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                        </span>
-                        <span class="field-action__label">{{ __('staff.field.action_add_findings') }}</span>
-                    </a>
-
-                    <a class="field-action" href="{{ route('staff.complaints.show', $actionTask) }}#complaint-update-form">
-                        <span class="field-action__icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
-                        </span>
-                        <span class="field-action__label">{{ __('staff.field.action_submit_report') }}</span>
-                    </a>
-                </div>
-            @else
-                <p class="field-home__actions-note">{{ __('staff.field.actions_unavailable') }}</p>
-            @endif
-        </section>
-
     </div>
 </div>
 @endsection

@@ -10548,7 +10548,7 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
 }
 .staff-bottom-nav__grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     gap: 6px;
 }
 /* The field home's footer caption, centred beneath the four tab items. */
@@ -10575,6 +10575,33 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
 .staff-bottom-nav__item:hover { color: var(--navy-900); background: var(--navy-50); }
 .staff-bottom-nav__item.is-active { color: var(--navy-900); background: var(--navy-50); }
 .staff-bottom-nav__item:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+/* Field ticket in the nav: the four quick actions replace the tab bar. */
+body.role-staff .staff-bottom-nav .ticket-action {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 52px;
+    padding: 6px 4px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font: 600 11px/1.2 var(--font-sans);
+    text-decoration: none;
+}
+body.role-staff .staff-bottom-nav .ticket-action:hover { color: var(--navy-900); background: var(--navy-50); }
+body.role-staff .staff-bottom-nav .ticket-action:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+body.role-staff .staff-bottom-nav .ticket-action__icon { width: 24px; height: 24px; }
+body.role-staff .staff-bottom-nav .ticket-action__icon svg { width: 24px; height: 24px; }
+/* When nothing can be done, the nav carries the reason instead of actions. */
+body.role-staff .staff-bottom-nav .ticket-action-note {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 2px 6px 8px;
+    color: var(--faint);
+    font: 500 10px/1.4 var(--font-sans);
+    text-align: center;
+}
 @media (max-width: 1023px) {
     body.role-staff .staff-bottom-nav { display: block; }
     body.role-staff .staff-content { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }

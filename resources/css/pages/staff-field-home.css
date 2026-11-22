@@ -160,93 +160,17 @@
 
 .field-home__more:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--radius-sm); }
 
-/* ── Task actions: 2x2 grid ─────────────────────────────────── */
-.field-home__section-title {
-    margin: 0;
-    font: 700 15px/1.3 var(--font-sans);
-    color: var(--navy-900);
-}
 
-/* Which ticket the four actions open. Without this line the grid would
-   look like it acts on every card above it. */
-.field-home__actions-target {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 6px 0 0;
-    font: 500 12px/1.4 var(--font-sans);
-    color: var(--muted);
-}
-
-.field-home__actions-ticket {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    color: var(--navy-800);
-}
-
-.field-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 12px;
-}
-
-.field-action {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 8px;
-    min-height: 76px;
-    padding: 12px;
-    background: var(--surface);
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    color: var(--navy-900);
-    font: 700 13px/1.3 var(--font-sans);
-    text-decoration: none;
-}
-
-.field-action:hover {
-    background: var(--navy-50);
-    border-color: var(--line);
-}
-
-.field-action:focus-visible {
-    outline: none;
-    box-shadow: var(--ring);
-}
-
-.field-action__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    background: var(--navy-50);
-    color: var(--navy-700);
-}
-
-.field-action__icon svg {
-    width: 17px;
-    height: 17px;
-}
-
-.field-home__actions-note {
-    margin: 8px 0 0;
-    font: 400 13px/1.55 var(--font-sans);
-    color: var(--muted);
+/* The field home's bottom nav carries the page's way out, so the site footer
+   (and its caption line) is redundant on phones. */
+@media (max-width: 1023px) {
+    body.role-staff.page-staff-dashboard .site-footer { display: none; }
+    body.role-staff.page-staff-dashboard .staff-bottom-nav__caption { display: none; }
 }
 
 /* Tighter rhythm on the smallest phones; the card keeps the shell's gutter. */
 @media (max-width: 599px) {
     .field-home__card {
         padding: 16px 14px;
-    }
-
-    .field-action {
-        min-height: 72px;
-        padding: 10px;
     }
 }
