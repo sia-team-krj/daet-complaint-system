@@ -1286,9 +1286,43 @@ body.role-staff .staff-conversation__textarea:focus {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 20%, transparent);
 }
 body.role-staff .staff-conversation__form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-body.role-staff .staff-conversation__file { font: 400 13px/1.4 var(--font-sans); color: var(--muted); min-width: 0; }
-body.role-staff .staff-conversation__file input[type="file"] { max-width: 100%; font: inherit; color: var(--muted); }
-body.role-staff .staff-conversation__submit { min-height: 44px; }
+body.role-staff .staff-conversation__file-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--navy-700);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+body.role-staff .staff-conversation__file-btn svg,
+body.role-staff .staff-conversation__submit--icon svg { width: 18px; height: 18px; }
+body.role-staff .staff-conversation__file-btn:hover { background: var(--navy-50); border-color: var(--line); color: var(--navy-900); }
+body.role-staff .staff-conversation__file-btn:focus-within { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+body.role-staff .staff-conversation__file-btn input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+body.role-staff .staff-conversation__submit--icon {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 
 @media (max-width: 768px) {
     body.role-staff .staff-ticket-shell { padding: 16px 16px 0; }
@@ -1301,7 +1335,7 @@ body.role-staff .staff-conversation__submit { min-height: 44px; }
     body.role-staff .marking-panel__record,
     body.role-staff .marking-panel__note { margin-left: 16px; margin-right: 16px; }
     body.role-staff .staff-conversation__msg-meta { flex-direction: column; align-items: flex-start; gap: 2px; }
-    body.role-staff .staff-conversation__form-footer { align-items: stretch; }
-    body.role-staff .staff-conversation__submit { width: 100%; }
+    body.role-staff .staff-conversation__form-footer { align-items: center; }
+    body.role-staff .staff-conversation__submit:not(.staff-conversation__submit--icon) { width: 100%; }
 }
 
