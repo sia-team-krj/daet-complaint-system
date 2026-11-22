@@ -172,6 +172,55 @@
                     <p style="font-size: 14px; line-height: 1.75; color: var(--navy-900); margin: 0; white-space: pre-line;">{{ $complaint->description }}</p>
                 </div>
 
+                {{-- Conversation thread --}}
+                @php
+                    $conversationMessages = $complaint->messages->sortBy('created_at')->values();
+                    $canPostFollowUpMsg = app(\App\Services\ComplaintFollowUpService::class)->canPostMessage($complaint, auth()->user());
+                @endphp
+                <div class="tr-card workspace-card staff-detail-card">
+                    <div class="workspace-card__header">
+                        <div class="workspace-card__icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <h2 class="tr-h2">{{ __('complaint_show.follow_up.thread_title') }}</h2>
+                    </div>
+                    @if($conversationMessages->isEmpty())
+                        <p style="color: var(--faint); font-size: 13px; margin: 0;">{{ __('complaint_show.follow_up.thread_empty') }}</p>
+                    @else
+                        <div style="display:flex;flex-direction:column;gap:12px;">
+                            @foreach($conversationMessages as $msg)
+                                @php
+                                    $senderLabel = match($msg->sender_type) {
+                                        'admin' => __('complaint_show.follow_up.sender_admin'),
+                                        'staff' => __('complaint_show.follow_up.sender_staff'),
+                                        default => ($msg->user?->name ?? 'Resident'),
+                                    };
+                                @endphp
+                                <div style="border:1px solid var(--border-subtle,#e5e7eb);border-radius:10px;padding:12px;">
+                                    <div style="font-size:12px;color:var(--faint);margin-bottom:4px;">{{ $msg->created_at?->format('M d, Y · g:i A') }} · {{ $senderLabel }}</div>
+                                    <div style="font-size:14px;white-space:pre-line;">{{ $msg->body }}</div>
+                                    @if($msg->images !== [])
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                                            @foreach($msg->images as $idx => $imgPath)
+                                                <a href="{{ route('complaints.messages.evidence', [$complaint, $msg, $idx]) }}" target="_blank" rel="noopener"><img src="{{ route('complaints.messages.evidence', [$complaint, $msg, $idx]) }}" alt="Attachment {{ $idx + 1 }}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border-subtle,#e5e7eb);"></a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                    @if($canPostFollowUpMsg)
+                        <form method="POST" action="{{ route('complaints.follow_up.store', $complaint) }}" enctype="multipart/form-data" style="margin-top:14px;display:grid;gap:10px;">
+                            @csrf
+                            <label style="font-size:13px;font-weight:600;">{{ __('complaint_show.follow_up.body_label') }}</label>
+                            <textarea name="body" rows="3" minlength="10" maxlength="2000" required class="tr-input" placeholder="{{ __('complaint_show.follow_up.body_placeholder') }}">{{ old('body') }}</textarea>
+                            <input type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple>
+                            <div><button type="submit" class="tr-btn tr-btn--primary">{{ __('complaint_show.follow_up.submit') }}</button></div>
+                        </form>
+                    @endif
+                </div>
+
                 {{-- 3. Activity History Timeline Card --}}
                 <div class="tr-card workspace-card staff-detail-card staff-detail-card--timeline">
                     <div class="workspace-card__header">

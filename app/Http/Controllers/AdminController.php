@@ -1204,7 +1204,7 @@ class AdminController extends Controller
     {
         Gate::authorize('viewRealIdentity', $complaint);
 
-        $complaint->load(['user', 'department', 'logs.actor', 'logs.evidences', 'assignedStaff', 'reviewedBy']);
+        $complaint->load(['user', 'department', 'logs.actor', 'logs.evidences', 'assignedStaff', 'reviewedBy', 'messages.user']);
 
         // The administrator cannot close a resolved report either, so the
         // Closed option is not offered — unless the report is already closed,

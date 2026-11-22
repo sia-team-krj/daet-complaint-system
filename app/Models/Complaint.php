@@ -271,6 +271,11 @@ class Complaint extends Model
         return $this->hasMany(ComplaintLog::class)->latest();
     }
 
+    public function messages(): HasMany
+    {
+        return $this->hasMany(ComplaintMessage::class)->latest();
+    }
+
     /**
      * The staff member assigned to this complaint.
      */
@@ -376,6 +381,26 @@ class Complaint extends Model
     public function followUps(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id')->latest('id');
+    }
+
+    /**
+     * Parent chain from immediate parent up to the root complaint.
+     *
+     * @return array<int, Complaint>
+     */
+    public function parentChain(): array
+    {
+        $chain = [];
+        $seen = [$this->id];
+        $parent = $this->parent;
+
+        while ($parent && ! in_array($parent->id, $seen, true)) {
+            $chain[] = $parent;
+            $seen[] = $parent->id;
+            $parent = $parent->parent;
+        }
+
+        return $chain;
     }
 
     /**

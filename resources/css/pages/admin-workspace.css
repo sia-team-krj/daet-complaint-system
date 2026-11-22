@@ -28,7 +28,7 @@ body.role-admin.admin-layout .site-footer {
 
 body.role-admin.admin-layout .admin-shell {
     display: grid;
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: max-content minmax(0, 1fr);
     align-items: start;
     gap: 24px;
     width: 100%;
@@ -52,7 +52,12 @@ body.role-admin.admin-layout .admin-content {
     padding: 16px 0 48px;
 }
 
-/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+/* ─── Sidebar — premium SaaS rail ───────────────────────────────────────── */
+/* One white panel inside a transparent sticky rail. The panel owns the
+   height so the nav can scroll independently while Settings stays pinned
+   above a hairline divider. Width animates between 256px and 72px; the
+   admin shell's `max-content` column follows that width, so the content
+   reflows smoothly instead of jumping. */
 body.role-admin.admin-layout .admin-sidebar {
     position: sticky;
     top: calc(var(--navbar-h) + 16px);
@@ -62,77 +67,128 @@ body.role-admin.admin-layout .admin-sidebar {
     align-self: start;
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: auto;
+    width: 256px;
+    height: calc(100dvh - var(--navbar-h) - 32px);
     max-height: calc(100dvh - var(--navbar-h) - 32px);
     margin: 0;
-    padding: 16px 12px 24px;
-    overflow-x: hidden;
-    overflow-y: auto;
+    padding: 0;
+    overflow: visible;
     background: transparent;
     border: 0;
     border-radius: 0;
     box-shadow: none;
     transform: none;
+    transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     z-index: 1;
 }
 
-body.role-admin.admin-layout .admin-sidebar-header {
-    display: none;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 0 12px;
-    border: 0;
+body.role-admin.admin-layout .admin-sidebar.is-collapsed {
+    width: 72px;
 }
 
-body.role-admin.admin-layout .admin-sidebar-close {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    background: var(--surface);
-    color: var(--navy-700);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-}
-
-body.role-admin.admin-layout .admin-sidebar-card {
+body.role-admin.admin-layout .admin-sidebar__panel {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     width: 100%;
-    min-height: calc(100dvh - var(--navbar-h) - 72px);
-    padding: 16px;
+    height: 100%;
+    min-height: 0;
     background: var(--surface);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
+    overflow: hidden;
 }
 
-body.role-admin.admin-layout .admin-sidebar-nav {
+/* Rail header — small workspace eyebrow on the left, a 32px ghost chevron
+   on the right. The chevron is the only collapse control. */
+body.role-admin.admin-layout .admin-sidebar__header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    padding: 12px 10px 10px 20px;
+}
+
+body.role-admin.admin-layout .admin-sidebar__eyebrow {
+    color: var(--faint);
+    font: 600 11px/1.2 var(--font-sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+body.role-admin.admin-layout .admin-sidebar__collapse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    padding: 0;
+    color: var(--faint);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+body.role-admin.admin-layout .admin-sidebar__collapse svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+body.role-admin.admin-layout .admin-sidebar__collapse:hover {
+    color: var(--navy-700);
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-sidebar__collapse:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .admin-sidebar__nav {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
     margin: 0;
     padding: 0;
-    overflow: visible;
+    overflow: hidden;
     background: transparent;
 }
 
-body.role-admin.admin-layout .admin-sidebar-nav__main {
-    flex: 0 0 auto;
+/* The only scroll container: everything above Settings scrolls inside it. */
+body.role-admin.admin-layout .admin-sidebar__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 2px 12px 12px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
 }
 
-body.role-admin.admin-layout .admin-sidebar-nav__bottom {
-    margin-top: auto;
-    padding-top: 8px;
+body.role-admin.admin-layout .admin-sidebar__scroll::-webkit-scrollbar {
+    width: 6px;
 }
 
-body.role-admin.admin-layout .admin-sidebar-nav ul {
+body.role-admin.admin-layout .admin-sidebar__scroll::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border-radius: 999px;
+}
+
+body.role-admin.admin-layout .admin-sidebar__list {
     display: grid;
     gap: 2px;
     margin: 0;
@@ -140,98 +196,342 @@ body.role-admin.admin-layout .admin-sidebar-nav ul {
     list-style: none;
 }
 
-body.role-admin.admin-layout .admin-sidebar-section-label {
-    margin: 16px 8px 6px;
-    color: var(--muted);
-    font: 700 11px/1 var(--font-sans);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-body.role-admin.admin-layout .admin-sidebar-nav__main > .admin-sidebar-section-label:first-child {
-    margin-top: 4px;
-}
-
-body.role-admin.admin-layout .admin-sidebar-nav a {
-    display: grid;
-    grid-template-columns: 20px minmax(0, 1fr);
+/* Primary rows — 44px, 18px icons, 10px gap, semibold navy label. */
+body.role-admin.admin-layout .admin-sidebar__link {
+    position: relative;
+    display: flex;
     align-items: center;
     gap: 10px;
     min-height: 44px;
-    padding: 10px;
-    color: var(--text);
+    padding: 0 10px;
+    color: var(--navy-800);
     background: transparent;
-    border-left: 3px solid transparent;
+    border: 0;
     border-radius: var(--radius-sm);
-    font: 500 14px/1.3 var(--font-sans);
+    font: 600 14px/1.25 var(--font-sans);
     text-decoration: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    white-space: nowrap;
+    transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
 }
 
-body.role-admin.admin-layout .admin-sidebar-nav a:hover {
-    color: var(--navy-800);
-    background: var(--navy-50);
-}
-
-body.role-admin.admin-layout .admin-sidebar-nav a.is-active {
-    color: var(--navy-800);
-    background: var(--navy-50);
-    border-left-color: var(--gold-500);
-    font-weight: 700;
-}
-
-body.role-admin.admin-layout .admin-sidebar-nav a:focus-visible,
-body.role-admin.admin-layout .admin-sidebar-close:focus-visible {
-    outline: none;
-    box-shadow: var(--ring);
-}
-
-body.role-admin.admin-layout .admin-sidebar-nav svg {
-    width: 20px;
-    height: 20px;
+body.role-admin.admin-layout .admin-sidebar__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
-    color: var(--muted);
+    color: var(--faint);
+    transition: color 0.16s ease;
 }
 
-body.role-admin.admin-layout .admin-sidebar-nav a:hover svg,
-body.role-admin.admin-layout .admin-sidebar-nav a.is-active svg {
+body.role-admin.admin-layout .admin-sidebar__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+body.role-admin.admin-layout .admin-sidebar__link:hover {
+    color: var(--navy-800);
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-sidebar__link:hover .admin-sidebar__icon {
     color: var(--navy-700);
 }
 
-body.role-admin.admin-layout .admin-sidebar-language {
-    padding: 2px 8px 8px;
-}
-
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch {
-    width: 100%;
-    justify-content: center;
-    background: var(--surface);
-    border-color: var(--line);
-}
-
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch__globe {
-    color: var(--muted);
-}
-
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option {
-    color: var(--navy-700);
-    background: transparent;
-}
-
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option:hover,
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option:focus-visible {
+/* Active row — pale navy fill, semibold label, 2px navy left indicator. */
+body.role-admin.admin-layout .admin-sidebar__link.is-active {
     color: var(--navy-800);
     background: var(--navy-50);
+    box-shadow: inset 2px 0 0 var(--navy-700);
 }
 
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option.is-active,
-body.role-admin.admin-layout .admin-sidebar-language .lang-switch__option.is-active:hover {
-    color: var(--navy-950);
-    background: var(--gold-500);
+body.role-admin.admin-layout .admin-sidebar__link.is-active .admin-sidebar__icon {
+    color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-sidebar__link:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+body.role-admin.admin-layout .admin-sidebar__link.is-active:focus-visible {
+    box-shadow: inset 2px 0 0 var(--navy-700), var(--ring);
+}
+
+/* Collapsible groups — full-row summary, icon left, label beside it,
+   chevron pinned far right, all on one line. No native marker. */
+body.role-admin.admin-layout .admin-sidebar-section {
+    margin-top: 14px;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 10px;
+    color: var(--navy-800);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font: 600 14px/1.25 var(--font-sans);
+    list-style: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__summary::-webkit-details-marker {
+    display: none;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__summary::marker {
+    content: "";
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: var(--faint);
+    transition: color 0.16s ease;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: var(--faint);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), color 0.16s ease;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section[open] > .admin-sidebar-section__summary .admin-sidebar-section__chevron {
+    transform: rotate(180deg);
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__summary:hover {
+    color: var(--navy-800);
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__summary:hover .admin-sidebar-section__icon,
+body.role-admin.admin-layout .admin-sidebar-section__summary:hover .admin-sidebar-section__chevron {
+    color: var(--navy-700);
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__summary:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+/* A group whose child route is active keeps its icon and label navy, so the
+   collapsed rail still shows where the current page lives. */
+body.role-admin.admin-layout .admin-sidebar-section.is-current > .admin-sidebar-section__summary {
+    color: var(--navy-800);
+}
+
+body.role-admin.admin-layout .admin-sidebar-section.is-current > .admin-sidebar-section__summary .admin-sidebar-section__icon {
+    color: var(--navy-700);
+}
+
+/* Accordion body — grid-rows animation works without JavaScript. Closed
+   bodies stay `visibility: hidden`, which keeps their links out of the tab
+   order and the accessibility tree. */
+body.role-admin.admin-layout .admin-sidebar-section__body {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition: grid-template-rows 0.22s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.22s ease;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section[open] > .admin-sidebar-section__body {
+    grid-template-rows: 1fr;
+    visibility: visible;
+}
+
+body.role-admin.admin-layout .admin-sidebar-section__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Submenu — 22px deeper than the group icon, 16px icons on one vertical
+   axis, a hairline guide line, 40px rows that grow when a label wraps. */
+body.role-admin.admin-layout .admin-sidebar__list--nested {
+    position: relative;
+    gap: 1px;
+    margin: 2px 0 6px 8px;
+    padding-left: 16px;
+}
+
+body.role-admin.admin-layout .admin-sidebar__list--nested::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 4px;
+    width: 1px;
+    background: var(--line-soft);
+}
+
+body.role-admin.admin-layout .admin-sidebar__link--nested {
+    align-items: flex-start;
+    min-height: 40px;
+    padding: 10px 8px;
+    color: var(--muted);
+    font: 500 13.5px/1.35 var(--font-sans);
+    white-space: normal;
+}
+
+body.role-admin.admin-layout .admin-sidebar__link--nested .admin-sidebar__icon {
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+}
+
+body.role-admin.admin-layout .admin-sidebar__label--wrap {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+body.role-admin.admin-layout .admin-sidebar__link--nested:hover {
+    color: var(--navy-800);
+    background: var(--surface-soft);
+}
+
+body.role-admin.admin-layout .admin-sidebar__link--nested.is-active {
+    color: var(--navy-800);
+    font-weight: 600;
+    background: var(--navy-50);
+    box-shadow: inset 2px 0 0 var(--navy-700);
+}
+
+/* Settings footer — pinned below the scroll area, same row as a primary
+   item, separated by a hairline. */
+body.role-admin.admin-layout .admin-sidebar__footer {
+    flex: 0 0 auto;
+    padding: 10px 12px 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--line-soft);
+}
+
+/* Icon-only mode — labels stay in the DOM for the accessible name but are
+   visually clipped; submenus and chevrons hide; icons center. */
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__header {
+    justify-content: center;
+    padding: 12px 0 10px;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__eyebrow,
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section__chevron,
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section__body {
+    display: none;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__scroll {
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__link,
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section__summary,
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section__head {
+    justify-content: center;
+    gap: 0;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__link,
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section__summary {
+    padding-right: 0;
+    padding-left: 0;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__label,
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar-section {
+    margin-top: 8px;
+}
+
+body.role-admin.admin-layout .admin-sidebar.is-collapsed .admin-sidebar__list {
+    gap: 4px;
+}
+
+/* Tooltip portal — created by initAdminSidebarTooltips() and positioned
+   fixed so the rail's scroll container can never clip it. */
+.admin-sidebar-tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: var(--z-overlay);
+    max-width: 240px;
+    padding: 6px 10px;
+    color: var(--surface);
+    background: var(--navy-950);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lift);
+    font: 500 12px/1.4 var(--font-sans);
+    white-space: nowrap;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+    transition: opacity 0.12s ease, transform 0.12s ease, visibility 0.12s ease;
+}
+
+.admin-sidebar-tooltip.is-visible {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+.admin-sidebar-tooltip.is-left {
+    transform: translate(-100%, -50%) translateX(4px);
+}
+
+.admin-sidebar-tooltip.is-left.is-visible {
+    transform: translate(-100%, -50%) translateX(0);
 }
 
 /* Mobile toolbar is only used in the 641–767px gap; the shared authenticated
@@ -2267,15 +2567,13 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
 }
 
 /* ─── Tablet: persistent sidebar, matching the staff breakpoint ──────────── */
+/* `max-content` makes the grid column follow the rail's animated width, so
+   collapsing to icon-only gives the workspace the space back smoothly. */
 @media (min-width: 768px) {
     body.role-admin.admin-layout .admin-shell {
-        grid-template-columns: 240px minmax(0, 1fr);
+        grid-template-columns: max-content minmax(0, 1fr);
         gap: 20px;
         padding: 0 16px;
-    }
-
-    body.role-admin.admin-layout .admin-sidebar {
-        width: 240px;
     }
 
     body.role-admin.admin-layout .admin-mobile-toolbar,
@@ -2286,13 +2584,9 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
 
 @media (min-width: 1024px) {
     body.role-admin.admin-layout .admin-shell {
-        grid-template-columns: 248px minmax(0, 1fr);
+        grid-template-columns: max-content minmax(0, 1fr);
         gap: 24px;
         padding: 0 24px;
-    }
-
-    body.role-admin.admin-layout .admin-sidebar {
-        width: 248px;
     }
 }
 
@@ -2356,11 +2650,12 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
         left: 0;
         bottom: 0;
         width: min(320px, 88vw);
+        height: auto;
         max-height: none;
         padding: 12px;
-        overflow-y: auto;
+        overflow: hidden;
         background: var(--bg);
-        border-right: 1px solid var(--line-soft);
+        border: 0;
         box-shadow: var(--shadow-lift);
         transform: translateX(-102%);
         transition: transform 180ms ease;
@@ -2372,12 +2667,13 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
         transform: translateX(0);
     }
 
-    body.role-admin.admin-layout .admin-sidebar-header {
-        display: flex;
+    body.role-admin.admin-layout .admin-sidebar__panel {
+        height: 100%;
     }
 
-    body.role-admin.admin-layout .admin-sidebar-card {
-        min-height: 0;
+    /* The drawer is touch-first: always expanded, no collapse control. */
+    body.role-admin.admin-layout .admin-sidebar__collapse {
+        display: none;
     }
 
     body.role-admin.admin-layout .admin-sidebar-overlay {
@@ -2396,6 +2692,13 @@ body.role-admin.admin-layout .staff-password-row .admin-button {
     html.admin-sidebar-open body.role-admin.admin-layout .admin-sidebar-overlay {
         opacity: 1;
         pointer-events: auto;
+    }
+}
+
+/* Phones (≤640px) use the shared authenticated drawer, not this rail. */
+@media (max-width: 640px) {
+    body.role-admin.admin-layout .admin-sidebar {
+        display: none;
     }
 }
 

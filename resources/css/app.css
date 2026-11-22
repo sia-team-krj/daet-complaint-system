@@ -9840,9 +9840,9 @@ tr.admin-audit-mobile-only { display: none !important; }
    itself (component-styles .tr-banner, .citizen-dashboard welcome). */
 html { scroll-padding-top: calc(var(--navbar-h) + 16px); }
 body { padding-top: var(--navbar-h); }
-body:has(.transparency-page),
-body:has(.citizen-dashboard),
-body:has(.lp-root) { padding-top: 0; }
+body:has(.transparency-page):not(.page-staff-dashboard):not(.admin-layout):not(.role-staff):not(.role-admin),
+body:has(.citizen-dashboard):not(.page-staff-dashboard):not(.admin-layout):not(.role-staff):not(.role-admin),
+body:has(.lp-root):not(.page-staff-dashboard):not(.admin-layout):not(.role-staff):not(.role-admin) { padding-top: 0; }
 
 /* ═══════════════════════════════════════════════════════════
    Department account header + staff workspace light theme
@@ -9985,77 +9985,197 @@ body.role-staff .staff-sidebar > .staff-sidebar-nav { /* legacy safety */ }
 }
 body.role-staff .staff-sidebar-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
 
-/* Staff sidebar fixes (pass 2): one white card, readable light text, sticky/scroll, language */
-body.role-staff .staff-sidebar { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+/* Staff sidebar — premium rail, same language as admin (tokens only). */
+body.role-staff .staff-sidebar {
+    position: sticky;
+    top: calc(var(--navbar-h) + 16px);
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    width: 256px;
+    height: calc(100dvh - var(--navbar-h) - 32px);
+    max-height: calc(100dvh - var(--navbar-h) - 32px);
+    margin: 0;
+    padding: 0 !important;
+    overflow: visible;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0;
+    box-shadow: none !important;
+    transform: none;
+    transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1;
+}
+body.role-staff .staff-sidebar.is-collapsed { width: 72px; }
+body.role-staff .staff-sidebar__panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+body.role-staff .staff-sidebar__header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    padding: 12px 10px 10px 20px;
+}
+body.role-staff .staff-sidebar__heading { min-width: 0; display: grid; gap: 2px; }
+body.role-staff .staff-sidebar__eyebrow {
+    color: var(--faint);
+    font: 600 11px/1.2 var(--font-sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+body.role-staff .staff-sidebar__department {
+    color: var(--navy-900);
+    font: 600 13px/1.3 var(--font-sans);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+body.role-staff .staff-sidebar__dept-code {
+    justify-self: start;
+    margin-top: 2px;
+    font-size: 10px;
+}
+body.role-staff .staff-sidebar__header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+body.role-staff .staff-sidebar__drawer-close,
+body.role-staff .staff-sidebar__collapse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    padding: 0;
+    color: var(--faint);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+body.role-staff .staff-sidebar__drawer-close svg,
+body.role-staff .staff-sidebar__collapse svg {
+    width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+body.role-staff .staff-sidebar__drawer-close:hover,
+body.role-staff .staff-sidebar__collapse:hover { color: var(--navy-700); background: var(--surface-soft); }
+body.role-staff .staff-sidebar__drawer-close:focus-visible,
+body.role-staff .staff-sidebar__collapse:focus-visible { outline: none; box-shadow: var(--ring); }
+body.role-staff .staff-sidebar__drawer-close { display: none; }
+body.role-staff .staff-sidebar__nav { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; overflow: hidden; }
+body.role-staff .staff-sidebar__scroll {
+    flex: 1 1 auto; min-height: 0; padding: 2px 12px 12px; overflow-x: hidden; overflow-y: auto;
+    overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+body.role-staff .staff-sidebar__scroll::-webkit-scrollbar { width: 6px; }
+body.role-staff .staff-sidebar__scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+body.role-staff .staff-sidebar__list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+body.role-staff .staff-sidebar__link {
+    position: relative; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px;
+    color: var(--navy-800); background: transparent; border: 0; border-radius: var(--radius-sm);
+    font: 600 14px/1.25 var(--font-sans); text-decoration: none; white-space: nowrap;
+    transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+body.role-staff .staff-sidebar__icon {
+    width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--faint); transition: color 0.16s ease;
+}
+body.role-staff .staff-sidebar__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+body.role-staff .staff-sidebar__link:hover { color: var(--navy-800); background: var(--surface-soft); }
+body.role-staff .staff-sidebar__link:hover .staff-sidebar__icon { color: var(--navy-700); }
+body.role-staff .staff-sidebar__link.is-active { color: var(--navy-800); background: var(--navy-50); box-shadow: inset 2px 0 0 var(--navy-700); }
+body.role-staff .staff-sidebar__link.is-active .staff-sidebar__icon { color: var(--navy-700); }
+body.role-staff .staff-sidebar__link:focus-visible { outline: none; box-shadow: var(--ring); }
+body.role-staff .staff-sidebar__link.is-active:focus-visible { box-shadow: inset 2px 0 0 var(--navy-700), var(--ring); }
+body.role-staff .staff-sidebar-section { margin-top: 14px; }
+body.role-staff .staff-sidebar-section__summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 0 10px;
+    color: var(--navy-800); background: transparent; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+    font: 600 14px/1.25 var(--font-sans); list-style: none; user-select: none; -webkit-user-select: none;
+    transition: background-color 0.16s ease, color 0.16s ease;
+}
+body.role-staff .staff-sidebar-section__summary::-webkit-details-marker { display: none; }
+body.role-staff .staff-sidebar-section__summary::marker { content: ""; }
+body.role-staff .staff-sidebar-section__head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+body.role-staff .staff-sidebar-section__icon { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--faint); transition: color 0.16s ease; }
+body.role-staff .staff-sidebar-section__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.role-staff .staff-sidebar-section__chevron { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--faint); transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), color 0.16s ease; }
+body.role-staff .staff-sidebar-section[open] > .staff-sidebar-section__summary .staff-sidebar-section__chevron { transform: rotate(180deg); }
+body.role-staff .staff-sidebar-section__summary:hover { color: var(--navy-800); background: var(--surface-soft); }
+body.role-staff .staff-sidebar-section__summary:hover .staff-sidebar-section__icon,
+body.role-staff .staff-sidebar-section__summary:hover .staff-sidebar-section__chevron { color: var(--navy-700); }
+body.role-staff .staff-sidebar-section__summary:focus-visible { outline: none; box-shadow: var(--ring); }
+body.role-staff .staff-sidebar-section.is-current > .staff-sidebar-section__summary { color: var(--navy-800); }
+body.role-staff .staff-sidebar-section.is-current > .staff-sidebar-section__summary .staff-sidebar-section__icon { color: var(--navy-700); }
+body.role-staff .staff-sidebar-section__body { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 0.22s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.22s ease; }
+body.role-staff .staff-sidebar-section[open] > .staff-sidebar-section__body { grid-template-rows: 1fr; visibility: visible; }
+body.role-staff .staff-sidebar-section__inner { min-height: 0; overflow: hidden; }
+body.role-staff .staff-sidebar__list--nested { position: relative; gap: 1px; margin: 2px 0 6px 8px; padding-left: 16px; }
+body.role-staff .staff-sidebar__list--nested::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 4px; width: 1px; background: var(--line-soft); }
+body.role-staff .staff-sidebar__link--nested { align-items: flex-start; min-height: 40px; padding: 10px 8px; color: var(--muted); font: 500 13.5px/1.35 var(--font-sans); white-space: normal; }
+body.role-staff .staff-sidebar__link--nested .staff-sidebar__icon { width: 16px; height: 16px; margin-top: 1px; }
+body.role-staff .staff-sidebar__label--wrap { overflow: visible; text-overflow: clip; white-space: normal; overflow-wrap: break-word; }
+body.role-staff .staff-sidebar__link--nested:hover { color: var(--navy-800); background: var(--surface-soft); }
+body.role-staff .staff-sidebar__link--nested.is-active { color: var(--navy-800); font-weight: 600; background: var(--navy-50); box-shadow: inset 2px 0 0 var(--navy-700); }
+body.role-staff .staff-sidebar__list--solo { margin-top: 14px; }
+body.role-staff .staff-sidebar__footer { flex: 0 0 auto; padding: 10px 12px 12px; background: var(--surface); border-top: 1px solid var(--line-soft); }
+/* Collapsed */
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__header { justify-content: center; padding: 12px 0 10px; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__heading,
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar-section__chevron,
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar-section__body { display: none; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__scroll { padding-right: 10px; padding-left: 10px; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__link,
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar-section__summary,
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar-section__head { justify-content: center; gap: 0; padding-right: 0; padding-left: 0; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__label,
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar-section__label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar-section { margin-top: 8px; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__list { gap: 4px; }
+body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__dept-code { display: none; }
+/* Shell grid uses rail width */
 @media (min-width: 1024px) {
-  body.role-staff .staff-sidebar { position: sticky; top: calc(var(--navbar-height) + 16px); align-self: flex-start; max-height: calc(100dvh - var(--navbar-height) - 32px); overflow-y: auto; overflow-x: hidden; padding: 16px 12px 24px 16px; }
-  body.role-staff .staff-content { padding-top: 16px; }
+    body.role-staff .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 24px; width: 100%; max-width: 1440px; margin: 0 auto; padding: 16px 24px 0; align-items: start; }
+    body.role-staff .staff-workspace { min-width: 0; }
+    body.role-staff .staff-content { padding-top: 0; }
 }
-body.role-staff .staff-sidebar-card { background: var(--surface) !important; border: 1px solid var(--line-soft) !important; border-radius: var(--radius-lg) !important; box-shadow: var(--shadow-card) !important; }
-body.role-staff .staff-sidebar-card .staff-department-context { background: var(--navy-50) !important; }
-body.role-staff .staff-sidebar-section-label { color: var(--muted) !important; }
-body.role-staff .staff-sidebar-nav a { color: var(--text) !important; }
-body.role-staff .staff-sidebar-nav a svg { color: var(--muted) !important; stroke: currentColor; }
-body.role-staff .staff-sidebar-nav a:hover,
-body.role-staff .staff-sidebar-nav a.is-active { background: var(--navy-50) !important; color: var(--navy-800) !important; }
-body.role-staff .staff-sidebar-nav a.is-active { border-left: 3px solid var(--gold-500) !important; font-weight: 700; }
-body.role-staff .staff-sidebar-nav a.is-active svg { color: var(--navy-700) !important; }
-body.role-staff .staff-sidebar-nav a { min-height: 44px; }
-/* Language switcher in light sidebar */
-body.role-staff .staff-sidebar .lang-switch {
-  border-color: var(--line) !important; background: var(--surface) !important; width: 100%;
+@media (min-width: 1280px) {
+    body.role-staff.page-staff-dashboard .staff-shell { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; max-width: 1440px; padding: 16px 24px 0; }
 }
-body.role-staff .staff-sidebar .lang-switch__globe { color: var(--muted) !important; }
-body.role-staff .staff-sidebar .lang-switch__option {
-  color: var(--navy-700) !important; background: transparent !important; font-size: 11px !important;
-}
-body.role-staff .staff-sidebar .lang-switch__option:hover,
-body.role-staff .staff-sidebar .lang-switch__option:focus-visible { background: var(--navy-50) !important; color: var(--navy-800) !important; }
-body.role-staff .staff-sidebar .lang-switch__option.is-active {
-  background: var(--gold-500) !important; color: var(--navy-900) !important;
-}
-body.role-staff .staff-sidebar .lang-switch--compact .lang-switch__label { display: none; }
-body.role-staff .staff-sidebar .lang-switch--compact .lang-switch__code { display: inline; }
-
-/* Staff shell 3-zone layout (dashboard, pass 3) */
-body.role-staff .staff-shell { width: 100%; max-width: 1440px; margin: 0 auto; padding: var(--navbar-height) 0 0 0; box-sizing: border-box; min-height: 100dvh; }
-@media (min-width: 1024px) {
-  body.role-staff .staff-shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 24px; padding: var(--navbar-height) 24px 0 24px; align-items: start; }
-  body.role-staff .staff-sidebar { width: 248px; position: sticky; top: calc(var(--navbar-height) + 16px); max-height: calc(100dvh - var(--navbar-height) - 32px); overflow-y: auto; transform: none; left: auto; }
-  body.role-staff .staff-workspace { min-width: 0; }
-}
-.staff-aside-column { display: none; }
-@media (min-width: 1024px) {
-  body.role-staff .staff-department-context { display: none !important; }
+@media (min-width: 768px) and (max-width: 1279px) {
+    body.role-staff.page-staff-dashboard .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 20px; align-items: start; max-width: 1440px; margin: 0 auto; padding: 16px 16px 0; }
+    body.role-staff.page-staff-dashboard .staff-sidebar { position: sticky; top: calc(var(--navbar-h) + 16px); width: 256px; }
 }
 @media (max-width: 1023px) {
-  body.role-staff .staff-shell { padding: var(--navbar-height) 0 0 0; gap: 0; }
+    body.role-staff .staff-sidebar {
+        position: fixed; top: var(--navbar-h, var(--navbar-height)); left: 0; bottom: 0;
+        width: min(320px, 88vw); height: auto; max-height: none; padding: 12px !important;
+        overflow: hidden; background: var(--bg) !important; border: 0 !important; box-shadow: var(--shadow-lift) !important;
+        transform: translateX(-102%); transition: transform 180ms ease; z-index: var(--z-drawer, 1010);
+    }
+    body.role-staff .staff-sidebar.is-open,
+    html.staff-sidebar-open body.role-staff .staff-sidebar { transform: translateX(0); }
+    body.role-staff .staff-sidebar__panel { height: 100%; }
+    body.role-staff .staff-sidebar__drawer-close { display: inline-flex; }
+    body.role-staff .staff-sidebar__collapse { display: none; }
+    body.role-staff .staff-mobile-toolbar { display: flex !important; }
+    body.role-staff .staff-sidebar-overlay { display: block; position: fixed; inset: var(--navbar-h, var(--navbar-height)) 0 0; background: color-mix(in srgb, var(--navy-950) 48%, transparent); border: 0; opacity: 0; pointer-events: none; transition: opacity 180ms ease; z-index: var(--z-drawer-backdrop, 1000); }
+    html.staff-sidebar-open body.role-staff .staff-sidebar-overlay { opacity: 1; pointer-events: auto; }
 }
-
-/* Sidebar definitive (pass 3) */
-body.role-staff .staff-sidebar-card { width: 100%; background: var(--dept-surface) !important; border: 1px solid var(--dept-card-border) !important; border-radius: 16px !important; box-shadow: var(--dept-card-shadow) !important; padding: 16px !important; display: flex; flex-direction: column; min-height: 0; }
-@media (min-width: 1024px) { body.role-staff .staff-sidebar-card { min-height: calc(100% - 8px); } }
-body.role-staff .staff-department-context { background: linear-gradient(135deg, var(--dept-active-bg), #f5f8ff) !important; border: 1px solid var(--dept-active-border) !important; border-radius: 12px !important; padding: 14px !important; margin: 0 0 8px !important; box-shadow: none !important; }
-body.role-staff .staff-department-label { color: var(--dept-muted) !important; font-size: 11px !important; letter-spacing: .08em !important; }
-body.role-staff .staff-department-context strong { color: var(--dept-ink) !important; font-size: 16px !important; }
-body.role-staff .staff-department-context .dept-chip { background: var(--dept-gold-chip) !important; color: var(--dept-ink) !important; border: 0 !important; }
-body.role-staff .staff-sidebar-nav { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-body.role-staff .staff-sidebar-nav__main { flex: 0 0 auto; }
-body.role-staff .staff-sidebar-nav__bottom { margin-top: auto; padding-top: 8px; }
-body.role-staff .staff-sidebar-section-label { color: var(--dept-muted) !important; font-size: 11px !important; margin: 16px 8px 6px !important; }
-body.role-staff .staff-sidebar-nav a { min-height: 44px !important; height: 44px; border-radius: 12px !important; color: var(--dept-ink) !important; font-size: 14px !important; font-weight: 500 !important; border-left: 3px solid transparent !important; padding: 0 10px !important; }
-body.role-staff .staff-sidebar-nav a svg { width: 20px !important; height: 20px !important; color: var(--dept-muted) !important; }
-body.role-staff .staff-sidebar-nav a:hover { background: var(--dept-hover) !important; color: var(--dept-ink) !important; }
-body.role-staff .staff-sidebar-nav a.is-active { background: var(--dept-active-bg) !important; color: var(--navy-700) !important; border-left-color: transparent !important; font-weight: 700 !important; }
-body.role-staff .staff-sidebar-nav a.is-active svg { color: var(--navy-700) !important; }
-body.role-staff .staff-sidebar-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--dept-primary); color: var(--surface); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
-body.role-staff .staff-sidebar-badge--amber { background: var(--status-progress-bg, rgba(217, 119, 6, 0.15)); color: var(--status-progress-text, var(--gold-700)); }
-body.role-staff .staff-sidebar-link-label { flex: 1 1 auto; min-width: 0; }
-body.role-staff .staff-sidebar-language .lang-switch { background: var(--dept-hover) !important; border-color: var(--dept-card-border) !important; }
-@media (max-width: 1023px) {
-  body.role-staff .staff-sidebar { width: min(320px, 88vw) !important; padding: 12px !important; }
-  body.role-staff .staff-sidebar-card { min-height: 0; }
-  body.role-staff .staff-sidebar-nav__bottom { margin-top: 8px; }
+@media (min-width: 1024px) {
+    body.role-staff .staff-mobile-toolbar, body.role-staff .staff-sidebar-overlay { display: none !important; }
 }
 
 /* Navbar / header fixes (staff, pass 3) */

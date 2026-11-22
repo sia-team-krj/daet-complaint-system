@@ -977,6 +977,7 @@ class StaffController extends Controller
             'assignedStaff:id,first_name,last_name,role',
             'duplicateOf',
             'informationRequests.requester:id,display_alias,first_name,last_name,role',
+            'messages.user:id,display_alias,first_name,last_name,role',
         ]);
 
         // Status options for dropdown (excluding current status to force change)

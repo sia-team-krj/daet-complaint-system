@@ -30,16 +30,8 @@
             ?? ($reviewerNote !== '' ? $reviewerNote : __('complaint_show.action.fallback_question'));
         $showNeedsInfo = $isOwner && ($openRequest !== null || $needsInfo);
 
-        // Sub-ticketing: the owner of a finished complaint may file one follow-up
-        // at a time, so the panel hides while a follow-up is still waiting.
-        $openFollowUp = $complaint->openFollowUp();
-        $hasOpenFollowUp = $openFollowUp !== null;
-        $showFollowUp = $isOwner
-            && ! $hasOpenFollowUp
-            && in_array($complaint->status, [
-                \App\Enums\ComplaintStatus::Resolved->value,
-                \App\Enums\ComplaintStatus::Closed->value,
-            ], true);
+        $conversationMessages = $complaint->messages->sortBy('created_at')->values();
+        $canPostFollowUp = $isOwner;
 
         $office = $complaint->department?->name ?? __('complaint_show.details.unassigned');
         $policy = $complaint->intakePolicy();
@@ -81,12 +73,6 @@
                     </button>
                     <span class="sr-only" id="copy-live" aria-live="polite"></span>
                 </div>
-                @if($complaint->parent)
-                    <p class="pt-banner__followup">
-                        {{ __('complaint_show.follow_up.parent_label') }}
-                        <a href="{{ route('complaints.show', $complaint->parent) }}">{{ $complaint->parent->ticket_id }}</a>
-                    </p>
-                @endif
 
                 <h1 class="pt-banner__title">{{ $complaint->title }}</h1>
 
@@ -352,88 +338,92 @@
                         </section>
                     @endif
 
-                    @if($isOwner && $hasOpenFollowUp)
-                        <section class="pt-card rd-order-followup" aria-labelledby="follow-up-open-heading">
-                            <h2 id="follow-up-open-heading">{{ __('complaint_show.follow_up.title') }}</h2>
-                            <p class="pt-copy">{{ __('complaint_show.follow_up.open_exists') }}</p>
-                            <div class="complaint-feedback-actions">
-                                <a href="{{ route('complaints.show', $openFollowUp) }}" class="tr-button tr-button--primary">{{ __('complaint_show.follow_up.view_follow_up', ['ticket' => $openFollowUp->ticket_id]) }}</a>
-                            </div>
-                        </section>
-                    @endif
-
-                    @if($showFollowUp)
-                        <section class="follow-up-panel rd-order-followup" aria-labelledby="follow-up-heading">
-                            <div class="follow-up-panel__head">
-                                <span class="follow-up-panel__icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                                </span>
-                                <div>
-                                    <p class="follow-up-panel__kicker">{{ __('complaint_show.follow_up.kicker') }}</p>
-                                    <h2 class="follow-up-panel__title" id="follow-up-heading">{{ __('complaint_show.follow_up.title') }}</h2>
-                                </div>
-                            </div>
-                            <p class="follow-up-panel__lede">{{ __('complaint_show.follow_up.lede') }}</p>
-                            <form data-loading-submit method="POST" action="{{ route('complaints.follow_up.store', $complaint) }}" enctype="multipart/form-data" class="follow-up-panel__form">
-                                @csrf
-                                <label class="follow-up-panel__field" for="follow-up-title">
-                                    <span class="follow-up-panel__label">{{ __('complaint_show.follow_up.subject_label') }}</span>
-                                    <input type="text" id="follow-up-title" name="title" class="follow-up-panel__input" maxlength="255" placeholder="{{ __('complaint_show.follow_up.subject_placeholder') }}" value="{{ old('title') }}">
-                                </label>
-                                @error('title')
-                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
-                                @enderror
-
-                                <label class="follow-up-panel__field" for="follow-up-description">
-                                    <span class="follow-up-panel__label">{{ __('complaint_show.follow_up.description_label') }}</span>
-                                    <textarea id="follow-up-description" name="description" class="feedback-textarea" rows="4" minlength="20" maxlength="2000" placeholder="{{ __('complaint_show.follow_up.description_placeholder') }}">{{ old('description') }}</textarea>
-                                </label>
-                                @error('description')
-                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
-                                @enderror
-
-                                <div class="info-request__photos"
-                                     data-photo-picker
-                                     data-max="5"
-                                     data-max-bytes="5242880"
-                                     data-msg-too-many="{{ __('complaint_show.action.photos_too_many', ['max' => 5]) }}"
-                                     data-msg-invalid="{{ __('complaint_show.action.photos_invalid') }}"
-                                     data-msg-remove="{{ __('complaint_show.action.photos_remove', ['name' => '__name__']) }}"
-                                     data-msg-preview="{{ __('complaint_show.action.photos_preview_alt', ['name' => '__name__']) }}"
-                                     data-msg-count="{{ __('complaint_show.action.photos_count', ['count' => '__count__', 'max' => 5]) }}">
-                                    <div class="info-request__photos-field" data-photo-field>
-                                        <label for="follow-up-images" class="follow-up-panel__label">{{ __('complaint_show.action.photos_label') }} <small>{{ __('complaint_show.action.photos_optional') }}</small></label>
-                                        <p class="info-request__hint">{{ __('complaint_show.action.photos_hint') }}</p>
-                                        <input type="file" name="images[]" id="follow-up-images" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" multiple data-photo-input>
-                                        <input type="file" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" capture="environment" data-photo-camera>
-                                        <div class="info-request__photo-actions">
-                                            <button type="button" class="info-request__photo-add tr-button" data-photo-trigger>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                                                {{ __('complaint_show.action.photos_choose') }}
-                                            </button>
-                                            <button type="button" class="info-request__photo-add tr-button" data-photo-camera-trigger>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                                {{ __('complaint_show.action.photos_take') }}
-                                            </button>
-                                            <span class="info-request__photo-count" data-photo-count aria-live="polite">{{ __('complaint_show.action.photos_count', ['count' => 0, 'max' => 5]) }}</span>
+                    <section class="pt-card rd-order-followup" aria-labelledby="pcs-conversation-heading">
+                        <h2 id="pcs-conversation-heading">{{ __('complaint_show.follow_up.thread_title') }}</h2>
+                        @if($conversationMessages->isEmpty())
+                            <p class="pt-copy">{{ __('complaint_show.follow_up.thread_empty') }}</p>
+                        @else
+                            <ul class="pt-updates" style="margin-top:0.75rem;">
+                                @foreach($conversationMessages as $msg)
+                                    @php
+                                        $senderLabel = match($msg->sender_type) {
+                                            'admin' => __('complaint_show.follow_up.sender_admin'),
+                                            'staff' => __('complaint_show.follow_up.sender_staff'),
+                                            default => ($msg->user_id === auth()->id() ? __('complaint_show.follow_up.sender_resident') : ($msg->user?->name ?? __('complaint_show.follow_up.sender_resident'))),
+                                        };
+                                        $msgImages = $msg->images;
+                                    @endphp
+                                    <li class="pt-update">
+                                        <span class="pt-update__marker" aria-hidden="true"></span>
+                                        <div class="pt-update__body">
+                                            <p class="pt-update__meta">
+                                                <span class="pt-update__date">{{ $msg->created_at?->format('M d, Y · g:i A') }}</span>
+                                                <span class="pt-update__actor"> · {{ $senderLabel }}</span>
+                                            </p>
+                                            <p class="pt-update__comment">{{ $msg->body }}</p>
+                                            @if($msgImages !== [])
+                                                <div class="info-request__photo-grid" style="margin-top:0.5rem;">
+                                                    @foreach($msgImages as $idx => $imgPath)
+                                                        <a href="{{ route('complaints.messages.evidence', [$complaint, $msg, $idx]) }}" target="_blank" rel="noopener" class="info-request__photo-thumb" style="display:block;">
+                                                            <img src="{{ route('complaints.messages.evidence', [$complaint, $msg, $idx]) }}" alt="Attachment {{ $idx + 1 }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
-                                        <div class="info-request__photo-grid" data-photo-previews aria-live="polite"></div>
-                                        <p class="info-request__error" data-photo-error hidden></p>
-                                    </div>
-                                </div>
-                                @error('images')
-                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
-                                @enderror
-                                @error('images.*')
-                                    <p class="cat-field__error" role="alert">{{ $message }}</p>
-                                @enderror
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
 
-                                <div class="follow-up-panel__actions">
-                                    <button type="submit" class="tr-button tr-button--primary">{{ __('complaint_show.follow_up.submit') }}</button>
-                                </div>
-                            </form>
-                        </section>
-                    @endif
+                        @if($canPostFollowUp)
+                            <div class="conversation-composer">
+                                <form data-loading-submit method="POST" action="{{ route('complaints.follow_up.store', $complaint) }}" enctype="multipart/form-data" class="conversation-composer__form">
+                                    @csrf
+                                    <label class="conversation-composer__field" for="follow-up-body">
+                                        <span class="conversation-composer__label">{{ __('complaint_show.follow_up.body_label') }}</span>
+                                        <textarea id="follow-up-body" name="body" class="feedback-textarea" rows="3" minlength="10" maxlength="2000" required placeholder="{{ __('complaint_show.follow_up.body_placeholder') }}">{{ old('body', old('description')) }}</textarea>
+                                    </label>
+                                    @error('body')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
+                                    @error('description')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
+
+                                    <div class="info-request__photos" data-photo-picker data-max="5" data-max-bytes="5242880"
+                                         data-msg-too-many="{{ __('complaint_show.action.photos_too_many', ['max' => 5]) }}"
+                                         data-msg-invalid="{{ __('complaint_show.action.photos_invalid') }}"
+                                         data-msg-remove="{{ __('complaint_show.action.photos_remove', ['name' => '__name__']) }}"
+                                         data-msg-preview="{{ __('complaint_show.action.photos_preview_alt', ['name' => '__name__']) }}"
+                                         data-msg-count="{{ __('complaint_show.action.photos_count', ['count' => '__count__', 'max' => 5]) }}">
+                                        <div class="info-request__photos-field" data-photo-field>
+                                            <div class="conversation-composer__attach-row">
+                                                <span class="conversation-composer__attach-label">{{ __('complaint_show.action.photos_label') }} <small>{{ __('complaint_show.action.photos_optional') }}</small></span>
+                                                <span class="info-request__photo-count" data-photo-count aria-live="polite">{{ __('complaint_show.action.photos_count', ['count' => 0, 'max' => 5]) }}</span>
+                                            </div>
+                                            <input type="file" name="images[]" id="follow-up-images" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" multiple data-photo-input>
+                                            <input type="file" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" capture="environment" data-photo-camera>
+                                            <div class="info-request__photo-actions">
+                                                <button type="button" class="info-request__photo-add tr-button" data-photo-trigger>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                                    {{ __('complaint_show.action.photos_choose') }}
+                                                </button>
+                                                <button type="button" class="info-request__photo-add tr-button" data-photo-camera-trigger>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                                    {{ __('complaint_show.action.photos_take') }}
+                                                </button>
+                                            </div>
+                                            <div class="info-request__photo-grid" data-photo-previews aria-live="polite"></div>
+                                            <p class="info-request__error" data-photo-error hidden></p>
+                                        </div>
+                                    </div>
+                                    @error('images')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
+                                    @error('images.*')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
+
+                                    <div class="conversation-composer__actions">
+                                        <button type="submit" class="tr-button tr-button--primary">{{ __('complaint_show.follow_up.submit') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        @endif
+                    </section>
 
                     <section class="pt-card rd-order-updates" aria-labelledby="pcs-updates-heading">
                         <h2 id="pcs-updates-heading">{{ __('complaint_show.updates.title') }}</h2>
@@ -548,12 +538,6 @@
                     <section class="pt-card rd-order-details" aria-labelledby="pcs-details-heading">
                         <h2 id="pcs-details-heading">{{ __('complaint_show.details.title') }}</h2>
                         <dl class="pt-dl">
-                            @if($complaint->parent)
-                                <div class="pt-dl--full">
-                                    <dt>{{ __('complaint_show.follow_up.parent_label') }}</dt>
-                                    <dd><a href="{{ route('complaints.show', $complaint->parent) }}" class="pt-map-link">{{ $complaint->parent->ticket_id }}</a></dd>
-                                </div>
-                            @endif
                             <div>
                                 <dt>{{ __('complaint_show.details.category') }}</dt>
                                 <dd>
@@ -831,154 +815,176 @@
         })();
 
         // Photo pickers: previews and removable selected photos. There can be
-        // more than one on the page (info request + follow-up).
+        // more than one on the page (info request + follow-up). Re-init safe for soft navigation.
         (function () {
-            document.querySelectorAll('[data-photo-picker]').forEach((picker) => {
-                const input = picker.querySelector('[data-photo-input]');
-                const trigger = picker.querySelector('[data-photo-trigger]');
-                const previews = picker.querySelector('[data-photo-previews]');
-                const count = picker.querySelector('[data-photo-count]');
-                const errorBox = picker.querySelector('[data-photo-error]');
-                if (!input || !previews) return;
+            const initPhotoPickers = (root) => {
+                (root || document).querySelectorAll('[data-photo-picker]').forEach((picker) => {
+                    if (picker.dataset.photoPickerReady === '1') return;
+                    picker.dataset.photoPickerReady = '1';
+                    const input = picker.querySelector('[data-photo-input]');
+                    const trigger = picker.querySelector('[data-photo-trigger]');
+                    const previews = picker.querySelector('[data-photo-previews]');
+                    const count = picker.querySelector('[data-photo-count]');
+                    const errorBox = picker.querySelector('[data-photo-error]');
+                    if (!input || !previews) return;
 
-                const max = Number(picker.dataset.max || 5);
-                const maxBytes = Number(picker.dataset.maxBytes || 5242880);
-                const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-                const allowedName = /\.(jpe?g|png|webp)$/i;
-                const tpl = {
-                    count: picker.dataset.msgCount || '__count__ / __max__ photos',
-                    remove: picker.dataset.msgRemove || 'Remove __name__',
-                    preview: picker.dataset.msgPreview || 'Selected photo: __name__',
-                    tooMany: picker.dataset.msgTooMany || 'You can attach up to __max__ photos.',
-                    invalid: picker.dataset.msgInvalid || 'Use JPG, PNG, or WEBP photos no larger than 5 MB each.',
-                };
+                    const max = Number(picker.dataset.max || 5);
+                    const maxBytes = Number(picker.dataset.maxBytes || 5242880);
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                    const allowedName = /\.(jpe?g|png|webp)$/i;
+                    const tpl = {
+                        count: picker.dataset.msgCount || '__count__ / __max__ photos',
+                        remove: picker.dataset.msgRemove || 'Remove __name__',
+                        preview: picker.dataset.msgPreview || 'Selected photo: __name__',
+                        tooMany: picker.dataset.msgTooMany || 'You can attach up to __max__ photos.',
+                        invalid: picker.dataset.msgInvalid || 'Use JPG, PNG, or WEBP photos no larger than 5 MB each.',
+                    };
 
-                let selected = [];
-                let previewUrls = [];
+                    let selected = [];
+                    let previewUrls = [];
 
-                const fill = (template, values) => {
-                    let out = String(template || '');
-                    Object.entries(values || {}).forEach(([key, value]) => {
-                        out = out.split(`:${key}`).join(String(value)).split(`__${key}__`).join(String(value));
-                    });
-                    return out;
-                };
-
-                const showError = (message) => {
-                    if (!errorBox) return;
-                    errorBox.textContent = message || '';
-                    errorBox.hidden = !message;
-                };
-
-                const isAllowed = (file) => file.size > 0 && file.size <= maxBytes
-                    && (allowedTypes.includes(file.type) || allowedName.test(file.name));
-
-                const syncInput = () => {
-                    if (typeof DataTransfer === 'undefined') return false;
-                    try {
-                        const transfer = new DataTransfer();
-                        selected.forEach(({ file }) => transfer.items.add(file));
-                        input.files = transfer.files;
-                        return true;
-                    } catch (error) {
-                        return false;
-                    }
-                };
-
-                const render = () => {
-                    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-                    previewUrls = [];
-                    previews.replaceChildren();
-
-                    selected.forEach(({ id, file }) => {
-                        const item = document.createElement('div');
-                        item.className = 'info-request__photo-item';
-
-                        const image = document.createElement('img');
-                        const url = URL.createObjectURL(file);
-                        previewUrls.push(url);
-                        image.src = url;
-                        image.alt = fill(tpl.preview, { name: file.name });
-                        item.appendChild(image);
-
-                        const remove = document.createElement('button');
-                        remove.type = 'button';
-                        remove.className = 'info-request__photo-remove';
-                        remove.setAttribute('aria-label', fill(tpl.remove, { name: file.name }));
-                        remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
-                        remove.addEventListener('click', () => {
-                            selected = selected.filter((photo) => photo.id !== id);
-                            syncInput();
-                            showError('');
-                            render();
+                    const fill = (template, values) => {
+                        let out = String(template || '');
+                        Object.entries(values || {}).forEach(([key, value]) => {
+                            out = out.split(`:${key}`).join(String(value)).split(`__${key}__`).join(String(value));
                         });
-                        item.appendChild(remove);
+                        return out;
+                    };
 
-                        previews.appendChild(item);
-                    });
+                    const showError = (message) => {
+                        if (!errorBox) return;
+                        errorBox.textContent = message || '';
+                        errorBox.hidden = !message;
+                    };
 
-                    if (count) {
-                        count.textContent = fill(tpl.count, { count: selected.length, max });
+                    const isAllowed = (file) => file.size > 0 && file.size <= maxBytes
+                        && (allowedTypes.includes(file.type) || allowedName.test(file.name));
+
+                    const syncInput = () => {
+                        if (typeof DataTransfer === 'undefined') return false;
+                        try {
+                            const transfer = new DataTransfer();
+                            selected.forEach(({ file }) => transfer.items.add(file));
+                            input.files = transfer.files;
+                            return true;
+                        } catch (error) {
+                            return false;
+                        }
+                    };
+
+                    const render = () => {
+                        previewUrls.forEach((url) => URL.revokeObjectURL(url));
+                        previewUrls = [];
+                        previews.replaceChildren();
+
+                        selected.forEach(({ id, file }) => {
+                            const item = document.createElement('div');
+                            item.className = 'info-request__photo-item';
+
+                            const image = document.createElement('img');
+                            const url = URL.createObjectURL(file);
+                            previewUrls.push(url);
+                            image.src = url;
+                            image.alt = fill(tpl.preview, { name: file.name });
+                            item.appendChild(image);
+
+                            const remove = document.createElement('button');
+                            remove.type = 'button';
+                            remove.className = 'info-request__photo-remove';
+                            remove.setAttribute('aria-label', fill(tpl.remove, { name: file.name }));
+                            remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"></path><path d="m18 6-12 12"></path></svg>';
+                            remove.addEventListener('click', () => {
+                                selected = selected.filter((photo) => photo.id !== id);
+                                syncInput();
+                                showError('');
+                                render();
+                            });
+                            item.appendChild(remove);
+
+                            previews.appendChild(item);
+                        });
+
+                        if (count) {
+                            count.textContent = fill(tpl.count, { count: selected.length, max });
+                        }
+                    };
+
+                    const addFiles = (files) => {
+                        const incoming = Array.from(files || []);
+                        if (!incoming.length) return;
+
+                        if (incoming.some((file) => !isAllowed(file))) {
+                            showError(tpl.invalid);
+                            return;
+                        }
+
+                        const seen = new Set(selected.map(({ file }) => `${file.name}-${file.size}-${file.lastModified}`));
+                        const unique = incoming.filter((file) => {
+                            const key = `${file.name}-${file.size}-${file.lastModified}`;
+                            if (seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        });
+
+                        const slots = max - selected.length;
+                        if (unique.length > slots) {
+                            showError(fill(tpl.tooMany, { max }));
+                        } else {
+                            showError('');
+                        }
+
+                        unique.slice(0, Math.max(slots, 0)).forEach((file, index) => {
+                            selected.push({ id: `${Date.now()}-${index}-${file.name}-${file.size}`, file });
+                        });
+
+                        syncInput();
+                        render();
+                    };
+
+                    const cameraInput = picker.querySelector('[data-photo-camera]');
+                    const cameraTrigger = picker.querySelector('[data-photo-camera-trigger]');
+
+                    picker.classList.add('is-enhanced');
+                    picker.querySelector('[data-photo-field]')?.classList.add('is-enhanced');
+
+                    if (trigger) {
+                        trigger.addEventListener('click', () => input.click());
                     }
-                };
-
-                const addFiles = (files) => {
-                    const incoming = Array.from(files || []);
-                    if (!incoming.length) return;
-
-                    if (incoming.some((file) => !isAllowed(file))) {
-                        showError(tpl.invalid);
-                        return;
+                    if (cameraTrigger && cameraInput) {
+                        cameraTrigger.addEventListener('click', () => cameraInput.click());
                     }
 
-                    const seen = new Set(selected.map(({ file }) => `${file.name}-${file.size}-${file.lastModified}`));
-                    const unique = incoming.filter((file) => {
-                        const key = `${file.name}-${file.size}-${file.lastModified}`;
-                        if (seen.has(key)) return false;
-                        seen.add(key);
-                        return true;
+                    input.addEventListener('change', () => {
+                        addFiles(input.files);
                     });
-
-                    const slots = max - selected.length;
-                    if (unique.length > slots) {
-                        showError(fill(tpl.tooMany, { max }));
-                    } else {
-                        showError('');
+                    if (cameraInput) {
+                        cameraInput.addEventListener('change', () => {
+                            addFiles(cameraInput.files);
+                            cameraInput.value = '';
+                        });
                     }
 
-                    unique.slice(0, Math.max(slots, 0)).forEach((file, index) => {
-                        selected.push({ id: `${Date.now()}-${index}-${file.name}-${file.size}`, file });
-                    });
-
-                    syncInput();
                     render();
-                };
-
-                const cameraInput = picker.querySelector('[data-photo-camera]');
-                const cameraTrigger = picker.querySelector('[data-photo-camera-trigger]');
-
-                picker.classList.add('is-enhanced');
-                picker.querySelector('[data-photo-field]')?.classList.add('is-enhanced');
-
-                if (trigger) {
-                    trigger.addEventListener('click', () => input.click());
-                }
-                if (cameraTrigger && cameraInput) {
-                    cameraTrigger.addEventListener('click', () => cameraInput.click());
-                }
-
-                input.addEventListener('change', () => {
-                    addFiles(input.files);
                 });
-                if (cameraInput) {
-                    cameraInput.addEventListener('change', () => {
-                        addFiles(cameraInput.files);
-                        cameraInput.value = '';
-                    });
-                }
+            };
 
-                render();
-            });
+            initPhotoPickers(document);
+            document.addEventListener('DOMContentLoaded', () => initPhotoPickers(document));
+            document.addEventListener('livewire:navigated', () => initPhotoPickers(document));
+            document.addEventListener('turbo:load', () => initPhotoPickers(document));
+            if ('MutationObserver' in window) {
+                new MutationObserver((mutations) => {
+                    for (const m of mutations) {
+                        for (const node of m.addedNodes || []) {
+                            if (node.nodeType !== 1) continue;
+                            if (node.matches?.('[data-photo-picker]') || node.querySelector?.('[data-photo-picker]')) {
+                                initPhotoPickers(document);
+                                return;
+                            }
+                        }
+                    }
+                }).observe(document.body, { childList: true, subtree: true });
+            }
         })();
     });
 </script>

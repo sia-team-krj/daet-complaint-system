@@ -221,6 +221,9 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     Route::get('/complaints/{complaint}/updates/{log}/evidence/{index}', [ComplaintController::class, 'updateEvidence'])
         ->whereNumber('index')
         ->name('complaints.updates.evidence');
+    Route::get('/complaints/{complaint}/messages/{message}/evidence/{index}', [ComplaintController::class, 'messageEvidence'])
+        ->whereNumber('index')
+        ->name('complaints.messages.evidence');
     // The photos the resident attached to a verification reply (the detail a
     // verifier asked for). Same family as evidence photos: owner, department
     // and admin only, streamed through the application.
@@ -248,6 +251,7 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     // Sub-ticketing: when a finished complaint is not satisfied, or the same
     // issue persists, the owner files a follow-up that becomes its child ticket.
     Route::post('/complaints/{complaint}/follow-up', [ComplaintController::class, 'storeFollowUp'])
+        ->middleware('throttle:6,1')
         ->name('complaints.follow_up.store');
     Route::get('/complaints/{complaint}/success', [ComplaintController::class, 'success'])->name('complaints.success');
 });

@@ -195,7 +195,7 @@ class ComplaintController extends Controller
     {
         $this->authorize('view', $complaint);
 
-        $complaint->load(['department', 'assignedStaff', 'logs.actor', 'informationRequests.requester', 'feedback.reviewer', 'parent']);
+        $complaint->load(['department', 'assignedStaff', 'logs.actor', 'informationRequests.requester', 'feedback.reviewer', 'parent', 'messages.user']);
 
         return view('complaints.show', compact('complaint'));
     }
@@ -249,13 +249,11 @@ class ComplaintController extends Controller
     }
 
     /**
-     * File a follow-up sub-ticket against a finished complaint.
+     * Post a follow-up message on the original complaint conversation.
      *
-     * The citizen's half of sub-ticketing: once the office has marked a report
-     * resolved, the resident can decide it is not resolved for them — or that the
-     * same issue persists — and open a follow-up against it. The follow-up is a
-     * child of the complaint it follows and gets its own ticket number, status
-     * and SLA; the parent itself stays closed.
+     * Follow-ups do not create a new complaint/ticket. They add a message to the
+     * same complaint thread. A resident follow-up on Resolved/Closed moves the
+     * complaint back to Under Review.
      */
     public function storeFollowUp(
         Request $request,
@@ -263,27 +261,23 @@ class ComplaintController extends Controller
         ComplaintFollowUpService $followUps,
         NotificationService $notifications,
     ): RedirectResponse {
-        $this->authorize('followUp', $complaint);
-
-        if (! $followUps->canFile($complaint)) {
-            return redirect()
-                ->route('complaints.show', $complaint)
-                ->with('error', $complaint->openFollowUp()
-                    ? __('complaint_show.follow_up.errors.pending')
-                    : __('complaint_show.follow_up.errors.not_finished'));
-        }
+        $this->authorize('view', $complaint);
+        $user = $request->user();
+        abort_unless($followUps->canPostMessage($complaint, $user), 403);
 
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'min:20'],
+            'body' => ['required_without:description', 'nullable', 'string', 'min:10', 'max:2000'],
+            'description' => ['required_without:body', 'nullable', 'string', 'min:10', 'max:2000'],
             'images' => ['nullable', 'array', 'max:5'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ], [
-            'title.required' => __('complaint_show.follow_up.errors.title'),
-            'title.max' => __('complaint_show.follow_up.errors.title'),
-            'description.required' => __('complaint_show.follow_up.errors.description'),
+            'body.required_without' => __('complaint_show.follow_up.errors.description'),
+            'body.min' => __('complaint_show.follow_up.errors.description'),
+            'description.required_without' => __('complaint_show.follow_up.errors.description'),
             'description.min' => __('complaint_show.follow_up.errors.description'),
         ]);
+
+        $body = trim((string) ($validated['body'] ?? $validated['description'] ?? ''));
 
         $photos = $request->file('images', []);
         if (! is_array($photos)) {
@@ -296,7 +290,7 @@ class ComplaintController extends Controller
                 if (! $photo instanceof UploadedFile || ! $photo->isValid()) {
                     continue;
                 }
-                $path = $photo->store('complaints', 'minio');
+                $path = $photo->store('complaints/messages', 'minio');
                 if (! is_string($path) || $path === '') {
                     throw new \RuntimeException('The follow-up photo could not be stored.');
                 }
@@ -312,26 +306,17 @@ class ComplaintController extends Controller
         }
 
         try {
-            $followUp = $followUps->create($complaint, $validated, $request->user(), $storedPaths);
+            $followUps->createMessage($complaint, $user, $body, $storedPaths);
         } catch (Throwable $exception) {
             Storage::disk('minio')->delete($storedPaths);
             report($exception);
 
-            return back()
-                ->withInput()
-                ->withErrors(['description' => __('complaint_show.follow_up.errors.description')]);
-        }
-
-        // Tell the department a follow-up is waiting, the same as a new filing.
-        try {
-            $notifications->complaintNeedsVerification($followUp, $request->user());
-        } catch (Throwable $exception) {
-            report($exception);
+            return back()->withInput()->with('error', 'Unable to post follow-up message.');
         }
 
         return redirect()
-            ->route('complaints.show', $followUp)
-            ->with('status', __('complaint_show.follow_up.created', ['ticket' => $followUp->ticket_id]));
+            ->route('complaints.show', $complaint)
+            ->with('status', __('complaint_show.follow_up.message_posted'));
     }
 
     /**
@@ -574,6 +559,22 @@ class ComplaintController extends Controller
         }
 
         return $this->streamPrivateImage($paths[$index], 'complaint-update', $index);
+    }
+
+    public function messageEvidence(Complaint $complaint, \App\Models\ComplaintMessage $message, int $index): StreamedResponse
+    {
+        if ((int) $message->complaint_id !== (int) $complaint->id) {
+            abort(404);
+        }
+
+        $this->authorize('view', $complaint);
+
+        $paths = $message->images;
+        if (! array_key_exists($index, $paths)) {
+            abort(404);
+        }
+
+        return $this->streamPrivateImage($paths[$index], 'complaint-message', $index);
     }
 
     /**

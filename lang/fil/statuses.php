@@ -48,7 +48,7 @@ return [
     ],
 
     'priority' => [
-        'routine' => 'Karaniwan',
+        'routine' => 'Pagtatasa',
         'elevated' => 'Nakaangat',
         'urgent' => 'Urgente',
         'critical' => 'Kritikal',

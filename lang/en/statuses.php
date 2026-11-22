@@ -50,7 +50,7 @@ return [
     ],
 
     'priority' => [
-        'routine' => 'Routine',
+        'routine' => 'Assessment',
         'elevated' => 'Elevated',
         'urgent' => 'Urgent',
         'critical' => 'Critical',

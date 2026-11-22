@@ -2474,6 +2474,124 @@ closure without reopening terminal statuses or creating an orphan duplicate.
 
 ---
 
+### 5.60 App sidebars — `.admin-sidebar` / `.staff-sidebar` (premium SaaS rail)
+
+Purpose: the persistent navigation for admin and staff/departmental/verifier
+workspaces — a white panel inside a transparent sticky rail. Primary items,
+expandable `<details>` groups with indented submenus, and **Settings** pinned at
+the bottom above a hairline divider while the middle scrolls independently. The
+rail collapses to an icon-only 72px strip with portal tooltips.
+Linear/Stripe-inspired, one markup per rail, JavaScript-off safe.
+
+Admin (`resources/views/admin/partials/sidebar.blade.php`): **Overview** is the
+standalone primary item; **Manage** and **People** are expandable sections;
+mobile drawer ≤640px is separate. Staff/departmental/verifier
+(`resources/views/staff/partials/sidebar.blade.php`): **Dashboard** is the
+primary item; **Workspace** and conditional **Office** (department admin) are
+expandable groups; publication queue is a conditional primary row; the drawer
+breakpoint is <1024px. Both share the same rail behavior and CSS/JS pattern.
+Detailed rationale, behavior, and verification: `docs/sidebar-premium-rail.md`.
+
+Anatomy (desktop ≥768px, `resources/views/admin/partials/sidebar.blade.php`):
+- **Rail** (`.admin-sidebar`): sticky at `top: calc(var(--navbar-h) + 16px)`,
+  height `calc(100dvh - var(--navbar-h) - 32px)`, 256px wide, transparent.
+  Width animates to 72px in collapsed mode
+  (`transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1)`).
+- **Panel** (`.admin-sidebar__panel`): `--surface`, `1px var(--line-soft)`,
+  `--radius-lg`, `--shadow-card`; a flex column with `overflow: hidden` so the
+  scroll area and footer respect the rounded corners.
+- **Rail header** (`.admin-sidebar__header`): the `Workspace` eyebrow
+  (`.admin-sidebar__eyebrow`, 11px/600 uppercase, `--faint`) on the left and a
+  32px ghost chevron button (`.admin-sidebar__collapse`) on the right. The
+  button owns `aria-expanded` (true when the rail is expanded), swaps
+  `aria-label`/`title`/`data-tooltip` between `nav.collapse_sidebar` and
+  `nav.expand_sidebar`, and flips its chevron path.
+- **Overview** — a permanent top-level `.admin-sidebar__link` (18px grid icon,
+  10px icon/label gap, 44px row, 14px/600).
+- **Manage** (`<details class="admin-sidebar-section is-current?" data-sidebar-section="manage" open>`)
+  — complaint operations and platform content: All complaints · Departments ·
+  Complaint categories · Identity verification queue · Audit trail · Resident
+  feedback · FAQs.
+- **People** (`data-sidebar-section="people"`) — User management · Staff
+  accounts · Staff invitations.
+- **Settings** — the same 44px primary row inside `.admin-sidebar__footer`,
+  separated from the scroll area by `1px var(--line-soft)`; always reachable.
+- **Scroll** — `.admin-sidebar__scroll` is the only scroll container (thin
+  `--line` scrollbar, `overscroll-behavior: contain`); the footer never scrolls
+  away.
+
+Section headers (`.admin-sidebar-section__summary`): one full-width clickable
+row, 44px tall, with the 18px group icon on the left, the 14px/600 label beside
+it, and a 16px `--faint` chevron pinned far right on the same row. The native
+disclosure marker is removed (`::-webkit-details-marker`, `::marker`), the row
+is `user-select: none`, and the chevron rotates 180° over
+`0.22s cubic-bezier(0.22, 1, 0.36, 1)` when open. A group whose child route is
+active gets `.is-current` — its icon and label stay `--navy-700`/`--navy-800`
+even when the rail is collapsed — and `initAdminSidebarSections()` forces that
+group open on load, overriding a stored "closed" state.
+
+Submenus (`.admin-sidebar__list--nested`): indented 8px, then 16px of padding,
+so icons sit 22px deeper than the group icon. A 1px `--line-soft` guide line
+runs at `left: 4px` inside the indented list. Rows are
+`.admin-sidebar__link--nested`: 16px icons on one vertical axis, 13.5px/500
+labels, 10px icon/label gap, `min-height: 40px` that grows when a long label
+wraps (`overflow-wrap: break-word`); the icon stays aligned to the first line.
+The active nested row keeps the same pale navy fill and 2px navy left
+indicator as a primary row.
+
+Items / states: hover = `--surface-soft` with a `--navy-700` icon; active =
+`--navy-50` fill, `--navy-800` text, `--navy-700` icon, and a 2px
+`--navy-700` inset left indicator (`box-shadow: inset 2px 0 0`). Gold stays
+off these rows (§4 LOCKED — no gold side borders). Focus = `--ring`; the active
+row composes the indicator and the ring. Every rail element carries
+`data-tooltip` (its translated label).
+
+Accordion: native `<details>/<summary>`; the body
+(`.admin-sidebar-section__body`) is a `display: grid` animating
+`grid-template-rows: 0fr → 1fr` with `visibility` swapped (`hidden ↔ visible`)
+and `transition: grid-template-rows 0.22s cubic-bezier(0.22, 1, 0.36, 1)`.
+Closed bodies are `visibility: hidden`, keeping their links out of the tab
+order and accessibility tree. Multiple groups may be open; no JavaScript is
+needed for the disclosure itself.
+
+Icon-only mode (`.admin-sidebar.is-collapsed`, desktop only): rail 72px; the
+eyebrow, chevrons and submenu bodies hide; row padding drops to zero so 18px
+icons center; labels are visually clipped to 1px (not `display: none`) so the
+accessible name survives; active fills and left indicators stay. Clicking a
+group header while collapsed expands the rail and opens that group. Tooltips
+are a fixed-position portal (`.admin-sidebar-tooltip`) appended to `<body>` by
+`initAdminSidebarTooltips()` — shown on hover or keyboard focus only while
+collapsed at ≥768px, positioned beside the rail so the scroll container can
+never clip them, with an `is-left` flip near the viewport edge.
+
+Behaviour / responsive:
+- ≥768px: sticky rail; admin shell grid is
+  `grid-template-columns: max-content minmax(0, 1fr)`, so the content column
+  reclaims the width as the rail animates.
+- 641–767px: the rail is a fixed drawer (`min(320px, 88vw)`) opened by the
+  admin mobile toolbar. It always renders expanded and hides the collapse
+  control; the stored collapse preference is re-applied when returning to
+  ≥768px.
+- ≤640px: this rail is hidden; the shared authenticated drawer owns navigation.
+- Open/closed group state persists in `localStorage`
+  (`daet-admin-sidebar-sections`) via `initAdminSidebarSections()`;
+  collapsed mode persists in `daet-admin-sidebar-collapsed` via
+  `initAdminSidebarCollapse()`. `aria-expanded` is kept accurate on summaries
+  and on the collapse button.
+
+Tokens: `--surface`, `--surface-soft`, `--navy-50/700/800/950`, `--line`,
+`--line-soft`, `--muted`, `--faint`, `--radius-sm`, `--radius-lg`,
+`--shadow-card`, `--shadow-lift`, `--ring`, `--z-overlay`, `--navbar-h`.
+**No new tokens.**
+
+Why: named groups map the back office instead of flattening eleven links into
+one priority; the indented guide line and the navy active row make the current
+page obvious without gold decoration; pinning Settings keeps the rail
+predictable; and the icon-only mode plus portal tooltips preserve the same
+navigation in a fraction of the width without layout jumps.
+
+---
+
 ## 7. Livewire + JS contracts — **LOCKED**
 
 These are the things that broke before. 
@@ -2614,6 +2732,11 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+- 2026-11-22 · Staff dashboard/activity alignment (`/staff/dashboard`, `/staff/activity`, `/staff/department-activity`) · **fixed navbar-overlap and matched super-admin spacing.** These pages contain `.transparency-page`, so `body:has(.transparency-page)` was zeroing body padding-top and hiding content under the fixed navbar; excluded staff/admin bodies from that zero-padding rule. Matched super-admin spacing with `max-width: 1440px`, `16px 24px 0` shell padding, and a 2-column `max-content minmax(0,1fr)` grid (removed unused 320px third column). File: `resources/css/app.css`. New tokens: none. Verification: Playwright 1440×900 — `bodyPT 64px, shellTop 64, sidebarTop 80, contentTop 80`; shell `1440px`, grid `256px 1112px`, 24px right gutter, no overflow.
+- 2026-11-22 · Staff/departmental/verifier sidebar (`resources/views/staff/partials/sidebar.blade.php`, staff layout pages) · **premium rail parity with admin.** Same 256px white panel rail (72px collapsed, portal tooltips, independent scroll, pinned Settings, full-row `<details>` groups, `is-current` forced open, `max-content` shell grid) applied to departmental accounts, staff, and verifiers. Groups: Workspace (verification when allowed, complaints queue/my work, my activity, department activity), conditional Office (department admin), conditional publication queue primary row. JS generalized to `initShellSidebars()` for both rails; storage keys `daet-staff-sidebar-sections/collapsed`. Files: `resources/views/staff/partials/sidebar.blade.php`, `resources/css/app.css`, `public/js/shell.js`, `docs/design-system.md` (§5.60). New tokens: none. Verification: `node --check public/js/shell.js`; `npm run build`; Playwright smoke for dept admin/staff/verifier — **21/21 passed** (256px, collapse to 72px, tooltip). Design-system guard: same 5 pre-existing NEW complaint-show violations, untouched.
+- 2026-11-22 · Admin sidebar (`resources/views/admin/partials/sidebar.blade.php`, every `/admin/*` page) · **rebuilt as a premium single-panel SaaS rail (supersedes the earlier 2026-11-22 rail).** The 256px sticky rail now holds one white `--radius-lg` panel (`--shadow-card`, `1px --line-soft`) with a 56px header (`Workspace` 11px/600 uppercase eyebrow + 32px ghost collapse chevron), a permanently visible **Overview** primary row, two full-row `<details>` groups (**Manage** / **People**), and **Settings** pinned in a footer above a hairline while only the middle scrolls. Group headers are 44px rows with an 18px icon, a 14px/600 label and a 16px chevron pinned far right; the native marker is removed and the whole row is clickable. Submenus are indented 22px deeper than the group icon with 16px icons on one axis, a 1px guide line, 13.5px/500 labels that wrap without losing icon alignment, and 40px rows that grow. Active rows keep the pale `--navy-50` fill, `--navy-800` text and 2px `--navy-700` left indicator; groups with an active child get `.is-current` and are forced open on load. The rail collapses smoothly to 72px (`max-content` grid column reclaims the space): labels are visually clipped (accessible names preserved), submenus/chevrons hide, active indicators stay, and a group header click expands the rail and opens that group. Tooltips are a fixed-position `body` portal (`.admin-sidebar-tooltip`) shown on hover/focus only when collapsed at ≥768px, so the scroll container cannot clip them. The 641–767px drawer always renders expanded and hides the collapse control; ≤640px hides this rail in favour of the shared drawer. Native `<details>` + grid `0fr → 1fr` keeps the accordion JavaScript-off safe; multiple groups may be open. Files: `resources/views/admin/partials/sidebar.blade.php`, `resources/css/pages/admin-workspace.css`, `public/js/shell.js`, `docs/design-system.md` (§5.60, §12). New tokens: none (reuses `--surface`, `--surface-soft`, `--navy-50/700/800/950`, `--line`, `--line-soft`, `--muted`, `--faint`, `--radius-sm`, `--radius-lg`, `--shadow-card`, `--shadow-lift`, `--ring`, `--z-overlay`, `--navbar-h`). Verification: `node --check public/js/shell.js` clean; `npm run build` clean; `php artisan view:cache` compiled; `php artisan test --filter="AdminMobileNavigationTest|IdentityVerificationTest|LocalizationTest"` — **23 passed (141 assertions)**; `php scripts/design-system-guard.php` — **0 NEW in the touched files** (the same 5 pre-existing NEW violations live in the owner's uncommitted complaint-show files, untouched here). Playwright at 1440×900, 1440×500, 700×900 and 393×844: **43/43 assertions passed** — 256px rail, 72px collapsed, Settings pinned, independent scrolling, 22px submenu indent, chevron on the header row, accurate `aria-expanded`, persisted collapse, hover/focus portal tooltip, collapsed-group click-to-expand, active group forced open, tablet drawer always expanded, phone rail hidden, no horizontal overflow at 700px or 393px. Screenshots captured during verification (not committed).
+- 2026-11-22 · Admin sidebar (`resources/views/admin/partials/sidebar.blade.php`, every `/admin/*` page) · **complete premium redesign — SaaS-admin aesthetics (Linear/Stripe inspired).** The rail grows from 240px to 250px and rises in quality: white card with the same shadow/line-soft, but now a rail-wide collapse toggle, a permanent Dashboard at top, and two collapsible groups — **Manage** (document icon · small-caps muted label · right-aligned chevron, hairline divider above) and **People** (users icon · label · chevron) — each with an icon (18px), 10px icon/label gap, 44px rows and 8px submenu indentation (`admin-sidebar-list--nested`), giving the whole rail a connected, organized hierarchy. Active rows are elegant: subtle `--navy-50`, semibold label and a rounded 2px `--navy-700` left accent (gold stays off these rows; §4 LOCKED). Hovers are pill hovers. The accordion stays native `<details>` with the smooth CSS grid `0fr → 1fr` ease-out motion (0.22s cubic-bezier). New **icon-only mode**: `.admin-sidebar.is-collapsed` (52px rail, centered icons, labels hidden, small CSS tooltips via `data-tooltip`) via the new 28px ghost `.admin-sidebar-toggle`, persisted in `localStorage`. New lang keys `nav.collapse_sidebar` / `nav.expand_sidebar` (en + fil). §5.60 rewritten for the final spec. Files: `resources/views/admin/partials/sidebar.blade.php`, `resources/css/pages/admin-workspace.css`, `public/js/shell.js`, `lang/{en,fil}/nav.php`, `docs/design-system.md` (§5.60, §12). New tokens: none. Verification: `php artisan view:cache` compiled; `php artisan test --filter="AdminMobileNavigationTest|IdentityVerificationTest|LocalizationTest"` — **23 passed (141 assertions)**; `node --check public/js/shell.js` clean; `php -l lang/{en,fil}/nav.php` clean; `php scripts/design-system-guard.php` — **0 NEW in the touched files** (5 pre-existing NEW violations live in the owner's uncommitted complaint-show files, untouched here). Screenshots NOT captured (waived by owner, 2026-11-09).
+- 2026-11-22 · Admin sidebar (`resources/views/admin/partials/sidebar.blade.php`, every `/admin/*` page) · **the rail is grouped into collapsible categories and de-cluttered.** Dashboard stays a permanent top-level link; the eight former "Operations" items and the three "People" items now sit under two native `<details>`/`<summary>` groups — **Manage** (All complaints · Departments · Complaint categories · Identity verification queue · Audit trail · Resident feedback · FAQs) and **People** (User management · Staff accounts · Staff invitations) — in priority order, with Settings still pinned at the bottom. The groups collapse/expand with JavaScript off and remember their state in `localStorage` (`daet-admin-sidebar-sections`, restored by `initAdminSidebarSections()` in `public/js/shell.js`; `aria-expanded` kept on the summary). Alignment: 220px rail (was 240/248px), 12px icon gap and 12px row padding (was 10px), 4px row gap (was 2px), and the active row's gold left border is gone (§4 LOCKED — no gold side borders); active is now `--navy-50` + 700 + `--navy-700` icon. New `nav.manage` key in `en` + `fil`; §5.60 documents the component. Files: `resources/views/admin/partials/sidebar.blade.php`, `resources/css/pages/admin-workspace.css`, `public/js/shell.js`, `lang/{en,fil}/nav.php`. New tokens: none. Verification: `php artisan view:cache` compiled; `php artisan test --filter="test_admin_sidebar_has_identity_verification_link|AdminMobileNavigationTest"` — **5 passed (38 assertions)**; `node --check public/js/shell.js` clean; `php scripts/design-system-guard.php` — **0 NEW in the touched files** (5 pre-existing NEW violations live in the owner's uncommitted complaint-show work, untouched here). Screenshots NOT captured (waived by owner, 2026-11-09).
 - 2026-11-22 · Resident complaint detail (`/complaints/{complaint}`) · **sub-ticketing v1 follow-up panel.** A finished (Resolved/Closed) complaint now lets the owning resident file one follow-up at a time: a new child complaint (`parent_id`) with its own `COMP-*` ticket, `Submitted` status, fresh SLA, seeded location/category/visibility, while the parent stays closed. Citizen self-service only; staff/admin deferred. UI: `.follow-up-panel` form (subject, description, optional photos) or an open-follow-up notice linking to the waiting child; follow-up children show "Follow-up of" parent link in details. Files: `database/migrations/2026_11_22_000001_add_parent_id_to_complaints_table.php`, `app/Models/Complaint.php`, `app/Services/ComplaintFollowUpService.php`, `app/Policies/ComplaintPolicy.php`, `app/Http/Controllers/ComplaintController.php`, `routes/web.php`, `resources/views/complaints/show.blade.php`, `resources/css/pages/complaint-show.css`, `lang/{en,fil}/complaint_show.php`, `tests/Feature/ComplaintFollowUpTest.php`, `docs/sub-ticketing-plan.md`, `docs/design-system.md` (§5.59). New tokens: none. Verification: `php artisan test --filter=ComplaintFollowUpTest` — **9 passed (39 assertions)**; `php -l` on touched PHP; `php artisan view:clear`; `php scripts/design-system-guard.php` — **0 NEW**. Screenshots NOT captured (waived by owner, 2026-11-09).
 - 2026-11-21 · Admin two-factor authentication (`/settings/security/two-factor`, `/two-factor/challenge`, Settings → Security) · **administrator TOTP enrollment and challenge, built on the settings card grammar with no new CSS or tokens.** Settings → Security now carries an admin-only status group (Enabled / Not set up, enrollment date, remaining recovery codes, one secondary link). The Settings → Security CTA navigates to the dedicated setup page; the setup page is a normal settings page using `settings.two-factor-card`. It asks the questions in place: a current-password gate before the QR is revealed, a `role="img"` QR wrapper plus a read-only manual-key `.settings-input`, a six-digit code field, and a one-time recovery-code `<textarea>`. The confirmed state has separate regenerate-codes and replace-authenticator forms, each requiring a current code; the Disable form requires the current password, clears the session marker, and logs `auth.2fa.disabled`. The challenge page is the same shell with one code field (TOTP or recovery code), one primary Verify action and a secondary Sign out form. Every admin route is gated by `admin.2fa` (admin access to the staff workspace included); setup/challenge sit outside it. Password changes clear the passed marker; five failures end the session; CLI `admin:reset-2fa {email}` is the recovery path. Files: `database/migrations/2026_11_21_000000_add_two_factor_columns_to_users_table.php`, `config/admin.php`, `app/Models/User.php`, `app/Services/TwoFactorAuthentication.php`, `app/Http/Middleware/EnsureAdminTwoFactor.php`, `app/Http/Controllers/{TwoFactorSetupController,TwoFactorChallengeController,AuthController,SettingsController,ProfileController,PasswordChangeController}.php`, `app/Console/Commands/ResetAdminTwoFactor.php`, `bootstrap/app.php`, `routes/web.php`, `resources/views/{settings/two-factor,auth/two-factor-challenge,settings/index,admin/users/index,admin/users/show}.blade.php`, `lang/{en,fil}/settings.php`, `tests/Feature/TwoFactorAuthenticationTest.php`. New tokens: none. Verification: `php artisan migrate --path=…`; `php artisan test --filter=TwoFactorAuthenticationTest` — **20 passed (108 assertions)**; `php artisan test --filter="SettingsTest|SettingsPageTest|AuthSessionSchemeTest|PasswordResetTest|AdminUserManagementTest|EmailVerificationTest|StaffWorkspaceTest|StaffQueueScopeTest"` — **78 passed (403 assertions)**; `php artisan view:cache`; `php scripts/design-system-guard.php` — **0 NEW**. Full suite: **737 passed**, with the same 11 unrelated pre-existing failures in AdminQueue, ComplaintDetection, ExactLocationVisibility, PasswordRequirements, ProfileQuery and ResidentInformationResponse. Screenshots not captured (owner waiver).
 - 2026-11-20 · Complaint filing step 4 (`/complaints/create`) · **the visibility choices read Private and Public.** The two option titles were “Just me” and “Publish on the transparency page”; the owner asked for the plain names residents already understand. English now reads **Private** / **Public**, Filipino reads **Pribado** / **Publiko**. The explanatory notes, the private-by-default choice and the acknowledgement gate for reports that name somebody are unchanged. The review summary and its live label read the same translated titles, so the retired wording cannot reappear there. Files: `resources/views/complaints/create.blade.php`, `lang/{en,fil}/complaint_create.php`, `tests/Feature/ComplaintVisibilityConsentTest.php`. New tokens: none. Verification: `php artisan test --filter="ComplaintVisibilityConsentTest|InlineScriptRuntimeTest"` — **30 passed (132 assertions)**; `php artisan view:clear`; `php scripts/design-system-guard.php` — **0 NEW**. Screenshots not captured (owner waiver).

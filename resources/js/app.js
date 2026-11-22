@@ -28,6 +28,8 @@ import { initializeSettings } from "./settings";
 // Status toasts (docs/design-system.md §5.48). It binds to [data-toast] and
 // leaves the inline notice alone when JavaScript is off.
 import { initializeToasts } from "./toast";
+// Photo pickers with previews/camera. Binds to [data-photo-picker].
+import { initializePhotoPickers } from "./photo-picker";
 
 const normalizeSearchValue = (value) => value.trim().toLocaleLowerCase();
 
@@ -465,6 +467,8 @@ const initializeSharedComponents = () => {
     initializeAnalytics();
     // Any page with a date field: the filing forms, the ticket pages.
     initializeDateFields();
+    // Photo pickers (complaint show, info requests, follow-up messages).
+    initializePhotoPickers();
     // The settings page.
     initializeSettings();
     // The thank-you and any later status toast.

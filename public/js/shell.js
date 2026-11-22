@@ -285,6 +285,8 @@
         });
     };
 
+    let hideSidebarTooltip = () => {};
+
     const resetShell = () => {
         document.querySelectorAll('[data-mobile-menu]').forEach((menu) => {
             const button = findToggleFor(menu);
@@ -306,6 +308,7 @@
         document.body.classList.remove('staff-sidebar-open', 'admin-sidebar-open', 'mobile-drawer-open');
         labelTableCells();
         startNotificationPolling();
+        initShellSidebars();
     };
 
     const handleClick = (event) => {
@@ -478,6 +481,188 @@
             }
         }
     };
+
+    // Generic premium rail behavior (admin + staff/departmental/verifier).
+    // Both sidebars share the same structure: collapsible <details> groups,
+    // a persistent collapse toggle, and icon-only tooltips. Native <details>
+    // keeps the rail usable with JavaScript off.
+    function initShellSidebars() {
+        const configs = [
+            {
+                id: 'admin-sidebar',
+                collapseAttr: 'data-admin-sidebar-collapse',
+                sectionClass: 'admin-sidebar-section',
+                summaryClass: 'admin-sidebar-section__summary',
+                storageSections: 'daet-admin-sidebar-sections',
+                storageCollapsed: 'daet-admin-sidebar-collapsed',
+            },
+            {
+                id: 'staff-sidebar',
+                collapseAttr: 'data-staff-sidebar-collapse',
+                sectionClass: 'staff-sidebar-section',
+                summaryClass: 'staff-sidebar-section__summary',
+                storageSections: 'daet-staff-sidebar-sections',
+                storageCollapsed: 'daet-staff-sidebar-collapsed',
+            },
+        ];
+        configs.forEach(initSidebarRail);
+    }
+
+    function initSidebarRail(cfg) {
+        const sidebar = document.getElementById(cfg.id);
+        if (!sidebar) return;
+        initSidebarSections(sidebar, cfg);
+        initSidebarCollapse(sidebar, cfg);
+        initSidebarTooltips(sidebar);
+    }
+
+    function initSidebarSections(sidebar, cfg) {
+        const sections = sidebar.querySelectorAll(`.${cfg.sectionClass}[data-sidebar-section]`);
+        if (!sections.length) return;
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(cfg.storageSections) || '{}'); } catch (_) { saved = {}; }
+        sections.forEach((sectionEl) => {
+            const name = sectionEl.dataset.sidebarSection;
+            const isCurrent = sectionEl.classList.contains('is-current');
+            const open = isCurrent || (Object.prototype.hasOwnProperty.call(saved, name) ? !!saved[name] : true);
+            if (sectionEl.open !== open) sectionEl.open = open;
+            const summary = sectionEl.querySelector('summary');
+            if (summary) summary.setAttribute('aria-expanded', String(open));
+            if (!sectionEl.__sidebarSectionBound) {
+                sectionEl.__sidebarSectionBound = true;
+                sectionEl.addEventListener('toggle', () => {
+                    const currentSummary = sectionEl.querySelector('summary');
+                    if (currentSummary) currentSummary.setAttribute('aria-expanded', String(sectionEl.open));
+                    let state = {};
+                    try { state = JSON.parse(localStorage.getItem(cfg.storageSections) || '{}'); } catch (_) { state = {}; }
+                    state[name] = sectionEl.open;
+                    localStorage.setItem(cfg.storageSections, JSON.stringify(state));
+                });
+            }
+        });
+    }
+
+    function initSidebarCollapse(sidebar, cfg) {
+        const toggle = sidebar.querySelector(`[${cfg.collapseAttr}]`) || document.querySelector(`[${cfg.collapseAttr}]`);
+        if (!toggle) return;
+        const desktop = window.matchMedia('(min-width: 768px)');
+        if (!toggle.__collapseLabels) {
+            toggle.__collapseLabels = {
+                collapse: toggle.dataset.tooltip || '',
+                expand: toggle.dataset.tooltipExpand || '',
+            };
+        }
+        const collapseLabel = toggle.__collapseLabels.collapse;
+        const expandLabel = toggle.__collapseLabels.expand;
+        const readCollapsed = () => {
+            try { return localStorage.getItem(cfg.storageCollapsed) === '1'; } catch (_) { return false; }
+        };
+        const writeCollapsed = (collapsed) => {
+            try { localStorage.setItem(cfg.storageCollapsed, collapsed ? '1' : '0'); } catch (_) {}
+        };
+        const applyCollapsed = (collapsed) => {
+            collapsed = collapsed && desktop.matches;
+            sidebar.classList.toggle('is-collapsed', collapsed);
+            const label = collapsed ? expandLabel : collapseLabel;
+            toggle.setAttribute('aria-expanded', String(!collapsed));
+            toggle.setAttribute('aria-label', label);
+            toggle.setAttribute('title', label);
+            toggle.setAttribute('data-tooltip', label);
+            toggle.querySelector('svg path')?.setAttribute('d', collapsed ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6');
+            hideSidebarTooltip();
+        };
+        if (!toggle.__collapseListenerAttached) {
+            toggle.__collapseListenerAttached = true;
+            toggle.addEventListener('click', () => {
+                const collapsed = !sidebar.classList.contains('is-collapsed');
+                writeCollapsed(collapsed);
+                applyCollapsed(collapsed);
+            });
+        }
+        if (!sidebar.__collapsedGroupListener) {
+            sidebar.__collapsedGroupListener = true;
+            sidebar.addEventListener('click', (event) => {
+                if (!sidebar.classList.contains('is-collapsed')) return;
+                const target = event.target instanceof Element ? event.target : null;
+                const summary = target ? target.closest(`.${cfg.summaryClass}`) : null;
+                if (!summary) return;
+                event.preventDefault();
+                const section = summary.closest(`.${cfg.sectionClass}`);
+                writeCollapsed(false);
+                applyCollapsed(false);
+                if (section) section.open = true;
+            });
+        }
+        if (!sidebar.__collapseMediaBound) {
+            sidebar.__collapseMediaBound = true;
+            const onBreakpointChange = () => applyCollapsed(readCollapsed());
+            if (desktop.addEventListener) desktop.addEventListener('change', onBreakpointChange);
+            else if (desktop.addListener) desktop.addListener(onBreakpointChange);
+        }
+        applyCollapsed(readCollapsed());
+    }
+
+    function initSidebarTooltips(sidebar) {
+        let tip = document.querySelector('.admin-sidebar-tooltip');
+        if (!tip) {
+            tip = document.createElement('div');
+            tip.className = 'admin-sidebar-tooltip';
+            tip.setAttribute('role', 'presentation');
+            tip.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(tip);
+        }
+        const canShow = () => sidebar.classList.contains('is-collapsed') && window.matchMedia('(min-width: 768px)').matches;
+        const hide = () => {
+            tip.classList.remove('is-visible', 'is-left');
+            tip.textContent = '';
+        };
+        hideSidebarTooltip = hide;
+        if (sidebar.__tooltipBound) { hide(); return; }
+        sidebar.__tooltipBound = true;
+        let current = null;
+        const show = (target) => {
+            if (!canShow() || !target) return;
+            const text = target.getAttribute('data-tooltip');
+            if (!text) return;
+            current = target;
+            tip.textContent = text;
+            tip.classList.remove('is-left');
+            tip.classList.add('is-visible');
+            const rect = target.getBoundingClientRect();
+            const railRect = sidebar.getBoundingClientRect();
+            const tipRect = tip.getBoundingClientRect();
+            let left = railRect.right + 10;
+            if (left + tipRect.width > window.innerWidth - 8) {
+                tip.classList.add('is-left');
+                left = railRect.left - 10;
+            }
+            tip.style.left = `${Math.round(left)}px`;
+            tip.style.top = `${Math.round(rect.top + rect.height / 2)}px`;
+        };
+        sidebar.addEventListener('pointerover', (event) => {
+            const target = event.target instanceof Element ? event.target.closest('[data-tooltip]') : null;
+            if (!target || target === current) return;
+            show(target);
+        });
+        sidebar.addEventListener('pointerout', (event) => {
+            if (!current) return;
+            const related = event.relatedTarget;
+            if (related instanceof Node && current.contains(related)) return;
+            hide(); current = null;
+        });
+        sidebar.addEventListener('focusin', (event) => {
+            const target = event.target instanceof Element ? event.target.closest('[data-tooltip]') : null;
+            if (target) show(target);
+        });
+        sidebar.addEventListener('focusout', () => { hide(); current = null; });
+        sidebar.addEventListener('scroll', () => { hide(); current = null; }, true);
+        if (!window.__sidebarTooltipGlobalBound) {
+            window.__sidebarTooltipGlobalBound = true;
+            window.addEventListener('resize', () => hideSidebarTooltip());
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideSidebarTooltip(); });
+        }
+        hide();
+    }
 
     const handleResize = () => {
         closeUserMenus();
