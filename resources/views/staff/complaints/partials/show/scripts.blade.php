@@ -139,6 +139,14 @@
             const hash = window.location.hash;
             if (!hash || hash.length < 2) return;
 
+            let link;
+            try {
+                // The action anchors carry what the tap was for ("Add
+                // Findings" vs "Submit Report"); the fragment alone can't.
+                link = document.querySelector('a[href="' + hash + '"]');
+            } catch (e) {
+                link = null;
+            }
             let target;
             try {
                 target = document.querySelector(hash);
@@ -155,9 +163,19 @@
                 return;
             }
 
-            // "Submit Report": open the resolution form on its first control.
+            // "Add Findings" → the official response note; "Submit Report"
+            // → the response form's submit button.
             if (target instanceof HTMLFormElement && target.id === 'complaint-update-form') {
-                focusIn(target);
+                const kind = link?.dataset?.ticketFocus;
+                if (kind === 'submit') {
+                    const submit = target.querySelector('button[type="submit"]');
+                    if (submit && !submit.disabled) submit.focus();
+                } else if (kind === 'note') {
+                    const note = target.querySelector('#note');
+                    if (note && !note.disabled && !note.readOnly) note.focus();
+                } else {
+                    focusIn(target);
+                }
                 return;
             }
 

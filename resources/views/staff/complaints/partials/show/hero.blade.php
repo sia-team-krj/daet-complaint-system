@@ -17,11 +17,6 @@
     @endphp
 
     <div class="staff-ticket-shell">
-        <div class="staff-ticket-topbar">
-            <a href="{{ route('staff.dashboard') }}" class="staff-ticket-back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-                <span>{{ __('staff.back') }}</span>
-            </a>
 
             @if(count($availableWorkspaceModes) > 1)
                 <div class="staff-workspace-switch" role="group" aria-label="{{ __('staff.workspace.switch_label', ['default' => 'Workspace view']) }}">
@@ -38,7 +33,6 @@
                     @endforeach
                 </div>
             @endif
-        </div>
 
         @if(count($availableWorkspaceModes) > 1)
             <script>

@@ -93,10 +93,18 @@ class StaffTicketActionsTest extends TestCase
         $this->assertCount(4, $actions, 'All four task actions render.');
 
         $this->assertEquals(
-            ['#status', '#proof-capture', '#note', '#complaint-update-form'],
+            ['#status', '#proof-capture', '#complaint-update-form', '#complaint-update-form'],
             array_map(fn ($a) => $a->getAttribute('href'), $actions),
             'Each action is one of the ticket\'s own controls, in reference order.',
         );
+
+        // "Add Findings" leads to the official response (the response note);
+        // "Submit Report" is the response form's submit button — the two
+        // share the form but are not the same control.
+        $this->assertSame('note', $actions[2]->getAttribute('data-ticket-focus'));
+        $this->assertSame('submit', $actions[3]->getAttribute('data-ticket-focus'));
+        $this->assertNull($actions[0]->getAttribute('data-ticket-focus'));
+        $this->assertNull($actions[1]->getAttribute('data-ticket-focus'));
 
         // The default tab items are replaced by the actions, and the only
         // remaining nav item is the location tab alongside them.

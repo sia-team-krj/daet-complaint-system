@@ -2350,17 +2350,17 @@ All styling uses existing tokens; no new palette.
 
 | Action | Anchor | Lands on |
 |---|---|---|
-| Update Status | `#status` | the status `<select>` in the update form |
+| Update Status | `#status` | the status `<select>` in the response form, picker open |
 | Take Photo | `#proof-capture` | the proof-capture zone (`x-proof-capture`'s opt-in `anchor-id`) |
-| Add Findings | `#note` | the public response note |
-| Submit Report | `#complaint-update-form` | the whole resolution/progress form |
+| Add Findings | `#complaint-update-form` | the official response form, focused on the `#note` response note |
+| Submit Report | `#complaint-update-form` | the response form, focused on its submit button |
 
 **Behaviour** — `staff/complaints/partials/show/scripts.blade.php`, an IIFE on `hashchange` **and** on the clicks of `.ticket-action` (repeated taps on the same action don't change `location.hash`, so the click re-runs the handler):
 
 - `#status` → `focus()` the select, then `showPicker()` where the browser allows it programmatically (a click on an action bar is a user activation; a `hashchange` is not — so the fallback is a plain focus).
-- `#note` → `focus()` the textarea.
+- `#note` → `focus()` the response note.
 - `#proof-capture` → `click()` the camera trigger — the camera picker opens.
-- `#complaint-update-form` → `focus()` the form's first usable control.
+- `#complaint-update-form` → the anchors carry `data-ticket-focus`: `"note"` focuses `#note` ("Add Findings"), `"submit"` focuses the form's submit button ("Submit Report"). The form is the *same* control both open; the focus target is what makes them differ.
 - Anything else (`#complaint-location`) → scroll only.
 
 With JavaScript off every anchor still works as a plain fragment link: the page scrolls to the target.

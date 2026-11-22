@@ -10148,7 +10148,7 @@ body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__list { gap: 4px; }
 body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__dept-code { display: none; }
 /* Shell grid uses rail width */
 @media (min-width: 1024px) {
-    body.role-staff .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 24px; width: 100%; max-width: 1440px; margin: 0 auto; padding: 16px 24px 0; align-items: start; }
+    body.role-staff .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 24px; width: 100%; max-width: 1440px; margin: 0 auto; padding: 0 24px 16px; align-items: start; }
     body.role-staff .staff-workspace { min-width: 0; }
     body.role-staff .staff-content { padding-top: 0; }
 }
@@ -10156,7 +10156,7 @@ body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__dept-code { display:
     body.role-staff.page-staff-dashboard .staff-shell { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; max-width: 1440px; padding: 16px 24px 0; }
 }
 @media (min-width: 768px) and (max-width: 1279px) {
-    body.role-staff.page-staff-dashboard .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 20px; align-items: start; max-width: 1440px; margin: 0 auto; padding: 16px 16px 0; }
+    body.role-staff.page-staff-dashboard .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 20px; align-items: start; max-width: 1440px; margin: 0 auto; padding: 0 16px 16px; }
     body.role-staff.page-staff-dashboard .staff-sidebar { position: sticky; top: calc(var(--navbar-h) + 16px); width: 256px; }
 }
 @media (max-width: 1023px) {
@@ -10577,16 +10577,17 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
 .staff-bottom-nav__item:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
 /* Field ticket in the nav: the four quick actions replace the tab bar. */
 body.role-staff .staff-bottom-nav .ticket-action {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    min-height: 52px;
+    gap: 6px;
+    min-height: 56px;
     padding: 6px 4px;
+    text-align: center;
     border-radius: var(--radius-sm);
     color: var(--muted);
-    font: 600 11px/1.2 var(--font-sans);
+    font: 600 11px/1.25 var(--font-sans);
     text-decoration: none;
 }
 body.role-staff .staff-bottom-nav .ticket-action:hover { color: var(--navy-900); background: var(--navy-50); }
