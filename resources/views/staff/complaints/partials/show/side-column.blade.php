@@ -53,7 +53,7 @@
                         ? number_format((float) $complaint->latitude, 6, '.', '').','.number_format((float) $complaint->longitude, 6, '.', '')
                         : null;
                 @endphp
-                <div class="tr-card workspace-card staff-detail-card staff-detail-card--location location-card" style="overflow: hidden; padding: 0;">
+                <div id="complaint-location" class="tr-card workspace-card staff-detail-card staff-detail-card--location location-card" style="overflow: hidden; padding: 0;">
                     <div class="workspace-card__header" style="padding: 16px 20px; border-bottom: 1px solid var(--line-soft);">
                         <div class="workspace-card__icon">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -349,12 +349,17 @@
                      department settles and verifies the work and does not
                      moderate public presentation. --}}
                 @if($user->canVerifyComplaints() && \App\Services\ComplaintPrivacyService::canApprove($user))
-                    <x-moderation-panel
-                        class="moderation-panel--light staff-detail-card staff-detail-card--moderation"
-                        :complaint="$complaint"
-                        :action="route('staff.complaints.moderate', $complaint)"
-                        id-prefix="staff"
-                    />
+                    <details class="ticket-collapse staff-detail-card staff-detail-card--moderation" {{ $complaint->hidden_from_public ? 'open' : '' }}>
+                        <summary><span>{{ __('staff.moderation.title', ['default' => 'Public presentation / moderation']) }}</span></summary>
+                        <div class="ticket-collapse__body">
+                            <x-moderation-panel
+                                class="moderation-panel--light"
+                                :complaint="$complaint"
+                                :action="route('staff.complaints.moderate', $complaint)"
+                                id-prefix="staff"
+                            />
+                        </div>
+                    </details>
                 @endif
 
                 {{-- 2b. Reports that name somebody: the name stays in the
@@ -362,11 +367,16 @@
                      Mayor's office to decide. Resolving a verified report sends
                      it there automatically; the panel is status only. --}}
                 @if($complaint->isPrivacyGated())
-                    <x-publication-panel
-                        class="moderation-panel--light staff-detail-card staff-detail-card--publication"
-                        :complaint="$complaint"
-                        :can-approve="\App\Services\ComplaintPrivacyService::canApprove($user)"
-                    />
+                    <details class="ticket-collapse staff-detail-card staff-detail-card--publication" {{ in_array($complaint->publication_status, ['pending', 'requested']) ? 'open' : '' }}>
+                        <summary><span>{{ __('staff.publication.title', ['default' => 'Publication review']) }}</span></summary>
+                        <div class="ticket-collapse__body">
+                            <x-publication-panel
+                                class="moderation-panel--light"
+                                :complaint="$complaint"
+                                :can-approve="\App\Services\ComplaintPrivacyService::canApprove($user)"
+                            />
+                        </div>
+                    </details>
                 @endif
 
                 {{-- 2c. The work is paused — waiting on funds, materials, a
@@ -376,11 +386,15 @@
                      a hold already in place can be taken off, it can never
                      be taken again. --}}
                 @if($complaint->isVerified())
-                    <x-hold-panel
-                        class="staff-detail-card staff-detail-card--hold"
-                        :complaint="$complaint"
-                        :can-manage="$user->role === 'admin' || $complaint->department_id === $user->department_id"
-                    />
+                    <details class="ticket-collapse staff-detail-card staff-detail-card--hold" {{ $complaint->isOnHold() ? 'open' : '' }}>
+                        <summary><span>{{ __('staff.hold.title', ['default' => 'Hold / pause work']) }}</span></summary>
+                        <div class="ticket-collapse__body">
+                            <x-hold-panel
+                                :complaint="$complaint"
+                                :can-manage="$user->role === 'admin' || $complaint->department_id === $user->department_id"
+                            />
+                        </div>
+                    </details>
                 @endif
 
                 {{-- 3. The work that is left is the resident's to close.

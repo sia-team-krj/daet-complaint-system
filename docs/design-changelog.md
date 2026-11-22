@@ -1,3 +1,10 @@
+## 2026-11-22: Staff ticket detail — Phase 2B/2C verifier desktop + field mobile workspaces
+
+- **Files:** `resources/views/staff/complaints/partials/show/{main-column,side-column,tail,scripts}.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.
+- **What changed:** Implemented role-based ticket workspaces on the same complaint record/routes. **Verifier desktop:** two-column workspace with review/verification and assignment prominent, evidence/description accessible, and secondary admin metadata (timeline, moderation, publication, hold, marking) collapsed by default unless attention-needed. **Field mobile:** single-column mobile-first layout prioritizing location, original complaint, evidence, and progress/update form; prominent camera capture in proof-capture; large touch targets; sticky bottom action bar with context-aware primary action (update/proof/resolve) and location shortcut; clear “Original resident report” and “Field investigation / progress update” labels. No backend workflow, route, permission, or status-transition changes.
+- **Verification:** `php artisan view:clear` and `npm run build` passed. Playwright: verifier desktop 1440×900 `?workspace=verifier` HTTP 200, review/assignment/response/location/kicker present, no action bar, no overflow; field mobile 390×844 `?workspace=field` HTTP 200, review/assignment/response/location/kicker/action bar present, no overflow. Screenshots: `/tmp/opencode/phase2-verifier-desktop.png`, `/tmp/opencode/phase2-field-mobile.png` (repo-waived, evidence recorded here).
+- **Tokens/components:** Existing tokens only; new patterns (`ticket-collapse`, `field-action-bar`, section kickers) use existing tokens/radii/shadows. No new colors/fonts/shadows/radii.
+
 ## 2026-11-22: Staff ticket detail — Phase 2A foundation (workspace mode + section extraction)
 
 - **Files:** `app/Http/Controllers/StaffController.php`, `resources/views/staff/complaints/show.blade.php`, `resources/views/staff/complaints/partials/show/{hero,main-column,side-column,tail,scripts}.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.

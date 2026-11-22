@@ -1382,3 +1382,179 @@ body.role-staff .staff-conversation__submit--icon {
     body.role-staff .staff-conversation__submit:not(.staff-conversation__submit--icon) { width: 100%; }
 }
 
+
+/* ----------------------------------------------------------------
+ * Phase 2B/2C — role-based ticket workspaces
+ * ---------------------------------------------------------------- */
+body.role-staff .staff-ticket-page[data-ticket-workspace="verifier"] .staff-detail-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.85fr);
+    gap: 20px;
+}
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-col { display: contents; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-ticket-shell {
+    width: min(100%, 860px);
+}
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-ticket-hero {
+    padding: 20px;
+}
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-ticket-hero__title {
+    font-size: clamp(22px, 5vw, 28px);
+}
+
+/* Field mobile ordering */
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--resident { order: 1; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--location { order: 2; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--description { order: 3; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--evidence { order: 4; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--response { order: 5; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--conversation { order: 6; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--timeline { order: 7; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--review { order: 8; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--followup { order: 9; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--assignment { order: 10; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--marking { order: 11; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--hold { order: 12; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--moderation { order: 13; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--publication { order: 14; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-detail-card--closure { order: 15; }
+
+/* Verifier desktop: review/assignment prominent */
+body.role-staff .staff-ticket-page[data-ticket-workspace="verifier"] .staff-detail-card--review { border-top: 3px solid var(--gold-500); }
+body.role-staff .staff-ticket-page[data-ticket-workspace="verifier"] .staff-detail-card--assignment { border-top: 3px solid var(--gold-500); }
+
+/* Collapsible secondary sections */
+body.role-staff .ticket-collapse {
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+body.role-staff .ticket-collapse > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 16px 20px;
+    font: 700 15px/1.3 var(--font-sans);
+    color: var(--navy-900);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+body.role-staff .ticket-collapse > summary::-webkit-details-marker { display: none; }
+body.role-staff .ticket-collapse > summary::after {
+    content: '';
+    width: 10px; height: 10px;
+    border-right: 2px solid var(--faint);
+    border-bottom: 2px solid var(--faint);
+    transform: rotate(45deg);
+    transition: transform .2s ease;
+    flex-shrink: 0;
+}
+body.role-staff .ticket-collapse[open] > summary::after { transform: rotate(-135deg); }
+body.role-staff .ticket-collapse__body { padding: 0 20px 20px; }
+body.role-staff .ticket-collapse__hint { font: 500 12px/1.4 var(--font-sans); color: var(--muted); margin: 0; }
+
+/* Field sticky action bar */
+body.role-staff .field-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    display: none;
+    gap: 10px;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line-soft);
+    box-shadow: 0 -4px 20px rgba(11,26,51,.08);
+}
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .field-action-bar { display: flex; }
+body.role-staff .field-action-bar__btn {
+    flex: 1;
+    min-height: 48px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--navy-900);
+    background: var(--navy-900);
+    color: var(--surface);
+    font: 700 14px/1 var(--font-sans);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+}
+body.role-staff .field-action-bar__btn:hover { background: var(--navy-800); }
+body.role-staff .field-action-bar__btn--secondary {
+    background: var(--surface);
+    color: var(--navy-900);
+    border-color: var(--line);
+}
+body.role-staff .field-action-bar__btn--secondary:hover { background: var(--navy-50); }
+body.role-staff .field-action-bar__btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+@media (min-width: 1024px) {
+    body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .field-action-bar {
+        position: static;
+        border: 1px solid var(--line-soft);
+        border-radius: var(--radius-md);
+        box-shadow: none;
+        backdrop-filter: none;
+        margin-top: 8px;
+    }
+}
+@media (max-width: 768px) {
+    body.role-staff .field-action-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Evidence gallery - convenient review */
+body.role-staff .staff-detail-card--evidence .tr-evidence-grid,
+body.role-staff .staff-detail-card--evidence [style*="grid-template-columns"] {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 12px !important;
+}
+body.role-staff .staff-detail-card--evidence a[style*="aspect-ratio"] {
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-soft);
+    overflow: hidden;
+}
+
+/* Field mode: camera prominent, touch-friendly */
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .proof-capture__action--camera {
+    background: var(--navy-900);
+    color: var(--surface);
+    border-color: var(--navy-900);
+    min-height: 48px;
+    padding: 0 18px;
+    font-weight: 700;
+}
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .proof-capture__action--camera:hover { background: var(--navy-800); }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .proof-capture__action { min-height: 48px; padding: 0 16px; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .tr-select,
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] input[type="text"],
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] input[type="search"],
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] textarea,
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] select { font-size: 16px; min-height: 48px; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] textarea { min-height: 112px; }
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .tr-button,
+body.role-staff .staff-ticket-page[data-ticket-workspace="field"] .staff-action-panel__submit { min-height: 48px; font-size: 15px; }
+
+/* Section labels for clarity */
+body.role-staff .ticket-section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--navy-50);
+    color: var(--navy-700);
+    font: 700 11px/1 var(--font-sans);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+body.role-staff .ticket-section-kicker--field { background: var(--status-progress-bg); color: var(--status-progress-text); }

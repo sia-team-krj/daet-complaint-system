@@ -2294,6 +2294,16 @@ visual language.
 
 ---
 
+### 5.61 Ticket workspace modes — `[data-ticket-workspace]` / `.ticket-collapse` / `.field-action-bar`
+
+**Use:** staff complaint detail (`/staff/complaints/{complaint}`) role-based workspace. Same complaint record, routes, permissions, and workflows; only layout/information hierarchy changes.
+
+**Modes:** `data-ticket-workspace="verifier"` (desktop two-column, verification/assignment prominent, secondary metadata collapsed) and `data-ticket-workspace="field"` (mobile-first single column, location/progress/evidence prominent, sticky bottom action bar). Dual-capability users get an explicit switch; preference persisted by `daet_ticket_workspace` cookie/query param. No resize-based switching.
+
+**Patterns:** `.ticket-collapse` for secondary/admin metadata (`<details>`), `.ticket-section-kicker` for “Original resident report” vs “Field investigation / progress update” labels, `.field-action-bar` for mobile quick actions (context-aware update/proof/resolve + location shortcut). All styling uses existing tokens; no new palette.
+
+---
+
 ## 6. The z-index contract — **LOCKED**
 | Layer | z-index |
 |---|---|

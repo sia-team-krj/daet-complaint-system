@@ -2,6 +2,7 @@
             <div class="staff-detail-col staff-detail-col--main">
                 {{-- 1. Complaint Description Card --}}
                 <div class="tr-card workspace-card staff-detail-card staff-detail-card--description">
+                    <p class="ticket-section-kicker">{{ __('staff.ticket.original_report', ['default' => 'Original resident report']) }}</p>
                     <div class="workspace-card__header">
                         <div class="workspace-card__icon">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -82,14 +83,17 @@
                     @endif
                 </div>
 
-                {{-- 3. Activity History Timeline Card --}}
-                <div class="tr-card workspace-card staff-detail-card staff-detail-card--timeline">
-                    <div class="workspace-card__header">
-                        <div class="workspace-card__icon">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{-- 3. Activity History Timeline Card (secondary) --}}
+                <details class="tr-card workspace-card staff-detail-card staff-detail-card--timeline ticket-collapse">
+                    <summary class="workspace-card__header" style="margin-bottom:0; padding-bottom:0; border-bottom:0;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="workspace-card__icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </div>
+                            <h2 class="tr-h2">Activity history timeline</h2>
                         </div>
-                        <h2 class="tr-h2">Activity history timeline</h2>
-                    </div>
+                    </summary>
+                    <div class="ticket-collapse__body" style="padding-top:14px; border-top:1px solid var(--line-soft); margin-top:14px;">
 
                     @if($complaint->logs->isEmpty())
                         <p style="color: var(--faint); font-size: 13px; margin: 0; text-align: center; padding: 12px 0;">No activity logs recorded yet.</p>
@@ -146,7 +150,8 @@
                             @endforeach
                         </div>
                     @endif
-                </div>
+                    </div>
+                </details>
 
                 {{-- 3. Resident Evidence Photos Card --}}
                 @if($complaint->evidence_images && count($complaint->evidence_images) > 0)
@@ -290,13 +295,21 @@
                      a report as misleading or spam. The field officer always
                      writes a description and a comment; the panel returns as
                      the read-only record once the report is rejected. --}}
-                @include('staff.complaints.partials.marking-panel', [
-                    'complaint' => $complaint,
-                    'user' => $user,
-                    'canMark' => $user->isDepartmentStaff()
-                        && $complaint->statusEnum->isOpen()
-                        && ! $complaint->isMarked(),
-                ])
+                @php
+                    $canMark = $user->isDepartmentStaff() && $complaint->statusEnum->isOpen() && ! $complaint->isMarked();
+                @endphp
+                @if($canMark || $complaint->isMarked())
+                    <details class="ticket-collapse staff-detail-card staff-detail-card--marking" {{ $complaint->isMarked() ? 'open' : '' }}>
+                        <summary><span>{{ __('staff.marking.title', ['default' => 'Mark report as misleading or spam']) }}</span></summary>
+                        <div class="ticket-collapse__body">
+                            @include('staff.complaints.partials.marking-panel', [
+                                'complaint' => $complaint,
+                                'user' => $user,
+                                'canMark' => $canMark,
+                            ])
+                        </div>
+                    </details>
+                @endif
 
                 {{-- 5. Verification follow-up — the two actions the November
                      rewrite dropped: ask the resident for better evidence, and
@@ -416,13 +429,14 @@
 
                 @if($complaint->isVerified() && $availableStatuses !== [])
                     <div class="tr-card workspace-card staff-detail-card staff-detail-card--response" style="border-top: 3px solid var(--success);">
+                        <p class="ticket-section-kicker ticket-section-kicker--field">{{ __('staff.ticket.field_update', ['default' => 'Field investigation / progress update']) }}</p>
                         <div class="workspace-card__header">
                             <div class="workspace-card__icon" style="background: rgba(63,203,111,0.12); color: var(--success);">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </div>
                             <h2 class="tr-h2">Add official response</h2>
                         </div>
-                        <form method="POST" action="{{ route('staff.complaints.update', $complaint) }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 14px;">
+                        <form id="complaint-update-form" method="POST" action="{{ route('staff.complaints.update', $complaint) }}" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 14px;">
                             @csrf
                             @method('PUT')
                             <div>
