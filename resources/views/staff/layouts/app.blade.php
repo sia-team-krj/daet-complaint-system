@@ -13,24 +13,6 @@
     ></button>
 
     <section class="staff-workspace" aria-label="Department workspace">
-        <div class="staff-mobile-toolbar">
-            <button
-                type="button"
-                class="staff-mobile-menu-button"
-                data-staff-sidebar-toggle
-                aria-controls="staff-sidebar"
-                aria-expanded="false"
-            >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                    <line x1="4" y1="6" x2="20" y2="6"></line>
-                    <line x1="4" y1="12" x2="20" y2="12"></line>
-                    <line x1="4" y1="18" x2="20" y2="18"></line>
-                </svg>
-                <span>Staff menu</span>
-            </button>
-            <span class="staff-mobile-toolbar-title">{{ auth()->user()->department?->name ?? 'Department workspace' }}</span>
-        </div>
-
         <div class="staff-content">
             @yield('staff-content')
         </div>
@@ -41,5 +23,24 @@
             @yield('staff-aside')
         </aside>
     @endif
+
+    <nav class="staff-bottom-nav" aria-label="{{ __('staff.mobile.nav', ['default' => 'Staff navigation']) }}">
+        <a href="{{ route('staff.complaints.index') }}" class="staff-bottom-nav__item {{ request()->routeIs('staff.complaints.*') ? 'is-active' : '' }}" @if(request()->routeIs('staff.complaints.*')) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>{{ __('nav.my_work', ['default' => 'My Tasks']) }}</span>
+        </a>
+        <a href="{{ route('staff.activity.index') }}" class="staff-bottom-nav__item {{ request()->routeIs('staff.activity.*', 'staff.department-activity.*') ? 'is-active' : '' }}" @if(request()->routeIs('staff.activity.*', 'staff.department-activity.*')) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>{{ __('staff.activity.title', ['default' => 'Activity']) }}</span>
+        </a>
+        <a href="{{ route('notifications.index') }}" class="staff-bottom-nav__item {{ request()->routeIs('notifications.*') ? 'is-active' : '' }}" @if(request()->routeIs('notifications.*')) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>{{ __('nav.notifications', ['default' => 'Notifications']) }}</span>
+        </a>
+        <a href="{{ route('settings') }}" class="staff-bottom-nav__item {{ request()->routeIs('settings*', 'profile.*') ? 'is-active' : '' }}" @if(request()->routeIs('settings*', 'profile.*')) aria-current="page" @endif>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>{{ __('nav.profile', ['default' => 'Profile']) }}</span>
+        </a>
+    </nav>
 </div>
 @endsection

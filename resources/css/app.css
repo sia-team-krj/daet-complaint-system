@@ -10533,3 +10533,42 @@ body.role-staff .nav-dept-account__sep, body.role-staff .nav-dept-account__code 
         width: 100%;
     }
 }
+
+/* Staff mobile bottom nav (field staff experience) */
+.staff-bottom-nav {
+    display: none;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 900;
+    background: var(--surface);
+    border-top: 1px solid var(--line-soft);
+    box-shadow: 0 -4px 20px rgba(11,26,51,.06);
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+.staff-bottom-nav__item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 52px;
+    padding: 6px 4px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    text-decoration: none;
+    font: 600 11px/1.2 var(--font-sans);
+}
+.staff-bottom-nav__item svg { width: 20px; height: 20px; }
+.staff-bottom-nav__item:hover { color: var(--navy-900); background: var(--navy-50); }
+.staff-bottom-nav__item.is-active { color: var(--navy-900); background: var(--navy-50); }
+.staff-bottom-nav__item:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+@media (max-width: 1023px) {
+    body.role-staff .staff-bottom-nav { display: grid; }
+    body.role-staff .staff-content { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+    body.role-staff .field-action-bar { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 901; }
+}
+@media (min-width: 1024px) {
+    body.role-staff .staff-bottom-nav { display: none !important; }
+}

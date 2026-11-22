@@ -1,3 +1,10 @@
+## 2026-11-22: Staff mobile bottom navigation — field staff experience
+
+- **Files:** `resources/views/staff/layouts/app.blade.php`, `resources/css/app.css`, `docs/design-changelog.md`.
+- **What changed:** Added mobile-only bottom navigation for staff shell (My Tasks, Activity, Notifications, Profile) with active states and 44px+ touch targets. Preserved desktop sidebar/admin navigation. Adjusted mobile content padding and field action bar offset to avoid overlap.
+- **Verification:** `npm run build` passed. Playwright mobile 390×844 on staff pages: bottom nav present, 4 items, no horizontal overflow. Screenshots: `/tmp/opencode/phase4-mobile.png`, `/tmp/opencode/phase4-ticket.png` (repo-waived, evidence recorded here).
+- **Tokens/components:** Existing tokens only.
+
 ## 2026-11-22: Staff assigned complaints list — mobile-friendly field queue
 
 - **Files:** `resources/views/staff/complaints/index.blade.php`, `resources/views/staff/complaints/partials/list.blade.php`, `docs/design-changelog.md`.
