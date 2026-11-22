@@ -1,3 +1,19 @@
+## 2026-11-22: Staff dashboard redesign — consistent across dept admin, staff, verifier
+
+- Page / component: staff dashboard (`/staff/dashboard`) for Department Admin, Staff, and Verifier roles.
+- Why: the dashboard needed the same clean, premium workspace language as the new sidebar/super-admin shell, while keeping role-specific data and permissions intact.
+- What changed:
+  - Replaced the transparency-style hero with a clean workspace header (department eyebrow, welcome title, role chip, overview label).
+  - Kept role-aware KPI cards (verifier/dept admin: pending review, in progress, resolved this month, avg days open; staff: assigned to me, in progress, resolved this month, avg days open).
+  - Rebuilt priority complaints into a clean panel with search, compact rows, status/priority badges, and empty state.
+  - Kept recent activity as a secondary panel.
+  - Unified visual style with existing tokens (`--surface`, `--line-soft`, `--navy-*`, `--muted`, status tokens) and matched super-admin spacing.
+- Files: `resources/views/staff/dashboard/index.blade.php`, `resources/css/pages/staff-dashboard.css`, `resources/css/app.css`, `docs/staff-dashboard-redesign.md`, `docs/design-system.md`, `docs/design-changelog.md`.
+- New tokens: none.
+- Verification screenshots: Playwright captures during verification (not committed): `/tmp/opencode/dash-after-dept-admin.png`, `/tmp/opencode/dash-after-staff.png`, `/tmp/opencode/dash-after-verifier.png`.
+- Verification (code): `npm run build` pass. Playwright 1440×900 smoke for dept admin/staff/verifier — rendered, no horizontal overflow. Layout: `bodyPT 64px`, `shellTop 64`, `sidebarTop 80`, `contentTop 80`; shell `1440px`, grid `256px 1112px`, 24px right gutter.
+- Definition of Done checklist: existing lang keys reused; no new hex/serif/gold side borders; 44px touch targets for inputs/buttons/links; `--ring` focus; global reduced-motion applies; routes/permissions/role data behavior unchanged.
+
 ## 2026-11-22: Staff dashboard/activity alignment fix
 
 - Page / component: staff dashboard, my activity, and department activity (`/staff/dashboard`, `/staff/activity`, `/staff/department-activity`), all `body.page-staff-dashboard` pages using the staff shell.
