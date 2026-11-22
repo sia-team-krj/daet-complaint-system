@@ -949,7 +949,7 @@ class StaffController extends Controller
     /**
      * Show single complaint details for staff
      */
-    public function show(Complaint $complaint, ComplaintWorkService $work, ComplaintSlaService $sla): View
+    public function show(Request $request, Complaint $complaint, ComplaintWorkService $work, ComplaintSlaService $sla): View
     {
         $user = Auth::user();
 
@@ -1114,6 +1114,27 @@ class StaffController extends Controller
         // ticket moved while the staff member was reading it.
         $ticketFingerprint = TicketFingerprint::for($complaint);
 
+        $availableWorkspaceModes = [];
+        if ($user->canVerifyComplaints()) {
+            $availableWorkspaceModes[] = 'verifier';
+        }
+        if ($user->isDepartmentStaff() || $user->isAdmin()) {
+            $availableWorkspaceModes[] = 'field';
+        }
+        $availableWorkspaceModes = array_values(array_unique($availableWorkspaceModes));
+        if ($availableWorkspaceModes === []) {
+            $availableWorkspaceModes = ['field'];
+        }
+
+        $requestedWorkspace = (string) $request->query('workspace', $request->cookie('daet_ticket_workspace', ''));
+        $workspaceMode = in_array($requestedWorkspace, $availableWorkspaceModes, true)
+            ? $requestedWorkspace
+            : (in_array('verifier', $availableWorkspaceModes, true) ? 'verifier' : $availableWorkspaceModes[0]);
+
+        if ($request->has('workspace') && in_array((string) $request->query('workspace'), $availableWorkspaceModes, true)) {
+            \Illuminate\Support\Facades\Cookie::queue('daet_ticket_workspace', $workspaceMode, 60 * 24 * 30);
+        }
+
         return view('staff.complaints.show', compact(
             'complaint',
             'statuses',
@@ -1134,7 +1155,9 @@ class StaffController extends Controller
             'workMode',
             'documentationRequiredStatuses',
             'slaSummary',
-            'ticketFingerprint'
+            'ticketFingerprint',
+            'workspaceMode',
+            'availableWorkspaceModes'
         ));
     }
 

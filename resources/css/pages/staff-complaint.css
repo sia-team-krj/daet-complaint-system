@@ -1036,6 +1036,51 @@ body.role-staff .staff-ticket-back svg { width: 16px; height: 16px; flex-shrink:
 body.role-staff .staff-ticket-back:hover { color: var(--navy-900); text-decoration: underline; }
 body.role-staff .staff-ticket-back:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 3px; border-radius: var(--radius-sm); }
 
+body.role-staff .staff-ticket-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+body.role-staff .staff-workspace-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+}
+body.role-staff .staff-workspace-switch__label {
+    padding: 0 8px;
+    font: 600 11px/1 var(--font-sans);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--faint);
+}
+body.role-staff .staff-workspace-switch__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: calc(var(--radius-sm) - 2px);
+    font: 600 13px/1.2 var(--font-sans);
+    color: var(--muted);
+    text-decoration: none;
+}
+body.role-staff .staff-workspace-switch__btn:hover { color: var(--navy-900); background: var(--navy-50); }
+body.role-staff .staff-workspace-switch__btn.is-active {
+    background: var(--navy-900);
+    color: var(--surface);
+}
+body.role-staff .staff-workspace-switch__btn:focus-visible {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
 body.role-staff .staff-ticket-hero {
     display: flex;
     flex-direction: column;

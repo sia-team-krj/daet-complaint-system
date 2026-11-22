@@ -1,3 +1,10 @@
+## 2026-11-22: Staff ticket detail — Phase 2A foundation (workspace mode + section extraction)
+
+- **Files:** `app/Http/Controllers/StaffController.php`, `resources/views/staff/complaints/show.blade.php`, `resources/views/staff/complaints/partials/show/{hero,main-column,side-column,tail,scripts}.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.
+- **What changed:** Added ticket workspace mode resolution (`verifier|field`) with capability-based available modes, explicit `?workspace=` switching, cookie preference persistence (`daet_ticket_workspace`), and a dual-capability workspace switcher. Added a one-time first-visit mobile default to field for dual-capability users only when no explicit preference exists (no resize switching). Extracted ticket detail into orchestrator + meaningful show partials without changing forms, routes, permissions, status transitions, or proof/verification logic.
+- **Verification:** `php -l` on `StaffController.php` passed; `npm run build` passed; `php artisan view:clear` passed. Playwright smoke (1440×900, dept admin, `/staff/complaints/6`): HTTP 200, hero/grid/description/conversation/timeline/review/assignment/response/location present, switcher present, `workspace=verifier`, `available=verifier,field`, no console errors. Screenshot: `/tmp/opencode/phase2a-smoke.png` (repo-waived, evidence recorded here).
+- **Tokens/components:** Existing tokens only; no new colors/fonts/shadows/radii.
+
 ## 2026-11-22: Staff ticket detail — marking panel and conversation UI refinement
 
 - **Files:** `resources/views/staff/complaints/partials/marking-panel.blade.php`, `resources/views/staff/complaints/show.blade.php`, `resources/css/pages/staff-complaint.css`, `docs/design-changelog.md`.
