@@ -82,19 +82,10 @@
 
         @include('staff.partials.flash')
 
-                <section class="dept-priority" aria-labelledby="priority-complaints-title">
-                    <div class="dept-section-head">
-                        <div>
-                            <h2 id="priority-complaints-title" class="dept-section-title">{{ __('staff.dashboard.priority_title') }}</h2>
-                            <p class="dept-section-sub">{{ __('staff.dashboard.priority_sub') }}</p>
-                        </div>
         <div class="dept-dashboard__content-grid">
             <section class="dept-panel" aria-labelledby="priority-complaints-title">
-                <div class="dept-panel__head">
-                    <div>
-                        <h2 id="priority-complaints-title" class="dept-panel__title">{{ __('staff.dashboard.priority_title') }}</h2>
-                        <p class="dept-panel__sub">{{ __('staff.dashboard.priority_sub') }}</p>
-                    </div>
+                <div class="dept-panel__head dept-panel__head--actions">
+                    <h2 id="priority-complaints-title" class="sr-only">{{ __('staff.dashboard.priority_title') }}</h2>
                     <a href="{{ route('staff.complaints.index') }}" class="dept-text-link">{{ __('staff.dashboard.open_full_queue') }} <span aria-hidden="true">→</span></a>
                 </div>
 
