@@ -9943,7 +9943,7 @@ body.role-staff .staff-activity-item-title { color: var(--text); }
 body.role-staff .staff-activity-item:not(:last-child) { border-bottom-color: var(--line-soft); }
 
 @media (max-width: 1023px) {
-  body.role-staff .staff-shell { display: block; }
+  body.role-staff .staff-shell { display: block; padding-top: 0; }
   body.role-staff .staff-sidebar {
     position: fixed; top: var(--navbar-height); left: 0; bottom: 0; width: min(320px, 88vw);
     height: auto; transform: translateX(-102%); transition: transform 180ms ease;
@@ -10153,7 +10153,7 @@ body.role-staff .staff-sidebar.is-collapsed .staff-sidebar__dept-code { display:
     body.role-staff .staff-content { padding-top: 0; }
 }
 @media (min-width: 1280px) {
-    body.role-staff.page-staff-dashboard .staff-shell { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; max-width: 1440px; padding: 16px 24px 0; }
+    body.role-staff.page-staff-dashboard .staff-shell { grid-template-columns: max-content minmax(0, 1fr); gap: 24px; max-width: 1440px; padding: 0 24px 16px; }
 }
 @media (min-width: 768px) and (max-width: 1279px) {
     body.role-staff.page-staff-dashboard .staff-shell { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 20px; align-items: start; max-width: 1440px; margin: 0 auto; padding: 0 16px 16px; }
