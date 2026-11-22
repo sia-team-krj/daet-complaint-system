@@ -1269,7 +1269,22 @@ body.role-staff .staff-conversation__form {
 body.role-staff .staff-conversation__form-head { display: grid; gap: 2px; }
 body.role-staff .staff-conversation__form-label { font: 600 13px/1.4 var(--font-sans); color: var(--text); }
 body.role-staff .staff-conversation__form-hint { margin: 0; font: 400 12px/1.5 var(--font-sans); color: var(--muted); }
-body.role-staff .staff-conversation__textarea { width: 100%; min-height: 96px; resize: vertical; }
+body.role-staff .staff-conversation__textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: 400 14px/1.6 var(--font-sans);
+    resize: vertical;
+}
+body.role-staff .staff-conversation__textarea:focus {
+    border-color: var(--gold-500);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold-500) 20%, transparent);
+}
 body.role-staff .staff-conversation__form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 body.role-staff .staff-conversation__file { font: 400 13px/1.4 var(--font-sans); color: var(--muted); min-width: 0; }
 body.role-staff .staff-conversation__file input[type="file"] { max-width: 100%; font: inherit; color: var(--muted); }

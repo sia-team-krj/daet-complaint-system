@@ -163,7 +163,6 @@
                         </div>
                         <div class="staff-conversation__heading">
                             <h2 class="tr-h2">{{ __('complaint_show.follow_up.thread_title') }}</h2>
-                            <p class="staff-conversation__sub">{{ __('complaint_show.follow_up.thread_sub', ['default' => 'Messages between the resident and the office handling this report.']) }}</p>
                         </div>
                     </div>
 
@@ -207,7 +206,6 @@
                             @csrf
                             <div class="staff-conversation__form-head">
                                 <label class="staff-conversation__form-label" for="follow-up-body">{{ __('complaint_show.follow_up.body_label') }}</label>
-                                <p class="staff-conversation__form-hint">{{ __('complaint_show.follow_up.form_hint', ['default' => 'Keep updates clear and factual for the resident.']) }}</p>
                             </div>
                             <textarea id="follow-up-body" name="body" rows="4" minlength="10" maxlength="2000" required class="tr-input staff-conversation__textarea" placeholder="{{ __('complaint_show.follow_up.body_placeholder') }}">{{ old('body') }}</textarea>
                             <div class="staff-conversation__form-footer">
