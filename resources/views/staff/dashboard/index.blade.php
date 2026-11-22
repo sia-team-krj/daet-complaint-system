@@ -59,7 +59,7 @@
             @foreach($statCards as $stat)
                 @php $tag = $stat['href'] ? 'a' : 'div'; @endphp
                 <{{ $tag }} @if($stat['href']) href="{{ $stat['href'] }}" @endif class="dept-stat {{ $stat['href'] ? 'dept-stat--link' : '' }}" @if($stat['href']) aria-label="{{ $stat['label'] }}: {{ $stat['value'] }}{{ !empty($stat['unit']) ? ' '.$stat['unit'] : '' }}" @endif>
-                    <span class="dept-stat__icon" aria-hidden="true">
+                    <span class="dept-stat__icon dept-stat__icon--{{ $stat['icon'] }}" aria-hidden="true">
                         @if($stat['icon'] === 'clock')
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
                         @elseif($stat['icon'] === 'progress')

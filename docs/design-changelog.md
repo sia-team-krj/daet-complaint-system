@@ -6,8 +6,8 @@
   - Replaced the transparency-style hero with a clean workspace header (department eyebrow, welcome title, role chip, overview label).
   - Kept role-aware KPI cards (verifier/dept admin: pending review, in progress, resolved this month, avg days open; staff: assigned to me, in progress, resolved this month, avg days open).
   - Rebuilt priority complaints into a clean panel with search, compact rows, status/priority badges, and empty state.
-  - Kept recent activity as a secondary panel.
-  - Unified visual style with existing tokens (`--surface`, `--line-soft`, `--navy-*`, `--muted`, status tokens) and matched super-admin spacing.
+  - Kept recent activity as a secondary panel with an internal max-height/scroll so it does not stretch the page.
+  - Unified visual style with existing tokens (`--surface`, `--line-soft`, `--navy-*`, `--muted`, status tokens), added subtle role/status-tinted stat icons, and matched super-admin spacing.
 - Files: `resources/views/staff/dashboard/index.blade.php`, `resources/css/pages/staff-dashboard.css`, `resources/css/app.css`, `docs/staff-dashboard-redesign.md`, `docs/design-system.md`, `docs/design-changelog.md`.
 - New tokens: none.
 - Verification screenshots: Playwright captures during verification (not committed): `/tmp/opencode/dash-after-dept-admin.png`, `/tmp/opencode/dash-after-staff.png`, `/tmp/opencode/dash-after-verifier.png`.
