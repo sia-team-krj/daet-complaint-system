@@ -18,6 +18,7 @@ use App\Services\ComplaintDetectionService;
 use App\Services\ComplaintFollowUpService;
 use App\Services\ComplaintPrivacyService;
 use App\Services\ComplaintPriorityService;
+use App\Services\ComplaintReopenService;
 use App\Services\ComplaintVerificationService;
 use App\Services\DaetBoundary;
 use App\Services\DepartmentRouter;
@@ -27,6 +28,7 @@ use App\Services\PhotoLocationService;
 use App\Services\TransparencyFeed;
 use App\Support\ComplaintProgress;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -60,6 +62,19 @@ class ComplaintController extends Controller
     public const LOCATION_CHOICE_PHOTO = 'photo';
 
     public const LOCATION_CHOICE_MAP = 'map';
+
+    /**
+     * The tracker never holds still: the ticket is the only secret on the page,
+     * so neither the document nor its fragment may be cached, linked or
+     * indexed. Shared by the page and by `trackBrowser`.
+     *
+     * @var array<string, string>
+     */
+    private const TRACK_HEADERS = [
+        'Cache-Control' => 'no-store, private',
+        'Referrer-Policy' => 'no-referrer',
+        'X-Robots-Tag' => 'noindex, nofollow',
+    ];
 
     /**
      * List all complaints for the authenticated user.
@@ -432,6 +447,41 @@ class ComplaintController extends Controller
         return redirect()
             ->route('complaints.show', $complaint)
             ->with('status', __('complaint_show.close.success'));
+    }
+
+    /**
+     * Record a resident's reopen of a resolved complaint.
+     *
+     * The complaint itself is not recreated — the same row returns to
+     * Under Review, and the reopen is recorded in complaint_reopens and
+     * visible in the Updates timeline.
+     */
+    public function storeReopen(
+        Request $request,
+        Complaint $complaint,
+        ComplaintReopenService $reopens,
+        NotificationService $notifications,
+    ): RedirectResponse {
+        $this->authorize('reopen', $complaint);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:2000'],
+        ], [
+            'reason.required' => __('complaint_show.reopen.errors.reason'),
+            'reason.min' => __('complaint_show.reopen.errors.reason'),
+        ]);
+
+        try {
+            $reopens->reopen($complaint, $request->user(), trim((string) $validated['reason']), $notifications);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', __('complaint_show.reopen.not_available'));
+        }
+
+        return redirect()
+            ->route('complaints.show', $complaint)
+            ->with('status', __('complaint_show.reopen.success'));
     }
 
     /**
@@ -1223,6 +1273,57 @@ class ComplaintController extends Controller
      */
     public function track(Request $request, TransparencyFeed $feed)
     {
+        $context = $this->trackContext($request, $feed);
+
+        if (isset($context['redirect'])) {
+            return redirect()->to($context['redirect']);
+        }
+
+        return $this->trackResponse($context['data']);
+    }
+
+    /**
+     * The fragment behind the same lookup: the browser swaps the one region a
+     * full load would have redrawn, rendered by the same code, so the two can
+     * never disagree (docs/soft-navigation.md).
+     */
+    public function trackBrowser(Request $request, TransparencyFeed $feed): JsonResponse
+    {
+        $context = $this->trackContext($request, $feed);
+
+        if (isset($context['redirect'])) {
+            return response()
+                ->json(['redirect' => $context['redirect']])
+                ->withHeaders(self::TRACK_HEADERS);
+        }
+
+        $data = $context['data'];
+        $found = $data['complaint'] !== null;
+
+        return response()
+            ->json([
+                'html' => view(
+                    $found ? 'complaints.partials.track-result' : 'complaints.partials.track-lookup',
+                    $data,
+                )->render(),
+                'mode' => $found ? 'result' : 'lookup',
+                'notFound' => (bool) ($data['notFound'] ?? false),
+                'title' => $found
+                    ? __('complaint_track.result.page_title', ['ticket' => $data['complaint']->ticket_id])
+                    : __('complaint_track.lookup.page_title'),
+            ])
+            ->withHeaders(self::TRACK_HEADERS);
+    }
+
+    /**
+     * The one lookup the page and the fragment endpoint share: either a
+     * redirect to the full ticket this viewer can reach, or the data both
+     * render.
+     *
+     * @return array{redirect?: string, data?: array<string, mixed>}
+     */
+    private function trackContext(Request $request, TransparencyFeed $feed): array
+    {
         $ticketInput = trim((string) $request->query('ticket_id', ''));
         $complaint = $ticketInput === '' ? null : Complaint::findByTicketId($ticketInput);
 
@@ -1230,16 +1331,16 @@ class ComplaintController extends Controller
             $fullTicketUrl = $this->fullTicketUrl($complaint, $request->user());
 
             if ($fullTicketUrl !== null) {
-                return redirect()->to($fullTicketUrl);
+                return ['redirect' => $fullTicketUrl];
             }
         }
 
         if ($complaint === null) {
-            return $this->trackResponse([
+            return ['data' => [
                 'complaint' => null,
                 'notFound' => $ticketInput !== '',
                 'ticketInput' => $ticketInput,
-            ]);
+            ]];
         }
 
         $isPublicRecord = $complaint->isPubliclyVisible() && $complaint->spam_status !== 'spam';
@@ -1283,7 +1384,7 @@ class ComplaintController extends Controller
             $data['publicPhotoCount'] = count($complaint->publicImagePaths());
         }
 
-        return $this->trackResponse($data);
+        return ['data' => $data];
     }
 
     /**
@@ -1325,11 +1426,7 @@ class ComplaintController extends Controller
     {
         return response()
             ->view('complaints.track', $data)
-            ->withHeaders([
-                'Cache-Control' => 'no-store, private',
-                'Referrer-Policy' => 'no-referrer',
-                'X-Robots-Tag' => 'noindex, nofollow',
-            ]);
+            ->withHeaders(self::TRACK_HEADERS);
     }
 
     /**

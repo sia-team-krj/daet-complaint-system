@@ -154,6 +154,17 @@ return [
         'success' => 'Thank you. Your report is now closed.',
         'log_comment' => 'Resident confirmed the resolution and closed this report.',
     ],
+    'reopen' => [
+        'reason_label' => 'Why do you want to reopen this complaint?',
+        'reason_placeholder' => 'Tell us why the resolution does not work for you...',
+        'submit' => 'Reopen Complaint',
+        'success' => 'Your reopen request was recorded. The department will review the complaint again.',
+        'log_comment' => 'Resident requested to reopen this complaint: :reason',
+        'errors' => [
+            'reason' => 'Please explain why the resolution is not satisfactory (10 to 2000 characters).',
+        ],
+        'not_available' => 'This complaint is not waiting on a resident decision.',
+    ],
     'feedback' => [
         'title' => 'Rate this service',
         'lede' => 'Tell us how this complaint was handled. Your rating helps improve public service.',

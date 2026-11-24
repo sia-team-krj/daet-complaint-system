@@ -1185,8 +1185,9 @@
             swatch above uses <code>[data-an-preview]</code> to exercise the same interaction
             handlers without a live endpoint. Without JavaScript the chips are ordinary links
             and the custom range is a normal GET — the report still works, it just reloads.
-            Live surfaces: <code>/staff/analytics</code>, <code>/admin/analytics</code> and
-            <code>/admin/analytics/departments/{department}</code>.
+            Live surfaces: <code>/admin/analytics</code> and
+            <code>/admin/analytics/departments/{department}</code>. The staff-facing
+            <code>/staff/analytics</code> report is parked.
         </p>
     </section>
 

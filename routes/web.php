@@ -84,6 +84,11 @@ Route::get('/transparency/complaints/{complaint}', [TransparencyController::clas
 Route::get('/track', [ComplaintController::class, 'track'])
     ->name('complaints.track')
     ->middleware('throttle:20,1');
+// The fragment the tracker swaps in place of a page reload (one lookup, one
+// region, same controller code) — docs/soft-navigation.md.
+Route::get('/track/browser', [ComplaintController::class, 'trackBrowser'])
+    ->name('complaints.track.browser')
+    ->middleware('throttle:20,1');
 Route::get('/transparency/complaints/{complaint}/evidence/{index}', [ComplaintController::class, 'publicEvidence'])
     ->whereNumber('index')
     ->name('transparency.complaints.evidence');
@@ -253,6 +258,11 @@ Route::middleware(['auth', 'email.verified', 'force.password.change'])->group(fu
     Route::post('/complaints/{complaint}/follow-up', [ComplaintController::class, 'storeFollowUp'])
         ->middleware('throttle:6,1')
         ->name('complaints.follow_up.store');
+    // Resident rejection of a submitted resolution: reopen the same complaint
+    // to Under Review (a new verification pass), with the reason recorded.
+    Route::post('/complaints/{complaint}/reopen', [ComplaintController::class, 'storeReopen'])
+        ->middleware('throttle:6,1')
+        ->name('complaints.reopen.store');
     Route::get('/complaints/{complaint}/success', [ComplaintController::class, 'success'])->name('complaints.success');
 });
 
@@ -272,8 +282,9 @@ Route::middleware(['auth', 'email.verified', 'role:staff,department_admin,admin'
         // collides. It is a landing page only: it reads the work already
         // scoped to this account and links into the same ticket.
         Route::get('/', [StaffController::class, 'fieldHome'])->name('staff.field.home');
-        // The analytics is parked: the code stays, the routes refuse. Taking
-        // the middleware off brings the feature back.
+        // The staff analytics is parked: the super admin's municipal report is
+        // live, but this staff-facing group still refuses. Removing the
+        // middleware brings it back.
         Route::middleware('analytics.paused')->group(function () {
             Route::get('/analytics', [StaffAnalyticsController::class, 'index'])->name('staff.analytics.index');
             Route::get('/analytics/browser', [StaffAnalyticsController::class, 'browser'])->name('staff.analytics.browser');
@@ -397,17 +408,15 @@ Route::middleware(['auth', 'email.verified', 'role:admin', 'force.password.chang
             AdminController::class,
             'dashboard',
         ])->name('admin.dashboard');
-        // The analytics is parked: the code stays, the routes refuse. Taking
-        // the middleware off brings the feature back.
-        Route::middleware('analytics.paused')->group(function () {
-            Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics.index');
-            Route::get('/analytics/browser', [AdminAnalyticsController::class, 'browser'])->name('admin.analytics.browser');
-            Route::get('/analytics/print', [AdminAnalyticsController::class, 'print'])->name('admin.analytics.print');
-            Route::get('/analytics/departments/{department}', [AdminAnalyticsController::class, 'department'])->name('admin.analytics.department');
-            Route::get('/analytics/departments/{department}/browser', [AdminAnalyticsController::class, 'departmentBrowser'])->name('admin.analytics.department.browser');
-            Route::get('/analytics/departments/{department}/export', [AdminAnalyticsController::class, 'departmentExport'])->name('admin.analytics.department.export');
-            Route::get('/analytics/departments/{department}/print', [AdminAnalyticsController::class, 'departmentPrint'])->name('admin.analytics.department.print');
-        });
+        // The municipal analytics is live for the super admin. The staff-facing
+        // report is still parked on its own group in the STAFF ROUTES section.
+        Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics.index');
+        Route::get('/analytics/browser', [AdminAnalyticsController::class, 'browser'])->name('admin.analytics.browser');
+        Route::get('/analytics/print', [AdminAnalyticsController::class, 'print'])->name('admin.analytics.print');
+        Route::get('/analytics/departments/{department}', [AdminAnalyticsController::class, 'department'])->name('admin.analytics.department');
+        Route::get('/analytics/departments/{department}/browser', [AdminAnalyticsController::class, 'departmentBrowser'])->name('admin.analytics.department.browser');
+        Route::get('/analytics/departments/{department}/export', [AdminAnalyticsController::class, 'departmentExport'])->name('admin.analytics.department.export');
+        Route::get('/analytics/departments/{department}/print', [AdminAnalyticsController::class, 'departmentPrint'])->name('admin.analytics.department.print');
         Route::get('/complaints', [AdminController::class, 'complaintsIndex'])->name('admin.complaints.index');
         Route::get('/complaints/browser', [AdminController::class, 'complaintsBrowser'])->name('admin.complaints.browser');
         Route::get('/complaints/export', [AdminController::class, 'exportComplaints'])->name('admin.complaints.export');

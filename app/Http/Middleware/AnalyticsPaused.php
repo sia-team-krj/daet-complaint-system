@@ -6,24 +6,24 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * The analytics is parked.
+ * The staff analytics is parked.
  *
- * The pages, the service, the styles and the data are all still here — the
- * feature was set aside, not deleted. But nothing in the interface points at
- * it and these routes refuse, so it is out of sight while it waits.
+ * The admin analytics is live. Only the staff-facing report is set aside: its
+ * pages, service and styles are still here, but its routes refuse and the
+ * staff sidebar does not point at it.
  *
- * Taking the middleware off the two analytics route groups brings the whole
- * feature back.
+ * Removing the middleware from the staff analytics route group and setting
+ * STAFF_PAUSED to false brings it back.
  */
 class AnalyticsPaused
 {
     /**
-     * Whether the feature is parked.
+     * Whether the staff-facing analytics is parked.
      *
-     * The tests read this so the suite can skip the pages that are out of
-     * sight, instead of failing them.
+     * The tests read this so the suite can skip the staff pages that are out
+     * of sight, instead of failing them.
      */
-    public const PAUSED = true;
+    public const STAFF_PAUSED = true;
 
     public function handle(Request $request, Closure $next)
     {

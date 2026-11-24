@@ -30,9 +30,6 @@
             ?? ($reviewerNote !== '' ? $reviewerNote : __('complaint_show.action.fallback_question'));
         $showNeedsInfo = $isOwner && ($openRequest !== null || $needsInfo);
 
-        $conversationMessages = $complaint->messages->sortBy('created_at')->values();
-        $canPostFollowUp = $isOwner;
-
         $office = $complaint->department?->name ?? __('complaint_show.details.unassigned');
         $policy = $complaint->intakePolicy();
         $photosAllowed = ($policy['photos_required'] ?? false) || ($policy['photos_allowed'] ?? false);
@@ -331,99 +328,21 @@
                                 </div>
                             </div>
                             <p class="close-report__lede">{{ __('complaint_show.close.lede') }}</p>
-                            <form data-loading-submit method="POST" action="{{ route('complaints.close', $complaint) }}" class="close-report__form">
-                                @csrf
-                                <button type="submit" class="close-report__submit">{{ __('complaint_show.close.submit') }}</button>
-                            </form>
-                        </section>
-                    @endif
-
-                    <section class="pt-card rd-order-followup" aria-labelledby="pcs-conversation-heading">
-                        <h2 id="pcs-conversation-heading">{{ __('complaint_show.follow_up.thread_title') }}</h2>
-                        @if($conversationMessages->isEmpty())
-                            <p class="pt-copy">{{ __('complaint_show.follow_up.thread_empty') }}</p>
-                        @else
-                            <ul class="pt-updates" style="margin-top:0.75rem;">
-                                @foreach($conversationMessages as $msg)
-                                    @php
-                                        $senderLabel = match($msg->sender_type) {
-                                            'admin' => __('complaint_show.follow_up.sender_admin'),
-                                            'staff' => __('complaint_show.follow_up.sender_staff'),
-                                            default => ($msg->user_id === auth()->id() ? __('complaint_show.follow_up.sender_resident') : ($msg->user?->name ?? __('complaint_show.follow_up.sender_resident'))),
-                                        };
-                                        $msgImages = $msg->images;
-                                    @endphp
-                                    <li class="pt-update">
-                                        <span class="pt-update__marker" aria-hidden="true"></span>
-                                        <div class="pt-update__body">
-                                            <p class="pt-update__meta">
-                                                <span class="pt-update__date">{{ $msg->created_at?->format('M d, Y · g:i A') }}</span>
-                                                <span class="pt-update__actor"> · {{ $senderLabel }}</span>
-                                            </p>
-                                            <p class="pt-update__comment">{{ $msg->body }}</p>
-                                            @if($msgImages !== [])
-                                                <div class="info-request__photo-grid" style="margin-top:0.5rem;">
-                                                    @foreach($msgImages as $idx => $imgPath)
-                                                        <a href="{{ route('complaints.messages.evidence', [$complaint, $msg, $idx]) }}" target="_blank" rel="noopener" class="info-request__photo-thumb" style="display:block;">
-                                                            <img src="{{ route('complaints.messages.evidence', [$complaint, $msg, $idx]) }}" alt="Attachment {{ $idx + 1 }}" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                                                        </a>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-
-                        @if($canPostFollowUp)
-                            <div class="conversation-composer">
-                                <form data-loading-submit method="POST" action="{{ route('complaints.follow_up.store', $complaint) }}" enctype="multipart/form-data" class="conversation-composer__form">
+                            <div class="close-report__actions">
+                                <form data-loading-submit method="POST" action="{{ route('complaints.close', $complaint) }}" class="close-report__form">
                                     @csrf
-                                    <label class="conversation-composer__field" for="follow-up-body">
-                                        <span class="conversation-composer__label">{{ __('complaint_show.follow_up.body_label') }}</span>
-                                        <textarea id="follow-up-body" name="body" class="feedback-textarea" rows="3" minlength="10" maxlength="2000" required placeholder="{{ __('complaint_show.follow_up.body_placeholder') }}">{{ old('body', old('description')) }}</textarea>
-                                    </label>
-                                    @error('body')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
-                                    @error('description')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
-
-                                    <div class="info-request__photos" data-photo-picker data-max="5" data-max-bytes="5242880"
-                                         data-msg-too-many="{{ __('complaint_show.action.photos_too_many', ['max' => 5]) }}"
-                                         data-msg-invalid="{{ __('complaint_show.action.photos_invalid') }}"
-                                         data-msg-remove="{{ __('complaint_show.action.photos_remove', ['name' => '__name__']) }}"
-                                         data-msg-preview="{{ __('complaint_show.action.photos_preview_alt', ['name' => '__name__']) }}"
-                                         data-msg-count="{{ __('complaint_show.action.photos_count', ['count' => '__count__', 'max' => 5]) }}">
-                                        <div class="info-request__photos-field" data-photo-field>
-                                            <div class="conversation-composer__attach-row">
-                                                <span class="conversation-composer__attach-label">{{ __('complaint_show.action.photos_label') }} <small>{{ __('complaint_show.action.photos_optional') }}</small></span>
-                                                <span class="info-request__photo-count" data-photo-count aria-live="polite">{{ __('complaint_show.action.photos_count', ['count' => 0, 'max' => 5]) }}</span>
-                                            </div>
-                                            <input type="file" name="images[]" id="follow-up-images" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" multiple data-photo-input>
-                                            <input type="file" class="info-request__file-input" accept="image/jpeg,image/png,image/webp" capture="environment" data-photo-camera>
-                                            <div class="info-request__photo-actions">
-                                                <button type="button" class="info-request__photo-add tr-button" data-photo-trigger>
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                                                    {{ __('complaint_show.action.photos_choose') }}
-                                                </button>
-                                                <button type="button" class="info-request__photo-add tr-button" data-photo-camera-trigger>
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                                    {{ __('complaint_show.action.photos_take') }}
-                                                </button>
-                                            </div>
-                                            <div class="info-request__photo-grid" data-photo-previews aria-live="polite"></div>
-                                            <p class="info-request__error" data-photo-error hidden></p>
-                                        </div>
-                                    </div>
-                                    @error('images')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
-                                    @error('images.*')<p class="cat-field__error" role="alert">{{ $message }}</p>@enderror
-
-                                    <div class="conversation-composer__actions">
-                                        <button type="submit" class="tr-button tr-button--primary">{{ __('complaint_show.follow_up.submit') }}</button>
-                                    </div>
+                                    <button type="submit" class="close-report__submit">{{ __('complaint_show.close.submit') }}</button>
+                                </form>
+                                <form method="POST" action="{{ route('complaints.reopen.store', $complaint) }}" class="close-report__reopen">
+                                    @csrf
+                                    <label class="close-report__reopen-label" for="close-report-reason">{{ __('complaint_show.reopen.reason_label') }}</label>
+                                    <textarea id="close-report-reason" name="reason" class="close-report__reopen-input" rows="3" minlength="10" maxlength="2000" required placeholder="{{ __('complaint_show.reopen.reason_placeholder') }}"></textarea>
+                                    @error('reason')<p class="close-report__reopen-error" role="alert">{{ $message }}</p>@enderror
+                                    <button type="submit" class="close-report__reopen-submit">{{ __('complaint_show.reopen.submit') }}</button>
                                 </form>
                             </div>
-                        @endif
-                    </section>
+                        </section>
+                    @endif
 
                     <section class="pt-card rd-order-updates" aria-labelledby="pcs-updates-heading">
                         <h2 id="pcs-updates-heading">{{ __('complaint_show.updates.title') }}</h2>

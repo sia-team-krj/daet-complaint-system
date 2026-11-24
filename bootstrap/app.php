@@ -83,8 +83,9 @@ return Application::configure(basePath: dirname(__DIR__))
             "email.verified" => \App\Http\Middleware\EnsureEmailIsVerified::class,
             "identity.verified" => \App\Http\Middleware\EnsureResidentIsVerified::class,
             "admin.2fa" => \App\Http\Middleware\EnsureAdminTwoFactor::class,
-            // The analytics is parked: the code stays, the routes refuse, and
-            // nothing in the interface points at it.
+            // The staff analytics is parked: the admin surface is live, but
+            // the staff routes refuse and nothing in the staff interface
+            // points at them.
             "analytics.paused" => \App\Http\Middleware\AnalyticsPaused::class,
         ]);
 

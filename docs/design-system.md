@@ -745,18 +745,28 @@ the entire "needs information" story on the resident side.
 
 ### 5.30 Resolved close-confirmation panel (resident) — `.close-report`
 Purpose: when the department has marked a report `Resolved`, the resident can
-confirm the outcome and close it. If they do not act, the report auto-closes
-7 days after `resolved_at` (scheduled `complaints:auto-close-resolved`).
+confirm the outcome and close it, or reopen it with a reason. If they do not
+act, the report auto-closes 7 days after `resolved_at` (scheduled
+`complaints:auto-close-resolved`).
 Anatomy: `--status-resolved-bg` card (resolved-dot hairline, `--radius-sm`,
 `--shadow-card`) with 44px navy-900 icon tile, resolved kicker, 20px/700 title,
-lede explaining the 7-day auto-close, and one gold primary button
-(`--gold-500`/`--navy-900`, 44px min-height, `--ring` focus) posting to
-`complaints.close`. Visible only to the complaint owner while status is `Resolved`.
-States: actionable (form shown) only; once closed the normal Closed/stepper state
-renders. Tokens: `--status-resolved-*`, `--navy-900`, `--gold-300/500`,
-`--radius-sm`, `--shadow-card`, `--ring`. No new colours.
+lede explaining the 7-day auto-close, and two side-by-side actions:
+- Close: gold primary button (`--gold-500`/`--navy-900`, 44px min-height,
+  `--ring` focus) posting to `complaints.close`.
+- Reopen (`.close-report__actions` row): secondary form — uppercase muted label
+  (`.close-report__reopen-label`), required reason textarea
+  (`.close-report__reopen-input`, 44px, `--line` border), inline error
+  (`.close-report__reopen-error`), and a secondary submit
+  (`.close-report__reopen-submit`) posting to `complaints.reopen.store`.
+Visible only to the complaint owner while status is `Resolved`; the resident
+view no longer carries the Conversation section (2026-11-24).
+States: close form shown, reopen form shown; once closed or reopened the panel
+hides. Tokens: `--status-resolved-*`, `--navy-900`, `--gold-300/500`,
+`--radius-sm`, `--shadow-card`, `--ring`, `--line`, `--surface`, `--muted`.
+No new colours.
 Why: resolution and closure are different decisions — the office finishes the
-work, the resident confirms it is done for them.
+work, the resident confirms it is done for them; a reopen is the resident's
+rejection of the resolution, returning the same ticket to Under Review.
 
 ### 5.31 Navbar identity indicator (staff / Department Administrator) — `.nav-identity`
 Purpose: make the current account context unmistakable in the fixed top bar
@@ -1480,16 +1490,23 @@ without turning unequal offices into a league table.
 
 Surfaces:
 - **Staff** `/staff/analytics` — the signed-in staff member's own department.
-  The office comes from the session, never from the URL.
-- **Admin comparison** `/admin/analytics` — every **active** office,
-  alphabetically, each against its own previous period, with a fairness note
-  above the table. Archived offices are deliberately absent.
-- **Admin department** `/admin/analytics/departments/{department}` — one
-  office's full report, active or archived, including the per-staff breakdown.
-- **Print** `/…/print` uses `layouts/print`; **CSV** `/…/export` streams one row
-  per report filed in the period.
-- Navigation: staff sidebar → **Analytics**; admin sidebar → **Analytics**;
-  admin department-directory rows → **Analytics**.
+  The office comes from the session, never from the URL. **Parked** (see
+  `AnalyticsPaused`): the pages and styles remain, but its routes answer 403
+  and the staff sidebar does not link to it.
+- **Admin comparison** `/admin/analytics` — **live for the super admin**; every
+  **active** office, alphabetically, each against its own previous period, with
+  a fairness note above the table. Archived offices are deliberately absent.
+- **Admin department** `/admin/analytics/departments/{department}` — live for
+  the super admin; one office's full report, active or archived, including the
+  per-staff breakdown.
+- **Print** `/…/print` uses `layouts/print` as a formal document (LGU
+  letterhead, reporting period/generated metadata, confidentiality notice,
+  signatures, footer). It is an HTML print view; the screen toolbar and
+  auto-triggered print dialog let the user **Print / Save as PDF** from the
+  browser. **CSV** `/…/export` streams one row per report filed in the period.
+- Navigation: admin sidebar top-level **Analytics**; admin
+  department-directory rows → **Analytics**. The staff sidebar link stays out
+  while the staff surface is parked.
 
 Anatomy:
 - **`.an-page`** — the analytics shell. Admin variants use
@@ -1694,8 +1711,9 @@ re-skin them.
 
 ```
 .settings-page          — the page
-.settings-body         — the body: the tab rail and the section beside it
-.settings-tabs         — the tabs (a left rail on the desktop, a scrolling strip on a phone)
+.settings-body         — the body: the tab strip above the section
+.settings-tabs         — the tab strip: horizontal, scrolls sideways when it
+                          does not fit (a scrolling chip strip on a phone)
 .settings-tab          — one tab
 .settings-sections     — the section column
 .settings-card         — the card for the section on screen
@@ -1706,10 +1724,16 @@ re-skin them.
 .settings-save-row__state — "You have unsaved changes" / "Saved"
 ```
 
-- **One section at a time, switched by the tabs** — the shape the page has
-  always had. A left rail on the desktop, a scrolling strip on a phone, and
-  the tab you are on says so. The arrow keys move between them, and the tab
-  you are on is scrolled into view on a narrow screen.
+- **One section at a time, switched by the horizontal tab strip** — the
+  strip is horizontal at every width. Staff, verifiers, admins, and citizens
+  all read the same strip; on a phone it scrolls. The arrow keys move between
+  tabs, and the active tab is scrolled into view on a narrow screen.
+- The page renders inside the caller's shell — `admin.layouts.app` for super
+  admins, `staff.layouts.app` for department staff (where verifiers are), and
+  `layouts.app` standalone for citizens. Inside the shells the page adds no
+  padding of its own: the shell and its content padding do the spacing, and
+  the page's banner-style text (`.tr-h1`, `.tr-privacy`) switches to the
+  shell's light palette.
 - Each section is a card in the portal's language, with the fields grouped
   inside it and the save row living with the fields it saves.
 - **The save row lives with the fields it saves**, and says what happened in
@@ -2095,21 +2119,39 @@ resident's identity — only progress.
 
 Anatomy (two states, one route):
 - **Lookup:** a full-height dark stage (`.track-page--lookup`, navy gradient) with one
-  centered `h1` and one white `.pt-card.track-lookup`. The form is ticket-only: label,
-  mono ticket input, a short format hint, and a full-width primary submit (`.track-submit`,
-  48px). A compact lock note states the page is progress-only; no account is required.
-  Not-found is a generic inline `.track-alert` (no submitted ticket echoed).
-- **Result:** the public-detail family, read-only. `.pt-back-row` → `.pt-banner` with the
-  ticket pill, `h1` "Complaint progress", status pill and neutral chips (office, filed,
-  last updated). A single-column `.track-result-stack` of `.pt-card`s: **Progress** (hold
-  notice, neutral "waiting on resident" notice when an information request is open, the
-  shared `.pt-steps` trail, "what this means", and a rejected note when applicable),
-  **Public updates** (`.pt-updates`, status/date/public comment only — no photos, no
-  actors, no internal notes), and **Progress only** (privacy reminder + "Track another"
-  and, for guests, "Sign in").
+  centered heading block — the `h1` and, tight beneath it, a one-line lede that says where
+  the ticket comes from (`.track-lookup-head`) — over one white `.pt-card.track-lookup`.
+  The form is ticket-only: label, mono ticket input with an inline lookup glyph inside the
+  field (`.track-input-wrap` / `.track-input__icon`, the same search mark the landing
+  tracker uses), a short format hint, and a full-width **gold** primary submit
+  (`.track-submit`, 48px, `--gold-500` → `--gold-300` on hover, `--navy-900` label). A
+  compact lock note states the page is progress-only; no account is required. Not-found is
+  a generic inline `.track-alert` (no submitted ticket echoed); the submitted value stays
+  in the field and is selected, so the correction is typed where the visitor already is.
+- **Result:** the public-detail family, read-only. `.pt-back-row` ("Back to home") →
+  `.pt-banner`, whose `.track-header` reads as one statement: the `COMPLAINT REFERENCE`
+  label, the ticket as `h1`, and the status pill beside it in `.track-ref-row`, then the
+  neutral meta (office, filed, last updated). A single-column `.track-result-stack` of
+  `.pt-card`s: **Progress** (hold notice, neutral "waiting on resident" notice when an
+  information request is open, the shared `.pt-steps` trail, "what this means", and a
+  rejected note when applicable), **Public updates** (`.pt-updates`, status/date/public
+  comment only — no photos, no actors, no internal notes), and **Progress only** (privacy
+  reminder). Actions close the stack: the **gold** primary "Track another"
+  (`.track-btn--primary`) with secondary "View public record" / "Sign in" — one gold
+  action per screen, the same primary the receipt uses.
+- **Soft navigation:** the two states are two partials
+  (`complaints/partials/track-{lookup,result}`) rendered inside one
+  `[data-track-region]`, by the page and by `GET /track/browser`
+  (`complaints.track.browser`, same throttle and same headers, JSON
+  `{html, mode, notFound, title}` or `{redirect}`). A lookup fetches the fragment, swaps
+  the region, writes the URL and moves focus (the record's `h1`, or the field when the
+  ticket was wrong); Back, Forward and a shared link still behave, and with JavaScript off
+  the form is a plain GET to `/track`. Any failure falls back to a real navigation — the
+  visitor is never left on a half-drawn page.
 - **Redirect:** if the signed-in viewer can open the full record (verified, not
   `must_change_password`, and owner/staff/admin with access) the route redirects to the
-  full ticket; everyone else sees the limited result.
+  full ticket; everyone else sees the limited result. The fragment endpoint answers the
+  same case with `{redirect}` and the browser follows it with a full navigation.
 
 Shared stepper: `resources/views/partials/complaint-steps.blade.php` renders the
 `App\Support\ComplaintProgress::steps()` trail (Submitted → Under Review → In Progress
@@ -2118,13 +2160,14 @@ transparency detail, the resident ticket, and this page.
 
 Behaviour / safety: the ticket is normalised (case and punctuation stripped) so
 `COMP-2026-A7K9P`, `COMP2026A7K9P`, and lower-case variants resolve the same record.
-`throttle:20,1`, `Cache-Control: no-store, private`, `Referrer-Policy: no-referrer`,
-`X-Robots-Tag: noindex, nofollow`, and a `noindex` meta. Confirmed-spam and
-soft-deleted complaints are not found.
+Both routes carry `throttle:20,1`, `Cache-Control: no-store, private`,
+`Referrer-Policy: no-referrer`, `X-Robots-Tag: noindex, nofollow`, and a `noindex` meta.
+Confirmed-spam and soft-deleted complaints are not found.
 
 Tokens/classes: reuses `.pt-*` (banner, card, pill, steps, updates, whatmeans,
-hold-notice, empty), status/hold/error tokens, and page-scoped `.track-*` for the
-lookup stage and compact action/note treatments in `resources/css/pages/complaint-track.css`.
+hold-notice, empty, back-row), status/hold/error tokens, and page-scoped `.track-*` for the
+lookup stage, the reference/status header and the compact action/note treatments in
+`resources/css/pages/complaint-track.css`.
 **No new colours, fonts, shadows, radii or tokens.**
 
 Why: a resident must be able to check progress from a receipt without creating an
@@ -2503,6 +2546,12 @@ lost to friction (single file input, no camera, no consent list, no status). The
 redesign keeps the portal's settings grammar and tokens and only adds the capture,
 consent and status vocabulary the flow actually needs.
 
+> Note (2026-11-24): the resident-facing follow-up form/section this section
+> describes was removed from the resident ticket view — the decision panel
+> (§5.30, `.close-report`) now carries the resident's accept/reopen actions.
+> The Conversation thread still exists for staff/admin tickets; `ComplaintMessage`
+> and the follow-up service remain in use there.
+
 ### 5.59 Follow-up panel — `.follow-up-panel` (resident, sub-ticketing v1)
 
 Purpose: when a finished complaint (Resolved or Closed) is not resolved for the
@@ -2557,9 +2606,10 @@ the bottom above a hairline divider while the middle scrolls independently. The
 rail collapses to an icon-only 72px strip with portal tooltips.
 Linear/Stripe-inspired, one markup per rail, JavaScript-off safe.
 
-Admin (`resources/views/admin/partials/sidebar.blade.php`): **Overview** is the
-standalone primary item; **Manage** and **People** are expandable sections;
-mobile drawer ≤640px is separate. Staff/departmental/verifier
+Admin (`resources/views/admin/partials/sidebar.blade.php`): **Overview** and
+**Analytics** are the standalone primary items; **Manage** and **People** are
+expandable sections; mobile drawer ≤640px is separate.
+Staff/departmental/verifier
 (`resources/views/staff/partials/sidebar.blade.php`): **Dashboard** is the
 primary item; **Workspace** and conditional **Office** (department admin) are
 expandable groups; publication queue is a conditional primary row; the drawer
@@ -2582,6 +2632,9 @@ Anatomy (desktop ≥768px, `resources/views/admin/partials/sidebar.blade.php`):
   `nav.expand_sidebar`, and flips its chevron path.
 - **Overview** — a permanent top-level `.admin-sidebar__link` (18px grid icon,
   10px icon/label gap, 44px row, 14px/600).
+- **Analytics** — a permanent top-level `.admin-sidebar__link` directly under
+  Overview (18px chart icon, same row grammar), active for
+  `admin.analytics.*`; it opens the municipal comparison.
 - **Manage** (`<details class="admin-sidebar-section is-current?" data-sidebar-section="manage" open>`)
   — complaint operations and platform content: All complaints · Departments ·
   Complaint categories · Identity verification queue · Audit trail · Resident
@@ -2806,6 +2859,19 @@ locale per page, `.navbar-logo { flex-shrink: 0 }`, `#navbar` `z-index 900`.
 ## 12. Changelog
 
 Every UI task appends here: **(date · page · what changed).**
+- 2026-11-24 · Staff ticket bottom nav — **center shortcut in note state.** When a field ticket nav shows `.ticket-action-note` (waiting on verification / no transitions) with only the Complaint location shortcut, the grid becomes a centered flex column (`display: flex; flex-direction: column; align-items: center`), the note stays full-width, and the shortcut is centered as a compact item (`width: auto; min-width: 96px`). Scoped to `body.role-staff .staff-bottom-nav__grid:has(.ticket-action-note)` so 4-action/4-tab layouts keep their even-fill grid. Files: `resources/css/app.css`, `docs/{design-system,design-changelog}.md`. Verification: `npm run build` clean; `php artisan test --filter="StaffTicketActionsTest|StaffWorkspaceTest"` — 10 passed (54 assertions); guard 0 NEW in touched files. Screenshots NOT captured (browser disconnected).
+- 2026-11-24 · Settings (`/settings`) — **main content overflow root cause (tab strip grid item).** User-provided live measurements at 375px (`scrollWidth 375, clientWidth 375`) showed `.settings-body` 311px wide while `.settings-tabs/.settings-sections/.settings-card` were 386px wide (overflowRight 43), with children at 348px; off-canvas `.mobile-nav-drawer` offenders did not create document scroll. Root cause: `.settings-tabs` was a grid item of `.settings-body` missing from the ≤1023px shrink-guard, so its nowrap tab labels pushed the 1-column grid track to min-content width. Fix: added `.settings-tabs` to the shrink-guard (`width: 100%; max-width: 100%; min-width: 0`) in `resources/css/pages/settings.css`. Files: `resources/css/pages/settings.css`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `npm run build` — clean; `php artisan test --filter="SettingsPageTest|SettingsTest|StaffWorkspaceTest"` — **23 passed (102 assertions)**; `php scripts/design-system-guard.php` — **0 NEW in touched files** (4 pre-existing in `complaint-show.css` / `admin/complaints/show.blade.php`). Post-fix live re-measurement at 320/375/393px still required (browser disconnected); no `overflow-x: hidden`; desktop unchanged.
+- 2026-11-24 · Settings (`/settings`) — **main content area responsiveness (second pass).** At ≤1023px, the card's grid children `form` and `fieldset.settings-group` (`.settings-card > form`, `.settings-group`) now carry `width: 100%; max-width: 100%; min-width: 0` — grid items default to `min-width: auto` (min-content) and would refuse to shrink below their widest content, which is one of the "grid children missing min-width: 0" cases behind the reported cut-offs — alongside `.settings-card__head`. Files: `resources/css/pages/settings.css`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `npm run build` — clean; `php artisan test --filter="SettingsPageTest|SettingsTest|StaffWorkspaceTest"` — **23 passed (102 assertions)**; `node tests/Support/js/settings-audit.mjs` — ok; `php scripts/design-system-guard.php` — **0 NEW in touched files** (the 4 NEW are the pre-existing owner-file ones in `resources/css/pages/complaint-show.css` and `resources/views/admin/complaints/show.blade.php`). Screenshots NOT captured (no browser connected); a live `scrollWidth` vs `clientWidth` pass at 393px, 375/390/430/768/1024/1440px needs a connected browser.
+- 2026-11-24 · Settings (`/settings`) — main content area responsiveness.
+- 2026-11-24 · Settings (`/settings`) — **main content area responsiveness.** In the ≤1023px block of `resources/css/pages/settings.css`, the page's main content area is made width-robust: `.settings-container`, `.settings-body`, `.settings-sections`, `.settings-card`, `.settings-grid`, `.settings-field` and `.settings-input` now carry `width: 100%; max-width: 100%; min-width: 0;` (+ `box-sizing: border-box` on `.settings-card`/`.settings-field` and `.settings-save-row`/`.settings-save-row__actions`), the card gets `width: 100%; max-width: 100%`, the Save Changes row is `width: 100%; max-width: 100%; box-sizing: border-box` with `flex-wrap: wrap` so the buttons never clip — addressing card cut off, inputs extending past the screen, the clipped save button and the container not adjusting. Screenshots unavailable (no browser connected in this session); a live pass at 375/390/430/768/1024/1440px needs a connected browser. Files: `resources/css/pages/settings.css`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `npm run build` — clean; `php artisan test --filter="SettingsPageTest|SettingsTest|StaffWorkspaceTest"` — **23 passed (102 assertions)**; `node tests/Support/js/settings-audit.mjs` — ok; `php scripts/design-system-guard.php` — **0 NEW in touched files** (the 4 NEW are the pre-existing owner-file ones in `resources/css/pages/complaint-show.css` and `resources/views/admin/complaints/show.blade.php`).
+- 2026-11-24 · Settings (`/settings`) — smaller-screen pass.
+- 2026-11-24 · Settings (`/settings`) — **smaller-screen pass.** A squeeze pass for smaller screens in `resources/css/pages/settings.css`: `.settings-card` gap 24 → 16px, then 14px at ≤500px; `.settings-grid` gap 16 → 12px at ≤768px; `.settings-tabs ul` gets `gap: 2px; padding-inline: 4px` at ≤768px and `.settings-tab` padding shrinks to 10px 14px (≤768px) / 8px 12px (≤500px) while the 44px min-height stays the touch floor; desktop untouched (every rule ≤768px/≤500px). Screenshots unavailable (no browser connected in this session). Files: `resources/css/pages/settings.css`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `npm run build` — clean; `php artisan test --filter="SettingsPageTest|SettingsTest|StaffWorkspaceTest"` — **23 passed (102 assertions)**; `node tests/Support/js/settings-audit.mjs` — ok; `php scripts/design-system-guard.php` — **0 NEW in touched files** (the 4 NEW are the pre-existing owner-file ones in `resources/css/pages/complaint-show.css` and `resources/views/admin/complaints/show.blade.php`).
+- 2026-11-24 · Settings (`/settings`) — mobile fixes (inputs ≥16px, tab strip, segmented control).
+- 2026-11-24 · Settings (`/settings`) — **footer removed on mobile, tab strip alignment + small-screen overlap.** On the settings page at the mobile width (≤1023px — the repo's mobile breakpoint where the fixed staff bottom nav shows) the **staff mobile bottom nav is now hidden** (`body.role-staff:has(.settings-page) .staff-bottom-nav { display: none !important; }`): it is the workspace's footer, not this page's, and on /settings it covered the bottom of the form (the small-screen overlap). Every other staff page keeps it — the rule is page-scoped via `:has(.settings-page)`; the ≥1024px hide is untouched. Two adjacent alignment fixes: `.settings-tabs ul` gains `scroll-padding-inline: 8px` at every width (the strip's leading/trailing ends are padded so a scrolled tab strip reads as distance rather than tabs flush against the container gutter), and the staff-content bottom room that existed to clear the nav is no longer reserved on settings pages (`body.role-staff:not(:has(.settings-page)) .staff-content { padding-bottom: calc(84px + env(safe-area-inset-bottom)) }` + the 108px caption variant). Screenshots unavailable (no browser connected in this session); the mobile rules are the ≤1023px/≤768px blocks reviewed in the compiled CSS from `npm run build`. Files: `resources/css/pages/settings.css`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `npm run build` — clean; `php artisan test --filter="SettingsPageTest|SettingsTest|StaffWorkspaceTest"` — **23 passed (102 assertions)**; `node tests/Support/js/settings-audit.mjs` — ok; `php scripts/design-system-guard.php` — **0 NEW in touched files** (the 4 NEW are the pre-existing owner-file ones in `resources/css/pages/complaint-show.css` and `resources/views/admin/complaints/show.blade.php`).
+- 2026-11-24 · Settings (`/settings`) — **mobile fixes (inputs ≥16px, tab strip, segmented control).** On phones (≤768px) every settings input (`.settings-input` — Profile first/last name, email, contact number; Privacy delete-email) is now 16px instead of the desktop 14px: iOS Safari zooms the page when a text input with font-size < 16px receives focus, and 16px also reads better on a ~390px screen. `.settings-tabs ul` gains `scroll-padding-inline: 8px` so the active tab — scrolled into view by `resources/js/settings.js` — reads as distance rather than packed against the strip's edge. The Preferences language/text-size `.segmented-control` (`resources/css/app.css`) is now `max-width: min(360px, 100%)` — its 360px cap could overflow the ~358px container on a 390px phone, adding horizontal scroll. Screenshots unavailable (no browser connected in this session); the mobile rules are the ≤768px block reviewed in the compiled CSS from `npm run build`. Files: `resources/css/pages/settings.css`, `resources/css/app.css`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `php artisan test --filter="SettingsPageTest|SettingsTest"` — **17 passed (71 assertions)**; `npm run build` — clean; `node tests/Support/js/settings-audit.mjs` — ok; `php scripts/design-system-guard.php` — **0 NEW in touched files** (the 4 NEW are the pre-existing owner-file ones in `resources/css/pages/complaint-show.css` and `resources/views/admin/complaints/show.blade.php`). Verification screenshots: NOT captured (no desktop browser connected to this session). Definition of Done: 1–8 verified — one `<h1>`/footer, no horizontal scroll (segmented control now caps to the container; inputs are 16px), no raw keys, no new hex/serif, 44px touch targets kept, focus ring unchanged, `prefers-reduced-motion` untouched.
+- 2026-11-24 · Admin analytics (`/admin/analytics`) · **the municipal report is live for the super admin again.** The admin route group no longer carries `analytics.paused`, so `/admin/analytics` (comparison) and `/admin/analytics/departments/{department}` (office report + per-staff workload) render for `role:admin`; the staff-facing `/staff/analytics*` group stays parked. A permanent top-level **Analytics** row sits directly under Overview in the admin rail and the admin mobile drawer (chart icon, `admin.analytics.*` active state), and every department-directory row now carries an **Analytics** action beside its queue/history actions. No new tokens or components; `nav.analytics` already existed in `en` + `fil`. Files: `routes/web.php`, `app/Http/Middleware/AnalyticsPaused.php`, `bootstrap/app.php`, `resources/views/admin/partials/sidebar.blade.php`, `resources/views/layouts/partials/mobile-drawer.blade.php`, `resources/views/admin/departments/index.blade.php`, `resources/views/pages/design-system.blade.php`, `tests/Feature/DepartmentAnalyticsTest.php`, `docs/{design-system,system-knowledge-base,office-statistics-plan,design-changelog}.md`. Verification: `php artisan view:clear`; `php artisan test --filter="DepartmentAnalyticsTest|AdminMobileNavigationTest|LocalizationTest"` — **30 passed, 6 skipped (151 assertions)** (the skips are the still-parked staff report); `php scripts/design-system-guard.php` — **0 NEW in touched files** (the 4 NEW violations are the pre-existing owner-file ones in `resources/css/pages/complaint-show.css` and `resources/views/admin/complaints/show.blade.php`). Screenshots NOT captured (waived by user, 2026-11-09).
+- 2026-11-24 · Analytics print report (`/admin/analytics/*/print`) · **print view now reads as a formal document, not a raw screen dump.** The print layout adds a screen-only toolbar with "Print / Save as PDF" (browser print dialog) and auto-opens print on load; the report has LGU letterhead, reporting period/generated metadata, confidentiality notice, prepared-by/noted-by signature lines, and print CSS for A4 portrait/landscape (comparison), hidden interactive chart/data-table/delta-label UI, real table borders, expanded feed details, plain-text links, and clean page breaks. No PDF library added — output is browser print-to-PDF by design. Files: `resources/views/layouts/print.blade.php`, `resources/views/analytics/print.blade.php`, `resources/views/analytics/comparison-print.blade.php`, `resources/css/pages/analytics.css`, `lang/en/analytics.php`, `lang/fil/analytics.php`, `docs/{design-system,design-changelog}.md`. Verification: `php artisan view:clear`; `php artisan test --filter=DepartmentAnalyticsTest` — **19 passed, 6 skipped (79 assertions)**; `php scripts/design-system-guard.php` — **0 NEW in touched files** (same 4 pre-existing owner-file violations). Screenshots NOT captured (waived by user, 2026-11-09).
+- 2026-11-23 · Public ticket tracking (`/track`, both states) · **a polish pass on the lookup and the result, and the lookup stops redrawing the browser.** *Lookup:* the stage gains a one-line lede under the `h1` (`.track-lookup-head` + `.track-lookup-lede`, new `lookup.lede`) that says where the ticket comes from; the field grows an inline lookup glyph inside its own box (`.track-input-wrap` / `.track-input__icon`, the landing tracker's search mark, input padded to `42px`); the submit stops being a navy block and becomes the portal's one **gold** primary (`.track-submit`: `background: --gold-500` → `--gold-300` on hover, `--navy-900` label, `--shadow-card` → `--shadow-lift`, `:active` back to `--shadow-card`) — the same primary the receipt uses; the lede takes `text-wrap: pretty`. *Result:* a `.pt-back-row` “Back to home” now sits above the banner (the anatomy §5.53 always described and the page never rendered); the header reads as one statement — `COMPLAINT REFERENCE` label, the ticket as `h1`, and the status pill beside it in `.track-ref-row` instead of floating alone at the far right — so `.track-header` drops its flex/`__ref`/`__status` rules and its mobile `flex-direction` override; “Track another complaint” is the same gold primary (`.track-btn--primary`, `box-shadow` added to the transition), giving each state exactly one gold action. *Copy (en + fil):* new `lookup.lede` and `result.back_home`; `lookup.not_found_body` lost its duplicated “hyphens and capitals don't matter” clause — the hint under the field already states it, so the fact is now on screen once. *Soft navigation (`docs/soft-navigation.md`, guide §5.34):* the two states are two partials (`complaints/partials/track-{lookup,result}.blade.php`, each root the page's own `.pt.track-page…` element so the modifier class travels with the swap) rendered inside one `[data-track-region]` by the page **and** by the new `GET /track/browser` (`complaints.track.browser`, same `throttle:20,1`, same `ComplaintController::TRACK_HEADERS`, JSON `{html, mode, notFound, title}` or `{redirect}`); `ComplaintController::track()` was split into a shared `trackContext()` so the page and the fragment cannot disagree, and `track.blade.php` carries one delegated client controller in `@push('scripts')` (fetch → swap region → `pushState` → focus the record's `h1`, or the field with its value selected when the ticket was wrong; `popstate` re-renders; a missing region, a bad payload or a failed request falls through to a real navigation). The form is `data-loading-managed`, so the shared §5.31 spinner is driven by the controller and cleared when the node is still connected. Files: `routes/web.php`, `app/Http/Controllers/ComplaintController.php`, `resources/views/complaints/track.blade.php`, `resources/views/complaints/partials/track-{lookup,result}.blade.php` (new), `resources/css/pages/complaint-track.css`, `lang/{en,fil}/complaint_track.php`, `tests/Feature/GuestComplaintTrackingTest.php`, `docs/design-system.md` (§5.53, §12), `docs/design-changelog.md`. New tokens: none. Verification: `php artisan view:clear`; `npm run build` clean; `php artisan test --filter="GuestComplaintTrackingTest"` — **23 passed (154 assertions)**, including four new endpoint tests (same lookup markup, record + no private data, generic unknown-ticket fragment, owner redirect); `php artisan test --filter="LegalPagesTest|TransparencyPageTest|ComplaintLiveTicketTest|LandingPageTest|CitizenHomeRedirectTest|LocalizationTest|InlineScriptRuntimeTest|DashboardTest"` — **60 passed (319 assertions)**; full `php artisan test` — **777 passed, 12 failed**, every failure outside this change's surface (AdminQueue ×6, ComplaintDetection, ExactLocationVisibility, ProfileQuery, ResidentInformationResponse, `DesignSystemGuardTest` on the same 4 pre-existing NEW violations in the untouched owner files `resources/css/pages/complaint-show.css` / `resources/views/admin/complaints/show.blade.php`, and `PasswordRequirementsTest`, the known network flake that passes in isolation — 5/5 alone); `php scripts/design-system-guard.php` — **0 NEW in touched files**; Playwright 1310×900 and 393×844 (one script, both states) — **13/13 checks**: 200 + exactly one `h1` + `scrollWidth ≤ innerWidth` + no raw lang keys + no console errors on all four pages; soft submit keeps the document (window marker survives) and writes `?ticket_id=…`, updates `document.title` and focuses the record `h1`; Back returns to the lookup state in place; a wrong ticket keeps the visitor on the page with the alert, the field focused and its value selected, and the URL as the truth; the primary action computes to `rgb(212, 169, 71)`; mobile soft submit has no overflow with the status pill beside the ticket; the soft-nav result screenshot is **byte-identical (md5) to the full page load** at both widths. Screenshots: `/tmp/opencode/track-ui/final/v2-{lookup-desktop,lookup-mobile,lookup-error-desktop,lookup-error-mobile,lookup-fil-desktop,lookup-fil-mobile,result-fil-desktop}.png`, `/tmp/opencode/track-ui/after-{lookup-desktop,lookup-mobile,result-desktop,result-mobile,soft-result,soft-result-mobile,lookup-error}.png` (repo-waived, evidence recorded here).
 - 2026-11-22 · Field ticket (`/staff/complaints/{id}`, field workspace) · **the four quick actions are the staff bottom nav — the ticket replaces the tab bar with them.** New `show.blade.php` section `staff-bottom-nav`: in field mode the nav is yielded as four `.ticket-action` tiles (Update Status · Take Photo · Add Findings · Submit Report, icons `svg 24×24`) plus the **Complaint location** tab; the default tab items (My Tasks/Activity/Notifications/Profile) and the sticky `.field-action-bar` are gone. When the ticket cannot be worked the nav shows `.ticket-action-note` (“Waiting on verification…” / “No status change is left…”) instead of dead actions. `app.css`: `.staff-bottom-nav__grid` → `repeat(auto-fit, minmax(0, 1fr))`, `.staff-bottom-nav .ticket-action{,__icon,.ticket-action__icon svg,.ticket-action-note}` new; `staff-complaint.css`: dead bar/grid rules removed. `show/scripts.blade.php`: the hash-target handler now runs on `hashchange` + `.ticket-action` clicks and opens the select picker / camera trigger / focuses the note — so “Add Findings” lands ready to type and “Take Photo” opens the camera. Files: `resources/views/staff/complaints/{show,layouts/app}.blade.php`, `resources/css/app.css`, `resources/css/pages/staff-complaint.css`, `resources/views/staff/complaints/partials/show/scripts.blade.php`, `tests/Feature/StaffTicketActionsTest.php` (new), `docs/design-system.md` (§5.61, §5.62, §5.63, §12), `docs/design-changelog.md`. New tokens: none. Verification: `php artisan view:clear`; `php artisan test --filter="StaffTicketActionsTest|StaffComplaintLayoutTest|StaffWorkspaceTest|InlineScriptRuntimeTest|LocalizationTest|StaffQueueScopeTest|RoleDashboardTest|CitizenHomeRedirectTest"` — **48/48 passed (214 assertions)**; Playwright phone 390×844 (mobile UA) — field ticket: nav replaced by the 4 actions (labels/hrefs/24px icons/no overflow/no raw keys); `#note` deep link focuses the field, `#status` focuses the select; dashboard: default tab items (My Tasks · Activity · Notifications · Profile); note ticket: note + location, no actions; `npm run build` clean; guard: same 4 pre-existing owner-file NEW violations (`complaint-show.css`, `admin/complaints/show.blade.php`). Screenshots: `/tmp/opencode/ticket-actions-nav.png`, `/tmp/opencode/field-home-nav.png` (repo-waived, evidence recorded here).
 - 2026-11-22 · Field staff home (`/staff`, `role === 'staff'`) · **the on-field officer's own landing — a mobile task dashboard, not a section of the ticket.** New `GET /staff` → `StaffController::fieldHome()` renders a centred rounded card: header row (**My Assigned Tasks** + live-count badge), compact task cards (title left / `.status-pill` right, `--font-mono` ticket id, barangay with pin, divider, the unchanged original resident description, full-width 44px **Open task**), then **Task actions**. The four actions (Update Status · Take Photo · Add Findings · Submit Report) are entry points into the first *actionable* assigned ticket (`isVerified()` + a legal manual transition left), named above the grid, anchored at `#status`, `#proof-capture`, `#note`, `#complaint-update-form`; where nothing is actionable the grid is replaced by an honest note rather than dead controls, and the list overflows to `staff.complaints.index?assigned_staff_id=…&scope=all` past `FIELD_HOME_TASK_LIMIT`. A small ticket script focuses a form-control target so “Add Findings” lands ready to type (plain fragment links still work with JS off). **Landing rule:** `role === 'staff'` **and** a phone user agent only — `User::homeRouteName()` and `DashboardController` were taught the same device test the complaint list already uses, so a desktop field officer and every Department Administrator keep `/staff/dashboard`, the pinned redirect/logo tests still pass, and other roles hitting `/staff` are sent to their own home. **Bottom nav:** the field role's **My Tasks** tab now points at `/staff` (`staff.activity.*` and `staff.complaints.*` stay active for other tabs); the bar gained a `.staff-bottom-nav__grid` wrapper and a section-gated `.staff-bottom-nav__caption` footer line beneath the four icons, with `.staff-content` clearing it via `:has` at 108px; the Phase-4 placeholder labels were replaced with real `en`+`fil` keys (`staff.mobile.nav|my_tasks|activity`, `nav.notifications`). `x-proof-capture` gained an opt-in `anchor-id`. Files: `routes/web.php`, `app/Http/Controllers/{StaffController,DashboardController}.php`, `app/Models/User.php`, `resources/views/staff/field/home.blade.php` (new), `resources/css/pages/staff-field-home.css` (new), `resources/views/staff/layouts/app.blade.php`, `resources/views/components/proof-capture.blade.php`, `resources/views/staff/complaints/partials/show/{main-column,scripts}.blade.php`, `resources/css/app.css`, `lang/{en,fil}/{staff,nav}.php`, `tests/Feature/{StaffComplaintLayoutTest,StaffWorkspaceTest}.php`, `docs/design-system.md` (§5.62, §12), `docs/design-changelog.md`. New tokens: none. Verification: Playwright phone 390×844 with a mobile UA — **36/36 checks passed** (login lands on `/staff`; `GET /staff` 200; exactly one `<h1>` reading “My Assigned Tasks”; “3 active” badge; 3 cards / 3 full-width Open-task / 3 pinned locations; 4 actions with the reference labels all anchored at one ticket; 4 tab items labelled My Tasks · Activity · Notifications · Profile with the caption beneath; `scrollWidth 390 ≤ innerWidth 390`; card 358px; **no raw lang keys, no console errors**; `#note` deep link keeps its hash and focuses the findings field; the tab returns to `/staff`; desktop login still lands on `/staff/dashboard`, card capped at 640px, tab hidden, no overflow; a Department Administrator on a phone still lands on the office dashboard and is bounced off `/staff`); `npm run build` clean; `php artisan route:list --path=staff` → `GET staff · staff.field.home`; every new key resolves in `en` and `fil`; guard **0 NEW in touched files** (the same 4 pre-existing owner-file violations in `complaint-show.css` / `admin/complaints/show.blade.php`); full `php artisan test` — **769 passed**, the same 11 pre-existing failures as HEAD (one further case is a network flake that passes in isolation). Two pre-existing test bugs this change surfaced were corrected: `StaffComplaintLayoutTest::elementWithClass()` scanned only `<div>` and could not see the `<details>` timeline card introduced by §5.61, and `StaffWorkspaceTest` counted the premium sidebar rail's `data-tooltip` as a duplicate “My activity”. Screenshots: `/tmp/opencode/field-home-{viewport,actions,mobile,desktop}.png` (repo-waived, evidence recorded here).
 - 2026-11-22 · Staff dashboard (`/staff/dashboard`, dept admin/staff/verifier) · **redesigned to clean workspace language consistent across roles.** Replaced transparency-style hero with a workspace header (department eyebrow, welcome, role chip), kept role-aware KPIs, rebuilt priority complaints as a clean panel (search, compact rows, status/priority badges, empty state), and kept recent activity as a secondary panel with internal scroll/max-height to avoid page stretch. Added subtle status-tinted stat icons using existing tokens. Shell spacing matches super admin (`1440px`, 2-column `max-content minmax(0,1fr)`, 24px gutters). Routes, permissions, and role-specific data scope unchanged. Files: `resources/views/staff/dashboard/index.blade.php`, `resources/css/pages/staff-dashboard.css`, `resources/css/app.css`, `docs/staff-dashboard-redesign.md`, `docs/design-system.md`, `docs/design-changelog.md`. New tokens: none. Verification: `npm run build`; Playwright 1440×900 smoke for dept admin/staff/verifier — rendered, no overflow; activity panel capped (562px, feed scrolls internally), page height reduced from ~2199px to ~1208px.

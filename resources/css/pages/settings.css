@@ -1,16 +1,40 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   SETTINGS — one card per section, all on one page, with a jump-nav.
+   SETTINGS — one card per section, all on one page, under a horizontal tab
+   strip.
 
    The page speaks the public portal's language: the card (surface, hairline
    border, radius-lg, soft shadow), the field and button styles, the quiet
    banner header. Nothing here is borrowed from the admin workspace any more.
+
+   The tab strip is horizontal at every width — staff and verifiers read it
+   on desktop and scroll it sideways on a phone; admins get it over the
+   admin rail, department staff over the staff rail, citizens standalone.
 
    The save row lives with the fields it saves and says what happened in
    place — no sticky bar over the page, no browser "leave site?" prompt.
    Docs: docs/design-system.md §5.45.
    ═══════════════════════════════════════════════════════════════════════ */
 
-body:has(.settings-page) > main {
+/* The staff/admin shells already carry the navbar offset and their own
+   light theme — the page adds no spacing of its own on top of them.
+   Citizens, who never sit in a shell, keep the banner padding below. */
+body.admin-layout .settings-page,
+body.role-staff .settings-page {
+    padding: 0;
+}
+
+body.admin-layout .settings-page .tr-h1,
+body.role-staff .settings-page .tr-h1 {
+    color: var(--navy-900);
+}
+
+body.admin-layout .settings-page .tr-privacy,
+body.role-staff .settings-page .tr-privacy {
+    color: var(--text-secondary);
+}
+
+/* Personal + admin settings — only citizens, who render without a shell. */
+body:has(.settings-page):not(.admin-layout):not(.role-staff) > main {
     flex: 1 0 auto;
     display: flex;
     flex-direction: column;
@@ -44,10 +68,8 @@ body:has(.settings-page) > main {
     line-height: 1.5;
 }
 
-/* ── Tabs ────────────────────────────────────────────────────────────
-   A left rail on the desktop, a scrolling strip on a phone — the shape the
-   page always had, rebuilt in the portal's colours. One section is shown at
-   a time, and the tab you are on says so.
+/* ── Tabs — a horizontal scrolling strip at every width ──────────────
+   The strip sits above the section card; the tab you are on says so.
    ──────────────────────────────────────────────────────────────────── */
 
 .settings-body {
@@ -68,7 +90,12 @@ body:has(.settings-page) > main {
     padding: 0;
     list-style: none;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* When the strip is scrolled, the first/last tabs never sit flush
+       against the container's gutter — the scroll always reads as distance. */
+    scroll-padding-inline: 8px;
 }
 
 .settings-tabs ul::-webkit-scrollbar {
@@ -850,28 +877,14 @@ body:has(.settings-page) > main {
 /* ── Narrow screens ─────────────────────────────────────────────────── */
 
 @media (min-width: 1024px) {
-    .settings-body {
-        grid-template-columns: 220px minmax(0, 1fr);
-    }
-
-    .settings-tabs ul {
-        flex-direction: column;
-        gap: 2px;
-        overflow-x: visible;
-    }
-
-    .settings-tab {
-        width: 100%;
-    }
-}
-
-@media (min-width: 1024px) {
     .identity-status { gap: 12px; }
 }
 
-@media (max-width: 700px) {
+/* ≤1023px: one-column page with the horizontal tab strip on top — the
+   shape staff, verifiers and admins all read on a phone or tablet. */
+@media (max-width: 1023px) {
     .settings-page {
-        padding: calc(var(--navbar-height, 64px) + 20px) 0 40px;
+        padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     }
 
     .settings-grid {
@@ -894,5 +907,175 @@ body:has(.settings-page) > main {
     .settings-save-row__actions .tr-button {
         flex: 1 1 auto;
         min-height: 44px;
+    }
+
+    /* ── Main content area — responsive robustness (2026-11-24) ───────
+       The container, body, card and fields can never be wider than the
+       viewport: `width: 100%` + `max-width: 100%` + `box-sizing:
+       border-box`, with `min-width: 0` where the content was allowed to
+       force width. The card's own grid children (the form and the group
+       fieldsets — grid items default to `min-width: auto`, i.e.
+       min-content, so they would refuse to shrink), the save row's
+       buttons and the card's fields stay inside the card. The tab strip
+       (`.settings-tabs`) is a grid item of `.settings-body` too — without
+       `min-width: 0` its nowrap tab labels push the 1-column grid track
+       wider than the viewport, overflowing the card/sections with it
+       (confirmed by 375px live measurements: body 311px, tabs/sections/card
+       386px). Desktop keeps its 1040px shapes. No overflow-x: hidden — the
+       layout itself is what shrinks. */
+    .settings-container,
+    .settings-body,
+    .settings-tabs,
+    .settings-sections,
+    .settings-card,
+    .settings-card__head,
+    .settings-card > form,
+    .settings-group,
+    .settings-grid,
+    .settings-field,
+    .settings-input {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .settings-card,
+    .settings-field {
+        box-sizing: border-box;
+    }
+
+    .settings-save-row,
+    .settings-save-row__actions {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .settings-save-row__actions {
+        flex-wrap: wrap;
+    }
+
+    /* Sessions are the densest rows on the Security card; they wrap instead
+       of squeezing their action off a phone. */
+    .settings-session {
+        gap: 10px;
+    }
+
+    .settings-session__meta {
+        min-width: 0;
+    }
+}
+
+/* Phones (≤768px): inputs at 16px. iOS Safari zooms the page when a text
+   input smaller than 16px receives focus — the 14px desktop step is one of
+   the classic causes of "the page jumped when I tapped the field" on a
+   phone — and 16px reads better than 13px on a ~390px screen anyway.
+   ─────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .settings-input {
+        font-size: 16px;
+    }
+
+    /* The tab strip scrolls on a phone; `scrollIntoView` keeps the active
+       tab centered (see resources/js/settings.js). */
+    .settings-tabs ul {
+        scroll-padding-inline: 8px;
+    }
+}
+
+/* Smaller still (≤768px): squeeze the card and the grid so more of the
+   small screen is the page, and tighten the tab strip — more tabs fit the
+   scroll without forcing a narrower tab. */
+@media (max-width: 768px) {
+    .settings-card {
+        gap: 16px;
+    }
+
+    .settings-grid {
+        gap: 12px;
+    }
+
+    .settings-tabs ul {
+        gap: 2px;
+        padding-inline: 4px;
+    }
+
+    .settings-tab {
+        padding: 10px 14px;
+    }
+}
+
+/* Below 500px: the card and tabs tighten again — phones get the real estate. */
+@media (max-width: 500px) {
+    .settings-card {
+        gap: 14px;
+    }
+
+    .settings-tab {
+        padding: 8px 12px;
+    }
+}
+
+/* Mobile M (≤375px) / Mobile S (≤320px): the main content gets the last of
+   the small screen — card and form padding shrink so the card, its fields
+   and the Save Changes button fit within the 320px scale. */
+@media (max-width: 375px) {
+    .settings-card {
+        padding: 16px;
+    }
+
+    .settings-card__head {
+        gap: 2px;
+    }
+
+    .settings-group {
+        gap: 12px;
+    }
+
+    .settings-grid {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 320px) {
+    .settings-card {
+        padding: 14px;
+    }
+
+    .settings-input,
+    .settings-select {
+        padding: 8px 10px;
+        height: 40px;
+    }
+
+    .settings-tabs ul {
+        gap: 0;
+    }
+}
+
+/* The staff mobile bottom nav is the workspace's footer, not the settings
+   page's: on /settings at the mobile width (≤1023px) it covers the form's
+   bottom, so it is hidden page-scoped here; every other staff page keeps it. */
+body.role-staff:has(.settings-page) .staff-bottom-nav {
+    display: none !important;
+}
+
+/* Where that nav used to reserve room, settings pages now run into the true
+   bottom of the content area. */
+body.role-staff:not(:has(.settings-page)) .staff-content {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+}
+body.role-staff:not(:has(.settings-page)):has(.staff-bottom-nav__caption) .staff-content {
+    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 700px) {
+    .settings-page {
+        padding: calc(var(--navbar-height, 64px) + 20px) 0 calc(40px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* The 2FA dialog: mobile-width caps so it clears the screen gutter. */
+    .settings-dialog {
+        max-width: calc(100vw - 32px);
     }
 }

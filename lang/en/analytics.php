@@ -161,9 +161,20 @@ return [
 
     'print' => [
         'title' => 'Department analytics report',
+        'republic' => 'Republic of the Philippines',
         'municipality' => 'Municipality of Daet',
+        'period' => 'Reporting period',
         'generated' => 'Generated :date',
+        'generated_label' => 'Generated',
+        'office_code' => 'Office code',
         'confidential' => 'Internal report. Contains operational data and is not for public distribution.',
+        'signatures' => 'Report signatures',
+        'prepared_by' => 'Prepared by',
+        'prepared_by_role' => 'DAET Listens System Administrator',
+        'noted_by' => 'Noted by',
+        'noted_by_role' => 'Office Head / Authorized Representative',
+        'save_hint' => 'Use your browser print dialog to print or save this report as PDF.',
+        'close' => 'Close',
     ],
 
     'csv' => [

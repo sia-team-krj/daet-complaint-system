@@ -98,6 +98,18 @@ class ComplaintPolicy
     }
 
     /**
+     * The resident who filed a resolved complaint may reopen it — the
+     * resident rejecting the office's resolution. The reopen returns the
+     * complaint to Under Review for a new verification pass; the cycle
+     * repeats until the resident closes it instead.
+     */
+    public function reopen(User $user, Complaint $complaint): bool
+    {
+        return $user->id === $complaint->user_id
+            && $complaint->statusEnum === \App\Enums\ComplaintStatus::Resolved;
+    }
+
+    /**
      * Only admin can view real identity of anonymous citizens.
      */
     public function viewRealIdentity(User $user, Complaint $complaint): bool

@@ -4,6 +4,7 @@ return [
     'lookup' => [
         'page_title' => 'Track a complaint - Daet Listens',
         'heading' => 'Track a complaint',
+        'lede' => 'Enter the ticket number you saved when you filed your report.',
         'form_label' => 'Look up a ticket',
         'label' => 'Ticket number',
         'placeholder' => 'COMP-2026-A7K9P',
@@ -11,12 +12,13 @@ return [
         'hint' => 'Example: COMP-2026-A7K9P. Hyphens and capitals don’t matter.',
         'privacy' => 'No account needed. Progress only.',
         'not_found_title' => 'No complaint matches that ticket number',
-        'not_found_body' => 'Check the ticket number and try again. Hyphens and capitals don’t matter.',
+        'not_found_body' => 'Check the ticket number and try again.',
     ],
 
     'result' => [
         'page_title' => 'Complaint progress :ticket - Daet Listens',
         'back' => 'Track another complaint',
+        'back_home' => 'Back to home',
         'title' => 'Complaint progress',
         'reference_label' => 'Complaint reference',
         'department_label' => 'Assigned department',

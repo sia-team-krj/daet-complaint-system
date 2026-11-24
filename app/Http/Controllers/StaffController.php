@@ -1807,7 +1807,7 @@ class StaffController extends Controller
                     'status' => $newStatus->value,
                 ];
 
-                if ($newStatus === ComplaintStatus::Resolved && $complaint->resolved_at === null) {
+                if ($newStatus === ComplaintStatus::Resolved) {
                     $updates['resolved_at'] = now();
                 }
 

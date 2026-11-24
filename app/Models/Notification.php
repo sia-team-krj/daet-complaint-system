@@ -70,6 +70,9 @@ class Notification extends Model
     /** The work was resolved; the resident has not confirmed it yet. */
     public const COMPLAINT_RESOLUTION_REMINDER = 'complaint.resolution_reminder';
 
+    /** The resident reopened a resolved complaint: the ticket is under review again. */
+    public const COMPLAINT_REOPENED = 'complaint.reopened';
+
     /** The moderation detector flagged the report; the resident is told. */
     public const COMPLAINT_MODERATION_FLAGGED = 'complaint.moderation_flagged';
 
@@ -165,6 +168,7 @@ class Notification extends Model
             self::COMPLAINT_INFORMATION_PROVIDED => 'reply',
             self::COMPLAINT_INFORMATION_STALE => 'waiting',
             self::COMPLAINT_STATUS_CHANGED => 'status',
+            self::COMPLAINT_REOPENED => 'status',
             self::COMPLAINT_REVIEW_UPDATED => 'review',
             self::COMPLAINT_MARKED_MISLEADING_OR_SPAM => 'status',
             self::COMPLAINT_MODERATION_FLAGGED => 'review',
@@ -242,6 +246,7 @@ class Notification extends Model
             self::COMPLAINT_INFORMATION_PROVIDED => 'Resident replied',
             self::COMPLAINT_INFORMATION_STALE => 'Waiting on resident',
             self::COMPLAINT_STATUS_CHANGED => 'Status changed',
+            self::COMPLAINT_REOPENED => 'Reopen requested by resident',
             self::COMPLAINT_REVIEW_UPDATED => 'Review updated',
             self::COMPLAINT_MARKED_MISLEADING_OR_SPAM => 'Marked misleading or spam',
             self::COMPLAINT_MODERATION_FLAGGED => 'Flagged for review',

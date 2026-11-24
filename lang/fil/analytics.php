@@ -161,9 +161,20 @@ return [
 
     'print' => [
         'title' => 'Ulat ng analytics ng kagawaran',
+        'republic' => 'Republika ng Pilipinas',
         'municipality' => 'Bayan ng Daet',
+        'period' => 'Panahon ng ulat',
         'generated' => 'Nilikha noong :date',
+        'generated_label' => 'Nilikha noong',
+        'office_code' => 'Kodigo ng opisina',
         'confidential' => 'Panloob na ulat. Naglalaman ng datos ng operasyon at hindi para sa pampublikong pamamahagi.',
+        'signatures' => 'Mga lagda sa ulat',
+        'prepared_by' => 'Inihanda ni',
+        'prepared_by_role' => 'Tagapangasiwa ng Sistemang DAET Listens',
+        'noted_by' => 'Pinagtibay ni',
+        'noted_by_role' => 'Pinuno ng Opisina / Awtorisadong Kinatawan',
+        'save_hint' => 'Gamitin ang print dialog ng iyong browser upang i-print o i-save ang ulat na ito bilang PDF.',
+        'close' => 'Isara',
     ],
 
     'csv' => [

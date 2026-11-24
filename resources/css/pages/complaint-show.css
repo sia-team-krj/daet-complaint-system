@@ -629,6 +629,55 @@
     color: var(--navy-900);
 }
 .close-report__submit:hover { background: var(--gold-300); }
+.close-report__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.close-report__reopen { display: grid; gap: 8px; }
+.close-report__reopen-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.close-report__reopen-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--navy-900);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+.close-report__reopen-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+}
+.close-report__reopen-error {
+    margin: 0;
+    font-size: 13px;
+    color: var(--status-rejected-text);
+}
+.close-report__reopen-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--surface);
+    color: var(--navy-700);
+}
+.close-report__reopen-submit:hover { background: var(--navy-50); }
 
 /* Follow-up panel: a finished report that is not satisfied for the resident.
    Sub-ticketing's entry point, so it keeps the close panel's grammar (head

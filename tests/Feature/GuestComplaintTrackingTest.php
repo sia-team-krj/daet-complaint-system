@@ -447,6 +447,79 @@ class GuestComplaintTrackingTest extends TestCase
             ->assertDontSee('complaint_track.result.title');
     }
 
+    public function test_the_fragment_endpoint_renders_the_same_lookup_as_the_page(): void
+    {
+        $this->getJson(route('complaints.track.browser'))
+            ->assertOk()
+            ->assertJson(['mode' => 'lookup', 'notFound' => false])
+            ->assertJsonPath('title', __('complaint_track.lookup.page_title'))
+            ->assertHeader('Cache-Control', 'no-store, private')
+            ->assertHeader('Referrer-Policy', 'no-referrer')
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+
+        $html = $this->getJson(route('complaints.track.browser'))->json('html');
+
+        // The same form the page renders: the fragment is the region, never a
+        // second implementation of it.
+        $this->assertStringContainsString('action="'.route('complaints.track').'"', $html);
+        $this->assertStringContainsString('name="ticket_id"', $html);
+        $this->assertStringContainsString(__('complaint_track.lookup.lede'), $html);
+    }
+
+    public function test_the_fragment_endpoint_returns_the_record_and_nothing_private(): void
+    {
+        $complaint = $this->complaint([
+            'title' => 'Secret road problem',
+            'description' => 'Secret description at 123 Hidden Street.',
+            'address_text' => '123 Hidden Street, Barangay VI, Daet',
+            'status' => ComplaintStatus::InProgress->value,
+            'is_public' => false,
+            'review_status' => 'pending',
+            'verified_at' => null,
+        ]);
+
+        $response = $this->getJson(route('complaints.track.browser', ['ticket_id' => 'comp2026a7k9p']));
+
+        $response->assertOk()
+            ->assertJson(['mode' => 'result', 'notFound' => false])
+            ->assertJsonPath('title', __('complaint_track.result.page_title', ['ticket' => $complaint->ticket_id]));
+
+        $html = $response->json('html');
+
+        $this->assertStringContainsString($complaint->ticket_id, $html);
+        $this->assertStringContainsString(__('complaint_track.result.back_home'), $html);
+        $this->assertStringContainsString(ComplaintStatus::InProgress->label(), $html);
+        $this->assertStringContainsString($this->department->name, $html);
+        $this->assertStringNotContainsString('Secret road problem', $html);
+        $this->assertStringNotContainsString('Secret description at 123 Hidden Street.', $html);
+        $this->assertStringNotContainsString('123 Hidden Street', $html);
+        $this->assertStringNotContainsString('private-resident@example.test', $html);
+    }
+
+    public function test_an_unknown_ticket_gets_the_generic_lookup_fragment(): void
+    {
+        $response = $this->getJson(route('complaints.track.browser', ['ticket_id' => 'COMP-2026-ZZZZZ']));
+
+        $response->assertOk()
+            ->assertJson(['mode' => 'lookup', 'notFound' => true])
+            ->assertJsonPath('title', __('complaint_track.lookup.page_title'));
+
+        $this->assertStringContainsString(
+            __('complaint_track.lookup.not_found_title'),
+            $response->json('html'),
+        );
+    }
+
+    public function test_the_owner_is_handed_the_full_ticket_by_the_fragment_endpoint(): void
+    {
+        $complaint = $this->complaint();
+
+        $this->actingAs($this->resident)
+            ->getJson(route('complaints.track.browser', ['ticket_id' => $complaint->ticket_id]))
+            ->assertOk()
+            ->assertJson(['redirect' => route('complaints.show', $complaint)]);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */

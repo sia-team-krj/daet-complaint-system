@@ -1397,7 +1397,7 @@ class AdminController extends Controller
                     $documentationPaths = $evidence['paths'];
                 }
                 $updates['status'] = $newStatus->value;
-                if ($newStatus === ComplaintStatus::Resolved && $complaint->resolved_at === null) {
+                if ($newStatus === ComplaintStatus::Resolved) {
                     $updates['resolved_at'] = now();
                 }
                 if ($newStatus === ComplaintStatus::Closed) {

@@ -39,6 +39,14 @@
                             <span class="admin-sidebar__label">{{ __('nav.overview') }}</span>
                         </a>
                     </li>
+                    <li>
+                        <a class="admin-sidebar__link {{ request()->routeIs('admin.analytics.*') ? 'is-active' : '' }}"
+                           href="{{ route('admin.analytics.index') }}" @if(request()->routeIs('admin.analytics.*')) aria-current="page" @endif
+                           data-tooltip="{{ __('nav.analytics') }}">
+                            <svg class="admin-sidebar__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"></path><path d="m7 14 3-3 3 3 5-6"></path></svg>
+                            <span class="admin-sidebar__label">{{ __('nav.analytics') }}</span>
+                        </a>
+                    </li>
                 </ul>
 
                 {{-- Manage: complaint operations and platform content. --}}

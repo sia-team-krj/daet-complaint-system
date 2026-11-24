@@ -1268,33 +1268,129 @@ body.page-staff-analytics .staff-content {
 /* ─── Print ──────────────────────────────────────────────────────────────── */
 .print-layout {
     min-height: 100vh;
-    background: var(--surface);
+    background: var(--surface-soft);
     color: var(--text);
     font-family: var(--font-sans);
 }
 
-.print-document {
-    max-width: 210mm;
-    margin: 0 auto;
-    padding: 16mm;
+.print-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--navy-900);
+    color: var(--surface);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.an-print__header {
+.print-toolbar__inner {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 10px 16mm;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 12px;
-    border-bottom: 3px solid var(--navy-900);
+    gap: 12px;
+}
+
+.print-toolbar__hint {
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.print-toolbar__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.print-toolbar__btn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: transparent;
+    color: var(--surface);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.print-toolbar__btn--primary {
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    color: var(--navy-900);
+}
+
+.print-document {
+    max-width: 210mm;
+    margin: 24px auto;
+    padding: 16mm;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(11, 30, 52, 0.08), 0 8px 24px rgba(11, 30, 52, 0.06);
+}
+
+.an-print__letterhead {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--navy-900);
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+.an-print__logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.an-print__letterhead-copy p {
+    margin: 0;
+}
+
+.an-print__republic {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
 }
 
 .an-print__municipality {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--navy-900);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.an-print__office {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.an-print__dochead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 12px;
+}
+
+.an-print__doctype {
     margin: 0 0 4px;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--faint);
+    color: var(--muted);
 }
 
 .an-print__title {
@@ -1306,34 +1402,71 @@ body.page-staff-analytics .staff-content {
 }
 
 .an-print__subtitle {
-    margin: 4px 0 0;
+    margin: 6px 0 0;
     font-size: 13px;
+    line-height: 1.5;
     color: var(--muted);
+    max-width: 60ch;
 }
 
 .an-print__meta {
     text-align: right;
     font-size: 11px;
-    line-height: 1.6;
+    line-height: 1.7;
     color: var(--muted);
+    flex-shrink: 0;
 }
 
 .an-print__meta p {
-    margin: 4px 0 0;
+    margin: 0;
+}
+
+.an-print__meta strong {
+    color: var(--text);
 }
 
 .an-print__notice {
-    margin: 10px 0 14px;
+    margin: 0 0 16px;
+    padding: 8px 10px;
     font-size: 11px;
-    font-style: italic;
-    color: var(--faint);
+    color: var(--muted);
+    background: var(--surface-soft);
+    border-left: 3px solid var(--gold-500);
+}
+
+.an-print__signatures {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+    margin-top: 36px;
+    padding-top: 8px;
+    break-inside: avoid;
+}
+
+.an-print__signature-line {
+    margin: 0 0 8px;
+    height: 48px;
+    border-bottom: 1px solid var(--text);
+}
+
+.an-print__signature-name {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.an-print__signature-role {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--muted);
 }
 
 .an-print__footer {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 20px;
+    margin-top: 24px;
     padding-top: 8px;
     border-top: 1px solid var(--line);
     font-size: 10px;
@@ -1377,41 +1510,136 @@ body.page-staff-analytics .staff-content {
     margin-bottom: 10px;
 }
 
-.an-print .an-chart__data summary {
-    display: none;
+.an-print .an-chart__data,
+.an-print .an-inspect,
+.an-print .an-feed__more > summary,
+.an-print .an-bar-hit,
+.an-print .an-donut-hit,
+.an-print .an-chart__hit,
+.an-print .an-chart__hover {
+    display: none !important;
 }
 
-.an-print .an-chart__data > *:not(summary),
-.an-print .an-feed__more > ol {
+.an-print .an-feed__more > ol,
+.an-print .an-feed__more:not([open]) > :not(summary) {
     display: block !important;
 }
 
-.an-print .an-inspect,
-.an-print .an-feed__more > summary {
+.an-print .an-delta__label {
     display: none;
 }
 
-.an-print .an-table {
+.an-print .an-delta {
     font-size: 10px;
+    gap: 3px;
 }
+
+.an-print .an-feed__meta a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.an-print .an-note {
+    margin-bottom: 12px;
+    font-size: 11px;
+}
+
+.an-print .an-table {
+    display: table;
+    width: 100%;
+    font-size: 10px;
+    border-collapse: collapse;
+}
+
+.an-print .an-table thead { display: table-header-group; }
+.an-print .an-table tbody { display: table-row-group; }
+.an-print .an-table tr { display: table-row; }
 
 .an-print .an-table th,
 .an-print .an-table td {
-    padding: 5px 6px;
+    display: table-cell;
+    padding: 6px 7px;
+    border: 1px solid var(--line);
+    vertical-align: top;
+    text-align: left;
+}
+
+.an-print .an-table th::before,
+.an-print .an-table td::before {
+    content: none !important;
+    display: none !important;
+}
+
+.an-print .an-table thead th {
+    background: var(--surface-soft);
+    color: var(--navy-900);
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.an-print .an-table__office-link {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.an-print .an-table__small {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.an-print .an-table__strong {
+    font-weight: 700;
+    color: var(--text);
 }
 
 .an-print .an-feed__item {
     break-inside: avoid;
 }
 
+.an-print .an-card__head {
+    margin-bottom: 10px;
+}
+
+.an-print .an-card__title {
+    font-size: 14px;
+}
+
+.an-print .an-card__sub {
+    font-size: 11px;
+}
+
 @media print {
     @page {
-        margin: 12mm;
+        size: A4;
+        margin: 14mm 12mm;
+    }
+
+    .print-layout {
+        background: var(--surface);
+    }
+
+    .print-toolbar {
+        display: none !important;
     }
 
     .print-document {
         max-width: none;
+        margin: 0;
         padding: 0;
+        box-shadow: none;
+    }
+
+    .an-print {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 
     .an-print a {

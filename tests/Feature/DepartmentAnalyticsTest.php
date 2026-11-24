@@ -34,7 +34,7 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_staff_page_renders_only_their_department_and_no_staff_breakdown(): void
     {
-        $this->skipIfAnalyticsPaused();
+        $this->skipIfStaffAnalyticsPaused();
 
         $staff = $this->staff($this->engineering);
         $otherStaff = $this->staff($this->engineering, 'Alex', 'Worker');
@@ -72,8 +72,6 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_admin_comparison_is_alphabetical_and_excludes_archived_offices(): void
     {
-        $this->skipIfAnalyticsPaused();
-
         $admin = $this->admin();
 
         $archived = Department::create([
@@ -89,9 +87,7 @@ class DepartmentAnalyticsTest extends TestCase
             ->get(route('admin.analytics.index'))
             ->assertOk()
             ->assertSeeInOrder([
-                'Business and Licensing Office',
                 'Engineering Office',
-                'Human Resource Management Office',
                 "Mayor's Office",
                 'Municipal Environment and Natural Resource Office',
             ])
@@ -102,8 +98,6 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_admin_department_page_includes_the_administrator_only_staff_breakdown(): void
     {
-        $this->skipIfAnalyticsPaused();
-
         $admin = $this->admin();
         $worker = $this->staff($this->engineering, 'Alex', 'Worker');
 
@@ -122,8 +116,6 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_admin_department_without_staff_shows_an_honest_empty_table(): void
     {
-        $this->skipIfAnalyticsPaused();
-
         $admin = $this->admin();
         $emptyOffice = Department::where('code', 'OM')->firstOrFail();
 
@@ -136,8 +128,6 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_admin_can_open_an_archived_department_report(): void
     {
-        $this->skipIfAnalyticsPaused();
-
         $admin = $this->admin();
         $archived = Department::create([
             'name' => 'Archived Office',
@@ -198,8 +188,6 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_completion_uses_resolved_at_then_closed_at_then_updated_at(): void
     {
-        $this->skipIfAnalyticsPaused();
-
         $resolved = $this->complaint($this->engineering, [
             'status' => ComplaintStatus::Resolved->value,
             'created_at' => now()->subDays(7),
@@ -221,8 +209,11 @@ class DepartmentAnalyticsTest extends TestCase
         $this->assertSame(2, $metrics['resolved']);
         $this->assertSame(4.5, $metrics['avg_days']);
 
-        $dates = $this->actingAs($this->staff($this->engineering))
-            ->get(route('staff.analytics.export', ['period' => 'month']))
+        $dates = $this->actingAs($this->admin())
+            ->get(route('admin.analytics.department.export', [
+                'department' => $this->engineering,
+                'period' => 'month',
+            ]))
             ->streamedContent();
 
         $this->assertStringContainsString($resolved->ticket_id, $dates);
@@ -286,32 +277,44 @@ class DepartmentAnalyticsTest extends TestCase
         $this->assertSame(AnalyticsPeriod::DEFAULT, $backwards->preset);
     }
 
-    public function test_fragment_endpoint_answers_json_and_redirects_plain_requests_to_the_page(): void
+    public function test_admin_fragment_endpoint_answers_json_and_redirects_plain_requests_to_the_page(): void
     {
-        $this->skipIfAnalyticsPaused();
+        $admin = $this->admin();
 
-        $staff = $this->staff($this->engineering);
-
-        $this->actingAs($staff)
-            ->getJson(route('staff.analytics.browser', ['period' => '7d']))
+        $this->actingAs($admin)
+            ->getJson(route('admin.analytics.browser', ['period' => '7d']))
             ->assertOk()
             ->assertJsonStructure(['period', 'content'])
             ->assertJsonPath('period', fn ($value) => is_string($value) && str_contains($value, 'an-period'));
 
-        $this->actingAs($staff)
-            ->get(route('staff.analytics.browser', ['period' => '7d']))
-            ->assertRedirect(route('staff.analytics.index', ['period' => '7d']));
+        $this->actingAs($admin)
+            ->get(route('admin.analytics.browser', ['period' => '7d']))
+            ->assertRedirect(route('admin.analytics.index', ['period' => '7d']));
 
-        $this->actingAs($this->admin())
+        $this->actingAs($admin)
             ->get(route('admin.analytics.department.browser', $this->engineering))
             ->assertRedirect(route('admin.analytics.department', [
                 'department' => $this->engineering->id,
             ]));
     }
 
+    public function test_staff_analytics_pages_still_refuse_while_parked(): void
+    {
+        $staff = $this->staff($this->engineering);
+
+        foreach ([
+            route('staff.analytics.index'),
+            route('staff.analytics.browser'),
+            route('staff.analytics.export'),
+            route('staff.analytics.print'),
+        ] as $url) {
+            $this->actingAs($staff)->get($url)->assertForbidden();
+        }
+    }
+
     public function test_csv_export_contains_the_complaint_register_without_resident_identity(): void
     {
-        $this->skipIfAnalyticsPaused();
+        $this->skipIfStaffAnalyticsPaused();
 
         $staff = $this->staff($this->engineering);
         $resident = User::factory()->create([
@@ -343,24 +346,14 @@ class DepartmentAnalyticsTest extends TestCase
         $this->assertStringNotContainsString('maria.santos@example.test', $csv);
     }
 
-    public function test_print_views_render_for_staff_and_admin(): void
+    public function test_print_views_render_for_admin(): void
     {
-        $this->skipIfAnalyticsPaused();
-
-        $staff = $this->staff($this->engineering);
         $admin = $this->admin();
         $worker = $this->staff($this->engineering, 'Alex', 'Worker');
 
         $this->complaint($this->engineering, [
             'assigned_staff_id' => $worker->id,
         ]);
-
-        $this->actingAs($staff)
-            ->get(route('staff.analytics.print', ['period' => '90d']))
-            ->assertOk()
-            ->assertSee(__('analytics.print.confidential'))
-            ->assertSee($this->engineering->name)
-            ->assertDontSee('Alex Worker');
 
         $this->actingAs($admin)
             ->get(route('admin.analytics.print', ['period' => '30d']))
@@ -375,9 +368,25 @@ class DepartmentAnalyticsTest extends TestCase
             ->assertSee('Alex Worker');
     }
 
+    public function test_print_views_render_for_staff(): void
+    {
+        $this->skipIfStaffAnalyticsPaused();
+
+        $staff = $this->staff($this->engineering);
+
+        $this->complaint($this->engineering);
+
+        $this->actingAs($staff)
+            ->get(route('staff.analytics.print', ['period' => '90d']))
+            ->assertOk()
+            ->assertSee(__('analytics.print.confidential'))
+            ->assertSee($this->engineering->name)
+            ->assertDontSee('Alex Worker');
+    }
+
     public function test_recent_activity_is_scoped_to_the_department_and_period(): void
     {
-        $this->skipIfAnalyticsPaused();
+        $this->skipIfStaffAnalyticsPaused();
 
         $staff = $this->staff($this->engineering);
         $own = $this->complaint($this->engineering, ['title' => 'Own department report']);
@@ -434,7 +443,7 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_recent_activity_labels_the_first_log_as_filed(): void
     {
-        $this->skipIfAnalyticsPaused();
+        $this->skipIfStaffAnalyticsPaused();
 
         $staff = $this->staff($this->engineering);
         $complaint = $this->complaint($this->engineering, ['title' => 'Fresh pothole report']);
@@ -457,7 +466,7 @@ class DepartmentAnalyticsTest extends TestCase
 
     public function test_recent_activity_shows_the_latest_eight_and_discloses_the_rest(): void
     {
-        $this->skipIfAnalyticsPaused();
+        $this->skipIfStaffAnalyticsPaused();
 
         $staff = $this->staff($this->engineering);
         $complaint = $this->complaint($this->engineering, ['title' => 'Activity pagination report']);
@@ -482,17 +491,32 @@ class DepartmentAnalyticsTest extends TestCase
         $this->assertSame(10, substr_count($response->getContent(), 'an-feed__item'));
     }
 
-    public function test_staff_sidebar_links_to_their_analytics_page(): void
+    public function test_staff_sidebar_hides_the_parked_analytics_link(): void
     {
-        $this->skipIfAnalyticsPaused();
-
         $staff = $this->staff($this->engineering);
 
         $this->actingAs($staff)
             ->get(route('staff.dashboard'))
             ->assertOk()
-            ->assertSee(route('staff.analytics.index'), false)
+            ->assertDontSee(route('staff.analytics.index'), false)
+            ->assertDontSee(__('nav.analytics'));
+    }
+
+    public function test_admin_sidebar_links_to_the_analytics_comparison(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.analytics.index'), false)
             ->assertSee(__('nav.analytics'));
+    }
+
+    public function test_admin_department_directory_links_to_each_office_report(): void
+    {
+        $this->actingAs($this->admin())
+            ->get(route('admin.departments.index'))
+            ->assertOk()
+            ->assertSee(route('admin.analytics.department', $this->engineering), false);
     }
 
     public function test_trend_buckets_follow_the_period_length(): void
@@ -537,13 +561,14 @@ class DepartmentAnalyticsTest extends TestCase
     }
 
     /**
-     * The analytics is parked: the pages are out of sight until the
-     * municipality is ready for them. These tests come back with the feature.
+     * The staff analytics is parked: the admin report is live, but the
+     * staff-facing pages are still out of sight. These tests come back with
+     * that surface.
      */
-    private function skipIfAnalyticsPaused(): void
+    private function skipIfStaffAnalyticsPaused(): void
     {
-        if (\App\Http\Middleware\AnalyticsPaused::PAUSED) {
-            $this->markTestSkipped('The department analytics is parked.');
+        if (\App\Http\Middleware\AnalyticsPaused::STAFF_PAUSED) {
+            $this->markTestSkipped('The staff analytics is parked.');
         }
     }
 }

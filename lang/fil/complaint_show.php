@@ -154,6 +154,17 @@ return [
         'success' => 'Salamat. Sarado na ang iyong ulat.',
         'log_comment' => 'Kinumpirma ng residente ang resolusyon at isinara ang ulat na ito.',
     ],
+    'reopen' => [
+        'reason_label' => 'Bakit mo balik i-reopen ang complaint na ito?',
+        'reason_placeholder' => 'Isali kung bakit hindi nakababasa sa iyo ang resolve...',
+        'submit' => 'I-reopen ang Complaint',
+        'success' => 'Naitala ang iyong reopen request. Susuriin muli ng departamento ang complaint na ito.',
+        'log_comment' => 'Resident requested to reopen this complaint: :reason',
+        'errors' => [
+            'reason' => 'Pakibigay kung bakit hindi nasisiyahan ang resolve (10 hanggang 2000 character).',
+        ],
+        'not_available' => 'Hindi ito naghihintay ng desisyon ng resident.',
+    ],
     'feedback' => [
         'title' => 'I-rate ang serbisyong ito',
         'lede' => 'Sabihin sa amin kung paano hinawakan ang reklamong ito. Nakakatulong ang iyong rating na mapabuti ang serbisyo publiko.',

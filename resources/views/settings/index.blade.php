@@ -1,12 +1,26 @@
-@extends('layouts.app')
+@php
+    // The settings page renders inside the caller's workspace shell: the
+    // admin rail for super admins, the staff rail for department staff (which
+    // is where verifiers are), and the standalone portal layout for citizens.
+    $settingsLayout = match ($user->role) {
+        'citizen' => 'layouts.app',
+        default => $user->isAdmin() ? 'admin.layouts.app' : 'staff.layouts.app',
+    };
+    $settingsContentSection = match ($user->role) {
+        'citizen' => 'content',
+        default => $user->isAdmin() ? 'admin-content' : 'staff-content',
+    };
+@endphp
+@extends($settingsLayout)
 @section('title', __('settings.title').' - Daet Listens')
 @include('partials.public-ui')
 @include('pages.transparency.partials.component-styles')
-@section('content')
+@section($settingsContentSection)
 {{--
     Settings.
 
-    One section at a time, switched by the tabs — the way it always worked.
+    One section at a time, switched by the horizontal tab strip — the way it
+    always worked.
     Each section is a card in the portal's own language, with the fields
     grouped inside it and the save row living with the fields it saves.
 

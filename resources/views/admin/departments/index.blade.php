@@ -96,6 +96,7 @@
                                  them: a lone control between the stats and the action
                                  row reads as an orphan, not one of this office's commands. --}}
                             <div class="admin-department-list-actions">
+                                <a href="{{ route('admin.analytics.department', $department) }}" class="admin-button admin-button--compact admin-button--secondary">{{ __('nav.analytics') }}</a>
                                 @if($department->is_active)
                                     <a href="{{ route('admin.complaints.index', ['department' => $department->id]) }}" class="admin-button admin-button--compact admin-button--secondary">View queue</a>
                                     <a href="{{ route('admin.audit.index', ['department_id' => $department->id]) }}" class="admin-button admin-button--compact admin-button--secondary">{{ __('staff.activity.department_title') }}</a>

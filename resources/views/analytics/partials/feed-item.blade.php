@@ -34,7 +34,7 @@
                 <a href="{{ route($routeNames['complaint'], $entry['complaint_id']) }}">{{ $entry['title'] ?: $entry['ticket_id'] }}</a>
                 <span aria-hidden="true">·</span>
             @endif
-            <time datetime="{{ $entry['created_at']?->toIso8601String() }}">{{ $entry['created_at']?->locale(app()->getLocale())->diffForHumans() }}</time>
+            <time datetime="{{ $entry['created_at']?->toIso8601String() }}">{{ $entry['created_at']?->locale(app()->getLocale())->translatedFormat('M j, Y g:i A') }}</time>
         </p>
     </div>
 </li>

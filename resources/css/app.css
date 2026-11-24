@@ -4241,11 +4241,13 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 
 /* Segmented control (language, text size) */
+/* The Preferences/language segmented control is desktop-sized content on a
+   phone; cap it to the container so it cannot overflow a ~390px screen. */
 .segmented-control {
     display: inline-flex;
     justify-self: start;
     width: fit-content;
-    max-width: 360px;
+    max-width: min(360px, 100%);
     gap: 2px;
     padding: 3px;
     background: #eef1f6;
@@ -10602,6 +10604,21 @@ body.role-staff .staff-bottom-nav .ticket-action-note {
     color: var(--faint);
     font: 500 10px/1.4 var(--font-sans);
     text-align: center;
+}
+/* Note + single shortcut: stack and centre — the note spans full width,
+   the shortcut sits centred beneath it as a compact item. The 4-action /
+   4-tab layouts keep their even-fill grid. */
+body.role-staff .staff-bottom-nav__grid:has(.ticket-action-note) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+body.role-staff .staff-bottom-nav__grid:has(.ticket-action-note) > .ticket-action-note {
+    width: 100%;
+}
+body.role-staff .staff-bottom-nav__grid:has(.ticket-action-note) > :not(.ticket-action-note) {
+    width: auto;
+    min-width: 96px;
 }
 @media (max-width: 1023px) {
     body.role-staff .staff-bottom-nav { display: block; }

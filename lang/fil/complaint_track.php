@@ -4,6 +4,7 @@ return [
     'lookup' => [
         'page_title' => 'Subaybayan ang reklamo - Daet Listens',
         'heading' => 'Subaybayan ang reklamo',
+        'lede' => 'Ilagay ang ticket number na iyong na-save nang maghain.',
         'form_label' => 'Hanapin ang ticket',
         'label' => 'Ticket number',
         'placeholder' => 'COMP-2026-A7K9P',
@@ -11,12 +12,13 @@ return [
         'hint' => 'Halimbawa: COMP-2026-A7K9P. Hindi mahalaga ang gitling at malaking titik.',
         'privacy' => 'Hindi kailangan ng account. Progreso lang ang ipinapakita.',
         'not_found_title' => 'Walang reklamong tumutugma sa ticket number',
-        'not_found_body' => 'Suriin ang ticket number at subukang muli. Hindi mahalaga ang gitling at malaking titik.',
+        'not_found_body' => 'Suriin ang ticket number at subukang muli.',
     ],
 
     'result' => [
         'page_title' => 'Progreso ng reklamo :ticket - Daet Listens',
         'back' => 'Subaybayan ang ibang reklamo',
+        'back_home' => 'Bumalik sa home page',
         'title' => 'Progreso ng reklamo',
         'reference_label' => 'Numero ng sanggunian ng reklamo',
         'department_label' => 'Itinalagang tanggapan',

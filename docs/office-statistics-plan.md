@@ -9,7 +9,7 @@ Give each **Department Administrator** a DA-only, office-scoped **Office statist
 - **Scope:** “Everything useful” for performance + common complaints (see Feature set below).
 - **Placement:** New **Office statistics** page in the **Office** section (staff sidebar + mobile drawer), alongside Manage office / Office audit.
 - **Access:** **Department Administrators only**, scoped to their own active office (controller-enforced; never another office). Global admin uses existing admin analytics.
-- **Availability:** **Available now** as its own office-scoped page (not behind `analytics.paused`), because it’s an office-management tool for DAs. (Existing staff/admin analytics routes remain paused as-is.)
+- **Availability:** **Available now** as its own office-scoped page (not behind `analytics.paused`), because it’s an office-management tool for DAs. (The super admin analytics is live; the staff-facing `/staff/analytics*` remains paused.)
 - **Time/detail:** Preset ranges + custom date range, trends over time, and drill-down to filtered complaint lists.
 - **UI consistency:** Top KPI/stat cards use the **dashboard stat-card pattern** (`dept-stats` / `dept-stat` with `tr-stat__icon` tones), same as standardized on `/staff/office`, `/staff/activity`, `/staff/department-activity`. Detailed analytics sections reuse existing `analytics.partials.*` / `an-*` patterns where they fit, adapted for office/DA context.
 
@@ -53,7 +53,7 @@ Give each **Department Administrator** a DA-only, office-scoped **Office statist
 - [~] Build assets if CSS/JS touched; run guard/tests. Blade-only/CSS-in-view changes; no Tailwind/build step required for this pass — verify in target env. Run guard/tests recorded below when executed.
 
 ## Implementation notes (2026-11-16)
-- **Availability:** Office statistics is intentionally **not** behind `analytics.paused` (DA office-management). Existing `/staff/analytics*` and admin analytics remain paused.
+- **Availability:** Office statistics is intentionally **not** behind `analytics.paused` (DA office-management). The super admin analytics is live; `/staff/analytics*` remains paused.
 - **Privacy/scoping:** enforced by `DepartmentAdminController::office()` (DA + active own office). No resident identities exposed; aggregates/categories/barangays only; per-staff workload limited to same office. Drill-down uses existing staff complaint views/filters.
 - **Drill-down:** status/review/overdue link to existing queue params; category/barangay use added optional queue params. Some metrics (e.g. avg days) are informational without a direct list filter.
 - **Continuation:** if extending, add feature tests, consider richer queue filter UI for category/barangay, and align export/print/soft-nav UX with staff analytics once unpaused. See `docs/design-system.md` §5.x dashboard/`dept-stats` usage.
